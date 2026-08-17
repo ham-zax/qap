@@ -32,6 +32,7 @@ from qap.experiment.runner import (
     execute_precommitted_experiment as execute_prepared_experiment,
 )
 from qap.experiment.tables import (
+    build_evidence_table,
     build_inventory_table,
     build_performance_table,
     validate_artifact_table,
@@ -112,6 +113,7 @@ class RunArtifactPaths:
     result: Path
     performance: Path
     inventory: Path
+    evidence: Path
     events: Path
     commitment: Path
     failure: Path
@@ -124,6 +126,7 @@ class LoadedRunArtifacts:
     result: ExperimentResult
     performance: Any
     inventory: Any
+    evidence: Any | None
     events: tuple[dict[str, object], ...]
     commitment: FinalOosCommitment | None
 
@@ -138,6 +141,7 @@ def _paths(run_root: Path, run_id: str) -> RunArtifactPaths:
         result=directory / "result.json",
         performance=directory / "performance.parquet",
         inventory=directory / "inventory.parquet",
+        evidence=directory / "evidence.parquet",
         events=directory / "events.jsonl",
         commitment=directory / "commitment.json",
         failure=directory / "failure.json",
@@ -336,6 +340,13 @@ def _write_completed_artifacts(paths: RunArtifactPaths, run: ExperimentRun) -> N
         compression="zstd",
         version="2.6",
     )
+    if run.relationship_observations:
+        pq.write_table(
+            build_evidence_table(run),
+            paths.evidence,
+            compression="zstd",
+            version="2.6",
+        )
     write_event_records(paths.events, run)
 
 
@@ -478,6 +489,9 @@ def read_run_artifacts(run_directory: str | Path) -> LoadedRunArtifacts:
 
     performance: Any = pq.read_table(paths.performance)
     inventory: Any = pq.read_table(paths.inventory)
+    evidence: Any | None = (
+        pq.read_table(paths.evidence) if paths.evidence.exists() else None
+    )
     validate_artifact_table(
         performance,
         expected_schema="qap.experiment.performance.v1",
@@ -488,6 +502,12 @@ def read_run_artifacts(run_directory: str | Path) -> LoadedRunArtifacts:
         expected_schema="qap.experiment.inventory.v1",
         run_id=directory.name,
     )
+    if evidence is not None:
+        validate_artifact_table(
+            evidence,
+            expected_schema="qap.experiment.evidence.v1",
+            run_id=directory.name,
+        )
     events = read_event_records(paths.events, run_id=directory.name)
     commitment = (
         FinalOosCommitment.model_validate_json(
@@ -510,6 +530,7 @@ def read_run_artifacts(run_directory: str | Path) -> LoadedRunArtifacts:
         result=result,
         performance=performance,
         inventory=inventory,
+        evidence=evidence,
         events=events,
         commitment=commitment,
     )

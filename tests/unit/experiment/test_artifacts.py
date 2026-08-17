@@ -41,6 +41,33 @@ def _manifest_data() -> dict[str, object]:
     return cast(dict[str, object], value)
 
 
+def _rolling_model_manifest() -> ExperimentManifest:
+    data = _manifest_data()
+    data["experiment_name"] = "phase10 rolling artifact"
+    data["relationship"] = {
+        "component_id": "rolling_log_ratio_zscore",
+        "config": {
+            "base_asset": "BTC",
+            "quote_asset": "USDT",
+            "window_bars": 3,
+            "min_observations": 3,
+        },
+    }
+    data["policy"] = {
+        "component_id": "evidence_tilt",
+        "config": {
+            "base_asset": "BTC",
+            "quote_asset": "USDT",
+            "neutral_weights": {"BTC": "0.5", "USDT": "0.5"},
+            "neutral_threshold": "0",
+            "enter_threshold": "0.000001",
+            "maximum_tilt": "0.1",
+            "neutral_mode": "neutral_target",
+        },
+    }
+    return ExperimentManifest.model_validate(data)
+
+
 def test_completed_run_writes_versioned_exact_readable_artifacts(
     tmp_path: Path,
 ) -> None:
@@ -86,6 +113,55 @@ def test_completed_run_writes_versioned_exact_readable_artifacts(
 
     with pytest.raises(RunAlreadyExistsError, match=run.provenance.run_id):
         write_run_artifacts(run, run_root=tmp_path)
+
+
+def test_model_run_writes_versioned_optional_relationship_evidence(
+    tmp_path: Path,
+) -> None:
+    manifest = _rolling_model_manifest()
+    run = execute_experiment(
+        manifest,
+        data_root=REPOSITORY_ROOT,
+        repository_root=REPOSITORY_ROOT,
+        run_timestamp=RUN_AT,
+    )
+
+    paths = write_run_artifacts(run, run_root=tmp_path)
+    loaded = read_run_artifacts(paths.run_directory)
+
+    assert paths.evidence.exists()
+    assert loaded.evidence is not None
+    assert loaded.evidence.num_rows == len(run.relationship_observations)
+    assert loaded.evidence.schema.metadata is not None
+    assert (
+        loaded.evidence.schema.metadata[b"qap_schema"] == b"qap.experiment.evidence.v1"
+    )
+    assert loaded.evidence.column("model_id").to_pylist() == [
+        "rolling_log_ratio_zscore"
+    ] * len(run.relationship_observations)
+    assert loaded.evidence.column("evidence_field").to_pylist() == ["score"] * len(
+        run.relationship_observations
+    )
+    values = loaded.evidence.column("value").to_pylist()
+    statuses = loaded.evidence.column("status").to_pylist()
+    assert values[:2] == [None, None]
+    assert statuses[:2] == ["insufficient_history", "insufficient_history"]
+    assert all(value is not None for value in values[2:])
+
+
+def test_model_free_run_has_no_evidence_artifact(tmp_path: Path) -> None:
+    run = execute_experiment(
+        load_manifest(MANIFEST_PATH),
+        data_root=REPOSITORY_ROOT,
+        repository_root=REPOSITORY_ROOT,
+        run_timestamp=RUN_AT,
+    )
+
+    paths = write_run_artifacts(run, run_root=tmp_path)
+    loaded = read_run_artifacts(paths.run_directory)
+
+    assert not paths.evidence.exists()
+    assert loaded.evidence is None
 
 
 def test_same_semantic_run_is_reproducible_across_separate_roots(

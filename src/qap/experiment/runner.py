@@ -34,9 +34,12 @@ from qap.experiment.manifest import (
     ExperimentManifest,
     PeriodicFixedWeightControlSpec,
 )
+from qap.experiment.model_policies import (
+    ModelPolicyComposition,
+    compose_model_strategy_policy,
+)
 from qap.experiment.provenance import RunProvenance, capture_run_provenance
 from qap.experiment.result import ExperimentResult
-from qap.market import AlignedBarSeries
 from qap.policy import ScheduledTargetPolicy
 from qap.portfolio import (
     AllocationTarget,
@@ -44,6 +47,7 @@ from qap.portfolio import (
     ExternalInventoryFlow,
     PortfolioLedger,
 )
+from qap.relationship import RelationshipObservation
 
 _ZERO = Decimal("0")
 
@@ -61,6 +65,7 @@ class ExperimentRun:
     provenance: RunProvenance
     roles: tuple[RoleRun, ...]
     result: ExperimentResult
+    relationship_observations: tuple[RelationshipObservation, ...] = ()
 
     def role(self, name: str) -> RoleRun:
         for role in self.roles:
@@ -73,6 +78,10 @@ class ExperimentRun:
 class _PolicyComposition:
     policy_id: str
     policy: ReplayPolicy
+
+    @property
+    def relationship_observations(self) -> tuple[RelationshipObservation, ...]:
+        return ()
 
 
 def prepare_experiment(
@@ -139,16 +148,15 @@ def _sequence(value: object, *, field: str) -> Sequence[object]:
 
 def _strategy_policy(
     manifest: ExperimentManifest,
-    aligned: AlignedBarSeries,
-) -> _PolicyComposition:
-    if manifest.relationship.component_id != "none" or manifest.relationship.config:
-        raise ExperimentSetupError(
-            "Phase 07 admits only relationship component 'none' with empty config"
-        )
-    if manifest.policy.component_id != "scheduled_target":
-        raise ExperimentSetupError(
-            "Phase 07 admits only the explicit scheduled_target strategy policy"
-        )
+    loaded: LoadedExperimentData,
+) -> _PolicyComposition | ModelPolicyComposition:
+    if not (
+        manifest.relationship.component_id == "none"
+        and not manifest.relationship.config
+        and manifest.policy.component_id == "scheduled_target"
+    ):
+        return compose_model_strategy_policy(manifest, loaded)
+    aligned = loaded.aligned
     config = _mapping(manifest.policy.config, field="policy.config")
     if set(config) != {"schedule"}:
         raise ExperimentSetupError(
@@ -207,7 +215,7 @@ def _run_role(
     *,
     prepared: PreparedExperiment,
     role: str,
-    composition: _PolicyComposition,
+    composition: _PolicyComposition | ModelPolicyComposition,
     flows: tuple[ExternalInventoryFlow, ...],
     cost_model_override: CostModel | None = None,
 ) -> RoleRun:
@@ -296,10 +304,11 @@ def execute_precommitted_experiment(prepared: PreparedExperiment) -> ExperimentR
         price_snapshot=hodl.trace.steps[0].price_snapshot,
         basket=tuple(manifest.asset(key) for key in manifest.basket),
     )
+    strategy_composition = _strategy_policy(manifest, prepared.loaded)
     strategy = _run_role(
         prepared=prepared,
         role="strategy",
-        composition=_strategy_policy(manifest, prepared.loaded.aligned),
+        composition=strategy_composition,
         flows=flows,
     )
 
@@ -344,7 +353,7 @@ def execute_precommitted_experiment(prepared: PreparedExperiment) -> ExperimentR
             _run_role(
                 prepared=prepared,
                 role="strategy:adverse_cost",
-                composition=_strategy_policy(manifest, prepared.loaded.aligned),
+                composition=_strategy_policy(manifest, prepared.loaded),
                 flows=flows,
                 cost_model_override=adverse.cost_model(),
             )
@@ -360,6 +369,7 @@ def execute_precommitted_experiment(prepared: PreparedExperiment) -> ExperimentR
             provenance=prepared.provenance,
             roles=roles,
         ),
+        relationship_observations=strategy_composition.relationship_observations,
     )
 
 

@@ -6,6 +6,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
+from types import MappingProxyType
 from typing import cast
 
 from qap.market import BarInterval
@@ -37,6 +38,14 @@ class EvidenceReciprocity(StrEnum):
     EXACT_TRANSFORM = "exact_transform"
     DIRECTIONAL_TRANSFORM = "directional_transform"
     MODEL_SPECIFIC = "model_specific"
+
+
+class RelationshipObservationStatus(StrEnum):
+    """Validity state for one fitted/model-derived relationship observation."""
+
+    VALID = "valid"
+    INSUFFICIENT_HISTORY = "insufficient_history"
+    INSUFFICIENT_VARIANCE = "insufficient_variance"
 
 
 def validated_utc(value: object, *, field: str) -> datetime:
@@ -107,6 +116,105 @@ def validated_finite_values(values: object) -> tuple[float, ...]:
     if not copied:
         raise RelationshipDataError("relationship values must be non-empty")
     return tuple(copied)
+
+
+@dataclass(frozen=True, slots=True)
+class RelationshipObservation:
+    """One typed model observation with causal coverage and provenance."""
+
+    pair_id: PairId
+    orientation: PairOrientation
+    as_of: datetime
+    model_id: str
+    model_version: str
+    fit_reciprocity: FitReciprocity
+    evidence_reciprocity: EvidenceReciprocity
+    status: RelationshipObservationStatus
+    window_observations: int
+    required_observations: int
+    coverage_observations: int
+    base_source_fingerprint: str
+    quote_source_fingerprint: str
+    input_fingerprint: str
+    values: Mapping[str, float]
+
+    def __post_init__(self) -> None:
+        if self.pair_id != self.orientation.pair_id:
+            raise RelationshipDataError(
+                "canonical pair identity must match the requested orientation"
+            )
+        if (
+            not isinstance(cast(object, self.model_id), str)
+            or not self.model_id.strip()
+        ):
+            raise TypeError("model_id must be a non-empty string")
+        if (
+            not isinstance(cast(object, self.model_version), str)
+            or not self.model_version.strip()
+        ):
+            raise TypeError("model_version must be a non-empty string")
+        if not isinstance(cast(object, self.fit_reciprocity), FitReciprocity):
+            raise TypeError("fit_reciprocity must be a FitReciprocity")
+        if not isinstance(cast(object, self.evidence_reciprocity), EvidenceReciprocity):
+            raise TypeError("evidence_reciprocity must be an EvidenceReciprocity")
+        if not isinstance(cast(object, self.status), RelationshipObservationStatus):
+            raise TypeError("status must be a RelationshipObservationStatus")
+        if self.window_observations <= 0:
+            raise RelationshipDataError("window_observations must be positive")
+        if not 0 < self.required_observations <= self.window_observations:
+            raise RelationshipDataError(
+                "required_observations must be within the declared window"
+            )
+        if not 0 <= self.coverage_observations <= self.window_observations:
+            raise RelationshipDataError(
+                "coverage_observations must be within the declared window"
+            )
+
+        normalized_values: dict[str, float] = {}
+        for key, value in self.values.items():
+            if not isinstance(cast(object, key), str) or not key.strip():
+                raise TypeError(
+                    "relationship observation value names must be non-empty"
+                )
+            if not isinstance(value, float):
+                raise TypeError("relationship observation values must be floats")
+            if not math.isfinite(value):
+                raise RelationshipDataError(
+                    "relationship observation values must be finite"
+                )
+            normalized_values[key.strip()] = value
+        if self.status is RelationshipObservationStatus.VALID and not normalized_values:
+            raise RelationshipDataError("valid relationship observation needs values")
+        if self.status is not RelationshipObservationStatus.VALID and normalized_values:
+            raise RelationshipDataError(
+                "invalid relationship observation cannot carry values"
+            )
+
+        object.__setattr__(self, "as_of", validated_utc(self.as_of, field="as_of"))
+        object.__setattr__(self, "model_id", self.model_id.strip())
+        object.__setattr__(self, "model_version", self.model_version.strip())
+        object.__setattr__(
+            self,
+            "base_source_fingerprint",
+            validated_fingerprint(
+                self.base_source_fingerprint,
+                field="base source fingerprint",
+            ),
+        )
+        object.__setattr__(
+            self,
+            "quote_source_fingerprint",
+            validated_fingerprint(
+                self.quote_source_fingerprint,
+                field="quote source fingerprint",
+            ),
+        )
+        object.__setattr__(
+            self,
+            "input_fingerprint",
+            validated_fingerprint(self.input_fingerprint, field="input fingerprint"),
+        )
+        object.__setattr__(self, "values", MappingProxyType(normalized_values))
 
 
 @dataclass(frozen=True, slots=True, init=False)

@@ -5,7 +5,7 @@ from typing import cast
 from fastapi import APIRouter, Query, Request
 
 from qap.api.readers import RunArtifactReader
-from qap.api.schemas import AnchorLensDto, PairSeriesDto
+from qap.api.schemas import AnchorLensDto, PairEvidenceDto, PairSeriesDto
 
 router = APIRouter(prefix="/api/pairs", tags=["pairs"])
 
@@ -30,6 +30,26 @@ def pair_series(
     orientation: str | None = Query(default=None, min_length=3),
 ) -> PairSeriesDto:
     return _reader(request).pair_series(
+        run_id=run_id,
+        asset_x=asset_x,
+        asset_y=asset_y,
+        orientation=orientation,
+    )
+
+
+@router.get(
+    "/{asset_x}/{asset_y}/evidence",
+    response_model=PairEvidenceDto,
+    operation_id="getPairEvidence",
+)
+def pair_evidence(
+    asset_x: str,
+    asset_y: str,
+    request: Request,
+    run_id: str = Query(min_length=1),
+    orientation: str | None = Query(default=None, min_length=3),
+) -> PairEvidenceDto:
+    return _reader(request).pair_evidence(
         run_id=run_id,
         asset_x=asset_x,
         asset_y=asset_y,

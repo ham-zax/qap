@@ -80,6 +80,18 @@ describe('QAP API client', () => {
         'http://127.0.0.1:8000/api/pairs/ETH/BTC/series?run_id=run-0123456789abcdef01234567&orientation=ETH%2FBTC',
     },
     {
+      label: 'pair evidence',
+      call: (client: ReturnType<typeof createApiClient>) =>
+        client.getPairEvidence({
+          runId: 'run-0123456789abcdef01234567',
+          assetX: 'ETH',
+          assetY: 'BTC',
+          orientation: 'ETH/BTC',
+        }),
+      expected:
+        'http://127.0.0.1:8000/api/pairs/ETH/BTC/evidence?run_id=run-0123456789abcdef01234567&orientation=ETH%2FBTC',
+    },
+    {
       label: 'anchor lens',
       call: (client: ReturnType<typeof createApiClient>) =>
         client.getAnchorLens({

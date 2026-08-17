@@ -13,6 +13,8 @@ from qap.relationship.observation import (
     EvidenceReciprocity,
     FitReciprocity,
     RelationshipDataError,
+    RelationshipObservation,
+    RelationshipObservationStatus,
     RelationshipSeries,
 )
 from qap.relationship.ratio import (
@@ -32,6 +34,8 @@ __all__ = [
     "NormalizationScale",
     "NormalizedPath",
     "RelationshipDataError",
+    "RelationshipObservation",
+    "RelationshipObservationStatus",
     "RelationshipSeries",
     "build_anchor_lens",
     "build_log_ratio_series",

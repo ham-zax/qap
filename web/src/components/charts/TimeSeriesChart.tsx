@@ -36,6 +36,23 @@ interface CursorSnapshot {
   values: CursorValue[]
 }
 
+function cursorSnapshotAtTimestamp(
+  series: readonly TimeSeriesDefinition[],
+  timestamp: string,
+): CursorSnapshot | null {
+  const anchor = series[0]
+    ? findPresentationPointAtTimestamp(series[0].points, timestamp)
+    : undefined
+  if (!anchor) return null
+  const values = series.flatMap((definition) => {
+    const matched = findPresentationPointAtTimestamp(definition.points, timestamp)
+    return matched
+      ? [{ name: definition.name, unit: definition.unit, value: matched.value }]
+      : []
+  })
+  return { timestamp: anchor.timestamp, values }
+}
+
 interface TimeSeriesChartProps {
   title: string
   description: string
@@ -85,6 +102,7 @@ export function TimeSeriesChart({
   const seriesRef = useRef<Array<ISeriesApi<'Line'>>>([])
   const applyingSharedCursor = useRef(false)
   const applyingSharedRange = useRef(false)
+  const lastCursorTime = useRef<string | null>(null)
   const [cursor, setCursor] = useState<CursorSnapshot | null>(null)
   const titleId = useId()
 
@@ -137,11 +155,30 @@ export function TimeSeriesChart({
     chart.timeScale().fitContent()
     const crosshairHandler = (parameter: MouseEventParams<Time>) => {
       if (parameter.time === undefined) {
+        if (onCursorTimeChange && lastCursorTime.current) {
+          const snapshot = cursorSnapshotAtTimestamp(series, lastCursorTime.current)
+          const anchor = snapshot?.values[0]
+          if (snapshot && anchor) {
+            applyingSharedCursor.current = true
+            chart.setCrosshairPosition(
+              anchor.value,
+              utcTimestamp(snapshot.timestamp),
+              chartSeries[0].api,
+            )
+            setCursor(snapshot)
+            queueMicrotask(() => {
+              applyingSharedCursor.current = false
+            })
+            return
+          }
+        }
+        lastCursorTime.current = null
         setCursor(null)
         if (!applyingSharedCursor.current) onCursorTimeChange?.(null)
         return
       }
       const timestamp = timestampFromChartTime(parameter.time)
+      lastCursorTime.current = timestamp
       const values = chartSeries.flatMap(({ definition, api }) => {
         const datum = parameter.seriesData.get(api)
         if (!datum || typeof datum !== 'object' || !('value' in datum)) return []
@@ -183,20 +220,24 @@ export function TimeSeriesChart({
     if (!chart || !firstSeries || sharedCursorTime === undefined) return
     applyingSharedCursor.current = true
     if (sharedCursorTime === null) {
+      lastCursorTime.current = null
       chart.clearCrosshairPosition()
+      setCursor(null)
     } else {
-      const point = series[0]
-        ? findPresentationPointAtTimestamp(
-            series[0].points,
-            sharedCursorTime,
-          )
-        : undefined
-      if (point) {
+      const snapshot = cursorSnapshotAtTimestamp(series, sharedCursorTime)
+      const anchor = snapshot?.values[0]
+      if (snapshot && anchor) {
+        lastCursorTime.current = snapshot.timestamp
         chart.setCrosshairPosition(
-          point.value,
-          utcTimestamp(sharedCursorTime),
+          anchor.value,
+          utcTimestamp(snapshot.timestamp),
           firstSeries,
         )
+        setCursor(snapshot)
+      } else {
+        lastCursorTime.current = null
+        chart.clearCrosshairPosition()
+        setCursor(null)
       }
     }
     queueMicrotask(() => {
@@ -230,7 +271,7 @@ export function TimeSeriesChart({
           })}
         </ul>
       </figcaption>
-      <div className="chart-canvas" ref={containerRef} />
+      <div className="chart-canvas" ref={containerRef} style={{ height }} />
       <div className="chart-tooltip" role="status">
         {cursor ? (
           <>

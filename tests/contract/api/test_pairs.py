@@ -11,6 +11,62 @@ from fastapi.testclient import TestClient
 REPOSITORY_ROOT = Path(__file__).parents[3]
 
 
+def test_pair_evidence_reads_persisted_model_observations_without_recomputation(
+    model_evidence_run_root: tuple[Path, str],
+) -> None:
+    from qap.api import ApiSettings, create_app
+
+    run_root, run_id = model_evidence_run_root
+    client = TestClient(
+        create_app(ApiSettings(run_root=run_root, market_data_root=REPOSITORY_ROOT))
+    )
+
+    response = client.get(
+        f"/api/pairs/BTC/USDT/evidence?run_id={run_id}&orientation=BTC/USDT"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["schema_version"] == "qap.api.pair_evidence.v1"
+    assert payload["canonical_pair"] == ["BTC", "USDT"]
+    assert payload["requested_orientation"] == "BTC/USDT"
+    assert len(payload["series"]) == 1
+    evidence = payload["series"][0]
+    assert evidence["persisted_orientation"] == "BTC/USDT"
+    assert evidence["model_id"] == "rolling_log_ratio_zscore"
+    assert evidence["model_version"] == "1"
+    assert evidence["evidence_field"] == "score"
+    assert evidence["fit_reciprocity"] == "exact_transform"
+    assert evidence["evidence_reciprocity"] == "exact_transform"
+    assert len(evidence["points"]) == 12
+    assert evidence["points"][0]["status"] == "insufficient_history"
+    assert evidence["points"][0]["value"] is None
+    assert evidence["points"][2]["status"] == "valid"
+    assert isinstance(evidence["points"][2]["value"], float)
+    assert len(evidence["points"][2]["input_fingerprint"]) == 64
+
+
+def test_pair_evidence_is_empty_for_model_free_run(
+    populated_run_root: tuple[Path, str],
+) -> None:
+    from qap.api import ApiSettings, create_app
+
+    run_root, run_id = populated_run_root
+    client = TestClient(
+        create_app(ApiSettings(run_root=run_root, market_data_root=REPOSITORY_ROOT))
+    )
+
+    response = client.get(
+        f"/api/pairs/BTC/USDT/evidence?run_id={run_id}&orientation=BTC/USDT"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["canonical_pair"] == ["BTC", "USDT"]
+    assert payload["requested_orientation"] == "BTC/USDT"
+    assert payload["series"] == []
+
+
 def test_pair_series_preserves_canonical_identity_and_explicit_orientation(
     pair_run_root: tuple[Path, str],
 ) -> None:

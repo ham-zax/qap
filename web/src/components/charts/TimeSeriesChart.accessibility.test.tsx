@@ -23,8 +23,8 @@ describe('TimeSeriesChart accessibility shell', () => {
     )
 
     expect(screen.getByRole('figure', { name: 'Evidence curve' })).toBeInTheDocument()
-    expect(container.querySelector('.chart-canvas')).not.toHaveAttribute(
-      'aria-hidden',
-    )
+    const chartCanvas = container.querySelector('.chart-canvas')
+    expect(chartCanvas).not.toHaveAttribute('aria-hidden')
+    expect(chartCanvas).toHaveStyle({ height: '320px' })
   })
 })

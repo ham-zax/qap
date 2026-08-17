@@ -31,6 +31,48 @@ def populated_run_root(tmp_path: Path) -> tuple[Path, str]:
 
 
 @pytest.fixture
+def model_evidence_run_root(tmp_path: Path) -> tuple[Path, str]:
+    raw = json.loads(BASE_MANIFEST.read_text(encoding="utf-8"))
+    raw.update(
+        {
+            "experiment_name": "rolling evidence API fixture",
+            "research_family_id": "family-api-model-evidence-v1",
+            "relationship": {
+                "component_id": "rolling_log_ratio_zscore",
+                "config": {
+                    "base_asset": "BTC",
+                    "quote_asset": "USDT",
+                    "window_bars": 3,
+                    "min_observations": 3,
+                },
+            },
+            "policy": {
+                "component_id": "evidence_tilt",
+                "config": {
+                    "base_asset": "BTC",
+                    "quote_asset": "USDT",
+                    "neutral_weights": {"BTC": "0.5", "USDT": "0.5"},
+                    "neutral_threshold": "0",
+                    "enter_threshold": "0.000001",
+                    "maximum_tilt": "0.1",
+                    "neutral_mode": "neutral_target",
+                },
+            },
+        }
+    )
+    manifest = ExperimentManifest.model_validate(raw)
+    run_root = tmp_path / "model-evidence-runs"
+    paths = run_experiment_to_artifacts(
+        manifest,
+        data_root=REPOSITORY_ROOT,
+        repository_root=REPOSITORY_ROOT,
+        run_root=run_root,
+        run_timestamp=RUN_TIMESTAMP,
+    )
+    return run_root, paths.run_id
+
+
+@pytest.fixture
 def final_oos_run_root(tmp_path: Path) -> tuple[Path, str]:
     raw = json.loads(BASE_MANIFEST.read_text(encoding="utf-8"))
     raw.update(

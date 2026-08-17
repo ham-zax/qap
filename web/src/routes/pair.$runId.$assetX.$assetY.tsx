@@ -23,14 +23,24 @@ export const Route = createFileRoute('/pair/$runId/$assetX/$assetY')({
   loaderDeps: ({ search }) => search,
   loader: async ({ context, params, deps }) => {
     const canonical = canonicalPairSearch(params, deps).search
-    const data = await context.queryClient.ensureQueryData(
-      context.queries.pairSeries({
-        runId: params.runId,
-        assetX: params.assetX,
-        assetY: params.assetY,
-        orientation: canonical.orientation,
-      }),
-    )
+    const [data, evidenceData] = await Promise.all([
+      context.queryClient.ensureQueryData(
+        context.queries.pairSeries({
+          runId: params.runId,
+          assetX: params.assetX,
+          assetY: params.assetY,
+          orientation: canonical.orientation,
+        }),
+      ),
+      context.queryClient.ensureQueryData(
+        context.queries.pairEvidence({
+          runId: params.runId,
+          assetX: params.assetX,
+          assetY: params.assetY,
+          orientation: canonical.orientation,
+        }),
+      ),
+    ])
     const anchorData =
       canonical.anchor === 'none'
         ? null
@@ -43,7 +53,7 @@ export const Route = createFileRoute('/pair/$runId/$assetX/$assetY')({
               orientation: canonical.orientation,
             }),
           )
-    return { data, anchorData, search: canonical }
+    return { data, evidenceData, anchorData, search: canonical }
   },
   component: PairRoute,
 })

@@ -4,6 +4,7 @@ type ExperimentListDto = components['schemas']['ExperimentListDto']
 type ExperimentDetailDto = components['schemas']['ExperimentDetailDto']
 type PortfolioSnapshotDto = components['schemas']['PortfolioSnapshotDto']
 type PortfolioPerformanceDto = components['schemas']['PortfolioPerformanceDto']
+type PairEvidenceDto = components['schemas']['PairEvidenceDto']
 type PairSeriesDto = components['schemas']['PairSeriesDto']
 type AnchorLensDto = components['schemas']['AnchorLensDto']
 type ErrorDetailDto = components['schemas']['ErrorDetailDto']
@@ -81,6 +82,20 @@ export function createApiClient({
       })
       return request<PairSeriesDto>(
         `/api/pairs/${encodeURIComponent(options.assetX)}/${encodeURIComponent(options.assetY)}/series?${query}`,
+      )
+    },
+    getPairEvidence: (options: {
+      runId: string
+      assetX: string
+      assetY: string
+      orientation: string
+    }) => {
+      const query = new URLSearchParams({
+        run_id: options.runId,
+        orientation: options.orientation,
+      })
+      return request<PairEvidenceDto>(
+        `/api/pairs/${encodeURIComponent(options.assetX)}/${encodeURIComponent(options.assetY)}/evidence?${query}`,
       )
     },
     getAnchorLens: (options: {

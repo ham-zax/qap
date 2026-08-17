@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { PairSeriesDto } from '../../api/types'
+import type { PairEvidenceDto, PairSeriesDto } from '../../api/types'
 import { PairWorkbench } from './PairWorkbench'
 
 const pair = {
@@ -45,6 +45,14 @@ const pair = {
   descriptive_only: true,
 } satisfies PairSeriesDto
 
+const evidence = {
+  schema_version: 'qap.api.pair_evidence.v1',
+  run_id: 'run-pair',
+  canonical_pair: ['BTC', 'ETH'],
+  requested_orientation: 'ETH/BTC',
+  series: [],
+} satisfies PairEvidenceDto
+
 describe('PairWorkbench', () => {
   it('updates URL-owned orientation and anchor state without changing pair identity', async () => {
     const user = userEvent.setup()
@@ -53,6 +61,7 @@ describe('PairWorkbench', () => {
     render(
       <PairWorkbench
         data={pair}
+        evidenceData={evidence}
         anchorData={null}
         search={{ orientation: 'ETH/BTC', anchor: 'none', view: 'ratio' }}
         onSearchChange={onSearchChange}
@@ -77,6 +86,9 @@ describe('PairWorkbench', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('decision-1 - executed')).toBeInTheDocument()
     expect(screen.getByText('Identity coordinates: USDT')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'No persisted model evidence' }),
+    ).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Show BTC/ETH' }))
     expect(onSearchChange).toHaveBeenLastCalledWith({

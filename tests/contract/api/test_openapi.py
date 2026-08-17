@@ -27,6 +27,7 @@ def test_openapi_exposes_stable_operation_ids_and_phase09_dtos(tmp_path: Path) -
         "getPortfolio",
         "getPortfolioPerformance",
         "getPairSeries",
+        "getPairEvidence",
         "getAnchorLens",
     }
 
@@ -36,6 +37,7 @@ def test_openapi_exposes_stable_operation_ids_and_phase09_dtos(tmp_path: Path) -
         "ExperimentDetailDto",
         "PortfolioSnapshotDto",
         "PortfolioPerformanceDto",
+        "PairEvidenceDto",
         "PairSeriesDto",
         "AnchorLensDto",
         "RebalanceDecisionAuditDto",

@@ -72,6 +72,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/pairs/{asset_x}/{asset_y}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pair Evidence */
+        get: operations["getPairEvidence"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pairs/{asset_x}/{asset_y}/series": {
         parameters: {
             query?: never;
@@ -150,6 +167,8 @@ export interface components {
             evidence_reciprocity: string;
             /** Fit Reciprocity */
             fit_reciprocity: string;
+            /** Identity Coordinate Assets */
+            identity_coordinate_assets: string[];
             /** Interval */
             interval: string;
             /** Max Log Decomposition Error */
@@ -645,6 +664,26 @@ export interface components {
             venue_symbol: string;
         };
         JsonValue: unknown;
+        /** PairEvidenceDto */
+        PairEvidenceDto: {
+            /** Canonical Pair */
+            canonical_pair: [
+                string,
+                string
+            ];
+            /** Requested Orientation */
+            requested_orientation: string;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @default qap.api.pair_evidence.v1
+             * @constant
+             */
+            schema_version: "qap.api.pair_evidence.v1";
+            /** Series */
+            series: components["schemas"]["RelationshipEvidenceSeriesDto"][];
+        };
         /** PairSeriesDto */
         PairSeriesDto: {
             /** Available Anchors */
@@ -662,6 +701,8 @@ export interface components {
             evidence_reciprocity: string;
             /** Fit Reciprocity */
             fit_reciprocity: string;
+            /** Identity Coordinate Assets */
+            identity_coordinate_assets: string[];
             /** Interval */
             interval: string;
             /** Log Ratio */
@@ -813,6 +854,47 @@ export interface components {
              * Format: date-time
              */
             timestamp: string;
+        };
+        /** RelationshipEvidencePointDto */
+        RelationshipEvidencePointDto: {
+            /** Coverage Observations */
+            coverage_observations: number;
+            /** Input Fingerprint */
+            input_fingerprint: string;
+            /** Required Observations */
+            required_observations: number;
+            /** Status */
+            status: string;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Value */
+            value: number | null;
+            /** Window Observations */
+            window_observations: number;
+        };
+        /** RelationshipEvidenceSeriesDto */
+        RelationshipEvidenceSeriesDto: {
+            /** Base Source Fingerprint */
+            base_source_fingerprint: string;
+            /** Evidence Field */
+            evidence_field: string;
+            /** Evidence Reciprocity */
+            evidence_reciprocity: string;
+            /** Fit Reciprocity */
+            fit_reciprocity: string;
+            /** Model Id */
+            model_id: string;
+            /** Model Version */
+            model_version: string;
+            /** Persisted Orientation */
+            persisted_orientation: string;
+            /** Points */
+            points: components["schemas"]["RelationshipEvidencePointDto"][];
+            /** Quote Source Fingerprint */
+            quote_source_fingerprint: string;
         };
         /**
          * ResultStatus
@@ -1052,6 +1134,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnchorLensDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getPairEvidence: {
+        parameters: {
+            query: {
+                run_id: string;
+                orientation?: string | null;
+            };
+            header?: never;
+            path: {
+                asset_x: string;
+                asset_y: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairEvidenceDto"];
                 };
             };
             /** @description Validation Error */

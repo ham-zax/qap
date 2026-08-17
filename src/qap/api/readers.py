@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from qap.api.errors import ApiBoundaryError, corrupt_artifact, run_not_found
+from qap.api.evidence_views import pair_evidence as project_pair_evidence
 from qap.api.portfolio_views import (
     portfolio_performance as project_portfolio_performance,
 )
@@ -20,6 +21,7 @@ from qap.api.schemas import (
     ExperimentDetailDto,
     ExperimentListDto,
     ExperimentSummaryDto,
+    PairEvidenceDto,
     PairSeriesDto,
     PortfolioPerformanceDto,
     PortfolioSnapshotDto,
@@ -155,6 +157,11 @@ class RunArtifactReader:
             available_series=(
                 _artifact_series_metadata("performance", loaded.performance),
                 _artifact_series_metadata("inventory", loaded.inventory),
+                *(
+                    (_artifact_series_metadata("evidence", loaded.evidence),)
+                    if loaded.evidence is not None
+                    else ()
+                ),
             ),
         )
 
@@ -175,6 +182,21 @@ class RunArtifactReader:
         return project_pair_series(
             self.read(run_id),
             market_data_root=self.market_data_root,
+            asset_x=asset_x,
+            asset_y=asset_y,
+            orientation=orientation,
+        )
+
+    def pair_evidence(
+        self,
+        *,
+        run_id: str,
+        asset_x: str,
+        asset_y: str,
+        orientation: str | None,
+    ) -> PairEvidenceDto:
+        return project_pair_evidence(
+            self.read(run_id),
             asset_x=asset_x,
             asset_y=asset_y,
             orientation=orientation,

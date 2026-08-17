@@ -38,7 +38,7 @@ def pair_series(
     asset_y: str,
     orientation: str | None,
 ) -> PairSeriesDto:
-    requested = _pair_orientation(
+    requested = requested_pair_orientation(
         asset_x=asset_x,
         asset_y=asset_y,
         orientation=orientation,
@@ -151,7 +151,7 @@ def anchor_lens(
     anchor: str,
     orientation: str | None,
 ) -> AnchorLensDto:
-    requested = _pair_orientation(
+    requested = requested_pair_orientation(
         asset_x=asset_x,
         asset_y=asset_y,
         orientation=orientation,
@@ -318,7 +318,7 @@ def _source_fingerprint(
     return source_fingerprints[asset]
 
 
-def _pair_orientation(
+def requested_pair_orientation(
     *,
     asset_x: str,
     asset_y: str,
@@ -373,4 +373,4 @@ def _float_points(
     )
 
 
-__all__ = ["anchor_lens", "pair_series"]
+__all__ = ["anchor_lens", "pair_series", "requested_pair_orientation"]

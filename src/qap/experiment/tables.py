@@ -18,6 +18,7 @@ _ONE = Decimal("1")
 _ZERO = Decimal("0")
 _PERFORMANCE_SCHEMA = "qap.experiment.performance.v1"
 _INVENTORY_SCHEMA = "qap.experiment.inventory.v1"
+_EVIDENCE_SCHEMA = "qap.experiment.evidence.v1"
 
 
 def _metadata(run: ExperimentRun, *, schema: str) -> dict[bytes, bytes]:
@@ -170,6 +171,98 @@ def build_inventory_table(run: ExperimentRun) -> Any:
     )
 
 
+def build_evidence_table(run: ExperimentRun) -> Any:
+    """Build long-form model evidence without coercing accounting values."""
+
+    timestamps: list[object] = []
+    canonical_first: list[str] = []
+    canonical_second: list[str] = []
+    orientation_base: list[str] = []
+    orientation_quote: list[str] = []
+    model_ids: list[str] = []
+    model_versions: list[str] = []
+    evidence_fields: list[str] = []
+    values: list[float | None] = []
+    statuses: list[str] = []
+    fit_reciprocity: list[str] = []
+    evidence_reciprocity: list[str] = []
+    window_observations: list[int] = []
+    required_observations: list[int] = []
+    coverage_observations: list[int] = []
+    input_fingerprints: list[str] = []
+    base_source_fingerprints: list[str] = []
+    quote_source_fingerprints: list[str] = []
+
+    for observation in run.relationship_observations:
+        fields = tuple(observation.values.items()) or (("score", None),)
+        for evidence_field, value in fields:
+            timestamps.append(observation.as_of)
+            canonical_first.append(observation.pair_id.first.key)
+            canonical_second.append(observation.pair_id.second.key)
+            orientation_base.append(observation.orientation.base.key)
+            orientation_quote.append(observation.orientation.quote.key)
+            model_ids.append(observation.model_id)
+            model_versions.append(observation.model_version)
+            evidence_fields.append(evidence_field)
+            values.append(value)
+            statuses.append(observation.status.value)
+            fit_reciprocity.append(observation.fit_reciprocity.value)
+            evidence_reciprocity.append(observation.evidence_reciprocity.value)
+            window_observations.append(observation.window_observations)
+            required_observations.append(observation.required_observations)
+            coverage_observations.append(observation.coverage_observations)
+            input_fingerprints.append(observation.input_fingerprint)
+            base_source_fingerprints.append(observation.base_source_fingerprint)
+            quote_source_fingerprints.append(observation.quote_source_fingerprint)
+
+    schema = pa.schema(
+        [
+            pa.field("timestamp", pa.timestamp("us", tz="UTC"), nullable=False),
+            pa.field("canonical_first", pa.string(), nullable=False),
+            pa.field("canonical_second", pa.string(), nullable=False),
+            pa.field("orientation_base", pa.string(), nullable=False),
+            pa.field("orientation_quote", pa.string(), nullable=False),
+            pa.field("model_id", pa.string(), nullable=False),
+            pa.field("model_version", pa.string(), nullable=False),
+            pa.field("evidence_field", pa.string(), nullable=False),
+            pa.field("value", pa.float64(), nullable=True),
+            pa.field("status", pa.string(), nullable=False),
+            pa.field("fit_reciprocity", pa.string(), nullable=False),
+            pa.field("evidence_reciprocity", pa.string(), nullable=False),
+            pa.field("window_observations", pa.int32(), nullable=False),
+            pa.field("required_observations", pa.int32(), nullable=False),
+            pa.field("coverage_observations", pa.int32(), nullable=False),
+            pa.field("input_fingerprint", pa.string(), nullable=False),
+            pa.field("base_source_fingerprint", pa.string(), nullable=False),
+            pa.field("quote_source_fingerprint", pa.string(), nullable=False),
+        ],
+        metadata=_metadata(run, schema=_EVIDENCE_SCHEMA),
+    )
+    return pa.Table.from_arrays(
+        [
+            pa.array(timestamps, type=pa.timestamp("us", tz="UTC")),
+            pa.array(canonical_first, type=pa.string()),
+            pa.array(canonical_second, type=pa.string()),
+            pa.array(orientation_base, type=pa.string()),
+            pa.array(orientation_quote, type=pa.string()),
+            pa.array(model_ids, type=pa.string()),
+            pa.array(model_versions, type=pa.string()),
+            pa.array(evidence_fields, type=pa.string()),
+            pa.array(values, type=pa.float64()),
+            pa.array(statuses, type=pa.string()),
+            pa.array(fit_reciprocity, type=pa.string()),
+            pa.array(evidence_reciprocity, type=pa.string()),
+            pa.array(window_observations, type=pa.int32()),
+            pa.array(required_observations, type=pa.int32()),
+            pa.array(coverage_observations, type=pa.int32()),
+            pa.array(input_fingerprints, type=pa.string()),
+            pa.array(base_source_fingerprints, type=pa.string()),
+            pa.array(quote_source_fingerprints, type=pa.string()),
+        ],
+        schema=schema,
+    )
+
+
 def validate_artifact_table(
     table: Any,
     *,
@@ -186,6 +279,7 @@ def validate_artifact_table(
 
 
 __all__ = [
+    "build_evidence_table",
     "build_inventory_table",
     "build_performance_table",
     "validate_artifact_table",

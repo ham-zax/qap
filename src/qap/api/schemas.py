@@ -200,6 +200,36 @@ class RebalanceMarkerDto(ApiDto):
     fill_id: str | None
 
 
+class RelationshipEvidencePointDto(ApiDto):
+    timestamp: datetime
+    value: float | None
+    status: str
+    window_observations: int
+    required_observations: int
+    coverage_observations: int
+    input_fingerprint: str
+
+
+class RelationshipEvidenceSeriesDto(ApiDto):
+    persisted_orientation: str
+    model_id: str
+    model_version: str
+    evidence_field: str
+    fit_reciprocity: str
+    evidence_reciprocity: str
+    base_source_fingerprint: str
+    quote_source_fingerprint: str
+    points: tuple[RelationshipEvidencePointDto, ...]
+
+
+class PairEvidenceDto(ApiDto):
+    schema_version: Literal["qap.api.pair_evidence.v1"] = "qap.api.pair_evidence.v1"
+    run_id: str
+    canonical_pair: tuple[str, str]
+    requested_orientation: str
+    series: tuple[RelationshipEvidenceSeriesDto, ...]
+
+
 class PairSeriesDto(ApiDto):
     schema_version: Literal["qap.api.pair_series.v1"] = "qap.api.pair_series.v1"
     run_id: str
@@ -263,11 +293,14 @@ __all__ = [
     "HealthDto",
     "HoldingDto",
     "HoldingsSnapshotDto",
+    "PairEvidenceDto",
     "PairSeriesDto",
     "PerformanceSeriesDto",
     "PortfolioPerformanceDto",
     "PortfolioSnapshotDto",
     "RebalanceDecisionAuditDto",
     "RebalanceMarkerDto",
+    "RelationshipEvidencePointDto",
+    "RelationshipEvidenceSeriesDto",
     "RunSummaryDto",
 ]

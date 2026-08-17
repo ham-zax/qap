@@ -40,6 +40,22 @@ export function createQapQueries(client: QapApiClient) {
         ] as const,
         queryFn: () => client.getPairSeries(options),
       }),
+    pairEvidence: (options: {
+      runId: string
+      assetX: string
+      assetY: string
+      orientation: string
+    }) =>
+      queryOptions({
+        queryKey: [
+          'pair-evidence',
+          options.runId,
+          options.assetX,
+          options.assetY,
+          options.orientation,
+        ] as const,
+        queryFn: () => client.getPairEvidence(options),
+      }),
     anchorLens: (options: {
       runId: string
       assetX: string

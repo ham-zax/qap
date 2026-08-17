@@ -21,6 +21,14 @@ describe('QAP query keys', () => {
       }).queryKey,
     ).toEqual(['pair-series', 'run-a', 'ETH', 'BTC', 'ETH/BTC'])
     expect(
+      queries.pairEvidence({
+        runId: 'run-a',
+        assetX: 'ETH',
+        assetY: 'BTC',
+        orientation: 'BTC/ETH',
+      }).queryKey,
+    ).toEqual(['pair-evidence', 'run-a', 'ETH', 'BTC', 'BTC/ETH'])
+    expect(
       queries.anchorLens({
         runId: 'run-a',
         assetX: 'ETH',

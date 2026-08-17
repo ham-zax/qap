@@ -1,7 +1,15 @@
-import type { AnchorLensDto, PairSeriesDto } from '../../api/types'
+import { useCallback, useState } from 'react'
+
+import type {
+  AnchorLensDto,
+  PairEvidenceDto,
+  PairSeriesDto,
+} from '../../api/types'
+import type { ChartVisibleRange } from '../../components/charts/chartData'
 import { AnchorLensPanel } from './AnchorLensPanel'
 import { PairRatioChart } from './PairRatioChart'
 import { RebalanceMarkerOverlay } from './RebalanceMarkerOverlay'
+import { RelationshipEvidencePanel } from './RelationshipEvidencePanel'
 import {
   toggleOrientation,
   type PairSearch,
@@ -10,6 +18,7 @@ import {
 
 interface PairWorkbenchProps {
   data: PairSeriesDto
+  evidenceData: PairEvidenceDto
   anchorData: AnchorLensDto | null
   search: PairSearch
   onSearchChange: (search: PairSearch) => void
@@ -24,11 +33,23 @@ const VIEW_OPTIONS: Array<{ value: PairView; label: string }> = [
 
 export function PairWorkbench({
   data,
+  evidenceData,
   anchorData,
   search,
   onSearchChange,
 }: PairWorkbenchProps) {
   const reciprocal = toggleOrientation(search.orientation)
+  const [cursorTime, setCursorTime] = useState<string | null>(null)
+  const [visibleRange, setVisibleRange] = useState<ChartVisibleRange | null>(null)
+  const handleCursorTime = useCallback((timestamp: string | null) => {
+    setCursorTime(timestamp)
+  }, [])
+  const handleVisibleRange = useCallback((range: ChartVisibleRange | null) => {
+    setVisibleRange((current) => {
+      if (current?.from === range?.from && current?.to === range?.to) return current
+      return range
+    })
+  }, [])
 
   return (
     <article aria-labelledby="pair-workbench-heading">
@@ -100,11 +121,31 @@ export function PairWorkbench({
         </div>
       </section>
 
-      {search.view === 'anchor' ? (
-        <AnchorLensPanel anchor={search.anchor} data={anchorData} />
-      ) : (
-        <PairRatioChart data={data} view={search.view} />
-      )}
+      <section className="synchronized-chart-group" aria-label="Synchronized pair evidence charts">
+        <p aria-live="polite">
+          Shared cursor: {cursorTime ?? 'move across either chart to synchronize time'}
+        </p>
+        {search.view === 'anchor' ? (
+          <AnchorLensPanel anchor={search.anchor} data={anchorData} />
+        ) : (
+          <PairRatioChart
+            data={data}
+            view={search.view}
+            sharedCursorTime={cursorTime}
+            onCursorTimeChange={handleCursorTime}
+            sharedVisibleRange={visibleRange}
+            onVisibleRangeChange={handleVisibleRange}
+          />
+        )}
+
+        <RelationshipEvidencePanel
+          data={evidenceData}
+          sharedCursorTime={cursorTime}
+          onCursorTimeChange={handleCursorTime}
+          sharedVisibleRange={visibleRange}
+          onVisibleRangeChange={handleVisibleRange}
+        />
+      </section>
 
       <RebalanceMarkerOverlay data={data} />
 
