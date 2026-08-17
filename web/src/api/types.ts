@@ -5,6 +5,10 @@ export type ExperimentListDto = components['schemas']['ExperimentListDto']
 export type ExperimentDetailDto = components['schemas']['ExperimentDetailDto']
 export type PortfolioSnapshotDto = components['schemas']['PortfolioSnapshotDto']
 export type PortfolioPerformanceDto = components['schemas']['PortfolioPerformanceDto']
+export type PaperOperationDetailDto =
+  components['schemas']['PaperOperationDetailDto']
+export type PaperOperationSummaryDto =
+  components['schemas']['PaperOperationSummaryDto']
 export type PairEvidenceDto = components['schemas']['PairEvidenceDto']
 export type PairSeriesDto = components['schemas']['PairSeriesDto']
 export type AnchorLensDto = components['schemas']['AnchorLensDto']

@@ -7,11 +7,13 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from qap.api.errors import ApiBoundaryError
+from qap.api.paper_operation_views import PaperOperationReader
 from qap.api.readers import RunArtifactReader
 from qap.api.routes import (
     experiments_router,
     health_router,
     pairs_router,
+    paper_operations,
     portfolios_router,
 )
 from qap.api.schemas import ErrorDetailDto, ErrorEnvelopeDto
@@ -46,6 +48,9 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.state.run_reader = RunArtifactReader(
         settings.run_root,
         market_data_root=settings.market_data_root,
+    )
+    app.state.paper_operation_reader = PaperOperationReader(
+        settings.run_root / "paper-operations"
     )
     app.add_middleware(
         CORSMiddleware,
@@ -125,6 +130,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.include_router(experiments_router)
     app.include_router(portfolios_router)
     app.include_router(pairs_router)
+    app.include_router(paper_operations.router)
     return app
 
 

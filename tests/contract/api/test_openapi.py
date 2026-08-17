@@ -10,7 +10,7 @@ from qap.api import ApiSettings, create_app
 REPOSITORY_ROOT = Path(__file__).parents[3]
 
 
-def test_openapi_exposes_stable_operation_ids_and_phase09_dtos(tmp_path: Path) -> None:
+def test_openapi_exposes_stable_operation_ids_and_public_dtos(tmp_path: Path) -> None:
     app = create_app(ApiSettings(run_root=tmp_path / "runs"))
     schema = app.openapi()
 
@@ -29,6 +29,8 @@ def test_openapi_exposes_stable_operation_ids_and_phase09_dtos(tmp_path: Path) -
         "getPairSeries",
         "getPairEvidence",
         "getAnchorLens",
+        "listPaperOperations",
+        "getPaperOperation",
     }
 
     schemas = set(schema["components"]["schemas"])
@@ -41,6 +43,8 @@ def test_openapi_exposes_stable_operation_ids_and_phase09_dtos(tmp_path: Path) -
         "PairSeriesDto",
         "AnchorLensDto",
         "RebalanceDecisionAuditDto",
+        "PaperOperationSummaryDto",
+        "PaperOperationDetailDto",
     } <= schemas
 
 

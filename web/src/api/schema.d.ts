@@ -106,6 +106,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/paper-operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Paper Operations */
+        get: operations["listPaperOperations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/paper-operations/{operation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Paper Operation */
+        get: operations["getPaperOperation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/portfolios/{run_id}": {
         parameters: {
             query?: never;
@@ -728,6 +762,200 @@ export interface components {
              */
             schema_version: "qap.api.pair_series.v1";
         };
+        /** PaperMarketMetadataDto */
+        PaperMarketMetadataDto: {
+            /** Base */
+            base: string;
+            /** Maximum Notional */
+            maximum_notional: string | null;
+            /** Maximum Notional Applies To Market */
+            maximum_notional_applies_to_market: boolean;
+            /** Maximum Price */
+            maximum_price: string | null;
+            /** Maximum Quantity */
+            maximum_quantity: string | null;
+            /** Minimum Notional */
+            minimum_notional: string | null;
+            /** Minimum Notional Applies To Market */
+            minimum_notional_applies_to_market: boolean;
+            /** Minimum Price */
+            minimum_price: string | null;
+            /** Minimum Quantity */
+            minimum_quantity: string | null;
+            /** Notional Average Price Minutes */
+            notional_average_price_minutes: number;
+            /** Price Tick */
+            price_tick: string;
+            /** Quantity Step */
+            quantity_step: string;
+            /** Quote */
+            quote: string;
+            /** Status */
+            status: string;
+            /** Venue */
+            venue: string;
+            /** Venue Symbol */
+            venue_symbol: string;
+        };
+        /** PaperOperationDetailDto */
+        PaperOperationDetailDto: {
+            /** Bridge */
+            bridge: string;
+            /** Bridge Residual */
+            bridge_residual: string;
+            /** Bridge Target Quantity */
+            bridge_target_quantity: string;
+            /**
+             * Data Role
+             * @constant
+             */
+            data_role: "forward_paper";
+            /** Ending Holdings */
+            ending_holdings: {
+                [key: string]: string;
+            };
+            /**
+             * Execution Timestamp
+             * Format: date-time
+             */
+            execution_timestamp: string;
+            /** Fills */
+            fills: components["schemas"]["PaperOperationFillDto"][];
+            /** Input Fingerprint */
+            input_fingerprint: string;
+            /** Market Metadata */
+            market_metadata: {
+                [key: string]: components["schemas"]["PaperMarketMetadataDto"];
+            };
+            /** Operation Id */
+            operation_id: string;
+            /** Orders */
+            orders: components["schemas"]["PaperOperationOrderDto"][];
+            /** Reconciliation Matches */
+            reconciliation_matches: boolean;
+            /** Reference Prices */
+            reference_prices: {
+                [key: string]: string;
+            };
+            research_boundary: components["schemas"]["PaperResearchBoundaryDto"];
+            /**
+             * Schema Version
+             * @default qap.api.paper_operation.v1
+             * @constant
+             */
+            schema_version: "qap.api.paper_operation.v1";
+            /** Source Note */
+            source_note: string;
+            /** Starting Holdings */
+            starting_holdings: {
+                [key: string]: string;
+            };
+            /** Target Weights */
+            target_weights: {
+                [key: string]: string;
+            };
+            /** Total Fee Quote */
+            total_fee_quote: string;
+            /** Total Slippage Quote */
+            total_slippage_quote: string;
+            /** Valuation Prices */
+            valuation_prices: {
+                [key: string]: string;
+            };
+        };
+        /** PaperOperationFillDto */
+        PaperOperationFillDto: {
+            /** Balance Deltas */
+            balance_deltas: {
+                [key: string]: string;
+            };
+            /** Base Quantity */
+            base_quantity: string;
+            /** Decision Id */
+            decision_id: string;
+            /** Execution Price */
+            execution_price: string;
+            /**
+             * Execution Timestamp
+             * Format: date-time
+             */
+            execution_timestamp: string;
+            /** Fee Quote */
+            fee_quote: string;
+            /** Fill Id */
+            fill_id: string;
+            /** Gross Quote Notional */
+            gross_quote_notional: string;
+            /** Reference Price */
+            reference_price: string;
+            /** Side */
+            side: string;
+            /** Slippage Quote */
+            slippage_quote: string;
+            /** Venue */
+            venue: string;
+            /** Venue Symbol */
+            venue_symbol: string;
+        };
+        /** PaperOperationOrderDto */
+        PaperOperationOrderDto: {
+            /** Asset */
+            asset: string;
+            /** Fill Ids */
+            fill_ids: string[];
+            /** Leg Reason */
+            leg_reason: string | null;
+            /** Phase */
+            phase: string;
+            /** Requested Source Quantity */
+            requested_source_quantity: string;
+            /** Route Id */
+            route_id: string;
+        };
+        /** PaperOperationSummaryDto */
+        PaperOperationSummaryDto: {
+            /** Bridge Residual */
+            bridge_residual: string;
+            /**
+             * Data Role
+             * @constant
+             */
+            data_role: "forward_paper";
+            /**
+             * Execution Timestamp
+             * Format: date-time
+             */
+            execution_timestamp: string;
+            /** Fill Count */
+            fill_count: number;
+            /** Operation Id */
+            operation_id: string;
+            /** Reconciliation Matches */
+            reconciliation_matches: boolean;
+            /** Route Ids */
+            route_ids: string[];
+            /**
+             * Schema Version
+             * @default qap.api.paper_operation_summary.v1
+             * @constant
+             */
+            schema_version: "qap.api.paper_operation_summary.v1";
+            /** Total Fee Quote */
+            total_fee_quote: string;
+            /** Total Slippage Quote */
+            total_slippage_quote: string;
+        };
+        /** PaperResearchBoundaryDto */
+        PaperResearchBoundaryDto: {
+            /** Eligible For Deployment Evidence */
+            eligible_for_deployment_evidence: boolean;
+            /** Eligible For Model Promotion */
+            eligible_for_model_promotion: boolean;
+            /** Eligible For Parameter Selection */
+            eligible_for_parameter_selection: boolean;
+            /** Rule */
+            rule: string;
+        };
         /** PerformanceSeriesDto */
         PerformanceSeriesDto: {
             /** Name */
@@ -1204,6 +1432,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PairSeriesDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listPaperOperations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperOperationSummaryDto"][];
+                };
+            };
+        };
+    };
+    getPaperOperation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperOperationDetailDto"];
                 };
             };
             /** @description Validation Error */

@@ -80,6 +80,19 @@ describe('QAP API client', () => {
         'http://127.0.0.1:8000/api/pairs/ETH/BTC/series?run_id=run-0123456789abcdef01234567&orientation=ETH%2FBTC',
     },
     {
+      label: 'paper operations',
+      call: (client: ReturnType<typeof createApiClient>) =>
+        client.listPaperOperations(),
+      expected: 'http://127.0.0.1:8000/api/paper-operations',
+    },
+    {
+      label: 'paper operation detail',
+      call: (client: ReturnType<typeof createApiClient>) =>
+        client.getPaperOperation('forward-paper/unsafe'),
+      expected:
+        'http://127.0.0.1:8000/api/paper-operations/forward-paper%2Funsafe',
+    },
+    {
       label: 'pair evidence',
       call: (client: ReturnType<typeof createApiClient>) =>
         client.getPairEvidence({

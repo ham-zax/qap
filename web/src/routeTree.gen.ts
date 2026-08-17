@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ExperimentsIndexRouteImport } from './routes/experiments.index'
 import { Route as ExperimentsRunIdRouteImport } from './routes/experiments.$runId'
+import { Route as PaperOperationsIndexRouteImport } from './routes/paper-operations.index'
+import { Route as PaperOperationsOperationIdRouteImport } from './routes/paper-operations.$operationId'
 import { Route as PortfolioRunIdRouteImport } from './routes/portfolio.$runId'
 import { Route as PairRunIdAssetXAssetYRouteImport } from './routes/pair.$runId.$assetX.$assetY'
 
@@ -30,6 +32,17 @@ const ExperimentsRunIdRoute = ExperimentsRunIdRouteImport.update({
   path: '/experiments/$runId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PaperOperationsIndexRoute = PaperOperationsIndexRouteImport.update({
+  id: '/paper-operations/',
+  path: '/paper-operations/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaperOperationsOperationIdRoute =
+  PaperOperationsOperationIdRouteImport.update({
+    id: '/paper-operations/$operationId',
+    path: '/paper-operations/$operationId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PortfolioRunIdRoute = PortfolioRunIdRouteImport.update({
   id: '/portfolio/$runId',
   path: '/portfolio/$runId',
@@ -44,23 +57,29 @@ const PairRunIdAssetXAssetYRoute = PairRunIdAssetXAssetYRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/experiments/$runId': typeof ExperimentsRunIdRoute
+  '/paper-operations/$operationId': typeof PaperOperationsOperationIdRoute
   '/portfolio/$runId': typeof PortfolioRunIdRoute
   '/experiments/': typeof ExperimentsIndexRoute
+  '/paper-operations/': typeof PaperOperationsIndexRoute
   '/pair/$runId/$assetX/$assetY': typeof PairRunIdAssetXAssetYRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/experiments/$runId': typeof ExperimentsRunIdRoute
+  '/paper-operations/$operationId': typeof PaperOperationsOperationIdRoute
   '/portfolio/$runId': typeof PortfolioRunIdRoute
   '/experiments': typeof ExperimentsIndexRoute
+  '/paper-operations': typeof PaperOperationsIndexRoute
   '/pair/$runId/$assetX/$assetY': typeof PairRunIdAssetXAssetYRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/experiments/$runId': typeof ExperimentsRunIdRoute
+  '/paper-operations/$operationId': typeof PaperOperationsOperationIdRoute
   '/portfolio/$runId': typeof PortfolioRunIdRoute
   '/experiments/': typeof ExperimentsIndexRoute
+  '/paper-operations/': typeof PaperOperationsIndexRoute
   '/pair/$runId/$assetX/$assetY': typeof PairRunIdAssetXAssetYRoute
 }
 export interface FileRouteTypes {
@@ -68,30 +87,38 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/experiments/$runId'
+    | '/paper-operations/$operationId'
     | '/portfolio/$runId'
     | '/experiments/'
+    | '/paper-operations/'
     | '/pair/$runId/$assetX/$assetY'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/experiments/$runId'
+    | '/paper-operations/$operationId'
     | '/portfolio/$runId'
     | '/experiments'
+    | '/paper-operations'
     | '/pair/$runId/$assetX/$assetY'
   id:
     | '__root__'
     | '/'
     | '/experiments/$runId'
+    | '/paper-operations/$operationId'
     | '/portfolio/$runId'
     | '/experiments/'
+    | '/paper-operations/'
     | '/pair/$runId/$assetX/$assetY'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExperimentsRunIdRoute: typeof ExperimentsRunIdRoute
+  PaperOperationsOperationIdRoute: typeof PaperOperationsOperationIdRoute
   PortfolioRunIdRoute: typeof PortfolioRunIdRoute
   ExperimentsIndexRoute: typeof ExperimentsIndexRoute
+  PaperOperationsIndexRoute: typeof PaperOperationsIndexRoute
   PairRunIdAssetXAssetYRoute: typeof PairRunIdAssetXAssetYRoute
 }
 
@@ -118,6 +145,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExperimentsRunIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/paper-operations/': {
+      id: '/paper-operations/'
+      path: '/paper-operations'
+      fullPath: '/paper-operations/'
+      preLoaderRoute: typeof PaperOperationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/paper-operations/$operationId': {
+      id: '/paper-operations/$operationId'
+      path: '/paper-operations/$operationId'
+      fullPath: '/paper-operations/$operationId'
+      preLoaderRoute: typeof PaperOperationsOperationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portfolio/$runId': {
       id: '/portfolio/$runId'
       path: '/portfolio/$runId'
@@ -138,8 +179,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExperimentsRunIdRoute: ExperimentsRunIdRoute,
+  PaperOperationsOperationIdRoute: PaperOperationsOperationIdRoute,
   PortfolioRunIdRoute: PortfolioRunIdRoute,
   ExperimentsIndexRoute: ExperimentsIndexRoute,
+  PaperOperationsIndexRoute: PaperOperationsIndexRoute,
   PairRunIdAssetXAssetYRoute: PairRunIdAssetXAssetYRoute,
 }
 export const routeTree = rootRouteImport

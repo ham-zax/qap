@@ -40,6 +40,16 @@ export function createQapQueries(client: QapApiClient) {
         ] as const,
         queryFn: () => client.getPairSeries(options),
       }),
+    paperOperations: () =>
+      queryOptions({
+        queryKey: ['paper-operations'] as const,
+        queryFn: () => client.listPaperOperations(),
+      }),
+    paperOperation: (operationId: string) =>
+      queryOptions({
+        queryKey: ['paper-operation', operationId] as const,
+        queryFn: () => client.getPaperOperation(operationId),
+      }),
     pairEvidence: (options: {
       runId: string
       assetX: string

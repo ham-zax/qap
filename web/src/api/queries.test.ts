@@ -20,6 +20,11 @@ describe('QAP query keys', () => {
         orientation: 'ETH/BTC',
       }).queryKey,
     ).toEqual(['pair-series', 'run-a', 'ETH', 'BTC', 'ETH/BTC'])
+    expect(queries.paperOperations().queryKey).toEqual(['paper-operations'])
+    expect(queries.paperOperation('paper-a').queryKey).toEqual([
+      'paper-operation',
+      'paper-a',
+    ])
     expect(
       queries.pairEvidence({
         runId: 'run-a',

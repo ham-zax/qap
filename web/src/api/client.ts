@@ -4,6 +4,8 @@ type ExperimentListDto = components['schemas']['ExperimentListDto']
 type ExperimentDetailDto = components['schemas']['ExperimentDetailDto']
 type PortfolioSnapshotDto = components['schemas']['PortfolioSnapshotDto']
 type PortfolioPerformanceDto = components['schemas']['PortfolioPerformanceDto']
+type PaperOperationDetailDto = components['schemas']['PaperOperationDetailDto']
+type PaperOperationSummaryDto = components['schemas']['PaperOperationSummaryDto']
 type PairEvidenceDto = components['schemas']['PairEvidenceDto']
 type PairSeriesDto = components['schemas']['PairSeriesDto']
 type AnchorLensDto = components['schemas']['AnchorLensDto']
@@ -84,6 +86,12 @@ export function createApiClient({
         `/api/pairs/${encodeURIComponent(options.assetX)}/${encodeURIComponent(options.assetY)}/series?${query}`,
       )
     },
+    listPaperOperations: () =>
+      request<PaperOperationSummaryDto[]>('/api/paper-operations'),
+    getPaperOperation: (operationId: string) =>
+      request<PaperOperationDetailDto>(
+        `/api/paper-operations/${encodeURIComponent(operationId)}`,
+      ),
     getPairEvidence: (options: {
       runId: string
       assetX: string
