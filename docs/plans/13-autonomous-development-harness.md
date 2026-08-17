@@ -1,28 +1,28 @@
-# Phase 13 — Autonomous Development Harness Implementation Plan
+# Phase 13 — Sequential Autonomous Development Harness Implementation Plan
 
-**Goal:** Build a local development harness that can continue executing already-approved QAP plan sections autonomously, with bounded scope, explicit verification, progress persistence, and hard escalation on architecture/economic/live-capital changes.
+**Goal:** Build a small local development-support harness that helps the same ChatGPT implementation agent continue approved QAP work sequentially across long sessions, preserving progress, verification evidence, Git safety, and hard escalation boundaries without spawning another coding model.
 
-**Architecture:** The harness lives under `tools/agent/` and `.qap-agent/`; it is development tooling only and never becomes a dependency of `src/qap`. The confirmed local execution path is the installed Codex CLI in WSL. The initial harness gives one write-owning Codex process a narrowly scoped mission extracted from an approved plan, then independently checks repository state and required verification before advancing. A separate Codex invocation may perform risk-proportional independent review after the writer is stable; no concurrent overlapping writers are allowed.
+**Architecture:** The harness lives under `tools/agent/` and `.qap-agent/`; it is development tooling only and never becomes a dependency of `src/qap`. The implementation agent remains the sole reasoning/writing owner. The harness parses approved plans, records progress, checks Git scope, runs declared verification commands, and preserves recoverable mission state. It does **not** launch subagents, reviewer agents, worker pools, or another autonomous coding runtime.
 
-**Tech Stack:** Python 3.14 standard library first, Git, the installed/authenticated local Codex CLI, existing Superpowers workflow conventions, and the outer WSL harness Terminal/wait primitives when a long-lived Codex process must survive ordinary RPC boundaries. No generic orchestration framework or multi-agent platform unless a later measured need exists.
+**Tech Stack:** Python 3.14 standard library first, Git, existing Superpowers Skills/workflows, and the connected WSL harness primitives already available to the implementation session. No generic agent framework, provider abstraction, multi-agent platform, queue, scheduler, or service.
 
 ## Update context — 2026-08-17
 
-- **Trigger:** local WSL verification confirmed `codex` is installed and exposes noninteractive `codex exec`; the mission workflow also has durable Terminal/wait primitives.
-- **Purpose:** replace the earlier hypothetical-runtime/subagent wording with the actual Codex execution path and admit independent Codex review without inventing a new agent framework.
-- **Impact:** Codex becomes the preferred local coding runtime; bounded jobs use noninteractive execution, long-lived outer-orchestrator jobs may use persistent Terminal sessions, and one separate reviewer invocation is allowed after a writer stabilizes. Phase ordering, protected economic boundaries, and the no-swarm rule are unchanged.
-- **Evidence:** local executable/version/help probe plus the repository's approved autonomous-mission and harness-routing rules.
+- **Trigger:** user steering explicitly changed the execution model to direct sequential implementation by the main ChatGPT agent.
+- **Purpose:** keep QAP engineering single-agent and sequential while preserving long-session recovery, verification, scope control, and plan discipline.
+- **Impact:** the same agent implements, debugs, reviews, verifies, commits, and advances phases directly. Relevant Skills are invoked by that agent when their trigger conditions apply. Phase ordering and all protected economic/research/live-capital boundaries remain unchanged.
 
 ## Global Constraints
 
-- Implement this phase only after the manual QAP engineering workflow is proven through earlier phases.
-- The harness executes approved plans; it does not invent product roadmap or economic policy.
-- One Codex process owns writes for one bounded plan section at a time in the initial harness; an independent reviewer may run after the write phase, but overlapping writers are forbidden.
+- Implement this phase only after the manual/direct QAP engineering workflow is proven through earlier phases.
+- The harness supports execution of approved plans; it does not invent product roadmap or economic policy.
+- The implementation agent owns all repository reasoning and mutations sequentially.
+- Do not invoke another model for implementation, review, debugging, investigation, or second opinions.
 - No runtime import from `tools/agent` into `src/qap`.
 - Preserve unrelated user changes and never run destructive Git operations automatically.
-- No secret/password/MFA input through agent prompts or chat logs.
+- No secret/password/MFA input through prompts, logs, or checkpoint files.
 - Architecture/economic/action-space/live-capital changes stop and escalate.
-- The harness may operate for long periods on the user's machine, but ChatGPT must never claim background work unless the local harness is actually the process performing it.
+- Long-running local commands may use Terminal + durable waits, but they remain tools of the same implementation mission, not independent agents.
 
 ## File Map
 
@@ -31,219 +31,223 @@
 - `AGENTS.md` — only if a context audit proves a small change is necessary; do not expand by default.
 
 **Create:**
-- `tools/agent/README.md` — operator usage and stop conditions.
-- `tools/agent/qap_agent.py` — command entry point and main loop.
+- `tools/agent/README.md` — operator usage, direct-agent workflow, and stop conditions.
+- `tools/agent/qap_agent.py` — small command entry point for status/checkpoint/verify helpers; it does not execute another coding model.
 - `tools/agent/plan.py` — approved plan/section extraction.
 - `tools/agent/state.py` — progress JSON/Markdown persistence under `.qap-agent/`.
 - `tools/agent/git_guard.py` — baseline status/diff/commit safety checks.
-- `tools/agent/runtime.py` — one selected installed agent-runtime adapter/command builder.
 - `tools/agent/verify.py` — bounded verification command execution and evidence capture.
-- `tools/agent/prompt.py` — mission prompt construction from exact plan section + design constraints.
 - `tests/tools/agent/test_plan.py`
 - `tests/tools/agent/test_state.py`
 - `tests/tools/agent/test_git_guard.py`
-- `tests/tools/agent/test_prompt.py`
-- `tests/tools/agent/test_loop_state_machine.py`
+- `tests/tools/agent/test_verify.py`
+
+**Do not create:**
+- agent-runtime/provider adapters;
+- prompt dispatchers for another model;
+- worker/reviewer process managers;
+- autonomous merge/push logic;
+- background coding daemons.
 
 ## Section 13.1 — Context Audit Before Harness Code
 
-**Purpose:** prevent the autonomous loop from amplifying contradictory or bloated instructions.
+**Purpose:** prevent a persistent direct implementation loop from amplifying contradictory or stale instructions.
 
 **Steps:**
-- [ ] Run the `context-audit` workflow over root `AGENTS.md`, relevant Superpowers/local harness instructions, and repository-level plan references.
-- [ ] Remove/shorten only context that is demonstrably contradictory, duplicated, stale, or over-constraining; preserve the canonical design/reference boundaries.
-- [ ] Record the final agent-context sources in `tools/agent/README.md`.
-- [ ] Do not copy full design/plan documents into `AGENTS.md`; the harness injects the exact current plan section at runtime.
+- [ ] Use the applicable context/instruction-review workflow available in the session when its trigger conditions apply.
+- [ ] Audit root `AGENTS.md`, the controlling implementation prompt, relevant plan references, and repository-level protected-boundary docs.
+- [ ] Remove/shorten only context that is demonstrably contradictory, duplicated, stale, or over-constraining; preserve canonical design/reference boundaries.
+- [ ] Record the final context sources in `tools/agent/README.md`.
+- [ ] Do not copy full design/plan documents into `AGENTS.md`; the implementation agent reads the exact current phase/section when needed.
 
 **Acceptance criteria:**
-- One concise root context plus exact mission/plan section is sufficient for an agent to act without scanning the entire docs tree.
+- One concise root context plus the controlling mission and current plan section is sufficient for the implementation agent to act without repeatedly scanning the entire docs tree.
 
-## Section 13.2 — Verify the Local Codex Runtime
+## Section 13.2 — Direct-Agent Operating Contract
 
-**Purpose:** use the machine's actual Codex CLI rather than building a fictional adapter layer.
+**Purpose:** make the no-delegation execution model explicit and recoverable.
 
-**Deterministic selection process at Phase-13 start:**
-1. Probe the local `codex` executable/version and `codex exec` help/config surface.
-2. Verify one non-writing noninteractive invocation against a temporary repository fixture without exposing a secret.
-3. Record the executable/version, verified invocation, sandbox/approval mode, and supported model/reasoning configuration in `tools/agent/README.md`.
-4. Use the strongest available Codex/Sol coding configuration with high reasoning for substantive work when the installed CLI exposes it; never invent an unsupported model ID/flag.
-5. Implement only this Codex runtime in `runtime.py`; do not build a generic provider/agent adapter hierarchy.
-6. If Codex is no longer installed/authenticated/non-interactively invokable when Phase 13 begins, stop Phase 13 and report that concrete runtime blocker instead of silently substituting a different framework.
+**Contract:**
+
+```text
+main ChatGPT implementation agent
+  -> inspect repository reality
+  -> invoke applicable Skill when triggered
+  -> implement coherent slice directly
+  -> run focused verification
+  -> inspect diff/state
+  -> self-review against plan + protected contracts
+  -> repair findings
+  -> run completion verification
+  -> commit/checkpoint
+  -> continue sequentially
+```
+
+**Behavior:**
+- The harness never launches another coding model.
+- The harness never marks a section complete merely because a command exited successfully.
+- Persistent Terminal processes are allowed only for builds, servers, experiments, browser sessions, or other real tools requiring durable lifetime.
+- `verification-before-completion` is the required review/completion workflow before the agent claims a substantive slice/phase is complete or creates its completion commit.
+- `systematic-debugging` is used when a bug, failing test, or unexpected behavior triggers that workflow.
+- Other installed Skills are invoked only when their own trigger conditions apply; do not create ceremony by invoking irrelevant Skills.
 
 **Steps:**
-- [ ] Run bounded `command -v codex`, version, and relevant `codex exec --help`/config probes.
-- [ ] Execute one harmless non-writing `codex exec` probe against a temporary prompt/repository fixture.
-- [ ] Capture exit-code/stdout/stderr behavior needed by the harness.
+- [ ] Document this contract in `tools/agent/README.md`.
+- [ ] Test that no source file or CLI option can configure a secondary coding/review model.
 
 ## Section 13.3 — Approved Plan Parser
 
 **Interfaces:**
 - Consumes: one explicit plan path under `docs/plans/` or `docs/superpowers/plans/` and optional section ID.
-- Produces: ordered bounded missions.
+- Produces: ordered bounded plan sections for the implementation agent to inspect/track.
 
 **Behavior:**
-- Harness never discovers arbitrary docs and decides they are executable.
-- User/operator passes the approved plan path.
-- Parser recognizes plan headings such as `Section 05.3` and their Steps/Verification/Acceptance/Exit/Stop content.
-- A section is the default autonomous mission unit; checklist micro-items are not separate agent sessions unless the plan itself requires it.
-- Stop Conditions are included in every mission prompt.
-- Parse failure stops before invoking an agent.
+- The harness never discovers arbitrary docs and decides they are executable.
+- User/operator or the implementation agent passes the approved plan path explicitly.
+- Parser recognizes headings such as `Section 05.3` plus Steps/Verification/Acceptance/Exit/Stop content.
+- A section is the default progress unit; checklist micro-items are not separate sessions.
+- Parse failure stops before progress mutation.
 
 **CLI shape:**
 
 ```bash
-uv run python tools/agent/qap_agent.py run docs/plans/05-policy-target-allocation-and-rebalancing.md
-uv run python tools/agent/qap_agent.py run docs/plans/05-policy-target-allocation-and-rebalancing.md --section 05.3
+uv run python tools/agent/qap_agent.py status docs/plans/05-policy-target-allocation-and-rebalancing.md
+uv run python tools/agent/qap_agent.py section docs/plans/05-policy-target-allocation-and-rebalancing.md --section 05.3
 ```
 
 **Steps:**
 - [ ] Write parser fixtures/tests using actual QAP plan structure.
-- [ ] Implement only the heading/checklist grammar this repository uses; no general Markdown parser framework unless needed.
+- [ ] Implement only the Markdown grammar this repository actually uses.
 
 ## Section 13.4 — Persistent Progress State
 
 **Interfaces:**
-- Consumes: plan path, section IDs, agent outcomes, verification evidence, commits.
+- Consumes: plan path, section IDs, direct-agent checkpoints, verification evidence, commits, blockers.
 - Produces: `.qap-agent/<plan-slug>/progress.json` and `progress.md`.
 
 **State per section:**
 - `pending | in_progress | complete | blocked`;
 - baseline Git commit/status fingerprint;
-- agent runtime/version;
 - start/end timestamps;
 - resulting commit hash when committed;
 - verification commands and exit codes;
-- blocker/retry reason.
+- concise material decision/blocker note;
+- next intended direct implementation action.
 
 **Behavior:**
 - State writes are atomic (`tempfile` + replace).
-- On restart, harness resumes the first non-complete section after validating repository state against recorded progress.
+- On a later session, repository/Git reality outranks stale progress state.
 - Progress is local/gitignored; plans and code commits remain durable Git truth.
+- Checkpoints never contain secrets or private credentials.
 
 **Steps:**
 - [ ] Write crash/resume and corrupted-state tests.
-- [ ] Provide `status` command that reads progress without launching an agent.
+- [ ] Provide a `status` command that reads progress without mutating the repository.
+- [ ] Provide an explicit `checkpoint` command/function used by the implementation agent at meaningful boundaries.
 
 ## Section 13.5 — Git Guard
 
 **Interfaces:**
-- Consumes: repository status before/after each mission.
-- Produces: safe-to-run/safe-to-advance decision.
+- Consumes: repository status before/after a direct implementation slice.
+- Produces: safe-to-proceed/safe-to-commit evidence.
 
 **Behavior:**
-- Capture `git status --porcelain=v1`, current branch, and HEAD before mission.
-- If unrelated dirty state exists before first mission, record paths and include "preserve these paths" in prompt; do not reset/stash them automatically.
-- After mission, verify changed paths are plausibly inside the approved section's file map plus necessary dependency/lock files.
-- Unexpected broad/deletion changes block advancement for review.
-- Harness never executes `git reset --hard`, `git clean -fd`, force push, branch deletion, or automatic merge.
+- Capture `git status --porcelain=v1`, current branch, and HEAD.
+- Preserve unrelated dirty state; never reset/stash/clean it automatically.
+- Compare changed paths against the current plan section's file map plus necessary dependency/lock/config files.
+- Unexpected broad/deletion changes become a self-review blocker before commit.
+- Never execute `git reset --hard`, `git clean -fd`, force push, branch deletion, or automatic merge/push.
 
 **Steps:**
-- [ ] Test with temporary Git repository containing unrelated dirty file.
-- [ ] Test allowed planned change and unexpected destructive change detection.
+- [ ] Test with temporary Git repository containing unrelated dirty files.
+- [ ] Test an allowed planned change and an unexpected destructive change.
 
-## Section 13.6 — Mission Prompt Construction
-
-**Interfaces:**
-- Consumes: exact plan section, root `AGENTS.md`, relevant design/reference paths, baseline Git state.
-- Produces: bounded agent prompt.
-
-**Prompt includes:**
-- repository path;
-- exact plan path/section text;
-- instruction to inspect only necessary files;
-- explicit unrelated dirty paths to preserve;
-- requirement to follow repository `AGENTS.md` and `docs/REFERENCE_BOUNDARY.md`;
-- prohibition on broadening scope/implementing future phases;
-- exact plan verification/acceptance/stop conditions;
-- requirement to leave evidence in normal Git diff/tests, not write a new essay unless plan requests docs;
-- escalation instruction for architecture/economic/action-space/live-capital ambiguity.
-
-**Steps:**
-- [ ] Snapshot-test the prompt semantically with focused assertions (mission text, stop conditions, dirty paths, no future-phase content).
-- [ ] Keep prompt concise enough that the agent can hold target code + mission in context.
-
-## Section 13.7 — Single-Mission Execution Loop
-
-**State machine:**
-
-```text
-load approved plan/progress
- -> select next pending section
- -> git safety snapshot
- -> mark in_progress
- -> launch one write-owning Codex runtime
- -> collect exit/evidence
- -> inspect git diff
- -> run required verification
- -> inline review against section acceptance/stop conditions
- -> optional independent Codex review for materially risky slices
- -> complete+commit OR one bounded repair attempt OR blocked
- -> continue to next section
-```
-
-**Behavior:**
-- Agent process must have a finite per-mission timeout configured by operator/harness; timeout marks blocked rather than spawning duplicates.
-- The standalone Phase-13 harness uses noninteractive Codex execution for bounded section missions. When the outer persistent-agent workflow needs a worker to survive ordinary RPC boundaries, it may host that Codex process in a named persistent Terminal session and observe it with durable waits; do not reimplement tmux/polling inside the Phase-13 Python harness.
-- A successful agent exit is not sufficient; verification and diff guard must pass.
-- First failed verification may trigger one repair prompt containing only failure evidence and original mission.
-- Second failure blocks and stops the loop for human review.
-- A blocked section prevents later dependent sections from auto-running.
-
-**Steps:**
-- [ ] Implement loop state machine with a fake runtime in tests.
-- [ ] Test success, agent failure, verification failure + successful repair, repeated failure, timeout, and stop-condition escalation.
-
-## Section 13.8 — Verification Runner
+## Section 13.6 — Verification Runner
 
 **Interfaces:**
 - Consumes: verification commands explicitly present in the plan section plus repository-global affected checks when the plan requires them.
 - Produces: command/exit/duration/output-tail evidence.
 
 **Behavior:**
-- No shell interpolation from arbitrary untrusted network input; commands originate from reviewed repository plans.
+- Commands originate from reviewed repository plans or explicit direct-agent verification decisions, not arbitrary untrusted network text.
 - Run section-focused verification first.
-- Do not automatically run all phases/full suites when the plan does not require it.
+- Do not automatically run every historical phase/full suite when the claim does not require it.
 - Output is bounded in progress state; full logs may be stored under `.qap-agent/<plan>/logs/`.
+- A zero exit code is evidence for that command only; plan acceptance and protected-contract review remain the implementation agent's responsibility.
 
 **Steps:**
 - [ ] Implement subprocess execution with timeout and captured output.
 - [ ] Preserve exact command and exit code.
+- [ ] Test success, failure, timeout, and bounded log capture.
 
-## Section 13.9 — Inline Review and Scope Control
+## Section 13.7 — Sequential Slice Checkpoint Loop
 
-**Review checklist after each mission:**
-- section acceptance criteria satisfied;
-- no future-phase work;
-- no new speculative abstraction/dependency;
-- no changed hand-written source/test file exceeds 700 lines; any file at 500–700 lines is explicitly reviewed for decomposition before further growth;
-- no God-object/module with multiple unrelated reasons to change, even if under the numeric cap;
-- no change to economic objective, matched-HODL/primary-control semantics, action-space, state ownership, timing/cost/fill semantics, data-role/holdout status, universe-eligibility semantics, historical-reference boundary, or live authority;
-- no unrelated user change modified;
-- verification evidence fresh.
+The harness records this direct-agent sequence; the implementation agent performs it:
+
+```text
+read current plan section
+ -> snapshot Git state
+ -> mark section/slice in_progress
+ -> main agent implements directly
+ -> run focused verification
+ -> inspect diff/state
+ -> invoke applicable self-review/debugging Skills
+ -> repair if needed
+ -> run required completion verification
+ -> commit coherent work
+ -> mark complete + record evidence
+ -> continue to next dependency-safe section
+```
 
 **Behavior:**
-- Review can reject a technically passing diff for scope/architecture violation.
-- For materially risky accounting, timing, execution, research-integrity, or cross-cutting architecture changes, the harness may invoke the same local Codex CLI a second time with a review-only mission after the writer has stopped mutating the slice.
-- The reviewer receives the plan/acceptance criteria plus the resulting diff and verification evidence, does not own mission truth, and must not concurrently edit the author's files.
-- Reviewer feedback is evidence; the harness/orchestrator verifies findings before applying repairs or advancing.
-- Trivial/mechanical changes do not require a second Codex review.
+- No background coding worker exists.
+- No second model is launched for review.
+- A failed verification leaves the slice `in_progress` or `blocked`; the same agent diagnoses and repairs it.
+- Repeated failure does not automatically consume new research holdouts or weaken acceptance criteria.
+- A blocked dependent section prevents later dependent work from being claimed complete.
 
-## Section 13.10 — Commit Discipline
+**Steps:**
+- [ ] Test legal progress transitions and restart recovery.
+- [ ] Test that `complete` requires recorded fresh verification evidence and a commit/reference where the plan expects one.
+
+## Section 13.8 — Risk-Proportional Self-Review
+
+After each coherent slice, the implementation agent re-reads the relevant diff and acceptance criteria. Review depth increases for:
+
+- inventory/accounting/valuation;
+- matched HODL and contribution controls;
+- fees/slippage/fills/quantization/execution;
+- timing/lookahead/replay determinism;
+- research-family/OOS/multiplicity semantics;
+- numerically delicate statistical/model logic;
+- cross-package dependency/ownership changes;
+- significant vectorization/performance rewrites.
+
+**Required behavior:**
+- use focused adversarial/property tests when warranted;
+- use `systematic-debugging` when its trigger applies;
+- use `verification-before-completion` before success/phase-complete claims and completion commits;
+- inspect actual repository state rather than trusting a prior command summary;
+- do not invoke another reviewer model casually or by default.
+
+A future independent manual review may be performed deliberately after implementation if the user requests it; it is outside this autonomous sequential loop.
+
+## Section 13.9 — Commit Discipline
 
 **Behavior:**
-- After a section passes verification/review, create one Git commit with message `phase XX section YY: <section title>`.
-- Never push automatically in initial harness.
+- Create meaningful local commits only after the direct implementation slice passes its required verification/self-review.
+- Never push automatically.
 - Never amend/rebase previous user commits automatically.
-- Commit only paths belonging to the mission; preserve unrelated pre-existing dirty files unstaged.
+- Commit only paths belonging to the coherent slice; preserve unrelated pre-existing dirty files unstaged.
 - Record commit hash in progress.
 
 **Steps:**
-- [ ] Test staging path selection in temporary repo.
-- [ ] Require clean planned-path diff after commit while allowing recorded unrelated dirt to remain.
+- [ ] Test staging-path selection in a temporary repo.
+- [ ] Require planned-path diff to be clean after commit while allowing recorded unrelated dirt to remain.
 
-## Section 13.11 — Hard Escalation Conditions
+## Section 13.10 — Hard Escalation Conditions
 
-Stop the autonomous loop immediately when work would require:
+Stop the sequential mission immediately when continuation would require:
 
 - changing the product economic objective;
 - redefining matched-HODL-relative wealth as the primary metric or promoting coin accumulation/standalone fiat P&L over it;
@@ -259,22 +263,18 @@ Stop the autonomous loop immediately when work would require:
 - violating a plan Stop Condition;
 - destructive Git operation;
 - human secret/MFA/sudo input;
-- selecting work not contained in the approved plan;
-- unresolved repeated verification failure.
+- unresolved verification failure where the approved contract cannot be satisfied without changing protected semantics.
 
-The progress record must name the exact section and evidence that caused escalation.
+The progress record names the exact section and evidence that caused escalation.
 
-## Section 13.12 — Dry Run Before Real Autonomous Use
+## Section 13.11 — Dry Run
 
 **Steps:**
-- [ ] Create a temporary toy Git repository and a tiny approved plan with two independent sections.
-- [ ] Run the full harness loop using the selected real agent runtime on harmless file/test changes.
-- [ ] Interrupt/restart between sections and verify resume.
+- [ ] Create a temporary toy Git repository and a tiny approved plan with two sequential sections.
+- [ ] Exercise plan parsing, progress/checkpointing, Git guard, verification capture, commit recording, and restart recovery without launching another coding model.
 - [ ] Inject an unrelated dirty file and verify preservation.
-- [ ] Inject a failing verification and verify one repair then block behavior.
+- [ ] Inject a failing verification and verify the state remains non-complete until the same implementation agent repairs/re-verifies it.
 - [ ] Confirm no automatic push/destructive Git actions occur.
-
-Only after the dry run passes should the harness operate on QAP implementation plans.
 
 ## Phase Verification
 
@@ -286,22 +286,20 @@ uv run pyright tools/agent tests/tools/agent
 uv run python scripts/check_source_size.py
 ```
 
-Then run the documented toy-repository dry run and inspect its progress/commits manually once before enabling unattended local execution.
+Then run the documented toy-repository dry run and inspect its progress/commit evidence once.
 
 ## Phase Exit Criteria
 
-- [ ] The real local Codex runtime is supported and verified non-interactively.
-- [ ] Harness executes exact approved plan sections sequentially.
-- [ ] Risk-proportional independent Codex review can run after a stable write phase without concurrent overlapping writers.
-- [ ] Progress survives interruption.
+- [ ] Harness supports one sequential direct implementation agent; it launches no secondary coding/review model.
+- [ ] Approved plan sections and progress are recoverable across session interruption.
+- [ ] Relevant Skills remain the implementation agent's review/debugging workflow rather than secondary-agent substitutes.
 - [ ] Unrelated dirty state is preserved.
-- [ ] Required verification/diff review gates advancement.
-- [ ] One bounded repair attempt is enforced; repeated failure blocks.
+- [ ] Required verification/diff/self-review gates completion.
 - [ ] Architecture/economic/live-capital changes escalate.
-- [ ] Harness commits locally but does not push automatically.
+- [ ] Local commits may be recorded but nothing is pushed automatically.
 - [ ] `src/qap` has no dependency on harness code.
-- [ ] Toy-repository autonomous dry run succeeds before QAP use.
+- [ ] Toy-repository dry run succeeds without any multi-agent runtime.
 
 ## Stop Conditions
 
-Do not add multi-agent swarms, distributed queues, speculative planner agents, autonomous roadmap generation, auto-merge/push, broad self-modifying context, or a persistent service. The admitted second Codex invocation is a bounded independent reviewer, not a new orchestration architecture. Broader concurrent worker pools require a concrete measured limitation plus disjoint ownership contracts; overlapping writers remain forbidden.
+Do not add external coding-model integration, model providers, subagents, reviewer agents, worker pools, distributed queues, speculative planner agents, autonomous roadmap generation, auto-merge/push, broad self-modifying context, or a persistent coding service. The implementation agent remains the single sequential owner of QAP engineering and self-review.
