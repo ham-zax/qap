@@ -11,7 +11,7 @@ import { PortfolioOverview } from './PortfolioOverview'
 const experiment = {
   schema_version: 'qap.api.experiment_detail.v1',
   run_id: 'run-portfolio-boundary',
-  sibling_trial_count: 4,
+  family_attempt_count: 4,
   manifest: {
     experiment_name: 'relationship candidate',
     description: 'A candidate that beats HODL but loses to stronger controls.',

@@ -53,7 +53,7 @@ class RunSummaryDto(ApiDto):
     incremental_vs_matched_contribution: str | None = None
     created_timestamp: datetime | None = None
     git_dirty: bool | None = None
-    sibling_trial_count: int | None = None
+    family_attempt_count: int | None = None
     error: ErrorDetailDto | None = None
 
 
@@ -77,7 +77,7 @@ class ExperimentDetailDto(ApiDto):
         "qap.api.experiment_detail.v1"
     )
     run_id: str
-    sibling_trial_count: int
+    family_attempt_count: int
     manifest: ExperimentManifest
     provenance: RunProvenance
     result: ExperimentResult

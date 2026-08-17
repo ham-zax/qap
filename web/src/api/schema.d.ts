@@ -410,6 +410,8 @@ export interface components {
         ExperimentDetailDto: {
             /** Available Series */
             available_series: components["schemas"]["ArtifactSeriesMetadataDto"][];
+            /** Family Attempt Count */
+            family_attempt_count: number;
             final_oos_commitment: components["schemas"]["FinalOosCommitment"] | null;
             manifest: components["schemas"]["ExperimentManifest"];
             provenance: components["schemas"]["RunProvenance"];
@@ -422,8 +424,6 @@ export interface components {
              * @constant
              */
             schema_version: "qap.api.experiment_detail.v1";
-            /** Sibling Trial Count */
-            sibling_trial_count: number;
         };
         /** ExperimentListDto */
         ExperimentListDto: {
@@ -1288,6 +1288,8 @@ export interface components {
             error?: components["schemas"]["ErrorDetailDto"] | null;
             /** Experiment Name */
             experiment_name?: string | null;
+            /** Family Attempt Count */
+            family_attempt_count?: number | null;
             /** Final Oos Consumed */
             final_oos_consumed?: boolean | null;
             /** Git Dirty */
@@ -1312,8 +1314,6 @@ export interface components {
             research_family_id?: string | null;
             /** Run Id */
             run_id: string;
-            /** Sibling Trial Count */
-            sibling_trial_count?: number | null;
             /** Status */
             status?: string | null;
             /** Universe Mode */

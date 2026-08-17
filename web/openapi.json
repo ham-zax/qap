@@ -632,6 +632,10 @@
             "title": "Available Series",
             "type": "array"
           },
+          "family_attempt_count": {
+            "title": "Family Attempt Count",
+            "type": "integer"
+          },
           "final_oos_commitment": {
             "anyOf": [
               {
@@ -660,15 +664,11 @@
             "default": "qap.api.experiment_detail.v1",
             "title": "Schema Version",
             "type": "string"
-          },
-          "sibling_trial_count": {
-            "title": "Sibling Trial Count",
-            "type": "integer"
           }
         },
         "required": [
           "run_id",
-          "sibling_trial_count",
+          "family_attempt_count",
           "manifest",
           "provenance",
           "result",
@@ -2990,6 +2990,17 @@
             ],
             "title": "Experiment Name"
           },
+          "family_attempt_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Attempt Count"
+          },
           "final_oos_consumed": {
             "anyOf": [
               {
@@ -3114,17 +3125,6 @@
           "run_id": {
             "title": "Run Id",
             "type": "string"
-          },
-          "sibling_trial_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sibling Trial Count"
           },
           "status": {
             "anyOf": [

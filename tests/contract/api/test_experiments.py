@@ -51,7 +51,7 @@ def test_experiment_list_preserves_research_and_benchmark_context(
                 "incremental_vs_matched_contribution": _MATCHED_CONTRIBUTION_INCREMENT,
                 "created_timestamp": "2026-08-17T06:00:00Z",
                 "git_dirty": None,
-                "sibling_trial_count": 1,
+                "family_attempt_count": 1,
                 "error": None,
             }
         ],
@@ -97,7 +97,7 @@ def test_experiment_list_surfaces_corrupt_artifact_without_hiding_valid_runs(
         "incremental_vs_matched_contribution": None,
         "created_timestamp": None,
         "git_dirty": None,
-        "sibling_trial_count": None,
+        "family_attempt_count": None,
         "error": {
             "code": "corrupt_artifact",
             "message": "Run artifacts are invalid.",
@@ -106,7 +106,7 @@ def test_experiment_list_surfaces_corrupt_artifact_without_hiding_valid_runs(
     }
 
 
-def test_family_trial_count_includes_failed_attempts_with_recoverable_lineage(
+def test_family_attempt_count_includes_failed_attempts_with_recoverable_lineage(
     populated_run_root: tuple[Path, str],
 ) -> None:
     from qap.api import ApiSettings, create_app
@@ -135,17 +135,17 @@ def test_family_trial_count_includes_failed_attempts_with_recoverable_lineage(
 
     assert listing.status_code == 200
     items = {item["run_id"]: item for item in listing.json()["items"]}
-    assert items[valid_run_id]["sibling_trial_count"] == 2
+    assert items[valid_run_id]["family_attempt_count"] == 2
     assert items[failed_run_id]["artifact_status"] == "invalid"
     assert items[failed_run_id]["experiment_name"] == "failed sibling attempt"
     assert items[failed_run_id]["research_family_id"] == "family-two-asset-v1"
     assert items[failed_run_id]["parent_run_id"] == valid_run_id
-    assert items[failed_run_id]["sibling_trial_count"] == 2
+    assert items[failed_run_id]["family_attempt_count"] == 2
     assert detail.status_code == 200
-    assert detail.json()["sibling_trial_count"] == 2
+    assert detail.json()["family_attempt_count"] == 2
 
 
-def test_experiment_detail_exposes_manifest_provenance_result_and_sibling_count(
+def test_experiment_detail_exposes_manifest_provenance_result_and_family_attempt_count(
     populated_run_root: tuple[Path, str],
 ) -> None:
     from qap.api import ApiSettings, create_app
@@ -159,7 +159,7 @@ def test_experiment_detail_exposes_manifest_provenance_result_and_sibling_count(
     payload = response.json()
     assert payload["schema_version"] == "qap.api.experiment_detail.v1"
     assert payload["run_id"] == run_id
-    assert payload["sibling_trial_count"] == 1
+    assert payload["family_attempt_count"] == 1
     assert payload["manifest"]["experiment_name"] == "two-asset dummy"
     assert payload["manifest"]["universe_mode"] == "declared_fixed_basket"
     assert (

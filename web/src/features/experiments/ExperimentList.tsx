@@ -115,7 +115,11 @@ function ExperimentCard({ run }: { run: RunSummaryDto }) {
           <span>{formatResearchTimestamp(run.created_timestamp)}</span>
         ) : null}
         {run.research_family_id ? <span>Family {run.research_family_id}</span> : null}
-        {run.sibling_trial_count ? <span>{run.sibling_trial_count} sibling trials</span> : null}
+        {run.family_attempt_count ? (
+          <span>
+            {run.family_attempt_count} family {run.family_attempt_count === 1 ? 'attempt' : 'attempts'}
+          </span>
+        ) : null}
         {run.git_dirty ? <span>Dirty snapshot</span> : null}
         <span className="break-all" title={run.run_id}>
           Run {shortId(run.run_id)}

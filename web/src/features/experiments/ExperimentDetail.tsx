@@ -254,8 +254,8 @@ export function ExperimentDetail({ data }: ExperimentDetailProps) {
           )}
           <div className="grid gap-4 text-sm sm:grid-cols-3">
             <div>
-              <p className="m-0 text-xs text-muted">Sibling trials</p>
-              <p className="mt-1 mb-0 font-medium text-foreground">{data.sibling_trial_count}</p>
+              <p className="m-0 text-xs text-muted">Family attempts</p>
+              <p className="mt-1 mb-0 font-medium text-foreground">{data.family_attempt_count}</p>
             </div>
             <div>
               <p className="m-0 text-xs text-muted">Primary metric</p>

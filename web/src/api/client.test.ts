@@ -24,7 +24,7 @@ describe('QAP API client', () => {
           incremental_vs_matched_contribution: '-0.0180',
           created_timestamp: '2026-08-17T06:00:00Z',
           git_dirty: true,
-          sibling_trial_count: 2,
+          family_attempt_count: 2,
           error: null,
         },
       ],

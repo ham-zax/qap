@@ -7,7 +7,7 @@ import { ExperimentDetail } from './ExperimentDetail'
 const data = {
   schema_version: 'qap.api.experiment_detail.v1',
   run_id: 'run-0123456789abcdef01234567',
-  sibling_trial_count: 3,
+  family_attempt_count: 3,
   manifest: {
     schema_version: 'qap.experiment.manifest.v1',
     experiment_name: 'sealed candidate',

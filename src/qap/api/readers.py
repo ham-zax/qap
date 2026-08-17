@@ -180,7 +180,7 @@ class RunArtifactReader:
                         git_dirty=(
                             None if provenance is None else provenance.git_dirty
                         ),
-                        sibling_trial_count=(
+                        family_attempt_count=(
                             None if family_id is None else family_counts[family_id]
                         ),
                         error=ErrorDetailDto(
@@ -222,7 +222,7 @@ class RunArtifactReader:
                     ),
                     created_timestamp=loaded.provenance.run_timestamp_utc,
                     git_dirty=loaded.provenance.git_dirty,
-                    sibling_trial_count=family_counts[result.research_family_id],
+                    family_attempt_count=family_counts[result.research_family_id],
                 )
             )
         items.sort(
@@ -239,7 +239,7 @@ class RunArtifactReader:
         loaded = self.read(run_id)
         manifests = self._attempt_manifests()
         provenances = self._attempt_provenances()
-        siblings = sum(
+        family_attempt_count = sum(
             (
                 manifests[directory.name].research_family_id
                 if directory.name in manifests
@@ -254,7 +254,7 @@ class RunArtifactReader:
         )
         return ExperimentDetailDto(
             run_id=loaded.provenance.run_id,
-            sibling_trial_count=siblings,
+            family_attempt_count=family_attempt_count,
             manifest=loaded.manifest,
             provenance=loaded.provenance,
             result=loaded.result,
