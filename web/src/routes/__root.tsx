@@ -30,11 +30,9 @@ export const Route = createRootRouteWithContext<QapRouterContext>()({
     </AppShell>
   ),
   notFoundComponent: () => (
-    <AppShell>
-      <StatusMessage title="Page not found" tone="warning">
-        <p>The requested analytical view does not exist.</p>
-      </StatusMessage>
-    </AppShell>
+    <StatusMessage title="Page not found" tone="warning">
+      <p>The requested analytical view does not exist.</p>
+    </StatusMessage>
   ),
 })
 
