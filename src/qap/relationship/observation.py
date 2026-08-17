@@ -147,6 +147,15 @@ class RelationshipSeries:
         evidence_reciprocity: EvidenceReciprocity,
         values: object,
     ) -> "RelationshipSeries":
+        if not isinstance(cast(object, evidence_kind), EvidenceKind):
+            raise TypeError("evidence_kind must be an EvidenceKind")
+        if not isinstance(cast(object, fit_reciprocity), FitReciprocity):
+            raise TypeError("fit_reciprocity must be a FitReciprocity")
+        if not isinstance(
+            cast(object, evidence_reciprocity),
+            EvidenceReciprocity,
+        ):
+            raise TypeError("evidence_reciprocity must be an EvidenceReciprocity")
         if pair_id != orientation.pair_id:
             raise RelationshipDataError(
                 "canonical pair identity must match the requested orientation"

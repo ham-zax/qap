@@ -247,6 +247,59 @@ def test_relationship_series_preserves_pair_orientation_and_provenance() -> None
         ratio.as_of = datetime(2024, 1, 1, 14, tzinfo=UTC)  # type: ignore[misc]
 
 
+def test_relationship_series_rejects_plain_strings_for_enum_metadata() -> None:
+    orientation = PairOrientation(base=ETH, quote=BTC)
+    timestamps = (
+        datetime(2024, 1, 1, 10, tzinfo=UTC),
+        datetime(2024, 1, 1, 11, tzinfo=UTC),
+    )
+
+    with pytest.raises(TypeError, match="evidence_kind"):
+        RelationshipSeries.from_values(
+            pair_id=orientation.pair_id,
+            orientation=orientation,
+            interval=INTERVAL,
+            timestamps=timestamps,
+            as_of=datetime(2024, 1, 1, 12, tzinfo=UTC),
+            base_source_fingerprint="b" * 64,
+            quote_source_fingerprint="a" * 64,
+            evidence_kind="ratio",  # type: ignore[arg-type]
+            fit_reciprocity=FitReciprocity.EXACT_TRANSFORM,
+            evidence_reciprocity=EvidenceReciprocity.EXACT_TRANSFORM,
+            values=(0.1, 0.2),
+        )
+
+    with pytest.raises(TypeError, match="fit_reciprocity"):
+        RelationshipSeries.from_values(
+            pair_id=orientation.pair_id,
+            orientation=orientation,
+            interval=INTERVAL,
+            timestamps=timestamps,
+            as_of=datetime(2024, 1, 1, 12, tzinfo=UTC),
+            base_source_fingerprint="b" * 64,
+            quote_source_fingerprint="a" * 64,
+            evidence_kind=EvidenceKind.RATIO,
+            fit_reciprocity="exact_transform",  # type: ignore[arg-type]
+            evidence_reciprocity=EvidenceReciprocity.EXACT_TRANSFORM,
+            values=(0.1, 0.2),
+        )
+
+    with pytest.raises(TypeError, match="evidence_reciprocity"):
+        RelationshipSeries.from_values(
+            pair_id=orientation.pair_id,
+            orientation=orientation,
+            interval=INTERVAL,
+            timestamps=timestamps,
+            as_of=datetime(2024, 1, 1, 12, tzinfo=UTC),
+            base_source_fingerprint="b" * 64,
+            quote_source_fingerprint="a" * 64,
+            evidence_kind=EvidenceKind.RATIO,
+            fit_reciprocity=FitReciprocity.EXACT_TRANSFORM,
+            evidence_reciprocity="exact_transform",  # type: ignore[arg-type]
+            values=(0.1, 0.2),
+        )
+
+
 def test_relationship_series_rejects_pair_or_time_metadata_mismatch() -> None:
     orientation = PairOrientation(base=ETH, quote=BTC)
     timestamps = (
