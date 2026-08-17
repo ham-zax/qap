@@ -17,12 +17,12 @@ from qap.execution.routing import (
     plan_execution_route,
 )
 from qap.market import MarketMetadata, PriceSnapshot, VenueInstrument
+from qap.policy import RebalancePlan
 from qap.portfolio import (
     AllocationTarget,
     AssetId,
     PortfolioState,
     holding_values_at_prices,
-    value_holdings_at_prices,
 )
 from qap.portfolio._decimal import (
     canonical_decimal,
@@ -106,34 +106,6 @@ class _ExecutionPass:
     orders: tuple[MultiAssetOrderOutcome, ...]
     fills: tuple[Fill, ...]
     states_after_fills: tuple[PortfolioState, ...]
-
-
-def _target_quantity(
-    *,
-    portfolio_value: Decimal,
-    target_weight: Decimal,
-    price: Decimal,
-) -> Decimal:
-    target_value = exact_multiply(portfolio_value, target_weight)
-    return divide(target_value, price)
-
-
-def _quantity_deltas(
-    current_state: PortfolioState,
-    *,
-    target: AllocationTarget,
-    prices: PriceSnapshot,
-) -> tuple[Decimal, dict[AssetId, Decimal]]:
-    total_value = value_holdings_at_prices(current_state, prices.prices)
-    deltas: dict[AssetId, Decimal] = {}
-    for asset, target_weight in target.weights.items():
-        desired = _target_quantity(
-            portfolio_value=total_value,
-            target_weight=target_weight,
-            price=prices.price(asset),
-        )
-        deltas[asset] = exact_subtract(desired, current_state.quantity(asset))
-    return total_value, deltas
 
 
 def _plan_orders(
@@ -349,9 +321,7 @@ def execute_multi_asset_rebalance(
     *,
     decision_id: str,
     execution_timestamp: datetime,
-    current_state: PortfolioState,
-    target: AllocationTarget,
-    valuation_prices: PriceSnapshot,
+    plan: RebalancePlan,
     bridge: AssetId,
     instruments: Iterable[VenueInstrument],
     reference_prices: Mapping[VenueInstrument, Decimal],
@@ -359,29 +329,21 @@ def execute_multi_asset_rebalance(
     market_metadata: Mapping[VenueInstrument, MarketMetadata],
     cost_model: CostModel,
 ) -> MultiAssetRebalanceResult:
-    """Sell overweights into bridge first, then fund underweights deterministically."""
+    """Execute one policy-owned rebalance plan through the declared bridge."""
 
-    if not isinstance(cast(object, current_state), PortfolioState):
-        raise TypeError("current_state must be PortfolioState")
-    if not isinstance(cast(object, target), AllocationTarget):
-        raise TypeError("target must be AllocationTarget")
-    if not isinstance(cast(object, valuation_prices), PriceSnapshot):
-        raise TypeError("valuation_prices must be PriceSnapshot")
+    if not isinstance(cast(object, plan), RebalancePlan):
+        raise TypeError("plan must be RebalancePlan")
     if not isinstance(cast(object, bridge), AssetId):
         raise TypeError("bridge must be AssetId")
+
     available = _validated_instruments(instruments)
-    declared_assets = frozenset((*target.weights, bridge))
-    total_value, deltas = _quantity_deltas(
-        current_state,
-        target=target,
-        prices=valuation_prices,
-    )
+    declared_assets = frozenset((*plan.target.weights, bridge))
     planned = _plan_orders(
-        deltas=deltas,
+        deltas=plan.quantity_deltas,
         bridge=bridge,
         instruments=available,
         declared_assets=declared_assets,
-        valuation_prices=valuation_prices,
+        valuation_prices=plan.price_snapshot,
     )
     _preflight_order_data(
         planned,
@@ -390,21 +352,17 @@ def execute_multi_asset_rebalance(
         market_metadata=market_metadata,
     )
 
-    bridge_target = _target_quantity(
-        portfolio_value=total_value,
-        target_weight=target.weights.get(bridge, _ZERO),
-        price=valuation_prices.price(bridge),
-    )
+    bridge_target = plan.target_quantities.get(bridge, _ZERO)
     # First pass is a complete immutable shadow execution: all route, precision,
     # cost, and settlement-balance outcomes are known before accepted fills exist.
     preview = _execute_planned_orders(
         planned=planned,
         decision_id=decision_id,
         execution_timestamp=execution_timestamp,
-        starting_state=current_state,
+        starting_state=plan.current_state,
         bridge=bridge,
         bridge_target=bridge_target,
-        valuation_prices=valuation_prices,
+        valuation_prices=plan.price_snapshot,
         reference_prices=reference_prices,
         market_notional_reference_prices=market_notional_reference_prices,
         market_metadata=market_metadata,
@@ -414,10 +372,10 @@ def execute_multi_asset_rebalance(
         planned=planned,
         decision_id=decision_id,
         execution_timestamp=execution_timestamp,
-        starting_state=current_state,
+        starting_state=plan.current_state,
         bridge=bridge,
         bridge_target=bridge_target,
-        valuation_prices=valuation_prices,
+        valuation_prices=plan.price_snapshot,
         reference_prices=reference_prices,
         market_notional_reference_prices=market_notional_reference_prices,
         market_metadata=market_metadata,
@@ -430,9 +388,9 @@ def execute_multi_asset_rebalance(
 
     residual = exact_subtract(executed.ending_state.quantity(bridge), bridge_target)
     return MultiAssetRebalanceResult(
-        starting_state=current_state,
+        starting_state=plan.current_state,
         ending_state=executed.ending_state,
-        target=target,
+        target=plan.target,
         bridge=bridge,
         bridge_target_quantity=bridge_target,
         bridge_residual=residual,
@@ -440,11 +398,11 @@ def execute_multi_asset_rebalance(
         fills=executed.fills,
         states_after_fills=executed.states_after_fills,
         tracking_errors=_tracking_errors(
-            portfolio_value=total_value,
+            portfolio_value=plan.total_portfolio_value,
             ending_state=executed.ending_state,
-            target=target,
+            target=plan.target,
             bridge=bridge,
-            prices=valuation_prices,
+            prices=plan.price_snapshot,
         ),
     )
 

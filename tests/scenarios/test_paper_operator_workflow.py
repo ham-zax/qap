@@ -166,9 +166,7 @@ def test_paper_spec_requires_every_owned_non_bridge_asset_in_target(
     spec = tmp_path / "omitted-owned-asset.json"
     spec.write_text(json.dumps(payload), encoding="utf-8")
 
-    with pytest.raises(
-        ValueError, match="owned non-bridge assets missing from target: SOL"
-    ):
+    with pytest.raises(ValueError, match="explicit zero.*SOL"):
         run_paper_operation_to_artifact(
             spec,
             repository_root=ROOT,

@@ -14,6 +14,7 @@ from qap.execution import CostModel, execute_multi_asset_rebalance
 from qap.experiment.reconciliation import ReconciliationReport, reconcile_fill_sequence
 from qap.market import PriceSnapshot, VenueInstrument
 from qap.market.adapters.binance_public import BinancePublicAdapter
+from qap.policy import build_rebalance_plan
 from qap.portfolio import AllocationTarget, AssetId, PortfolioState
 
 _SCHEMA_VERSION = "qap.paper_operation.v1"
@@ -301,20 +302,6 @@ def _build_record(
     target_weights = _decimal_mapping(
         spec.get("target_weights"), field="target_weights"
     )
-    missing_owned_assets = tuple(
-        sorted(
-            asset.key
-            for asset, quantity in starting_holdings.items()
-            if asset != bridge
-            and quantity > Decimal("0")
-            and asset not in target_weights
-        )
-    )
-    if missing_owned_assets:
-        raise ValueError(
-            "owned non-bridge assets missing from target: "
-            + ", ".join(missing_owned_assets)
-        )
     valuation_prices = _decimal_mapping(
         spec.get("valuation_prices"), field="valuation_prices"
     )
@@ -324,6 +311,12 @@ def _build_record(
         timestamp=execution_timestamp,
         numeraire=bridge,
         prices=valuation_prices,
+    )
+    plan = build_rebalance_plan(
+        current_state=starting_state,
+        target=target,
+        prices=prices,
+        execution_only_bridge=bridge,
     )
 
     raw_instruments = _array(spec.get("instruments"), field="instruments")
@@ -376,9 +369,7 @@ def _build_record(
     result = execute_multi_asset_rebalance(
         decision_id=operation_id,
         execution_timestamp=execution_timestamp,
-        current_state=starting_state,
-        target=target,
-        valuation_prices=prices,
+        plan=plan,
         bridge=bridge,
         instruments=tuple(instruments),
         reference_prices=reference_prices,

@@ -75,6 +75,30 @@ def test_planner_requires_explicit_zero_weight_for_every_current_holding() -> No
         build_rebalance_plan(current_state=state, target=target, prices=_prices())
 
 
+def test_planner_allows_only_explicitly_declared_omitted_current_assets() -> None:
+    state = PortfolioState.from_holdings({BTC: D("10"), USDT: D("25")})
+    target = AllocationTarget.for_basket({BTC: D("1")}, basket={BTC})
+
+    plan = build_rebalance_plan(
+        current_state=state,
+        target=target,
+        prices=_prices(),
+        execution_only_bridge=USDT,
+    )
+
+    assert plan.target is target
+    assert plan.target_quantities[USDT] == D("0")
+    assert plan.quantity_deltas[USDT] == D("-25")
+
+    with pytest.raises(ValueError, match="explicit zero.*BTC"):
+        build_rebalance_plan(
+            current_state=PortfolioState.from_holdings({BTC: D("10"), USDT: D("25")}),
+            target=AllocationTarget.for_basket({ETH: D("1")}, basket={ETH}),
+            prices=_prices(),
+            execution_only_bridge=USDT,
+        )
+
+
 def test_plan_mappings_are_read_only_and_context_independent() -> None:
     state = PortfolioState.from_holdings({BTC: D("9.85")})
     with localcontext() as context:

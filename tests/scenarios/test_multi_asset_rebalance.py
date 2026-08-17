@@ -5,6 +5,7 @@ import pytest
 
 from qap.execution import CostModel, DirectExecutionReason
 from qap.market import MarketMetadata, PriceSnapshot, VenueInstrument
+from qap.policy import RebalancePlan, build_rebalance_plan
 from qap.portfolio import AllocationTarget, AssetId, PortfolioState
 
 D = Decimal
@@ -63,15 +64,68 @@ METADATA = {
 }
 
 
+def _plan(
+    *,
+    current_state: PortfolioState = STARTING,
+    target: AllocationTarget = TARGET,
+    prices: PriceSnapshot = PRICES,
+    bridge: AssetId = USDT,
+) -> RebalancePlan:
+    return build_rebalance_plan(
+        current_state=current_state,
+        target=target,
+        prices=prices,
+        execution_only_bridge=bridge,
+    )
+
+
+def test_multi_asset_execution_consumes_policy_rebalance_plan() -> None:
+    from qap.execution.multi_asset import execute_multi_asset_rebalance
+
+    plan = build_rebalance_plan(
+        current_state=STARTING,
+        target=TARGET,
+        prices=PRICES,
+    )
+
+    result = execute_multi_asset_rebalance(
+        decision_id="multi-plan-authority",
+        execution_timestamp=AT,
+        plan=plan,
+        bridge=USDT,
+        instruments=INSTRUMENTS,
+        reference_prices=REFERENCE_PRICES,
+        market_notional_reference_prices=REFERENCE_PRICES,
+        market_metadata=METADATA,
+        cost_model=CostModel.zero(),
+    )
+
+    assert result.starting_state is plan.current_state
+    assert result.target is plan.target
+
+
+def test_multi_asset_plan_rejects_omitted_held_non_bridge_asset() -> None:
+    target = AllocationTarget.for_basket(
+        {BTC: D("0.5"), ETH: D("0.5")},
+        basket={BTC, ETH},
+    )
+
+    with pytest.raises(ValueError, match="explicit zero.*SOL"):
+        build_rebalance_plan(
+            current_state=STARTING,
+            target=target,
+            prices=PRICES,
+            execution_only_bridge=USDT,
+        )
+
+
 def test_four_asset_rebalance_sells_then_buys_without_double_spending_bridge() -> None:
     from qap.execution.multi_asset import RebalancePhase, execute_multi_asset_rebalance
 
     result = execute_multi_asset_rebalance(
         decision_id="multi-1",
         execution_timestamp=AT,
-        current_state=STARTING,
-        target=TARGET,
-        valuation_prices=PRICES,
+        plan=_plan(),
         bridge=USDT,
         instruments=INSTRUMENTS,
         reference_prices=REFERENCE_PRICES,
@@ -113,9 +167,7 @@ def test_four_asset_rebalance_sells_then_buys_without_double_spending_bridge() -
     repeat = execute_multi_asset_rebalance(
         decision_id="multi-1",
         execution_timestamp=AT,
-        current_state=STARTING,
-        target=TARGET,
-        valuation_prices=PRICES,
+        plan=_plan(),
         bridge=USDT,
         instruments=INSTRUMENTS,
         reference_prices=REFERENCE_PRICES,
@@ -135,9 +187,7 @@ def test_multi_asset_precision_no_fill_is_explicit_and_leaves_dust_owned() -> No
     result = execute_multi_asset_rebalance(
         decision_id="multi-min-notional",
         execution_timestamp=AT,
-        current_state=STARTING,
-        target=TARGET,
-        valuation_prices=PRICES,
+        plan=_plan(),
         bridge=USDT,
         instruments=INSTRUMENTS,
         reference_prices=REFERENCE_PRICES,
@@ -174,9 +224,7 @@ def test_multi_asset_dry_preflights_all_precision_outcomes_before_execution(
     result = multi_asset.execute_multi_asset_rebalance(
         decision_id="multi-preflight-precision",
         execution_timestamp=AT,
-        current_state=STARTING,
-        target=TARGET,
-        valuation_prices=PRICES,
+        plan=_plan(),
         bridge=USDT,
         instruments=INSTRUMENTS,
         reference_prices=REFERENCE_PRICES,
@@ -204,9 +252,7 @@ def test_multi_asset_preflights_all_order_data_before_any_execution() -> None:
         execute_multi_asset_rebalance(
             decision_id="multi-preflight",
             execution_timestamp=AT,
-            current_state=STARTING,
-            target=TARGET,
-            valuation_prices=PRICES,
+            plan=_plan(),
             bridge=USDT,
             instruments=INSTRUMENTS,
             reference_prices=references,
@@ -233,9 +279,7 @@ def test_execution_only_bridge_need_not_be_an_economic_target_asset() -> None:
     result = execute_multi_asset_rebalance(
         decision_id="execution-only-bridge",
         execution_timestamp=AT,
-        current_state=starting,
-        target=target,
-        valuation_prices=prices,
+        plan=_plan(current_state=starting, target=target, prices=prices),
         bridge=USDT,
         instruments=(BTCUSDT, ETHUSDT),
         reference_prices={BTCUSDT: D("100"), ETHUSDT: D("50")},
@@ -265,9 +309,7 @@ def test_multi_asset_orders_by_descending_target_value_change_then_asset_key() -
     result = execute_multi_asset_rebalance(
         decision_id="multi-ordering",
         execution_timestamp=AT,
-        current_state=STARTING,
-        target=target,
-        valuation_prices=PRICES,
+        plan=_plan(target=target),
         bridge=USDT,
         instruments=INSTRUMENTS,
         reference_prices=REFERENCE_PRICES,
@@ -290,9 +332,7 @@ def test_multi_asset_result_reports_authoritative_tracking_and_unfilled_remainde
     result = execute_multi_asset_rebalance(
         decision_id="multi-tracking",
         execution_timestamp=AT,
-        current_state=STARTING,
-        target=TARGET,
-        valuation_prices=PRICES,
+        plan=_plan(),
         bridge=USDT,
         instruments=INSTRUMENTS,
         reference_prices=REFERENCE_PRICES,

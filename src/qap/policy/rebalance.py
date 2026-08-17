@@ -130,6 +130,7 @@ def build_rebalance_plan(
     current_state: PortfolioState,
     target: AllocationTarget,
     prices: PriceSnapshot,
+    execution_only_bridge: AssetId | None = None,
 ) -> RebalancePlan:
     """Translate one target allocation into immutable desired quantities."""
 
@@ -140,9 +141,16 @@ def build_rebalance_plan(
     if not isinstance(cast(object, prices), PriceSnapshot):
         raise TypeError("prices must be a PriceSnapshot")
 
+    if execution_only_bridge is not None and not isinstance(
+        cast(object, execution_only_bridge), AssetId
+    ):
+        raise TypeError("execution_only_bridge must be AssetId or None")
+
     target_weights = target.weights
     missing_current_assets = sorted(
-        asset for asset in current_state.holdings if asset not in target_weights
+        asset
+        for asset in current_state.holdings
+        if asset not in target_weights and asset != execution_only_bridge
     )
     if missing_current_assets:
         missing = ", ".join(asset.key for asset in missing_current_assets)
