@@ -20,8 +20,13 @@ approved for implementation. Slice 3 remains a separate design gate and must not
 invented from the umbrella plan.
 Evidence: docs/plans/15-research-scanner-and-candidate-workbench.md;
 docs/superpowers/specs/2026-08-18-qap-scanner-slice1-design.md;
-docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md;
-commit f53f00b.
+docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md.
+
+Steering override — 2026-08-18: this mission uses no delegated/external coding or
+review model. Do not invoke Codex, subagents, reviewer agents, second-opinion models,
+or other model CLIs for implementation, investigation, debugging, or review. All
+reasoning, coding, and verification are performed directly by this implementation
+agent from repository/tool evidence.
 
 This is ONE continuous mission.
 
@@ -219,6 +224,12 @@ For Scanner V1, detailed approved slice specs outrank less-specific older Phase-
 or master-plan wording. Do not use generic historical Phase-15 wording to
 reintroduce selector choice, arbitrary parameter grids, adaptive routing, or a
 Cartesian scan builder that the slice architecture explicitly removed.
+
+Fresh-agent startup gate: repository reality outranks this prompt's historical
+commit references. Inspect current HEAD/status/log and cooperative writer ownership
+before mutation. Reconcile newer fixes and dirty work rather than assuming the repo
+is frozen. Do not start Phase 15 until Phase 14's integrated acceptance/remediation
+is freshly green and any prior writer has completed an explicit safe handoff.
 
 Do not blindly recreate files simply because a plan says "Create".
 
@@ -424,13 +435,11 @@ Do the substantive repository work yourself through the connected WSL harness:
 - update material documentation;
 - create coherent local commits.
 
-Do NOT launch another model as an implementation worker, reviewer, investigator,
-debugger, or second opinion. Do not create secondary-agent delegation merely
-because the runtime can support it. This mission does not authorize Codex or any
-other separately metered external model/CLI as a substitute reviewer or helper; a
-workflow instruction to request review is not authorization to spend external-model
-usage. Use such a model only if the user explicitly authorizes that model for the
-current task.
+Do NOT launch or delegate to another model for implementation, review,
+investigation, debugging, planning, or second opinions. This includes Codex,
+subagents, reviewer agents, worker models, and external model CLIs. There is no
+delegation exception inside this mission. If a workflow asks for delegated review,
+perform the required review directly from fresh repository evidence instead.
 
 Use bounded Bash for ordinary commands and Terminal + durable waits only for
 processes that genuinely need persistence or a PTY. A persistent process is a tool
@@ -513,7 +522,7 @@ Do not spawn concurrent coding/review agents. Do not create implementation swarm
 parallel writers, reviewer agents, or worker pools.
 
 Maintain exactly one writable autonomous process/session per Git worktree. Before
-mutating a worktree, establish that no other Terminal/Codex/agent/session still owns
+mutating a worktree, establish that no other Terminal/agent/session still owns
 it as a writer. PTY ownership and Git writer ownership are separate contracts; a
 Terminal being model-owned does not prove the worktree is free. If another writer
 exists, wait for or explicitly complete the handoff instead of becoming a second
@@ -555,10 +564,10 @@ apply `verification-before-completion` before claiming success.
 If review exposes a failure, use `systematic-debugging` when applicable, repair the
 root cause, and re-run the evidence that proves the corrected claim.
 
-Use self-review from fresh authoritative repository evidence by default. Do not
-invoke an external or separately metered model for review unless the user explicitly
-authorizes that model for the current task. A future independent manual review may
-be performed deliberately if the user requests it.
+Use self-review from fresh authoritative repository evidence. Do not invoke an
+external model, delegated reviewer, or model CLI for review. Independent review, if
+needed later, is a separate human-directed activity outside this implementation
+mission.
 
 
 ======================================================================
@@ -1400,8 +1409,8 @@ The mission is complete only when ALL of the following are true:
 16. No required phase was silently skipped.
 
 Then perform one final fresh, risk-proportional self-review of the integrated
-product from authoritative repository evidence. Do not substitute Codex or another
-external/metered reviewer unless the user explicitly authorizes it for this task.
+product from authoritative repository evidence. Do not substitute Codex, a
+delegated reviewer, or any other external model.
 
 Run final fresh verification.
 

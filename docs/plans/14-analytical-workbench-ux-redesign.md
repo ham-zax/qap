@@ -4,7 +4,7 @@
 
 **Architecture:** Keep the existing React/Vite/TanStack Router/Query/OpenAPI architecture and QAP-owned backend truth. Reorganize the presentation around **verdict first → primary visual evidence → explanation → audit/provenance on demand**. Phase 14 does not add research execution, live trading, a database, or browser-owned financial logic.
 
-**Status:** Implemented and under integrated acceptance/remediation. Detailed architecture and route plans are split below so this phase overview remains reviewable rather than becoming a planning God object.
+**Status:** Implemented; integrated rendered acceptance is GREEN as recorded in `docs/reviews/2026-08-18-phase14-browser-acceptance.md`. Detailed architecture and route plans are split below so this phase overview remains reviewable rather than becoming a planning God object.
 
 ## Plan set
 
