@@ -31,6 +31,10 @@ export function BenchmarkLadder({ experiment }: BenchmarkLadderProps) {
   const primaryIncrement = result.strategy_vs_primary_control
   const matchedIncrement = result.strategy_vs_matched_contribution
   const hasExternalFlows = manifest.external_flows.length > 0
+  const primaryControlIsSuccessMetric =
+    result.primary_metric === 'primary_control_relative_terminal_wealth'
+  const missedDeclaredThreshold =
+    primaryControlIsSuccessMetric && result.status === 'negative'
 
   return (
     <section aria-labelledby="benchmark-ladder-heading">
@@ -63,8 +67,16 @@ export function BenchmarkLadder({ experiment }: BenchmarkLadderProps) {
       {manifest.benchmarks.relationship_alpha_claim && primaryIncrement != null ? (
         exactSign(primaryIncrement) > 0 ? (
           <p>
-            Relationship intelligence added incremental value over{' '}
-            {primaryControl ?? 'the predeclared primary control'} in this run.
+            Relationship intelligence added positive incremental value over{' '}
+            {primaryControl ?? 'the predeclared primary control'}
+            {missedDeclaredThreshold ? (
+              <>
+                , but this run did not meet the predeclared success threshold{' '}
+                {result.success_threshold}.
+              </>
+            ) : (
+              <> in this run.</>
+            )}
           </p>
         ) : (
           <p>

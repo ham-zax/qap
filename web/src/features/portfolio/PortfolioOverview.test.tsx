@@ -213,6 +213,33 @@ const performance = {
 } satisfies PortfolioPerformanceDto
 
 describe('PortfolioOverview', () => {
+  it('distinguishes positive increment from meeting the predeclared success threshold', () => {
+    const thresholdExperiment = {
+      ...experiment,
+      result: {
+        ...experiment.result,
+        status: 'negative',
+        primary_metric_value: '0.01',
+        strategy_vs_primary_control: '0.01',
+        success_threshold: '0.02',
+      },
+    } as unknown as ExperimentDetailDto
+
+    render(
+      <PortfolioOverview
+        experiment={thresholdExperiment}
+        snapshot={snapshot}
+        performance={performance}
+      />,
+    )
+
+    expect(
+      screen.getByText(
+        'Relationship intelligence added positive incremental value over periodic-2, but this run did not meet the predeclared success threshold 0.02.',
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('does not relabel HODL outperformance as relationship or accumulation alpha', () => {
     render(
       <PortfolioOverview
