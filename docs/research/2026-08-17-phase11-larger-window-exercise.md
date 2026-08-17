@@ -4,7 +4,11 @@
 
 **Purpose:** Exercise the existing multi-asset paper-operation, immutable artifact, reconciliation, and filesystem-reader paths over a representative recorded window. This is an operational/performance check, not research alpha, final-OOS evidence, or prospective candidate evidence.
 
-**Measured commit:** `d05c4360a522c8a5b2dc335857a05cdf4f2b466d`
+**Measured commit:** `67d24bd56c62ca384a54ce802a802914d78a8fc9`
+
+**Measured code fingerprint:** `f57d7465d33f9e6490edd59a9cebcfe6aff0856f83f0410195402e52f654e444`
+
+The machine-readable exercise emitted both values itself with `git_dirty=false`; they are not hand-entered provenance fields.
 
 **Machine-readable result:** `docs/research/2026-08-17-phase11-larger-window-exercise.json`
 
@@ -16,7 +20,7 @@ The exercise used three recorded public Binance daily series from 2023, so it di
 - ETHUSDT: 365 bars, fingerprint `bfe77b4d12ba680c2a90d9c4b39bb2efab16427f4f25579775d56202df88b237`
 - SOLUSDT: 365 bars, fingerprint `0b6ed55cc33f1149d98ea0f4b2b29ddecdf455257157be751c42647884a63be1`
 
-The paper path carried each operation's real ending holdings into the next day and alternated between two fixed target allocations every 30 days. It used the recorded Phase-11 Binance exchange-info snapshot for normalized precision/minimum constraints. Applying that later metadata snapshot to 2023 prices is intentional for an **operational stress exercise**; this result is not a historical execution-fidelity claim.
+The paper path carried each operation's real ending holdings into the next day and alternated between two fixed target allocations every 30 days. It used the recorded Phase-11 Binance exchange-info snapshot for normalized precision/minimum constraints. Each modeled MARKET order also received an explicit notional-filter reference equal to that day's recorded close; this exercises the separate filter-price contract but is **not** a reconstruction of Binance's historical `avgPriceMins` reference series. Applying the later metadata snapshot and these deterministic reference values to 2023 prices is intentional for an **operational stress exercise**; this result is not a historical execution-fidelity claim.
 
 A separate temporary experiment root contained 25 deliberately distinct copies of the small deterministic fixture manifest under an artificial scan-only family. Those runs exist only to exercise the real `RunArtifactReader.list_experiments()` filesystem path and are not research-family evidence.
 
@@ -34,18 +38,18 @@ The clean run processed:
 
 Observed paper-operation metrics on this machine:
 
-- execution time: `1.0189322330115829` seconds;
-- total immutable JSON artifact bytes: `2044653`;
-- average artifact size: `5601.789041095891` bytes;
-- largest artifact: `6644` bytes;
-- full 365-operation read-only list scan: `0.05282372600049712` seconds.
+- execution time: `1.2216496839973843` seconds;
+- total immutable JSON artifact bytes: `2079544`;
+- average artifact size: `5697.380821917808` bytes;
+- largest artifact: `6740` bytes;
+- full 365-operation read-only list scan: `0.05178837499988731` seconds.
 
 Observed temporary experiment-reader metrics:
 
-- 25 run artifacts generated in `1.8677885409997543` seconds;
-- full 25-run `list_experiments()` scan: `0.11853980498563033` seconds.
+- 25 run artifacts generated in `1.8779373750003288` seconds;
+- full 25-run `list_experiments()` scan: `0.11767132599197794` seconds.
 
-Process maximum resident set size reported by the Linux process was `198088` KiB.
+Process maximum resident set size reported by the Linux process was `213240` KiB.
 
 These timings and memory values are **observations, not performance SLAs**. They are included to establish that the current bounded workload did not expose a material bottleneck requiring profiling or a new compute/indexing framework.
 
