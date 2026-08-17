@@ -1,6 +1,9 @@
 from datetime import UTC, datetime
 from decimal import Decimal, localcontext
 
+from hypothesis import given
+from hypothesis import strategies as st
+
 from qap.evaluation import (
     QuantityRatioStatus,
     concentration_diagnostics,
@@ -100,3 +103,48 @@ def test_concentration_reports_equal_weight_single_asset_and_contributor_share()
     )
     assert single_result.max_single_asset_weight == D("1")
     assert single_result.herfindahl_index == D("1")
+
+
+def test_zero_value_portfolio_has_explicitly_undefined_value_concentration() -> None:
+    hodl = PortfolioState.from_holdings({BTC: D("1")})
+    strategy = PortfolioState.from_holdings({})
+    prices = _prices({BTC: D("100")})
+    attribution = terminal_attribution(strategy, hodl, prices)
+
+    result = concentration_diagnostics(strategy, prices, attribution)
+
+    assert result.max_single_asset_weight is None
+    assert result.herfindahl_index is None
+    assert result.largest_positive_contributor_share is None
+
+
+@given(
+    hodl_btc=st.integers(min_value=0, max_value=100),
+    hodl_eth=st.integers(min_value=0, max_value=100),
+    strategy_btc=st.integers(min_value=0, max_value=100),
+    strategy_eth=st.integers(min_value=0, max_value=100),
+    btc_price=st.integers(min_value=1, max_value=10_000),
+    eth_price=st.integers(min_value=1, max_value=10_000),
+)
+def test_attribution_value_deltas_reconcile_for_generated_inventories(
+    hodl_btc: int,
+    hodl_eth: int,
+    strategy_btc: int,
+    strategy_eth: int,
+    btc_price: int,
+    eth_price: int,
+) -> None:
+    if hodl_btc == 0 and hodl_eth == 0:
+        hodl_btc = 1
+    hodl = PortfolioState.from_holdings({BTC: D(hodl_btc), ETH: D(hodl_eth)})
+    strategy = PortfolioState.from_holdings(
+        {BTC: D(strategy_btc), ETH: D(strategy_eth)}
+    )
+    prices = _prices({BTC: D(btc_price), ETH: D(eth_price)})
+
+    attribution = terminal_attribution(strategy, hodl, prices)
+
+    assert sum((item.value_delta for item in attribution), D("0")) == (
+        sum((item.strategy_value for item in attribution), D("0"))
+        - sum((item.hodl_value for item in attribution), D("0"))
+    )

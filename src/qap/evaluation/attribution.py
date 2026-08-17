@@ -39,8 +39,8 @@ class AssetAttribution:
 
 @dataclass(frozen=True, slots=True)
 class ConcentrationDiagnostics:
-    max_single_asset_weight: Decimal
-    herfindahl_index: Decimal
+    max_single_asset_weight: Decimal | None
+    herfindahl_index: Decimal | None
     largest_positive_contributor_share: Decimal | None
 
 
@@ -106,8 +106,8 @@ def concentration_diagnostics(
 
     total_value = value_portfolio(strategy_state, prices)
     if total_value == _ZERO:
-        max_weight = _ZERO
-        herfindahl = _ZERO
+        max_weight: Decimal | None = None
+        herfindahl: Decimal | None = None
     else:
         asset_values = tuple(
             exact_multiply(quantity, prices.price(asset))

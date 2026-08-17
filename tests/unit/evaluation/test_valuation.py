@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from decimal import Decimal
+from decimal import Decimal, localcontext
 
 import pytest
 
@@ -47,3 +47,18 @@ def test_value_portfolio_empty_inventory_is_exact_zero() -> None:
     state = PortfolioState.from_holdings({})
 
     assert value_portfolio(state, _prices({usdt: D("1")})) == D("0")
+
+
+def test_value_portfolio_is_independent_of_ambient_decimal_context() -> None:
+    btc = AssetId("BTC")
+    usdt = AssetId("USDT")
+    state = PortfolioState.from_holdings({btc: D("9.85e999")})
+    prices = _prices({btc: D("1.01e-997"), usdt: D("1")})
+
+    with localcontext() as context:
+        context.prec = 2
+        context.Emax = 2
+        context.Emin = -2
+        value = value_portfolio(state, prices)
+
+    assert value == D("994.85")

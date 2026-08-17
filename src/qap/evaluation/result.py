@@ -64,7 +64,7 @@ class EconomicResult:
         return self.relative_wealth_path.maximum_relative_drawdown
 
     @property
-    def incremental_log_relative(self) -> tuple[Decimal, ...]:
+    def incremental_log_relative(self) -> tuple[Decimal, ...] | None:
         return self.relative_wealth_path.incremental_log_relative
 
 

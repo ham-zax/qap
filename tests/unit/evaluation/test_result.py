@@ -81,3 +81,20 @@ def test_economic_result_rejects_negative_or_non_integer_rebalance_count() -> No
             price_snapshots=[_snapshot(0)],
             rebalance_count=-1,
         )
+
+
+def test_economic_result_persists_total_loss_without_log_relative_fabrication() -> None:
+    start = PortfolioState.from_holdings({USDT: D("100")})
+    result = build_economic_result(
+        strategy_start=start,
+        strategy_states=[start, PortfolioState.from_holdings({})],
+        benchmark=HodlBenchmark.from_start(start),
+        price_snapshots=[_snapshot(0), _snapshot(1)],
+    )
+
+    assert result.strategy_terminal_value == D("0")
+    assert result.hodl_relative_basket_growth == D("-1")
+    assert result.maximum_relative_drawdown == D("1")
+    assert result.incremental_log_relative is None
+    assert result.concentration.max_single_asset_weight is None
+    assert result.concentration.herfindahl_index is None

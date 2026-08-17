@@ -12,7 +12,9 @@ from qap.evaluation.metrics import (
     RelativeWealthPath,
     RelativeWealthPoint,
     hodl_relative_growth,
+    incremental_log_relative_series,
     relative_wealth_path,
+    require_incremental_log_relative,
 )
 from qap.evaluation.result import EconomicResult, build_economic_result
 from qap.evaluation.valuation import value_portfolio
@@ -28,7 +30,9 @@ __all__ = [
     "build_economic_result",
     "concentration_diagnostics",
     "hodl_relative_growth",
+    "incremental_log_relative_series",
     "relative_wealth_path",
+    "require_incremental_log_relative",
     "terminal_attribution",
     "value_portfolio",
 ]
