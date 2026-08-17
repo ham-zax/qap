@@ -14,6 +14,7 @@ packages = ["src/qap"]
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6.165.10",
     "import-linter",
     "pyright",
     "pytest",
