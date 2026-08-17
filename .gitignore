@@ -1,0 +1,35 @@
+# Python environments, caches, and packaging output.
+/.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.pyright/
+/.import_linter_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.egg-info/
+/build/
+/dist/
+
+# Runtime data and generated experiment output.
+/data/
+/runs/
+/web/node_modules/
+/web/dist/
+
+# Local configuration and secrets. Keep a future template committable.
+/.env
+/.env.*
+!/.env.example
+
+# Editor and operating-system noise.
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/

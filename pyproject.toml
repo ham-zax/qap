@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qap"
+version = "0.1.0.dev0"
+description = "Deterministic, spot-only crypto inventory rebalancing research."
+requires-python = ">=3.14,<3.15"
+dependencies = []
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qap"]
+
+[dependency-groups]
+dev = [
+    "import-linter",
+    "pyright",
+    "pytest",
+    "ruff",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pyright]
+include = ["src/qap", "tests", "scripts"]
+exclude = ["data", "runs", "web/node_modules", "web/dist"]
+pythonVersion = "3.14"
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false

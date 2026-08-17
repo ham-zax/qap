@@ -1,0 +1,43 @@
+[importlinter]
+root_package = qap
+
+[importlinter:qap_package_layers]
+name = QAP package dependency direction
+type = layers
+layers =
+    (qap.api)
+    (qap.experiment)
+    (qap.evaluation)
+    (qap.execution)
+    (qap.policy)
+    (qap.relationship)
+    (qap.market)
+    (qap.portfolio)
+
+[importlinter:qap_evaluation_execution_independence]
+name = Evaluation and execution remain independent
+type = layers
+layers =
+    (qap.execution)
+    (qap.evaluation)
+
+[importlinter:qap_evaluation_policy_independence]
+name = Evaluation and policy remain independent
+type = layers
+layers =
+    (qap.policy)
+    (qap.evaluation)
+
+[importlinter:qap_evaluation_relationship_independence]
+name = Evaluation and relationship remain independent
+type = layers
+layers =
+    (qap.relationship)
+    (qap.evaluation)
+
+[importlinter:qap_execution_relationship_independence]
+name = Execution and relationship remain independent
+type = layers
+layers =
+    (qap.relationship)
+    (qap.execution)
