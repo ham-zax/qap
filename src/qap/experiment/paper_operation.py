@@ -15,14 +15,14 @@ from qap.experiment.reconciliation import ReconciliationReport, reconcile_fill_s
 from qap.market import PriceSnapshot, VenueInstrument
 from qap.market.adapters.binance_public import BinancePublicAdapter
 from qap.portfolio import AllocationTarget, AssetId, PortfolioState
-from qap.portfolio._decimal import exact_add
 
 _SCHEMA_VERSION = "qap.paper_operation.v1"
 _SPEC_SCHEMA_VERSION = "qap.paper_operation_spec.v1"
 _OPERATION_ID = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
 _FORWARD_PAPER_RULE = (
-    "Observed forward-paper outcomes are prospective operational evidence only; "
-    "they cannot be retuned into or reused as deployment evidence."
+    "This artifact is an operational paper-rebalance dry run, not prospective "
+    "candidate evidence. Prospective evidence requires frozen candidate lineage "
+    "and an observation period beginning after the freeze."
 )
 
 
@@ -181,6 +181,21 @@ def _metadata_record(metadata: object) -> dict[str, object]:
             metadata.maximum_notional_applies_to_market
         ),
         "notional_average_price_minutes": metadata.notional_average_price_minutes,
+        "market_quantity_step": (
+            None
+            if metadata.market_quantity_step is None
+            else str(metadata.market_quantity_step)
+        ),
+        "market_minimum_quantity": (
+            None
+            if metadata.market_minimum_quantity is None
+            else str(metadata.market_minimum_quantity)
+        ),
+        "market_maximum_quantity": (
+            None
+            if metadata.market_maximum_quantity is None
+            else str(metadata.market_maximum_quantity)
+        ),
     }
 
 
@@ -211,6 +226,31 @@ def _fill_record(fill: object) -> dict[str, object]:
 def _reconciliation_record(report: ReconciliationReport) -> dict[str, object]:
     return {
         "matches": report.matches,
+        "reported_fee_total": str(report.reported_fee_total),
+        "recomputed_fee_total": str(report.recomputed_fee_total),
+        "reported_turnover": str(report.reported_turnover),
+        "recomputed_turnover": str(report.recomputed_turnover),
+        "reported_slippage_total": str(report.reported_slippage_total),
+        "recomputed_slippage_total": str(report.recomputed_slippage_total),
+        "expected_terminal_value": (
+            None
+            if report.expected_terminal_value is None
+            else str(report.expected_terminal_value)
+        ),
+        "recomputed_terminal_value": (
+            None
+            if report.recomputed_terminal_value is None
+            else str(report.recomputed_terminal_value)
+        ),
+        "economic_differences": [
+            {
+                "fill_id": difference.fill_id,
+                "field": difference.field,
+                "reported": str(difference.reported),
+                "recomputed": str(difference.recomputed),
+            }
+            for difference in report.economic_differences
+        ],
         "steps": [
             {
                 "fill_id": step.fill_id,
@@ -269,11 +309,17 @@ def _build_record(
         symbol = _text(item.get("venue_symbol"), field="venue_symbol")
         base = AssetId(_text(item.get("base"), field="base"))
         quote = AssetId(_text(item.get("quote"), field="quote"))
+        venue_base_asset = _text(item.get("venue_base_asset"), field="venue_base_asset")
+        venue_quote_asset = _text(
+            item.get("venue_quote_asset"), field="venue_quote_asset"
+        )
         metadata = BinancePublicAdapter.market_metadata_from_payload(
             exchange_info,
             venue_symbol=symbol,
             base=base,
             quote=quote,
+            venue_base_asset=venue_base_asset,
+            venue_quote_asset=venue_quote_asset,
         )
         instrument = metadata.instrument
         if instrument in reference_prices:
@@ -312,20 +358,17 @@ def _build_record(
         starting_state=starting_state,
         fills=result.fills,
         expected_states=result.states_after_fills,
+        valuation_prices=prices,
     )
     if not reconciliation.matches or reconciliation.ending_state != result.ending_state:
         raise ValueError("paper operation reconciliation failed")
-
-    total_fees = Decimal("0")
-    total_slippage = Decimal("0")
-    for fill in result.fills:
-        total_fees = exact_add(total_fees, fill.fee_amount)
-        total_slippage = exact_add(total_slippage, fill.slippage_value)
 
     return {
         "schema_version": _SCHEMA_VERSION,
         "operation_id": operation_id,
         "data_role": "forward_paper",
+        "evidence_class": "operational_dry_run",
+        "prospective_candidate_evidence": False,
         "execution_timestamp": execution_timestamp.isoformat(),
         "input_fingerprint": _input_fingerprint(spec, exchange_info),
         "source_note": _text(spec.get("source_note"), field="source_note"),
@@ -366,8 +409,19 @@ def _build_record(
         "ending_holdings": _holdings(result.ending_state),
         "bridge_target_quantity": str(result.bridge_target_quantity),
         "bridge_residual": str(result.bridge_residual),
-        "total_fee_quote": str(total_fees),
-        "total_slippage_quote": str(total_slippage),
+        "tracking_errors": [
+            {
+                "asset": item.asset.key,
+                "target_weight": str(item.target_weight),
+                "actual_weight": str(item.actual_weight),
+                "weight_error": str(item.weight_error),
+                "unfilled_quantity": str(item.unfilled_quantity),
+                "unfilled_value": str(item.unfilled_value),
+            }
+            for item in result.tracking_errors
+        ],
+        "total_fee_quote": str(reconciliation.recomputed_fee_total),
+        "total_slippage_quote": str(reconciliation.recomputed_slippage_total),
         "reconciliation": _reconciliation_record(reconciliation),
         "research_boundary": {
             "eligible_for_parameter_selection": False,

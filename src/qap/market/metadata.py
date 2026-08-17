@@ -50,6 +50,9 @@ class MarketMetadata:
     minimum_notional_applies_to_market: bool
     maximum_notional_applies_to_market: bool
     notional_average_price_minutes: int
+    market_quantity_step: Decimal | None = None
+    market_minimum_quantity: Decimal | None = None
+    market_maximum_quantity: Decimal | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(cast(object, self.instrument), VenueInstrument):
@@ -81,6 +84,18 @@ class MarketMetadata:
             self.maximum_notional,
             field="maximum_notional",
         )
+        market_quantity_step = _optional_positive_decimal(
+            self.market_quantity_step,
+            field="market_quantity_step",
+        )
+        market_minimum_quantity = _optional_positive_decimal(
+            self.market_minimum_quantity,
+            field="market_minimum_quantity",
+        )
+        market_maximum_quantity = _optional_positive_decimal(
+            self.market_maximum_quantity,
+            field="market_maximum_quantity",
+        )
         if minimum_price is not None and maximum_price is not None:
             if minimum_price > maximum_price:
                 raise ValueError("minimum_price must not exceed maximum_price")
@@ -90,6 +105,14 @@ class MarketMetadata:
         if minimum_notional is not None and maximum_notional is not None:
             if minimum_notional > maximum_notional:
                 raise ValueError("minimum_notional must not exceed maximum_notional")
+        if (
+            market_minimum_quantity is not None
+            and market_maximum_quantity is not None
+            and market_minimum_quantity > market_maximum_quantity
+        ):
+            raise ValueError(
+                "market_minimum_quantity must not exceed market_maximum_quantity"
+            )
         if not isinstance(cast(object, self.minimum_notional_applies_to_market), bool):
             raise TypeError("minimum_notional_applies_to_market must be a boolean")
         if not isinstance(cast(object, self.maximum_notional_applies_to_market), bool):
@@ -111,6 +134,9 @@ class MarketMetadata:
         object.__setattr__(self, "maximum_quantity", maximum_quantity)
         object.__setattr__(self, "minimum_notional", minimum_notional)
         object.__setattr__(self, "maximum_notional", maximum_notional)
+        object.__setattr__(self, "market_quantity_step", market_quantity_step)
+        object.__setattr__(self, "market_minimum_quantity", market_minimum_quantity)
+        object.__setattr__(self, "market_maximum_quantity", market_maximum_quantity)
 
 
 __all__ = ["MarketMetadata"]

@@ -129,6 +129,8 @@ def test_exchange_info_maps_only_the_explicit_public_spot_orientation() -> None:
             venue_symbol="BTCUSDT",
             base=AssetId("BTC"),
             quote=AssetId("USDT"),
+            venue_base_asset="BTC",
+            venue_quote_asset="USDT",
         )
 
     assert instrument.venue == "binance"
@@ -159,6 +161,8 @@ def test_exchange_info_maps_current_precision_and_notional_filters_exactly() -> 
             venue_symbol="BTCUSDT",
             base=AssetId("BTC"),
             quote=AssetId("USDT"),
+            venue_base_asset="BTC",
+            venue_quote_asset="USDT",
         )
 
     assert metadata.instrument.venue_symbol == "BTCUSDT"
@@ -177,6 +181,23 @@ def test_exchange_info_maps_current_precision_and_notional_filters_exactly() -> 
     assert len(requests) == 1
     assert requests[0].url.path == "/api/v3/exchangeInfo"
     assert "X-MBX-APIKEY" not in requests[0].headers
+
+
+def test_exchange_info_keeps_stable_asset_ids_independent_of_venue_codes() -> None:
+    payload = _recorded_exchange_info()
+
+    instrument = BinancePublicAdapter.instrument_from_payload(
+        payload,
+        venue_symbol="BTCUSDT",
+        base=AssetId("BTC-STABLE-ID"),
+        quote=AssetId("USD-STABLE-ID"),
+        venue_base_asset="BTC",
+        venue_quote_asset="USDT",
+    )
+
+    assert instrument.base == AssetId("BTC-STABLE-ID")
+    assert instrument.quote == AssetId("USD-STABLE-ID")
+    assert instrument.venue_symbol == "BTCUSDT"
 
 
 def test_exchange_info_supports_legacy_min_notional_without_maximum() -> None:
@@ -207,6 +228,8 @@ def test_exchange_info_supports_legacy_min_notional_without_maximum() -> None:
         venue_symbol="BTCUSDT",
         base=AssetId("BTC"),
         quote=AssetId("USDT"),
+        venue_base_asset="BTC",
+        venue_quote_asset="USDT",
     )
 
     assert metadata.minimum_notional == D("10")
@@ -231,6 +254,8 @@ def test_recorded_three_asset_snapshot_maps_each_spot_symbol(
         venue_symbol=symbol,
         base=AssetId(base),
         quote=AssetId("USDT"),
+        venue_base_asset=base,
+        venue_quote_asset="USDT",
     )
 
     assert metadata.instrument.venue_symbol == symbol
@@ -239,6 +264,22 @@ def test_recorded_three_asset_snapshot_maps_each_spot_symbol(
     assert metadata.quantity_step > 0
     assert metadata.minimum_quantity is None or metadata.minimum_quantity > 0
     assert metadata.minimum_notional is None or metadata.minimum_notional > 0
+
+
+def test_recorded_market_lot_size_is_preserved_separately_from_lot_size() -> None:
+    metadata = BinancePublicAdapter.market_metadata_from_payload(
+        _recorded_three_asset_exchange_info(),
+        venue_symbol="ETHUSDT",
+        base=AssetId("ETH"),
+        quote=AssetId("USDT"),
+        venue_base_asset="ETH",
+        venue_quote_asset="USDT",
+    )
+
+    assert metadata.maximum_quantity == D("9000")
+    assert metadata.market_maximum_quantity == D("2870.37341004")
+    assert metadata.market_minimum_quantity is None
+    assert metadata.market_quantity_step is None
 
 
 def test_exchange_info_rejects_duplicate_required_precision_filters() -> None:
@@ -265,6 +306,8 @@ def test_exchange_info_rejects_duplicate_required_precision_filters() -> None:
             venue_symbol="BTCUSDT",
             base=AssetId("BTC"),
             quote=AssetId("USDT"),
+            venue_base_asset="BTC",
+            venue_quote_asset="USDT",
         )
 
 
@@ -278,6 +321,8 @@ def test_exchange_info_rejects_orientation_mismatch_and_non_spot_symbol() -> Non
                 venue_symbol="BTCUSDT",
                 base=AssetId("BTC"),
                 quote=AssetId("USDT"),
+                venue_base_asset="BTC",
+                venue_quote_asset="USDT",
             )
 
     def not_spot(request: httpx.Request) -> httpx.Response:
@@ -289,6 +334,8 @@ def test_exchange_info_rejects_orientation_mismatch_and_non_spot_symbol() -> Non
                 venue_symbol="BTCUSDT",
                 base=AssetId("BTC"),
                 quote=AssetId("USDT"),
+                venue_base_asset="BTC",
+                venue_quote_asset="USDT",
             )
 
 
@@ -306,6 +353,8 @@ def test_kline_response_preserves_source_timestamps_and_validates_series() -> No
             venue_symbol="BTCUSDT",
             base=AssetId("BTC"),
             quote=AssetId("USDT"),
+            venue_base_asset="BTC",
+            venue_quote_asset="USDT",
         )
         series = adapter.fetch_klines(
             instrument=instrument,
@@ -349,6 +398,8 @@ def test_kline_gap_and_public_http_failures_are_explicit() -> None:
         venue_symbol="BTCUSDT",
         base=AssetId("BTC"),
         quote=AssetId("USDT"),
+        venue_base_asset="BTC",
+        venue_quote_asset="USDT",
     )
     with BinancePublicAdapter(transport=_transport(gap_handler)) as adapter:
         with pytest.raises(BinancePublicDataError, match="validation"):
@@ -368,6 +419,8 @@ def test_kline_gap_and_public_http_failures_are_explicit() -> None:
                 venue_symbol="BTCUSDT",
                 base=AssetId("BTC"),
                 quote=AssetId("USDT"),
+                venue_base_asset="BTC",
+                venue_quote_asset="USDT",
             )
 
 
@@ -384,6 +437,8 @@ def test_fetch_klines_rejects_future_end_before_any_network_call() -> None:
         venue_symbol="BTCUSDT",
         base=AssetId("BTC"),
         quote=AssetId("USDT"),
+        venue_base_asset="BTC",
+        venue_quote_asset="USDT",
     )
     with BinancePublicAdapter(transport=_transport(handler)) as adapter:
         with pytest.raises(ValueError, match="completed historical bars"):
@@ -409,6 +464,8 @@ def test_kline_parser_requires_the_documented_twelve_field_shape(
         venue_symbol="BTCUSDT",
         base=AssetId("BTC"),
         quote=AssetId("USDT"),
+        venue_base_asset="BTC",
+        venue_quote_asset="USDT",
     )
 
     with pytest.raises(BinancePublicDataError, match="exactly twelve"):
@@ -433,6 +490,8 @@ def test_fetch_klines_rejects_partial_requested_window_coverage(
         venue_symbol="BTCUSDT",
         base=AssetId("BTC"),
         quote=AssetId("USDT"),
+        venue_base_asset="BTC",
+        venue_quote_asset="USDT",
     )
     with BinancePublicAdapter(transport=_transport(handler)) as adapter:
         with pytest.raises(BinancePublicDataError, match="exact requested window"):
@@ -450,6 +509,8 @@ def test_kline_parser_rejects_a_bar_not_completed_by_the_requested_end() -> None
         venue_symbol="BTCUSDT",
         base=AssetId("BTC"),
         quote=AssetId("USDT"),
+        venue_base_asset="BTC",
+        venue_quote_asset="USDT",
     )
 
     with pytest.raises(BinancePublicDataError, match="completed"):
@@ -473,6 +534,8 @@ def test_live_public_exchange_info_smoke() -> None:
             venue_symbol="BTCUSDT",
             base=AssetId("BTC"),
             quote=AssetId("USDT"),
+            venue_base_asset="BTC",
+            venue_quote_asset="USDT",
         )
 
     assert instrument.venue_symbol == "BTCUSDT"

@@ -12,7 +12,10 @@ from qap.api.paper_operation_schemas import (
     PaperOperationFillDto,
     PaperOperationOrderDto,
     PaperOperationSummaryDto,
+    PaperReconciliationDto,
+    PaperReconciliationEconomicDifferenceDto,
     PaperResearchBoundaryDto,
+    PaperTrackingErrorDto,
 )
 from qap.experiment.paper_operation import read_paper_operation_artifact
 
@@ -51,10 +54,44 @@ class PaperOperationReader:
             research_boundary = PaperResearchBoundaryDto.model_validate(
                 _object(raw.get("research_boundary"), field="research_boundary")
             )
+            tracking_errors = tuple(
+                PaperTrackingErrorDto.model_validate(item)
+                for item in _object_array(
+                    raw.get("tracking_errors"), field="tracking_errors"
+                )
+            )
             reconciliation = _object(raw.get("reconciliation"), field="reconciliation")
+            reconciliation_dto = PaperReconciliationDto(
+                matches=_bool(reconciliation, "matches"),
+                reported_fee_total=_text(reconciliation, "reported_fee_total"),
+                recomputed_fee_total=_text(reconciliation, "recomputed_fee_total"),
+                reported_turnover=_text(reconciliation, "reported_turnover"),
+                recomputed_turnover=_text(reconciliation, "recomputed_turnover"),
+                reported_slippage_total=_text(
+                    reconciliation, "reported_slippage_total"
+                ),
+                recomputed_slippage_total=_text(
+                    reconciliation, "recomputed_slippage_total"
+                ),
+                expected_terminal_value=_optional_text(
+                    reconciliation, "expected_terminal_value"
+                ),
+                recomputed_terminal_value=_optional_text(
+                    reconciliation, "recomputed_terminal_value"
+                ),
+                economic_differences=tuple(
+                    PaperReconciliationEconomicDifferenceDto.model_validate(item)
+                    for item in _object_array(
+                        reconciliation.get("economic_differences"),
+                        field="economic_differences",
+                    )
+                ),
+            )
             return PaperOperationDetailDto(
                 operation_id=_text(raw, "operation_id"),
                 data_role="forward_paper",
+                evidence_class="operational_dry_run",
+                prospective_candidate_evidence=False,
                 execution_timestamp=datetime.fromisoformat(
                     _text(raw, "execution_timestamp")
                 ),
@@ -71,9 +108,11 @@ class PaperOperationReader:
                 ending_holdings=_string_mapping(raw, "ending_holdings"),
                 bridge_target_quantity=_text(raw, "bridge_target_quantity"),
                 bridge_residual=_text(raw, "bridge_residual"),
+                tracking_errors=tracking_errors,
                 total_fee_quote=_text(raw, "total_fee_quote"),
                 total_slippage_quote=_text(raw, "total_slippage_quote"),
-                reconciliation_matches=_bool(reconciliation, "matches"),
+                reconciliation_matches=reconciliation_dto.matches,
+                reconciliation=reconciliation_dto,
                 research_boundary=research_boundary,
             )
         except ApiBoundaryError:
@@ -101,6 +140,8 @@ class PaperOperationReader:
                 PaperOperationSummaryDto(
                     operation_id=detail.operation_id,
                     data_role="forward_paper",
+                    evidence_class=detail.evidence_class,
+                    prospective_candidate_evidence=detail.prospective_candidate_evidence,
                     execution_timestamp=detail.execution_timestamp,
                     reconciliation_matches=detail.reconciliation_matches,
                     fill_count=len(detail.fills),
@@ -146,6 +187,15 @@ def _text(source: Mapping[str, Any], field: str) -> str:
     value = source.get(field)
     if not isinstance(value, str) or not value:
         raise ValueError(f"{field} must be a non-empty string")
+    return value
+
+
+def _optional_text(source: Mapping[str, Any], field: str) -> str | None:
+    value = source.get(field)
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{field} must be a non-empty string or null")
     return value
 
 

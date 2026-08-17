@@ -18,8 +18,8 @@ export function PaperOperationList({ items }: PaperOperationListProps) {
     <section aria-labelledby="paper-operation-list-heading">
       <h1 id="paper-operation-list-heading">Forward-paper operations</h1>
       <p>
-        These are read-only paper-operation artifacts. They are not deployment
-        evidence and cannot execute orders from the browser.
+        These are read-only operational dry-run artifacts. They are not prospective
+        candidate or deployment evidence and cannot execute orders from the browser.
       </p>
       {items.map((item) => (
         <article key={item.operation_id} aria-label={item.operation_id}>
@@ -28,6 +28,18 @@ export function PaperOperationList({ items }: PaperOperationListProps) {
             <div>
               <dt>Status</dt>
               <dd>{statusLabel(item)}</dd>
+            </div>
+            <div>
+              <dt>Evidence class</dt>
+              <dd>Operational dry run</dd>
+            </div>
+            <div>
+              <dt>Prospective candidate evidence</dt>
+              <dd>
+                {item.prospective_candidate_evidence
+                  ? 'Eligible'
+                  : 'Not prospective candidate evidence'}
+              </dd>
             </div>
             <div>
               <dt>Execution time</dt>

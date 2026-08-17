@@ -90,6 +90,45 @@ def test_reconciliation_reports_tampered_expected_balance_without_hiding_delta()
     assert difference.delta == D("0.1")
 
 
+def test_reconciliation_detects_tampered_fill_economics() -> None:
+    from qap.experiment.reconciliation import reconcile_fill_sequence
+    from qap.market import PriceSnapshot
+
+    sell, buy = _fills()
+    object.__setattr__(sell, "fee_amount", D("999999"))
+    starting = PortfolioState.from_holdings({BTC: D("1")})
+    expected = (
+        PortfolioState.from_holdings({BTC: D("0.5"), USDT: D("50")}),
+        PortfolioState.from_holdings({BTC: D("0.5"), ETH: D("0.5"), USDT: D("25")}),
+    )
+    prices = PriceSnapshot.from_prices(
+        timestamp=AT,
+        numeraire=USDT,
+        prices={BTC: D("100"), ETH: D("50"), USDT: D("1")},
+    )
+
+    report = reconcile_fill_sequence(
+        starting_state=starting,
+        fills=(sell, buy),
+        expected_states=expected,
+        valuation_prices=prices,
+    )
+
+    assert report.matches is False
+    fee_difference = next(
+        item
+        for item in report.economic_differences
+        if item.fill_id == "sell-btc" and item.field == "fee_amount"
+    )
+    assert fee_difference.reported == D("999999")
+    assert fee_difference.recomputed == D("0")
+    assert report.reported_fee_total == D("999999")
+    assert report.recomputed_fee_total == D("0")
+    assert report.recomputed_turnover == D("75")
+    assert report.recomputed_terminal_value == D("100")
+    assert report.expected_terminal_value == D("100")
+
+
 def test_reconciliation_rejects_fill_state_length_mismatch() -> None:
     from qap.experiment.reconciliation import reconcile_fill_sequence
 

@@ -9,18 +9,24 @@
       "base": "BTC",
       "quote": "USDT",
       "reference_price": "63643.03000000",
+      "venue_base_asset": "BTC",
+      "venue_quote_asset": "USDT",
       "venue_symbol": "BTCUSDT"
     },
     {
       "base": "ETH",
       "quote": "USDT",
       "reference_price": "1906.42000000",
+      "venue_base_asset": "ETH",
+      "venue_quote_asset": "USDT",
       "venue_symbol": "ETHUSDT"
     },
     {
       "base": "SOL",
       "quote": "USDT",
       "reference_price": "75.80000000",
+      "venue_base_asset": "SOL",
+      "venue_quote_asset": "USDT",
       "venue_symbol": "SOLUSDT"
     }
   ],

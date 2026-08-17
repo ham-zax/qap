@@ -766,6 +766,12 @@ export interface components {
         PaperMarketMetadataDto: {
             /** Base */
             base: string;
+            /** Market Maximum Quantity */
+            market_maximum_quantity: string | null;
+            /** Market Minimum Quantity */
+            market_minimum_quantity: string | null;
+            /** Market Quantity Step */
+            market_quantity_step: string | null;
             /** Maximum Notional */
             maximum_notional: string | null;
             /** Maximum Notional Applies To Market */
@@ -815,6 +821,11 @@ export interface components {
                 [key: string]: string;
             };
             /**
+             * Evidence Class
+             * @constant
+             */
+            evidence_class: "operational_dry_run";
+            /**
              * Execution Timestamp
              * Format: date-time
              */
@@ -831,6 +842,12 @@ export interface components {
             operation_id: string;
             /** Orders */
             orders: components["schemas"]["PaperOperationOrderDto"][];
+            /**
+             * Prospective Candidate Evidence
+             * @constant
+             */
+            prospective_candidate_evidence: false;
+            reconciliation: components["schemas"]["PaperReconciliationDto"];
             /** Reconciliation Matches */
             reconciliation_matches: boolean;
             /** Reference Prices */
@@ -858,6 +875,8 @@ export interface components {
             total_fee_quote: string;
             /** Total Slippage Quote */
             total_slippage_quote: string;
+            /** Tracking Errors */
+            tracking_errors: components["schemas"]["PaperTrackingErrorDto"][];
             /** Valuation Prices */
             valuation_prices: {
                 [key: string]: string;
@@ -922,6 +941,11 @@ export interface components {
              */
             data_role: "forward_paper";
             /**
+             * Evidence Class
+             * @constant
+             */
+            evidence_class: "operational_dry_run";
+            /**
              * Execution Timestamp
              * Format: date-time
              */
@@ -930,6 +954,11 @@ export interface components {
             fill_count: number;
             /** Operation Id */
             operation_id: string;
+            /**
+             * Prospective Candidate Evidence
+             * @constant
+             */
+            prospective_candidate_evidence: false;
             /** Reconciliation Matches */
             reconciliation_matches: boolean;
             /** Route Ids */
@@ -945,6 +974,40 @@ export interface components {
             /** Total Slippage Quote */
             total_slippage_quote: string;
         };
+        /** PaperReconciliationDto */
+        PaperReconciliationDto: {
+            /** Economic Differences */
+            economic_differences: components["schemas"]["PaperReconciliationEconomicDifferenceDto"][];
+            /** Expected Terminal Value */
+            expected_terminal_value: string | null;
+            /** Matches */
+            matches: boolean;
+            /** Recomputed Fee Total */
+            recomputed_fee_total: string;
+            /** Recomputed Slippage Total */
+            recomputed_slippage_total: string;
+            /** Recomputed Terminal Value */
+            recomputed_terminal_value: string | null;
+            /** Recomputed Turnover */
+            recomputed_turnover: string;
+            /** Reported Fee Total */
+            reported_fee_total: string;
+            /** Reported Slippage Total */
+            reported_slippage_total: string;
+            /** Reported Turnover */
+            reported_turnover: string;
+        };
+        /** PaperReconciliationEconomicDifferenceDto */
+        PaperReconciliationEconomicDifferenceDto: {
+            /** Field */
+            field: string;
+            /** Fill Id */
+            fill_id: string;
+            /** Recomputed */
+            recomputed: string;
+            /** Reported */
+            reported: string;
+        };
         /** PaperResearchBoundaryDto */
         PaperResearchBoundaryDto: {
             /** Eligible For Deployment Evidence */
@@ -955,6 +1018,21 @@ export interface components {
             eligible_for_parameter_selection: boolean;
             /** Rule */
             rule: string;
+        };
+        /** PaperTrackingErrorDto */
+        PaperTrackingErrorDto: {
+            /** Actual Weight */
+            actual_weight: string;
+            /** Asset */
+            asset: string;
+            /** Target Weight */
+            target_weight: string;
+            /** Unfilled Quantity */
+            unfilled_quantity: string;
+            /** Unfilled Value */
+            unfilled_value: string;
+            /** Weight Error */
+            weight_error: string;
         };
         /** PerformanceSeriesDto */
         PerformanceSeriesDto: {

@@ -52,6 +52,38 @@ class PaperMarketMetadataDto(_Dto):
     minimum_notional_applies_to_market: bool
     maximum_notional_applies_to_market: bool
     notional_average_price_minutes: int
+    market_quantity_step: str | None
+    market_minimum_quantity: str | None
+    market_maximum_quantity: str | None
+
+
+class PaperTrackingErrorDto(_Dto):
+    asset: str
+    target_weight: str
+    actual_weight: str
+    weight_error: str
+    unfilled_quantity: str
+    unfilled_value: str
+
+
+class PaperReconciliationEconomicDifferenceDto(_Dto):
+    fill_id: str
+    field: str
+    reported: str
+    recomputed: str
+
+
+class PaperReconciliationDto(_Dto):
+    matches: bool
+    reported_fee_total: str
+    recomputed_fee_total: str
+    reported_turnover: str
+    recomputed_turnover: str
+    reported_slippage_total: str
+    recomputed_slippage_total: str
+    expected_terminal_value: str | None
+    recomputed_terminal_value: str | None
+    economic_differences: tuple[PaperReconciliationEconomicDifferenceDto, ...]
 
 
 class PaperResearchBoundaryDto(_Dto):
@@ -67,6 +99,8 @@ class PaperOperationSummaryDto(_Dto):
     )
     operation_id: str
     data_role: Literal["forward_paper"]
+    evidence_class: Literal["operational_dry_run"]
+    prospective_candidate_evidence: Literal[False]
     execution_timestamp: datetime
     reconciliation_matches: bool
     fill_count: int
@@ -80,6 +114,8 @@ class PaperOperationDetailDto(_Dto):
     schema_version: Literal["qap.api.paper_operation.v1"] = "qap.api.paper_operation.v1"
     operation_id: str
     data_role: Literal["forward_paper"]
+    evidence_class: Literal["operational_dry_run"]
+    prospective_candidate_evidence: Literal[False]
     execution_timestamp: datetime
     input_fingerprint: str
     source_note: str
@@ -94,9 +130,11 @@ class PaperOperationDetailDto(_Dto):
     ending_holdings: dict[str, str]
     bridge_target_quantity: str
     bridge_residual: str
+    tracking_errors: tuple[PaperTrackingErrorDto, ...]
     total_fee_quote: str
     total_slippage_quote: str
     reconciliation_matches: bool
+    reconciliation: PaperReconciliationDto
     research_boundary: PaperResearchBoundaryDto
 
 
@@ -106,5 +144,8 @@ __all__ = [
     "PaperOperationFillDto",
     "PaperOperationOrderDto",
     "PaperOperationSummaryDto",
+    "PaperReconciliationDto",
+    "PaperReconciliationEconomicDifferenceDto",
     "PaperResearchBoundaryDto",
+    "PaperTrackingErrorDto",
 ]

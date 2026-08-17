@@ -8,6 +8,8 @@ const item = {
   schema_version: 'qap.api.paper_operation_summary.v1',
   operation_id: 'forward-paper-1',
   data_role: 'forward_paper',
+  evidence_class: 'operational_dry_run',
+  prospective_candidate_evidence: false,
   execution_timestamp: '2026-08-17T11:11:00Z',
   reconciliation_matches: true,
   fill_count: 3,
@@ -23,6 +25,8 @@ describe('PaperOperationList', () => {
 
     expect(screen.getByRole('heading', { name: 'Forward-paper operations' })).toBeVisible()
     expect(screen.getByText('Reconciled')).toBeVisible()
+    expect(screen.getByText('Operational dry run')).toBeVisible()
+    expect(screen.getByText('Not prospective candidate evidence')).toBeVisible()
     expect(screen.getByText('0.42')).toBeVisible()
     expect(screen.getByRole('link', { name: 'Inspect paper operation' })).toHaveAttribute(
       'href',

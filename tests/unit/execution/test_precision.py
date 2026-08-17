@@ -32,6 +32,11 @@ def _metadata(
     maximum_quantity: str | None = "100",
     minimum_notional: str | None = "10",
     maximum_notional: str | None = "100000",
+    minimum_notional_applies_to_market: bool = True,
+    maximum_notional_applies_to_market: bool = False,
+    market_step: str | None = None,
+    market_minimum_quantity: str | None = None,
+    market_maximum_quantity: str | None = None,
 ) -> MarketMetadata:
     return MarketMetadata(
         instrument=INSTRUMENT,
@@ -52,9 +57,16 @@ def _metadata(
         maximum_notional=(
             D(maximum_notional) if maximum_notional is not None else None
         ),
-        minimum_notional_applies_to_market=True,
-        maximum_notional_applies_to_market=False,
+        minimum_notional_applies_to_market=minimum_notional_applies_to_market,
+        maximum_notional_applies_to_market=maximum_notional_applies_to_market,
         notional_average_price_minutes=5,
+        market_quantity_step=D(market_step) if market_step is not None else None,
+        market_minimum_quantity=(
+            D(market_minimum_quantity) if market_minimum_quantity is not None else None
+        ),
+        market_maximum_quantity=(
+            D(market_maximum_quantity) if market_maximum_quantity is not None else None
+        ),
     )
 
 
@@ -146,3 +158,67 @@ def test_direct_execution_returns_explicit_minimum_notional_no_fill() -> None:
 
     assert result.fill is None
     assert result.reason is DirectExecutionReason.BELOW_MINIMUM_NOTIONAL
+
+
+def test_market_order_enforces_market_lot_size_in_addition_to_lot_size() -> None:
+    from qap.execution.precision import MarketPrecision, MarketPrecisionError
+
+    precision = MarketPrecision(
+        _metadata(
+            maximum_quantity="9000",
+            maximum_notional=None,
+            market_maximum_quantity="2870.37341004",
+        )
+    )
+
+    with pytest.raises(MarketPrecisionError, match="above_maximum_quantity"):
+        precision.validate_fill(
+            base_quantity=D("3000"),
+            execution_price=D("1906.42"),
+            order_type="market",
+        )
+
+    precision.validate_fill(
+        base_quantity=D("3000"),
+        execution_price=D("1906.42"),
+        order_type="limit",
+    )
+
+
+def test_market_order_notional_bounds_respect_apply_to_market_flags() -> None:
+    from qap.execution.precision import MarketPrecision, MarketPrecisionError
+
+    precision = MarketPrecision(
+        _metadata(
+            minimum_quantity=None,
+            maximum_quantity=None,
+            minimum_notional="10",
+            maximum_notional="100",
+            minimum_notional_applies_to_market=False,
+            maximum_notional_applies_to_market=False,
+        )
+    )
+
+    precision.validate_fill(
+        base_quantity=D("0.05"),
+        execution_price=D("100"),
+        order_type="market",
+    )
+    precision.validate_fill(
+        base_quantity=D("2"),
+        execution_price=D("100"),
+        order_type="market",
+    )
+
+    with pytest.raises(MarketPrecisionError, match="below_minimum_notional"):
+        precision.validate_fill(
+            base_quantity=D("0.05"),
+            execution_price=D("100"),
+            order_type="limit",
+        )
+    with pytest.raises(MarketPrecisionError, match="above_maximum_notional"):
+        precision.validate_fill(
+            base_quantity=D("2"),
+            execution_price=D("100"),
+            order_type="limit",
+        )

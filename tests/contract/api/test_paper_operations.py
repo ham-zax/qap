@@ -62,6 +62,8 @@ def test_paper_operation_detail_preserves_routes_precision_and_research_boundary
     payload = response.json()
     assert payload["operation_id"] == operation_id
     assert payload["data_role"] == "forward_paper"
+    assert payload["evidence_class"] == "operational_dry_run"
+    assert payload["prospective_candidate_evidence"] is False
     assert payload["bridge"] == "USDT"
     assert payload["reconciliation_matches"] is True
     assert [item["phase"] for item in payload["orders"]] == [
@@ -74,6 +76,23 @@ def test_paper_operation_detail_preserves_routes_precision_and_research_boundary
     assert all(
         isinstance(item["quantity_step"], str)
         for item in payload["market_metadata"].values()
+    )
+    assert payload["market_metadata"]["ETHUSDT"]["market_maximum_quantity"] == (
+        "2870.37341004"
+    )
+    assert {item["asset"] for item in payload["tracking_errors"]} == {
+        "BTC",
+        "ETH",
+        "SOL",
+        "USDT",
+    }
+    assert payload["reconciliation"]["economic_differences"] == []
+    assert (
+        payload["reconciliation"]["recomputed_fee_total"] == payload["total_fee_quote"]
+    )
+    assert (
+        payload["reconciliation"]["expected_terminal_value"]
+        == payload["reconciliation"]["recomputed_terminal_value"]
     )
     assert payload["research_boundary"]["eligible_for_parameter_selection"] is False
     assert payload["research_boundary"]["eligible_for_deployment_evidence"] is False

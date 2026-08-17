@@ -3,12 +3,20 @@
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
+from math import gcd, lcm
 from typing import cast
 
 from qap.market import MarketMetadata
 from qap.portfolio._decimal import canonical_decimal, exact_multiply
 
 _ZERO = Decimal("0")
+
+
+class PaperOrderType(StrEnum):
+    """Order-type semantics supported by deterministic paper precision."""
+
+    MARKET = "market"
+    LIMIT = "limit"
 
 
 class MarketPrecisionReason(StrEnum):
@@ -53,6 +61,36 @@ def _floor_to_step(value: Decimal, step: Decimal) -> Decimal:
     return canonical_decimal(exact_multiply(Decimal(units), step))
 
 
+def _common_step(first: Decimal, second: Decimal) -> Decimal:
+    first_numerator, first_denominator = first.as_integer_ratio()
+    second_numerator, second_denominator = second.as_integer_ratio()
+    denominator = lcm(first_denominator, second_denominator)
+    first_units = first_numerator * (denominator // first_denominator)
+    second_units = second_numerator * (denominator // second_denominator)
+    common_units = abs(first_units * second_units) // gcd(first_units, second_units)
+    return canonical_decimal(Decimal(common_units) / Decimal(denominator))
+
+
+def _is_multiple(value: Decimal, step: Decimal) -> bool:
+    value_numerator, value_denominator = value.as_integer_ratio()
+    step_numerator, step_denominator = step.as_integer_ratio()
+    return (value_numerator * step_denominator) % (
+        value_denominator * step_numerator
+    ) == 0
+
+
+def _order_type(value: PaperOrderType | str) -> PaperOrderType:
+    raw = cast(object, value)
+    if isinstance(raw, PaperOrderType):
+        return raw
+    if not isinstance(raw, str):
+        raise TypeError("order_type must be a PaperOrderType or string")
+    try:
+        return PaperOrderType(raw)
+    except ValueError as exc:
+        raise ValueError("order_type must be 'market' or 'limit'") from exc
+
+
 def _ceil_to_step(value: Decimal, step: Decimal) -> Decimal:
     value_numerator, value_denominator = value.as_integer_ratio()
     step_numerator, step_denominator = step.as_integer_ratio()
@@ -72,11 +110,23 @@ class MarketPrecision:
         if not isinstance(cast(object, self.metadata), MarketMetadata):
             raise TypeError("metadata must be MarketMetadata")
 
-    def quantity_down(self, quantity: Decimal) -> Decimal:
-        """Round a requested base quantity down to the venue quantity step."""
+    def quantity_down(
+        self,
+        quantity: Decimal,
+        *,
+        order_type: PaperOrderType | str = PaperOrderType.MARKET,
+    ) -> Decimal:
+        """Round quantity down to all enabled steps for the modeled order type."""
 
         normalized = _validated_non_negative(quantity, field="quantity")
-        return _floor_to_step(normalized, self.metadata.quantity_step)
+        kind = _order_type(order_type)
+        step = self.metadata.quantity_step
+        if (
+            kind is PaperOrderType.MARKET
+            and self.metadata.market_quantity_step is not None
+        ):
+            step = _common_step(step, self.metadata.market_quantity_step)
+        return _floor_to_step(normalized, step)
 
     def execution_price(self, price: Decimal, *, side: str) -> Decimal:
         """Quantize modeled price adversely: buys up, sells down."""
@@ -93,11 +143,13 @@ class MarketPrecision:
         *,
         base_quantity: Decimal,
         execution_price: Decimal,
+        order_type: PaperOrderType | str = PaperOrderType.MARKET,
     ) -> None:
         """Fail closed when rounded quantity/price/notional violates venue bounds."""
 
         quantity = _validated_non_negative(base_quantity, field="base_quantity")
         price = _validated_positive(execution_price, field="execution_price")
+        kind = _order_type(order_type)
         metadata = self.metadata
         if metadata.status != "TRADING":
             raise MarketPrecisionError(MarketPrecisionReason.MARKET_NOT_TRADING)
@@ -115,18 +167,46 @@ class MarketPrecision:
             and quantity > metadata.maximum_quantity
         ):
             raise MarketPrecisionError(MarketPrecisionReason.ABOVE_MAXIMUM_QUANTITY)
+        if kind is PaperOrderType.MARKET:
+            if (
+                metadata.market_minimum_quantity is not None
+                and quantity < metadata.market_minimum_quantity
+            ):
+                raise MarketPrecisionError(MarketPrecisionReason.BELOW_MINIMUM_QUANTITY)
+            if (
+                metadata.market_maximum_quantity is not None
+                and quantity > metadata.market_maximum_quantity
+            ):
+                raise MarketPrecisionError(MarketPrecisionReason.ABOVE_MAXIMUM_QUANTITY)
+            if metadata.market_quantity_step is not None and not _is_multiple(
+                quantity, metadata.market_quantity_step
+            ):
+                raise MarketPrecisionError(MarketPrecisionReason.BELOW_MINIMUM_QUANTITY)
 
         notional = exact_multiply(quantity, price)
+        minimum_applies = (
+            kind is PaperOrderType.LIMIT or metadata.minimum_notional_applies_to_market
+        )
+        maximum_applies = (
+            kind is PaperOrderType.LIMIT or metadata.maximum_notional_applies_to_market
+        )
         if (
-            metadata.minimum_notional is not None
+            minimum_applies
+            and metadata.minimum_notional is not None
             and notional < metadata.minimum_notional
         ):
             raise MarketPrecisionError(MarketPrecisionReason.BELOW_MINIMUM_NOTIONAL)
         if (
-            metadata.maximum_notional is not None
+            maximum_applies
+            and metadata.maximum_notional is not None
             and notional > metadata.maximum_notional
         ):
             raise MarketPrecisionError(MarketPrecisionReason.ABOVE_MAXIMUM_NOTIONAL)
 
 
-__all__ = ["MarketPrecision", "MarketPrecisionError", "MarketPrecisionReason"]
+__all__ = [
+    "MarketPrecision",
+    "MarketPrecisionError",
+    "MarketPrecisionReason",
+    "PaperOrderType",
+]

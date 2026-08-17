@@ -21,6 +21,7 @@ from qap.portfolio import (
     AllocationTarget,
     AssetId,
     PortfolioState,
+    holding_values_at_prices,
     value_holdings_at_prices,
 )
 from qap.portfolio._decimal import (
@@ -28,6 +29,7 @@ from qap.portfolio._decimal import (
     divide,
     exact_multiply,
     exact_subtract,
+    exact_sum,
 )
 
 _ZERO = Decimal("0")
@@ -62,6 +64,18 @@ class MultiAssetOrderOutcome:
 
 
 @dataclass(frozen=True, slots=True)
+class MultiAssetTrackingError:
+    """Authoritative terminal deviation from one requested economic target."""
+
+    asset: AssetId
+    target_weight: Decimal
+    actual_weight: Decimal
+    weight_error: Decimal
+    unfilled_quantity: Decimal
+    unfilled_value: Decimal
+
+
+@dataclass(frozen=True, slots=True)
 class MultiAssetRebalanceResult:
     """Complete immutable outcome for one target-weight paper rebalance."""
 
@@ -74,6 +88,7 @@ class MultiAssetRebalanceResult:
     orders: tuple[MultiAssetOrderOutcome, ...]
     fills: tuple[Fill, ...]
     states_after_fills: tuple[PortfolioState, ...]
+    tracking_errors: tuple[MultiAssetTrackingError, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,6 +97,7 @@ class _PlannedOrder:
     asset: AssetId
     route: ExecutionRoute
     quantity_delta: Decimal
+    absolute_target_value_change: Decimal
 
 
 def _target_quantity(
@@ -118,10 +134,11 @@ def _plan_orders(
     bridge: AssetId,
     instruments: tuple[VenueInstrument, ...],
     declared_assets: frozenset[AssetId],
+    valuation_prices: PriceSnapshot,
 ) -> tuple[_PlannedOrder, ...]:
     sells: list[_PlannedOrder] = []
     buys: list[_PlannedOrder] = []
-    for asset in sorted(deltas, key=lambda item: item.key):
+    for asset in deltas:
         if asset == bridge:
             continue
         delta = deltas[asset]
@@ -145,9 +162,16 @@ def _plan_orders(
             asset=asset,
             route=route,
             quantity_delta=delta,
+            absolute_target_value_change=exact_multiply(
+                delta.copy_abs(), valuation_prices.price(asset)
+            ),
         )
         (sells if delta < _ZERO else buys).append(order)
-    return tuple(sells + buys)
+
+    def order_key(order: _PlannedOrder) -> tuple[Decimal, str]:
+        return (-order.absolute_target_value_change, order.asset.key)
+
+    return tuple(sorted(sells, key=order_key) + sorted(buys, key=order_key))
 
 
 def _preflight_order_data(
@@ -179,6 +203,40 @@ def _validated_instruments(
     if any(not isinstance(cast(object, item), VenueInstrument) for item in copied):
         raise TypeError("instruments members must be VenueInstrument")
     return copied
+
+
+def _tracking_errors(
+    *,
+    portfolio_value: Decimal,
+    ending_state: PortfolioState,
+    target: AllocationTarget,
+    bridge: AssetId,
+    prices: PriceSnapshot,
+) -> tuple[MultiAssetTrackingError, ...]:
+    values = holding_values_at_prices(ending_state, prices.prices)
+    ending_value = exact_sum(values.values())
+    assets = tuple(sorted(set(target.weights) | set(ending_state.holdings) | {bridge}))
+    result: list[MultiAssetTrackingError] = []
+    for asset in assets:
+        target_weight = target.weights.get(asset, _ZERO)
+        target_value = exact_multiply(portfolio_value, target_weight)
+        target_quantity = divide(target_value, prices.price(asset))
+        actual_quantity = ending_state.quantity(asset)
+        actual_value = values.get(asset, _ZERO)
+        actual_weight = (
+            divide(actual_value, ending_value) if ending_value > _ZERO else _ZERO
+        )
+        result.append(
+            MultiAssetTrackingError(
+                asset=asset,
+                target_weight=target_weight,
+                actual_weight=actual_weight,
+                weight_error=exact_subtract(actual_weight, target_weight),
+                unfilled_quantity=exact_subtract(target_quantity, actual_quantity),
+                unfilled_value=exact_subtract(target_value, actual_value),
+            )
+        )
+    return tuple(result)
 
 
 def _bridge_budget_for_buy(
@@ -214,10 +272,8 @@ def execute_multi_asset_rebalance(
         raise TypeError("valuation_prices must be PriceSnapshot")
     if not isinstance(cast(object, bridge), AssetId):
         raise TypeError("bridge must be AssetId")
-    if bridge not in target.weights:
-        raise ValueError("bridge must be included in target basket")
     available = _validated_instruments(instruments)
-    declared_assets = frozenset(target.weights)
+    declared_assets = frozenset((*target.weights, bridge))
     total_value, deltas = _quantity_deltas(
         current_state,
         target=target,
@@ -228,6 +284,7 @@ def execute_multi_asset_rebalance(
         bridge=bridge,
         instruments=available,
         declared_assets=declared_assets,
+        valuation_prices=valuation_prices,
     )
     _preflight_order_data(
         planned,
@@ -237,7 +294,7 @@ def execute_multi_asset_rebalance(
 
     bridge_target = _target_quantity(
         portfolio_value=total_value,
-        target_weight=target.weights[bridge],
+        target_weight=target.weights.get(bridge, _ZERO),
         price=valuation_prices.price(bridge),
     )
     state = current_state
@@ -309,6 +366,13 @@ def execute_multi_asset_rebalance(
         orders=tuple(outcomes),
         fills=tuple(fills),
         states_after_fills=tuple(states_after_fills),
+        tracking_errors=_tracking_errors(
+            portfolio_value=total_value,
+            ending_state=state,
+            target=target,
+            bridge=bridge,
+            prices=valuation_prices,
+        ),
     )
 
 
@@ -316,6 +380,7 @@ __all__ = [
     "MultiAssetOrderOutcome",
     "MultiAssetPreflightError",
     "MultiAssetRebalanceResult",
+    "MultiAssetTrackingError",
     "RebalancePhase",
     "execute_multi_asset_rebalance",
 ]

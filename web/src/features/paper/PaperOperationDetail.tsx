@@ -21,7 +21,9 @@ export function PaperOperationDetail({ data }: PaperOperationDetailProps) {
   return (
     <article aria-labelledby="paper-operation-heading">
       <header>
-        <p>Forward paper</p>
+        <p>
+          Forward-paper operational dry run — not prospective candidate evidence
+        </p>
         <h1 id="paper-operation-heading">{data.operation_id}</h1>
         <p>{data.reconciliation_matches ? 'Reconciled' : 'Reconciliation mismatch'}</p>
         <p>{data.source_note}</p>
@@ -132,6 +134,71 @@ export function PaperOperationDetail({ data }: PaperOperationDetailProps) {
         </TableScroll>
       </section>
 
+      <section aria-labelledby="tracking-heading">
+        <h2 id="tracking-heading">Target tracking</h2>
+        <TableScroll label="Target tracking">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Asset</th>
+                <th scope="col">Target weight</th>
+                <th scope="col">Actual weight</th>
+                <th scope="col">Weight error</th>
+                <th scope="col">Unfilled quantity</th>
+                <th scope="col">Unfilled value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.tracking_errors.map((item) => (
+                <tr key={item.asset}>
+                  <th scope="row">{item.asset}</th>
+                  <td><ExactNumber value={item.target_weight} /></td>
+                  <td><ExactNumber value={item.actual_weight} /></td>
+                  <td><ExactNumber value={item.weight_error} /></td>
+                  <td><ExactNumber value={item.unfilled_quantity} /></td>
+                  <td><ExactNumber value={item.unfilled_value} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableScroll>
+      </section>
+
+      <section aria-labelledby="reconciliation-heading">
+        <h2 id="reconciliation-heading">Independent reconciliation</h2>
+        <dl>
+          <div>
+            <dt>Recomputed fee total</dt>
+            <dd><ExactNumber value={data.reconciliation.recomputed_fee_total} /></dd>
+          </div>
+          <div>
+            <dt>Recomputed turnover</dt>
+            <dd><ExactNumber value={data.reconciliation.recomputed_turnover} /></dd>
+          </div>
+          <div>
+            <dt>Expected terminal value</dt>
+            <dd>
+              {data.reconciliation.expected_terminal_value == null
+                ? 'Unavailable'
+                : <ExactNumber value={data.reconciliation.expected_terminal_value} />}
+            </dd>
+          </div>
+          <div>
+            <dt>Recomputed terminal value</dt>
+            <dd>
+              {data.reconciliation.recomputed_terminal_value == null
+                ? 'Unavailable'
+                : <ExactNumber value={data.reconciliation.recomputed_terminal_value} />}
+            </dd>
+          </div>
+        </dl>
+        {data.reconciliation.economic_differences.length === 0 ? (
+          <p>No independent fill-economic differences detected.</p>
+        ) : (
+          <p>{data.reconciliation.economic_differences.length} fill-economic difference(s) detected.</p>
+        )}
+      </section>
+
       <section aria-labelledby="orders-heading">
         <h2 id="orders-heading">Execution routes and orders</h2>
         <TableScroll label="Execution routes and orders">
@@ -210,6 +277,7 @@ export function PaperOperationDetail({ data }: PaperOperationDetailProps) {
                 <th scope="col">Tick</th>
                 <th scope="col">Quantity step</th>
                 <th scope="col">Minimum quantity</th>
+                <th scope="col">Market maximum quantity</th>
                 <th scope="col">Minimum notional</th>
               </tr>
             </thead>
@@ -222,6 +290,7 @@ export function PaperOperationDetail({ data }: PaperOperationDetailProps) {
                     <td><ExactNumber value={metadata.price_tick} /></td>
                     <td><ExactNumber value={metadata.quantity_step} /></td>
                     <td>{metadata.minimum_quantity ? <ExactNumber value={metadata.minimum_quantity} /> : 'Disabled'}</td>
+                    <td>{metadata.market_maximum_quantity ? <ExactNumber value={metadata.market_maximum_quantity} /> : 'Disabled'}</td>
                     <td>{metadata.minimum_notional ? <ExactNumber value={metadata.minimum_notional} /> : 'Disabled'}</td>
                   </tr>
                 ))}

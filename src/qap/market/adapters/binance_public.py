@@ -237,6 +237,8 @@ class BinancePublicAdapter:
         venue_symbol: str,
         base: AssetId,
         quote: AssetId,
+        venue_base_asset: str,
+        venue_quote_asset: str,
     ) -> VenueInstrument:
         """Verify one current Spot symbol against an explicit QAP orientation."""
 
@@ -250,6 +252,8 @@ class BinancePublicAdapter:
             venue_symbol=symbol,
             base=base,
             quote=quote,
+            venue_base_asset=venue_base_asset,
+            venue_quote_asset=venue_quote_asset,
         )
 
     def fetch_market_metadata(
@@ -258,6 +262,8 @@ class BinancePublicAdapter:
         venue_symbol: str,
         base: AssetId,
         quote: AssetId,
+        venue_base_asset: str,
+        venue_quote_asset: str,
     ) -> MarketMetadata:
         """Fetch normalized public Spot precision/filter metadata for one symbol."""
 
@@ -271,6 +277,8 @@ class BinancePublicAdapter:
             venue_symbol=symbol,
             base=base,
             quote=quote,
+            venue_base_asset=venue_base_asset,
+            venue_quote_asset=venue_quote_asset,
         )
 
     @staticmethod
@@ -280,6 +288,8 @@ class BinancePublicAdapter:
         venue_symbol: str,
         base: AssetId,
         quote: AssetId,
+        venue_base_asset: str,
+        venue_quote_asset: str,
     ) -> VenueInstrument:
         """Map recorded exchange-info JSON without guessing inverses or history."""
 
@@ -305,12 +315,19 @@ class BinancePublicAdapter:
         ):
             raise BinancePublicDataError(f"{symbol} does not allow Spot trading")
 
-        venue_base = _as_string(item.get("baseAsset"), field="baseAsset")
-        venue_quote = _as_string(item.get("quoteAsset"), field="quoteAsset")
-        if venue_base != base.key or venue_quote != quote.key:
+        expected_venue_base = _normalized_symbol(venue_base_asset)
+        expected_venue_quote = _normalized_symbol(venue_quote_asset)
+        venue_base = (
+            _as_string(item.get("baseAsset"), field="baseAsset").strip().upper()
+        )
+        venue_quote = (
+            _as_string(item.get("quoteAsset"), field="quoteAsset").strip().upper()
+        )
+        if venue_base != expected_venue_base or venue_quote != expected_venue_quote:
             raise BinancePublicDataError(
-                "exchangeInfo orientation does not match the explicit QAP mapping: "
-                f"received {venue_base}/{venue_quote}, expected {base.key}/{quote.key}"
+                "exchangeInfo orientation does not match the explicit venue mapping: "
+                f"received {venue_base}/{venue_quote}, expected "
+                f"{expected_venue_base}/{expected_venue_quote}"
             )
 
         return VenueInstrument(
@@ -329,6 +346,8 @@ class BinancePublicAdapter:
         venue_symbol: str,
         base: AssetId,
         quote: AssetId,
+        venue_base_asset: str,
+        venue_quote_asset: str,
     ) -> MarketMetadata:
         """Normalize the precision/notional filters required by paper execution."""
 
@@ -337,6 +356,8 @@ class BinancePublicAdapter:
             venue_symbol=venue_symbol,
             base=base,
             quote=quote,
+            venue_base_asset=venue_base_asset,
+            venue_quote_asset=venue_quote_asset,
         )
         document = _as_mapping(payload, field="exchangeInfo response")
         symbols = _as_list(document.get("symbols"), field="exchangeInfo symbols")
@@ -354,6 +375,11 @@ class BinancePublicAdapter:
         filters = _as_list(item.get("filters"), field="symbol filters")
         price_filter = _filter(filters, filter_type="PRICE_FILTER", required=True)
         lot_filter = _filter(filters, filter_type="LOT_SIZE", required=True)
+        market_lot_filter = _filter(
+            filters,
+            filter_type="MARKET_LOT_SIZE",
+            required=False,
+        )
         assert price_filter is not None
         assert lot_filter is not None
 
@@ -436,6 +462,30 @@ class BinancePublicAdapter:
                 minimum_notional_applies_to_market=minimum_applies_to_market,
                 maximum_notional_applies_to_market=maximum_applies_to_market,
                 notional_average_price_minutes=average_price_minutes,
+                market_quantity_step=(
+                    None
+                    if market_lot_filter is None
+                    else _enabled_decimal(
+                        market_lot_filter.get("stepSize"),
+                        field="MARKET_LOT_SIZE stepSize",
+                    )
+                ),
+                market_minimum_quantity=(
+                    None
+                    if market_lot_filter is None
+                    else _enabled_decimal(
+                        market_lot_filter.get("minQty"),
+                        field="MARKET_LOT_SIZE minQty",
+                    )
+                ),
+                market_maximum_quantity=(
+                    None
+                    if market_lot_filter is None
+                    else _enabled_decimal(
+                        market_lot_filter.get("maxQty"),
+                        field="MARKET_LOT_SIZE maxQty",
+                    )
+                ),
             )
         except (TypeError, ValueError) as exc:
             raise BinancePublicDataError(

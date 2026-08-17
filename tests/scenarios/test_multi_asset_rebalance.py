@@ -172,3 +172,92 @@ def test_multi_asset_preflights_all_order_data_before_any_execution() -> None:
             market_metadata=METADATA,
             cost_model=CostModel.zero(),
         )
+
+
+def test_execution_only_bridge_need_not_be_an_economic_target_asset() -> None:
+    from qap.execution.multi_asset import execute_multi_asset_rebalance
+
+    starting = PortfolioState.from_holdings({BTC: D("0"), ETH: D("2"), USDT: D("10")})
+    target = AllocationTarget.for_basket(
+        {BTC: D("0.5"), ETH: D("0.5")},
+        basket={BTC, ETH},
+    )
+    prices = PriceSnapshot.from_prices(
+        timestamp=AT,
+        numeraire=USDT,
+        prices={BTC: D("100"), ETH: D("50"), USDT: D("1")},
+    )
+
+    result = execute_multi_asset_rebalance(
+        decision_id="execution-only-bridge",
+        execution_timestamp=AT,
+        current_state=starting,
+        target=target,
+        valuation_prices=prices,
+        bridge=USDT,
+        instruments=(BTCUSDT, ETHUSDT),
+        reference_prices={BTCUSDT: D("100"), ETHUSDT: D("50")},
+        market_metadata={BTCUSDT: METADATA[BTCUSDT], ETHUSDT: METADATA[ETHUSDT]},
+        cost_model=CostModel.zero(),
+    )
+
+    assert result.bridge_target_quantity == D("0")
+    assert result.fills
+    assert result.ending_state.quantity(USDT) >= D("0")
+    bridge_tracking = next(
+        item for item in result.tracking_errors if item.asset == USDT
+    )
+    assert bridge_tracking.target_weight == D("0")
+    assert bridge_tracking.actual_weight >= D("0")
+
+
+def test_multi_asset_orders_by_descending_target_value_change_then_asset_key() -> None:
+    from qap.execution.multi_asset import execute_multi_asset_rebalance
+
+    target = AllocationTarget.for_basket(
+        {BTC: D("0.45"), ETH: D("0.2"), SOL: D("0.05"), USDT: D("0.3")},
+        basket={BTC, ETH, SOL, USDT},
+    )
+
+    result = execute_multi_asset_rebalance(
+        decision_id="multi-ordering",
+        execution_timestamp=AT,
+        current_state=STARTING,
+        target=target,
+        valuation_prices=PRICES,
+        bridge=USDT,
+        instruments=INSTRUMENTS,
+        reference_prices=REFERENCE_PRICES,
+        market_metadata=METADATA,
+        cost_model=CostModel.zero(),
+    )
+
+    assert tuple(order.asset for order in result.orders) == (SOL, ETH, BTC)
+
+
+def test_multi_asset_result_reports_authoritative_tracking_and_unfilled_remainder() -> (
+    None
+):
+    from qap.execution.multi_asset import execute_multi_asset_rebalance
+
+    metadata = dict(METADATA)
+    metadata[SOLUSDT] = _metadata(SOLUSDT, minimum_notional="25")
+
+    result = execute_multi_asset_rebalance(
+        decision_id="multi-tracking",
+        execution_timestamp=AT,
+        current_state=STARTING,
+        target=TARGET,
+        valuation_prices=PRICES,
+        bridge=USDT,
+        instruments=INSTRUMENTS,
+        reference_prices=REFERENCE_PRICES,
+        market_metadata=metadata,
+        cost_model=CostModel.zero(),
+    )
+
+    assert tuple(item.asset for item in result.tracking_errors) == (BTC, ETH, SOL, USDT)
+    sol_tracking = next(item for item in result.tracking_errors if item.asset == SOL)
+    assert sol_tracking.unfilled_quantity != D("0")
+    assert sol_tracking.unfilled_value != D("0")
+    assert sol_tracking.weight_error != D("0")

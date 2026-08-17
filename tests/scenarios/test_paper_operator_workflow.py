@@ -28,6 +28,8 @@ def test_forward_paper_operator_writes_reconciled_replayable_artifact(
     assert loaded["schema_version"] == "qap.paper_operation.v1"
     assert loaded["operation_id"] == "forward-paper-three-asset-20260817"
     assert loaded["data_role"] == "forward_paper"
+    assert loaded["evidence_class"] == "operational_dry_run"
+    assert loaded["prospective_candidate_evidence"] is False
     assert loaded["reconciliation"]["matches"] is True
     assert loaded["bridge"] == "USDT"
     assert DecimalString(loaded["bridge_residual"]) >= 0
@@ -47,14 +49,30 @@ def test_forward_paper_operator_writes_reconciled_replayable_artifact(
         DecimalString(item["quantity_step"]) > 0
         for item in loaded["market_metadata"].values()
     )
+    assert loaded["market_metadata"]["ETHUSDT"]["market_maximum_quantity"] == (
+        "2870.37341004"
+    )
+    assert loaded["reconciliation"]["economic_differences"] == []
+    assert loaded["reconciliation"]["recomputed_fee_total"] == loaded["total_fee_quote"]
+    assert (
+        loaded["reconciliation"]["recomputed_terminal_value"]
+        == (loaded["reconciliation"]["expected_terminal_value"])
+    )
+    assert {item["asset"] for item in loaded["tracking_errors"]} == {
+        "BTC",
+        "ETH",
+        "SOL",
+        "USDT",
+    }
     assert loaded["research_boundary"] == {
         "eligible_for_parameter_selection": False,
         "eligible_for_model_promotion": False,
         "eligible_for_deployment_evidence": False,
         "rule": (
-            "Observed forward-paper outcomes are prospective operational evidence "
-            "only; "
-            "they cannot be retuned into or reused as deployment evidence."
+            "This artifact is an operational paper-rebalance dry run, not prospective "
+            "candidate evidence. Prospective evidence requires frozen candidate "
+            "lineage "
+            "and an observation period beginning after the freeze."
         ),
     }
 
@@ -75,6 +93,11 @@ def test_forward_paper_operator_preserves_explicit_precision_no_fill(
     assert sol_order["fill_ids"] == []
     assert loaded["reconciliation"]["matches"] is True
     assert DecimalString(loaded["bridge_residual"]) >= 0
+    sol_tracking = next(
+        item for item in loaded["tracking_errors"] if item["asset"] == "SOL"
+    )
+    assert DecimalString(sol_tracking["unfilled_quantity"]).value != 0
+    assert DecimalString(sol_tracking["weight_error"]).value != 0
 
 
 def test_same_forward_paper_input_is_byte_reproducible_across_output_roots(

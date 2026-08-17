@@ -63,6 +63,13 @@
             "title": "Fit Reciprocity",
             "type": "string"
           },
+          "identity_coordinate_assets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Identity Coordinate Assets",
+            "type": "array"
+          },
           "interval": {
             "title": "Interval",
             "type": "string"
@@ -131,6 +138,7 @@
           "canonical_pair",
           "requested_orientation",
           "anchor",
+          "identity_coordinate_assets",
           "interval",
           "base_source_fingerprint",
           "quote_source_fingerprint",
@@ -1382,6 +1390,54 @@
         "type": "object"
       },
       "JsonValue": {},
+      "PairEvidenceDto": {
+        "additionalProperties": false,
+        "properties": {
+          "canonical_pair": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Canonical Pair",
+            "type": "array"
+          },
+          "requested_orientation": {
+            "title": "Requested Orientation",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.pair_evidence.v1",
+            "default": "qap.api.pair_evidence.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/RelationshipEvidenceSeriesDto"
+            },
+            "title": "Series",
+            "type": "array"
+          }
+        },
+        "required": [
+          "run_id",
+          "canonical_pair",
+          "requested_orientation",
+          "series"
+        ],
+        "title": "PairEvidenceDto",
+        "type": "object"
+      },
       "PairSeriesDto": {
         "additionalProperties": false,
         "properties": {
@@ -1421,6 +1477,13 @@
           "fit_reciprocity": {
             "title": "Fit Reciprocity",
             "type": "string"
+          },
+          "identity_coordinate_assets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Identity Coordinate Assets",
+            "type": "array"
           },
           "interval": {
             "title": "Interval",
@@ -1485,6 +1548,7 @@
           "canonical_pair",
           "requested_orientation",
           "available_anchors",
+          "identity_coordinate_assets",
           "interval",
           "base_source_fingerprint",
           "quote_source_fingerprint",
@@ -1498,6 +1562,714 @@
           "descriptive_only"
         ],
         "title": "PairSeriesDto",
+        "type": "object"
+      },
+      "PaperMarketMetadataDto": {
+        "additionalProperties": false,
+        "properties": {
+          "base": {
+            "title": "Base",
+            "type": "string"
+          },
+          "market_maximum_quantity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Maximum Quantity"
+          },
+          "market_minimum_quantity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Minimum Quantity"
+          },
+          "market_quantity_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Quantity Step"
+          },
+          "maximum_notional": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Notional"
+          },
+          "maximum_notional_applies_to_market": {
+            "title": "Maximum Notional Applies To Market",
+            "type": "boolean"
+          },
+          "maximum_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Price"
+          },
+          "maximum_quantity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Quantity"
+          },
+          "minimum_notional": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Notional"
+          },
+          "minimum_notional_applies_to_market": {
+            "title": "Minimum Notional Applies To Market",
+            "type": "boolean"
+          },
+          "minimum_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Price"
+          },
+          "minimum_quantity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Quantity"
+          },
+          "notional_average_price_minutes": {
+            "title": "Notional Average Price Minutes",
+            "type": "integer"
+          },
+          "price_tick": {
+            "title": "Price Tick",
+            "type": "string"
+          },
+          "quantity_step": {
+            "title": "Quantity Step",
+            "type": "string"
+          },
+          "quote": {
+            "title": "Quote",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "title": "Venue Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "venue",
+          "venue_symbol",
+          "base",
+          "quote",
+          "status",
+          "price_tick",
+          "minimum_price",
+          "maximum_price",
+          "quantity_step",
+          "minimum_quantity",
+          "maximum_quantity",
+          "minimum_notional",
+          "maximum_notional",
+          "minimum_notional_applies_to_market",
+          "maximum_notional_applies_to_market",
+          "notional_average_price_minutes",
+          "market_quantity_step",
+          "market_minimum_quantity",
+          "market_maximum_quantity"
+        ],
+        "title": "PaperMarketMetadataDto",
+        "type": "object"
+      },
+      "PaperOperationDetailDto": {
+        "additionalProperties": false,
+        "properties": {
+          "bridge": {
+            "title": "Bridge",
+            "type": "string"
+          },
+          "bridge_residual": {
+            "title": "Bridge Residual",
+            "type": "string"
+          },
+          "bridge_target_quantity": {
+            "title": "Bridge Target Quantity",
+            "type": "string"
+          },
+          "data_role": {
+            "const": "forward_paper",
+            "title": "Data Role",
+            "type": "string"
+          },
+          "ending_holdings": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Ending Holdings",
+            "type": "object"
+          },
+          "evidence_class": {
+            "const": "operational_dry_run",
+            "title": "Evidence Class",
+            "type": "string"
+          },
+          "execution_timestamp": {
+            "format": "date-time",
+            "title": "Execution Timestamp",
+            "type": "string"
+          },
+          "fills": {
+            "items": {
+              "$ref": "#/components/schemas/PaperOperationFillDto"
+            },
+            "title": "Fills",
+            "type": "array"
+          },
+          "input_fingerprint": {
+            "title": "Input Fingerprint",
+            "type": "string"
+          },
+          "market_metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PaperMarketMetadataDto"
+            },
+            "title": "Market Metadata",
+            "type": "object"
+          },
+          "operation_id": {
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "orders": {
+            "items": {
+              "$ref": "#/components/schemas/PaperOperationOrderDto"
+            },
+            "title": "Orders",
+            "type": "array"
+          },
+          "prospective_candidate_evidence": {
+            "const": false,
+            "title": "Prospective Candidate Evidence",
+            "type": "boolean"
+          },
+          "reconciliation": {
+            "$ref": "#/components/schemas/PaperReconciliationDto"
+          },
+          "reconciliation_matches": {
+            "title": "Reconciliation Matches",
+            "type": "boolean"
+          },
+          "reference_prices": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Reference Prices",
+            "type": "object"
+          },
+          "research_boundary": {
+            "$ref": "#/components/schemas/PaperResearchBoundaryDto"
+          },
+          "schema_version": {
+            "const": "qap.api.paper_operation.v1",
+            "default": "qap.api.paper_operation.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_note": {
+            "title": "Source Note",
+            "type": "string"
+          },
+          "starting_holdings": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Starting Holdings",
+            "type": "object"
+          },
+          "target_weights": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Target Weights",
+            "type": "object"
+          },
+          "total_fee_quote": {
+            "title": "Total Fee Quote",
+            "type": "string"
+          },
+          "total_slippage_quote": {
+            "title": "Total Slippage Quote",
+            "type": "string"
+          },
+          "tracking_errors": {
+            "items": {
+              "$ref": "#/components/schemas/PaperTrackingErrorDto"
+            },
+            "title": "Tracking Errors",
+            "type": "array"
+          },
+          "valuation_prices": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Valuation Prices",
+            "type": "object"
+          }
+        },
+        "required": [
+          "operation_id",
+          "data_role",
+          "evidence_class",
+          "prospective_candidate_evidence",
+          "execution_timestamp",
+          "input_fingerprint",
+          "source_note",
+          "bridge",
+          "starting_holdings",
+          "target_weights",
+          "valuation_prices",
+          "reference_prices",
+          "market_metadata",
+          "orders",
+          "fills",
+          "ending_holdings",
+          "bridge_target_quantity",
+          "bridge_residual",
+          "tracking_errors",
+          "total_fee_quote",
+          "total_slippage_quote",
+          "reconciliation_matches",
+          "reconciliation",
+          "research_boundary"
+        ],
+        "title": "PaperOperationDetailDto",
+        "type": "object"
+      },
+      "PaperOperationFillDto": {
+        "additionalProperties": false,
+        "properties": {
+          "balance_deltas": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Balance Deltas",
+            "type": "object"
+          },
+          "base_quantity": {
+            "title": "Base Quantity",
+            "type": "string"
+          },
+          "decision_id": {
+            "title": "Decision Id",
+            "type": "string"
+          },
+          "execution_price": {
+            "title": "Execution Price",
+            "type": "string"
+          },
+          "execution_timestamp": {
+            "format": "date-time",
+            "title": "Execution Timestamp",
+            "type": "string"
+          },
+          "fee_quote": {
+            "title": "Fee Quote",
+            "type": "string"
+          },
+          "fill_id": {
+            "title": "Fill Id",
+            "type": "string"
+          },
+          "gross_quote_notional": {
+            "title": "Gross Quote Notional",
+            "type": "string"
+          },
+          "reference_price": {
+            "title": "Reference Price",
+            "type": "string"
+          },
+          "side": {
+            "title": "Side",
+            "type": "string"
+          },
+          "slippage_quote": {
+            "title": "Slippage Quote",
+            "type": "string"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "title": "Venue Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fill_id",
+          "decision_id",
+          "execution_timestamp",
+          "venue",
+          "venue_symbol",
+          "side",
+          "base_quantity",
+          "reference_price",
+          "execution_price",
+          "gross_quote_notional",
+          "fee_quote",
+          "slippage_quote",
+          "balance_deltas"
+        ],
+        "title": "PaperOperationFillDto",
+        "type": "object"
+      },
+      "PaperOperationOrderDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset": {
+            "title": "Asset",
+            "type": "string"
+          },
+          "fill_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fill Ids",
+            "type": "array"
+          },
+          "leg_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leg Reason"
+          },
+          "phase": {
+            "title": "Phase",
+            "type": "string"
+          },
+          "requested_source_quantity": {
+            "title": "Requested Source Quantity",
+            "type": "string"
+          },
+          "route_id": {
+            "title": "Route Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phase",
+          "asset",
+          "route_id",
+          "requested_source_quantity",
+          "fill_ids",
+          "leg_reason"
+        ],
+        "title": "PaperOperationOrderDto",
+        "type": "object"
+      },
+      "PaperOperationSummaryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "bridge_residual": {
+            "title": "Bridge Residual",
+            "type": "string"
+          },
+          "data_role": {
+            "const": "forward_paper",
+            "title": "Data Role",
+            "type": "string"
+          },
+          "evidence_class": {
+            "const": "operational_dry_run",
+            "title": "Evidence Class",
+            "type": "string"
+          },
+          "execution_timestamp": {
+            "format": "date-time",
+            "title": "Execution Timestamp",
+            "type": "string"
+          },
+          "fill_count": {
+            "title": "Fill Count",
+            "type": "integer"
+          },
+          "operation_id": {
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "prospective_candidate_evidence": {
+            "const": false,
+            "title": "Prospective Candidate Evidence",
+            "type": "boolean"
+          },
+          "reconciliation_matches": {
+            "title": "Reconciliation Matches",
+            "type": "boolean"
+          },
+          "route_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Route Ids",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "qap.api.paper_operation_summary.v1",
+            "default": "qap.api.paper_operation_summary.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "total_fee_quote": {
+            "title": "Total Fee Quote",
+            "type": "string"
+          },
+          "total_slippage_quote": {
+            "title": "Total Slippage Quote",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "data_role",
+          "evidence_class",
+          "prospective_candidate_evidence",
+          "execution_timestamp",
+          "reconciliation_matches",
+          "fill_count",
+          "total_fee_quote",
+          "total_slippage_quote",
+          "bridge_residual",
+          "route_ids"
+        ],
+        "title": "PaperOperationSummaryDto",
+        "type": "object"
+      },
+      "PaperReconciliationDto": {
+        "additionalProperties": false,
+        "properties": {
+          "economic_differences": {
+            "items": {
+              "$ref": "#/components/schemas/PaperReconciliationEconomicDifferenceDto"
+            },
+            "title": "Economic Differences",
+            "type": "array"
+          },
+          "expected_terminal_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Terminal Value"
+          },
+          "matches": {
+            "title": "Matches",
+            "type": "boolean"
+          },
+          "recomputed_fee_total": {
+            "title": "Recomputed Fee Total",
+            "type": "string"
+          },
+          "recomputed_slippage_total": {
+            "title": "Recomputed Slippage Total",
+            "type": "string"
+          },
+          "recomputed_terminal_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recomputed Terminal Value"
+          },
+          "recomputed_turnover": {
+            "title": "Recomputed Turnover",
+            "type": "string"
+          },
+          "reported_fee_total": {
+            "title": "Reported Fee Total",
+            "type": "string"
+          },
+          "reported_slippage_total": {
+            "title": "Reported Slippage Total",
+            "type": "string"
+          },
+          "reported_turnover": {
+            "title": "Reported Turnover",
+            "type": "string"
+          }
+        },
+        "required": [
+          "matches",
+          "reported_fee_total",
+          "recomputed_fee_total",
+          "reported_turnover",
+          "recomputed_turnover",
+          "reported_slippage_total",
+          "recomputed_slippage_total",
+          "expected_terminal_value",
+          "recomputed_terminal_value",
+          "economic_differences"
+        ],
+        "title": "PaperReconciliationDto",
+        "type": "object"
+      },
+      "PaperReconciliationEconomicDifferenceDto": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "fill_id": {
+            "title": "Fill Id",
+            "type": "string"
+          },
+          "recomputed": {
+            "title": "Recomputed",
+            "type": "string"
+          },
+          "reported": {
+            "title": "Reported",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fill_id",
+          "field",
+          "reported",
+          "recomputed"
+        ],
+        "title": "PaperReconciliationEconomicDifferenceDto",
+        "type": "object"
+      },
+      "PaperResearchBoundaryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "eligible_for_deployment_evidence": {
+            "title": "Eligible For Deployment Evidence",
+            "type": "boolean"
+          },
+          "eligible_for_model_promotion": {
+            "title": "Eligible For Model Promotion",
+            "type": "boolean"
+          },
+          "eligible_for_parameter_selection": {
+            "title": "Eligible For Parameter Selection",
+            "type": "boolean"
+          },
+          "rule": {
+            "title": "Rule",
+            "type": "string"
+          }
+        },
+        "required": [
+          "eligible_for_parameter_selection",
+          "eligible_for_model_promotion",
+          "eligible_for_deployment_evidence",
+          "rule"
+        ],
+        "title": "PaperResearchBoundaryDto",
+        "type": "object"
+      },
+      "PaperTrackingErrorDto": {
+        "additionalProperties": false,
+        "properties": {
+          "actual_weight": {
+            "title": "Actual Weight",
+            "type": "string"
+          },
+          "asset": {
+            "title": "Asset",
+            "type": "string"
+          },
+          "target_weight": {
+            "title": "Target Weight",
+            "type": "string"
+          },
+          "unfilled_quantity": {
+            "title": "Unfilled Quantity",
+            "type": "string"
+          },
+          "unfilled_value": {
+            "title": "Unfilled Value",
+            "type": "string"
+          },
+          "weight_error": {
+            "title": "Weight Error",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset",
+          "target_weight",
+          "actual_weight",
+          "weight_error",
+          "unfilled_quantity",
+          "unfilled_value"
+        ],
+        "title": "PaperTrackingErrorDto",
         "type": "object"
       },
       "PerformanceSeriesDto": {
@@ -1870,6 +2642,115 @@
           "fill_id"
         ],
         "title": "RebalanceMarkerDto",
+        "type": "object"
+      },
+      "RelationshipEvidencePointDto": {
+        "additionalProperties": false,
+        "properties": {
+          "coverage_observations": {
+            "title": "Coverage Observations",
+            "type": "integer"
+          },
+          "input_fingerprint": {
+            "title": "Input Fingerprint",
+            "type": "string"
+          },
+          "required_observations": {
+            "title": "Required Observations",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "window_observations": {
+            "title": "Window Observations",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "timestamp",
+          "value",
+          "status",
+          "window_observations",
+          "required_observations",
+          "coverage_observations",
+          "input_fingerprint"
+        ],
+        "title": "RelationshipEvidencePointDto",
+        "type": "object"
+      },
+      "RelationshipEvidenceSeriesDto": {
+        "additionalProperties": false,
+        "properties": {
+          "base_source_fingerprint": {
+            "title": "Base Source Fingerprint",
+            "type": "string"
+          },
+          "evidence_field": {
+            "title": "Evidence Field",
+            "type": "string"
+          },
+          "evidence_reciprocity": {
+            "title": "Evidence Reciprocity",
+            "type": "string"
+          },
+          "fit_reciprocity": {
+            "title": "Fit Reciprocity",
+            "type": "string"
+          },
+          "model_id": {
+            "title": "Model Id",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "persisted_orientation": {
+            "title": "Persisted Orientation",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/RelationshipEvidencePointDto"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "quote_source_fingerprint": {
+            "title": "Quote Source Fingerprint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "persisted_orientation",
+          "model_id",
+          "model_version",
+          "evidence_field",
+          "fit_reciprocity",
+          "evidence_reciprocity",
+          "base_source_fingerprint",
+          "quote_source_fingerprint",
+          "points"
+        ],
+        "title": "RelationshipEvidenceSeriesDto",
         "type": "object"
       },
       "ResultStatus": {
@@ -2504,6 +3385,84 @@
         ]
       }
     },
+    "/api/pairs/{asset_x}/{asset_y}/evidence": {
+      "get": {
+        "operationId": "getPairEvidence",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_x",
+            "required": true,
+            "schema": {
+              "title": "Asset X",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_y",
+            "required": true,
+            "schema": {
+              "title": "Asset Y",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "orientation",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minLength": 3,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Orientation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairEvidenceDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pair Evidence",
+        "tags": [
+          "pairs"
+        ]
+      }
+    },
     "/api/pairs/{asset_x}/{asset_y}/series": {
       "get": {
         "operationId": "getPairSeries",
@@ -2579,6 +3538,73 @@
         "summary": "Pair Series",
         "tags": [
           "pairs"
+        ]
+      }
+    },
+    "/api/paper-operations": {
+      "get": {
+        "operationId": "listPaperOperations",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PaperOperationSummaryDto"
+                  },
+                  "title": "Response Listpaperoperations",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Paper Operations",
+        "tags": [
+          "paper-operations"
+        ]
+      }
+    },
+    "/api/paper-operations/{operation_id}": {
+      "get": {
+        "operationId": "getPaperOperation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "title": "Operation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaperOperationDetailDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Paper Operation",
+        "tags": [
+          "paper-operations"
         ]
       }
     },
