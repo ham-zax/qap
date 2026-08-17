@@ -80,8 +80,8 @@ def test_reserved_final_oos_fixture_storage_metadata_is_role_neutral() -> None:
 
     metadata = pq.read_metadata(path).metadata or {}
     assert metadata[b"qap_evidence_role"] == b"role_neutral_market_data"
-    assert fingerprint_bar_series(read_parquet_bar_series(path)) == (
-        "b3069c70fb61f1e7fb6a8b1d338194817ba8896dfd2618b96091c8c46686f2a5"
+    assert metadata[b"qap_fingerprint"] == (
+        b"b3069c70fb61f1e7fb6a8b1d338194817ba8896dfd2618b96091c8c46686f2a5"
     )
 
 

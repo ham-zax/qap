@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
+from qap.experiment.dataset_seals import validate_dataset_seals
 from qap.experiment.manifest import DataSourceSpec, ExperimentManifest
 from qap.experiment.provenance import DatasetFingerprint
 from qap.market import (
@@ -120,6 +121,10 @@ def load_experiment_data(
 
     if not isinstance(cast(object, manifest), ExperimentManifest):
         raise TypeError("manifest must be an ExperimentManifest")
+    try:
+        validate_dataset_seals(manifest)
+    except ValueError as exc:
+        raise ExperimentSetupError(str(exc)) from exc
     root = Path(data_root)
     instruments = manifest.instruments_by_id()
     interval = manifest.interval_domain()

@@ -26,6 +26,9 @@ from qap.portfolio._decimal import divide, exact_subtract
 D = Decimal
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 MANIFEST_PATH = REPOSITORY_ROOT / "tests/fixtures/experiments/two_asset_dummy.json"
+PHASE10_MANIFEST_PATH = (
+    REPOSITORY_ROOT / "tests/fixtures/experiments/phase10_momentum_2023/l30-narrow.json"
+)
 RUN_AT = datetime(2026, 8, 17, 6, 0, tzinfo=UTC)
 
 
@@ -57,6 +60,34 @@ def test_data_loader_refuses_altered_dataset_before_replay(tmp_path: Path) -> No
 
     with pytest.raises(DatasetFingerprintMismatchError, match="fixture-btcusdt-1h"):
         load_experiment_data(manifest, data_root=tmp_path)
+
+
+def test_data_loader_rejects_reserved_final_oos_before_reading_dataset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    raw = json.loads(PHASE10_MANIFEST_PATH.read_text(encoding="utf-8"))
+    raw["data_sources"][0] = {
+        "dataset_id": "binance-btcusdt-1d-2024",
+        "expected_semantic_fingerprint": (
+            "b3069c70fb61f1e7fb6a8b1d338194817ba8896dfd2618b96091c8c46686f2a5"
+        ),
+        "instrument_id": "btc-usdt",
+        "relative_path": "tests/fixtures/market/BTCUSDT_1d_2024.parquet",
+    }
+    raw["data_window"] = {
+        "start": "2024-01-01T00:00:00Z",
+        "end": "2025-01-01T00:00:00Z",
+    }
+    raw["data_role"] = "development"
+    manifest = ExperimentManifest.model_validate(raw)
+
+    def fail_if_loaded(**_kwargs: object) -> object:
+        raise AssertionError("reserved final-OOS dataset bytes must not be read")
+
+    monkeypatch.setattr("qap.experiment.data._load_dataset", fail_if_loaded)
+
+    with pytest.raises(ExperimentSetupError, match="reserved final-OOS"):
+        load_experiment_data(manifest, data_root=REPOSITORY_ROOT)
 
 
 def test_runner_composes_strategy_and_all_declared_controls_on_shared_inputs() -> None:
