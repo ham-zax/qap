@@ -5,7 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from qap.experiment import ExperimentManifest, load_manifest
+from qap.experiment import (
+    DataRole,
+    ExperimentManifest,
+    ExperimentSetupError,
+    execute_prepared_experiment,
+    load_manifest,
+    prepare_experiment,
+)
 from qap.experiment.result import ResultStatus
 from qap.experiment.runner import (
     DatasetFingerprintMismatchError,
@@ -110,6 +117,29 @@ def test_runner_composes_strategy_and_all_declared_controls_on_shared_inputs() -
         assert run.result.status is ResultStatus.NEUTRAL
     else:
         assert run.result.status is ResultStatus.NEGATIVE
+
+
+def test_public_in_memory_execution_refuses_uncommitted_final_oos() -> None:
+    manifest = load_manifest(MANIFEST_PATH).model_copy(
+        update={"data_role": DataRole.FINAL_OOS}
+    )
+    prepared = prepare_experiment(
+        manifest,
+        data_root=REPOSITORY_ROOT,
+        repository_root=REPOSITORY_ROOT,
+        run_timestamp=RUN_AT,
+    )
+
+    with pytest.raises(ExperimentSetupError, match="precommit"):
+        execute_prepared_experiment(prepared)
+
+    with pytest.raises(ExperimentSetupError, match="precommit"):
+        execute_experiment(
+            manifest,
+            data_root=REPOSITORY_ROOT,
+            repository_root=REPOSITORY_ROOT,
+            run_timestamp=RUN_AT,
+        )
 
 
 def test_result_keeps_exact_role_economics_and_flow_adjusted_diagnostics() -> None:

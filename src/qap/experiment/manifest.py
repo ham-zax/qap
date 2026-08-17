@@ -503,6 +503,15 @@ class ExperimentManifest(_FrozenModel):
             previous_time = flow.effective_time
 
         if (
+            self.benchmarks.relationship_alpha_claim
+            and self.primary_metric
+            is not PrimaryMetric.PRIMARY_CONTROL_RELATIVE_TERMINAL_WEALTH
+        ):
+            raise ValueError(
+                "relationship-alpha claim must classify success against the "
+                "predeclared primary incremental control"
+            )
+        if (
             self.primary_metric
             is PrimaryMetric.PRIMARY_CONTROL_RELATIVE_TERMINAL_WEALTH
             and self.benchmarks.primary_incremental_benchmark is None

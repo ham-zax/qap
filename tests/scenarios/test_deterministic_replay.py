@@ -3,7 +3,10 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
+from qap.evaluation import value_portfolio
 from qap.execution import CostModel, run_deterministic_replay
 from qap.market import (
     BarInterval,
@@ -168,7 +171,61 @@ def test_replay_is_causal_deterministic_and_applies_due_flow_before_policy() -> 
     assert step.fill.reference_price == D("20")
     assert step.fill.execution_price == D("20")
     assert step.state_after.holdings == {BTC: D("2.5"), USDT: D("50")}
+    assert step.valuation_price_snapshot.timestamp == first_decision_time
+    assert step.valuation_price_snapshot.price(BTC) == D("20")
+    assert value_portfolio(step.state_after, step.valuation_price_snapshot) == D("100")
     assert first.ending_state.holdings == {BTC: D("2.5"), USDT: D("50")}
+
+
+@given(
+    starting_quote=st.integers(min_value=1, max_value=10**9),
+    decision_close=st.integers(min_value=1, max_value=10**6),
+    execution_open=st.integers(min_value=1, max_value=10**6),
+    base_percent=st.integers(min_value=1, max_value=99),
+)
+def test_zero_cost_rebalance_conserves_wealth_across_open_gaps(
+    starting_quote: int,
+    decision_close: int,
+    execution_open: int,
+    base_percent: int,
+) -> None:
+    decision_time = START + INTERVAL.duration
+    base_weight = D(base_percent) / D("100")
+    aligned = align_bar_series(
+        [
+            _series(
+                BTC_USDT,
+                opens=(float(decision_close), float(execution_open)),
+                closes=(float(decision_close), float(execution_open)),
+            )
+        ]
+    )
+    target = AllocationTarget.for_basket(
+        {BTC: base_weight, USDT: D("1") - base_weight},
+        basket={BTC, USDT},
+    )
+
+    trace = run_deterministic_replay(
+        run_id="gap-conservation-property",
+        aligned=aligned,
+        ledger=PortfolioLedger(PortfolioState.from_holdings({USDT: D(starting_quote)})),
+        policy=ScheduledTargetPolicy(
+            policy_id="gap-conservation-policy",
+            schedule={decision_time: target},
+        ),
+        execution_instrument=BTC_USDT,
+        numeraire=USDT,
+        cost_model=CostModel.zero(),
+        min_rebalance_notional=D("0"),
+    )
+
+    first = trace.steps[0]
+    assert first.fill is not None
+    assert first.valuation_price_snapshot.price(BTC) == D(execution_open)
+    assert value_portfolio(
+        first.state_after,
+        first.valuation_price_snapshot,
+    ) == D(starting_quote)
 
 
 @pytest.mark.parametrize("minimum", [D("-1"), D("NaN"), D("Infinity")])

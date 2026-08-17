@@ -104,7 +104,7 @@ def build_inventory_table(run: ExperimentRun) -> Any:
                 quantity = step.state_after.quantity(asset)
                 value = exact_multiply(
                     quantity,
-                    step.price_snapshot.price(asset),
+                    step.valuation_price_snapshot.price(asset),
                 )
                 weight = divide(value, total) if total > _ZERO else _ZERO
                 timestamps.append(step.decision_time)

@@ -6,10 +6,18 @@
 
 **Tech Stack:** Python 3.14, `Decimal`, existing market/policy/portfolio types, pytest.
 
+## Update context — 2026-08-17
+
+Trigger: Implementation review found that valuing post-fill inventory at the prior completed close manufactured wealth across close/open gaps.
+Purpose: Separate the causal decision snapshot from the contemporaneous post-decision accounting mark.
+Impact: Policy still sees only completed-bar closes. Non-final post-decision inventory is marked at the next contiguous open used as the execution boundary; the final unfilled step is marked at the final completed close.
+Evidence: `tests/scenarios/test_deterministic_replay.py::test_zero_cost_rebalance_conserves_wealth_across_open_gaps`.
+
 ## Global Constraints
 
 - Phase 06 supports direct spot market legs only.
 - Default decision timing is completed bar `t` -> next bar open **execution reference** -> modeled fill after explicit slippage/fee/quantization.
+- Decision construction uses the completed-bar close snapshot only. Post-decision accounting uses a separate same-boundary mark: the next contiguous open for non-final steps and the final completed close when no next bar exists.
 - No fill is created when no next execution bar exists.
 - Fees are modeled explicitly in the direct market's quote asset.
 - Slippage is an explicit adverse price adjustment, not a second hidden fee.
@@ -161,7 +169,8 @@ for each completed decision bar t except final bar:
 - Relationship builder never sees `t+1` when deciding at `t`.
 - A contribution with `effective_time <= decision_time` is owned inventory visible to policy at that decision; a later contribution is not. The same declared flow schedule must be replayable identically for strategy and controls in Phase 07.
 - Reference price comes only from `t+1` open; modeled execution price is derived deterministically from that reference plus the declared cost/slippage contract.
-- Final-bar decision cannot fill.
+- Every role's post-decision holdings are valued from the same contemporaneous mark set. A zero-cost conversion cannot gain or lose wealth merely because bar `t` close differs from bar `t+1` open.
+- Final-bar decision cannot fill; its terminal accounting mark is the final completed close.
 - Iteration order and IDs are deterministic.
 
 **Steps:**
@@ -193,6 +202,7 @@ uv run pyright src tests
 - [ ] Test/output language distinguishes `reference_price` from `execution_price`; no result claims a guaranteed fill at the OHLC bar open.
 - [ ] Ledger idempotency prevents duplicate fills.
 - [ ] Replay is deterministic.
+- [ ] Decision and valuation snapshots are distinct where required, and zero-cost fills conserve wealth across close/open gaps.
 - [ ] No lookahead is possible through the replay's public history boundary.
 - [ ] Explicit external flows are ordered, idempotent, auditable, and cannot create negative inventory.
 - [ ] Final-bar decisions remain unfilled.

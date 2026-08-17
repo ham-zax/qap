@@ -30,6 +30,7 @@ from qap.experiment.economics import (
 from qap.experiment.manifest import (
     BandPartialControlSpec,
     ContributionAwareBandControlSpec,
+    DataRole,
     ExperimentManifest,
     PeriodicFixedWeightControlSpec,
 )
@@ -272,7 +273,7 @@ def _control_policy(
     )
 
 
-def execute_prepared_experiment(prepared: PreparedExperiment) -> ExperimentRun:
+def execute_precommitted_experiment(prepared: PreparedExperiment) -> ExperimentRun:
     """Run one strategy and its frozen comparator ladder through shared replay."""
 
     if not isinstance(cast(object, prepared), PreparedExperiment):
@@ -360,6 +361,21 @@ def execute_prepared_experiment(prepared: PreparedExperiment) -> ExperimentRun:
             roles=roles,
         ),
     )
+
+
+def execute_prepared_experiment(prepared: PreparedExperiment) -> ExperimentRun:
+    """Execute a non-final prepared experiment entirely in memory.
+
+    Final-OOS execution must pass through ``run_experiment_to_artifacts`` so its
+    family/holdout commitment is durably reserved before any result is computed.
+    """
+
+    if prepared.manifest.data_role is DataRole.FINAL_OOS:
+        raise ExperimentSetupError(
+            "final_oos execution requires a durable precommit through "
+            "run_experiment_to_artifacts"
+        )
+    return execute_precommitted_experiment(prepared)
 
 
 def execute_experiment(

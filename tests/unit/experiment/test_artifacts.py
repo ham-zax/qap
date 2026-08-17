@@ -14,6 +14,7 @@ import pytest
 
 from qap.experiment import load_manifest
 from qap.experiment.artifacts import (
+    ArtifactError,
     HoldoutAlreadyCommittedError,
     RunAlreadyExistsError,
     discover_family_runs,
@@ -313,4 +314,23 @@ def test_reader_rejects_tampered_parquet_schema_metadata(tmp_path: Path) -> None
     pq.write_table(table.replace_schema_metadata(metadata), paths.performance)
 
     with pytest.raises(ValueError, match="unexpected artifact table schema"):
+        read_run_artifacts(paths.run_directory)
+
+
+def test_reader_requires_completed_final_oos_commitment(tmp_path: Path) -> None:
+    data = _manifest_data()
+    data["data_role"] = "final_oos"
+    data["experiment_name"] = "reader commitment validation"
+    manifest = ExperimentManifest.model_validate(data)
+    paths = run_experiment_to_artifacts(
+        manifest,
+        data_root=REPOSITORY_ROOT,
+        repository_root=REPOSITORY_ROOT,
+        run_root=tmp_path,
+        run_timestamp=RUN_AT,
+    )
+
+    paths.commitment.unlink()
+
+    with pytest.raises(ArtifactError, match="commitment"):
         read_run_artifacts(paths.run_directory)

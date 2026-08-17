@@ -6,6 +6,13 @@
 
 **Tech Stack:** Python 3.14, Pydantic for manifest/result boundary validation, JSON, Parquet for derived time series, Git provenance, pytest.
 
+## Update context — 2026-08-17
+
+Trigger: Adversarial implementation review of the completed experiment boundary.
+Purpose: Close fail-open paths around relationship-claim classification and final-OOS commitment auditability.
+Impact: Relationship-alpha claims must classify success against the predeclared primary control. Public in-memory execution refuses `final_oos`; only the precommitting artifact path may execute it, and readers cross-check the consumed commitment against manifest/provenance/result.
+Evidence: `tests/unit/experiment/test_manifest.py`, `test_runner.py`, and `test_artifacts.py`.
+
 ## Global Constraints
 
 - Research serves the accumulation product.
@@ -132,7 +139,7 @@
 - Evaluate all terminal states using the same terminal valuation snapshot.
 - Classify result as `positive` when the primary metric is greater than the predeclared threshold, `neutral` when exactly equal, and `negative` when below; classification has no promotion side effect.
 - An accumulation/timing conclusion with external flows additionally reports improvement versus matched-contribution static HODL; beating strict inventory HODL alone may only show that contributed quote inventory gained market exposure.
-- A relationship-alpha conclusion additionally reports improvement versus the predeclared `primary_incremental_benchmark`; beating HODL alone is insufficient.
+- A relationship-alpha conclusion additionally reports improvement versus the predeclared `primary_incremental_benchmark`; beating HODL alone is insufficient. A manifest declaring such a claim must use primary-control-relative terminal wealth as its classified primary metric.
 
 **Steps:**
 - [ ] Implement orchestration using composition functions, not a generic workflow engine.
@@ -165,8 +172,8 @@ runs/<run_id>/
 - `events.jsonl` is append-ordered external-flow/decision/rebalance/fill trace data sufficient to reconstruct web markers and audit inventory/execution identity without serializing Python objects.
 - Large bar inputs are not copied into each run; `manifest.json` retains the validated relative locator plus expected fingerprint.
 - Existing `runs/<run_id>/` is never overwritten. A repeated semantic run is executed under a fresh temporary test/output root when reproducibility is being checked; production tooling must not silently replace prior artifacts.
-- Artifact reader validates schema versions for JSON and tabular files.
-- For `final_oos`, `commitment.json` freezes manifest/code/data identifiers before replay. Successful/failed execution marks that holdout consumed for the research family; inspecting the result and changing the research requires a new final holdout for the next generation.
+- Artifact reader validates schema versions for JSON and tabular files and cross-checks manifest/provenance/result lineage.
+- For `final_oos`, `commitment.json` freezes manifest/code/data identifiers before replay. Public in-memory execution rejects uncommitted final-OOS runs. Successful/failed execution marks that holdout consumed for the research family; a completed result is readable only with its matching consumed commitment. Inspecting the result and changing the research requires a new final holdout for the next generation.
 
 **Steps:**
 - [ ] Write artifact roundtrip test in temporary directory.

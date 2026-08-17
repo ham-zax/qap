@@ -6,6 +6,13 @@
 
 **Product:** QAP — crypto wealth-compounding and relative-rebalancing system
 
+## Update context — 2026-08-17
+
+Trigger: Replay/experiment implementation review exposed a post-fill marking mismatch and fail-open final-OOS entry points.
+Purpose: Clarify existing timing and research-integrity contracts without changing the approved economic objective.
+Impact: Decisions remain completed-data-only; post-decision accounting uses same-boundary marks, and final-OOS computation requires durable precommitment. Relationship claims are classified relative to their predeclared primary control.
+Evidence: Phase 06 and Phase 07 regression suites and plans.
+
 ## 1. Product definition
 
 QAP is a **spot-only crypto wealth-compounding system whose economic state is owned inventory**.
@@ -260,7 +267,8 @@ For bar-based deterministic replay:
 3. Compute target allocation.
 4. Convert it to a rebalance intent.
 5. Use the **next bar open as the deterministic execution reference**, then derive the modeled fill from explicit direction-aware slippage/fee/quantization semantics. QAP does not claim that the observed bar open was a guaranteed executable market price.
-6. If there is no next bar, record the intent as unfilled; do not backfill at the last close.
+6. Mark every role's post-decision inventory at that same causal boundary using the next contiguous opens of admitted direct numeraire markets. Keep this accounting snapshot separate from the completed-close snapshot shown to policy; a zero-cost conversion must not manufacture gap P&L.
+7. If there is no next bar, record the intent as unfilled and use the final completed close only as the terminal valuation mark; do not backfill an execution.
 
 Any model requiring a different timing contract must declare it explicitly in its experiment manifest.
 
@@ -484,7 +492,7 @@ Rules:
 - failed and neutral experiments remain recorded;
 - attempted variants in the same research family remain discoverable, including failures;
 - `final_oos` is an information-state claim, not merely a date label: once its result or chart is inspected and used to adapt code, parameters, pair selection, or the hypothesis, that window is consumed and becomes development evidence for subsequent work;
-- a final-OOS run must be committed/frozen before its holdout is evaluated;
+- a final-OOS run must be committed/frozen before its holdout is evaluated; public in-memory execution paths fail closed, and a completed result is authoritative only with its matching consumed commitment;
 - model quality and economic quality are separate claims;
 - multiple searches/features/models require selection-pressure awareness;
 - formal family-level multiplicity methods (for example SPA/Reality Check style tests) are introduced only when the breadth of a serious claim warrants them; exploratory work is not forced through heavy governance;

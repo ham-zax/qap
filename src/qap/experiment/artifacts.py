@@ -26,8 +26,10 @@ from qap.experiment.result import ExperimentResult
 from qap.experiment.runner import (
     ExperimentRun,
     PreparedExperiment,
-    execute_prepared_experiment,
     prepare_experiment,
+)
+from qap.experiment.runner import (
+    execute_precommitted_experiment as execute_prepared_experiment,
 )
 from qap.experiment.tables import (
     build_inventory_table,
@@ -410,6 +412,41 @@ def run_experiment_to_artifacts(
     return paths
 
 
+def _validate_loaded_commitment(
+    *,
+    manifest: ExperimentManifest,
+    provenance: RunProvenance,
+    result: ExperimentResult,
+    commitment: FinalOosCommitment | None,
+) -> None:
+    if manifest.data_role is not DataRole.FINAL_OOS:
+        if commitment is not None:
+            raise ArtifactError("non-final run must not contain a commitment artifact")
+        return
+    if commitment is None:
+        raise ArtifactError("final_oos run is missing its commitment artifact")
+    if not commitment.consumed or commitment.execution_status != "completed":
+        raise ArtifactError(
+            "completed final_oos result requires a consumed completed commitment"
+        )
+    matches = (
+        commitment.run_id == provenance.run_id,
+        commitment.research_family_id == manifest.research_family_id,
+        commitment.parent_run_id == manifest.parent_run_id,
+        commitment.manifest_sha256 == provenance.manifest_sha256,
+        commitment.code_fingerprint == provenance.code_fingerprint,
+        commitment.data_fingerprints == provenance.data_fingerprints,
+        commitment.data_window_start == manifest.data_window.start,
+        commitment.data_window_end == manifest.data_window.end,
+        commitment.committed_at == provenance.run_timestamp_utc,
+        result.final_oos_consumed,
+    )
+    if not all(matches):
+        raise ArtifactError(
+            "final_oos commitment does not match manifest, provenance, and result"
+        )
+
+
 def read_run_artifacts(run_directory: str | Path) -> LoadedRunArtifacts:
     directory = Path(run_directory).resolve()
     paths = _paths(directory.parent, directory.name)
@@ -426,8 +463,18 @@ def read_run_artifacts(run_directory: str | Path) -> LoadedRunArtifacts:
         raise ArtifactError("artifact run IDs do not match the directory name")
     if manifest_sha256(manifest) != provenance.manifest_sha256:
         raise ArtifactError("artifact manifest hash does not match provenance")
-    if result.research_family_id != manifest.research_family_id:
-        raise ArtifactError("artifact result research family does not match manifest")
+    if (
+        provenance.research_family_id != manifest.research_family_id
+        or result.research_family_id != manifest.research_family_id
+    ):
+        raise ArtifactError("artifact research family does not match manifest")
+    if (
+        provenance.data_role is not manifest.data_role
+        or result.data_role is not manifest.data_role
+    ):
+        raise ArtifactError("artifact data role does not match manifest")
+    if result.parent_run_id != manifest.parent_run_id:
+        raise ArtifactError("artifact parent run does not match manifest")
 
     performance: Any = pq.read_table(paths.performance)
     inventory: Any = pq.read_table(paths.inventory)
@@ -451,6 +498,12 @@ def read_run_artifacts(run_directory: str | Path) -> LoadedRunArtifacts:
     )
     if commitment is not None and commitment.run_id != directory.name:
         raise ArtifactError("commitment run ID does not match the directory name")
+    _validate_loaded_commitment(
+        manifest=manifest,
+        provenance=provenance,
+        result=result,
+        commitment=commitment,
+    )
     return LoadedRunArtifacts(
         manifest=manifest,
         provenance=provenance,

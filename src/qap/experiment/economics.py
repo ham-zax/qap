@@ -56,7 +56,7 @@ def _unitized_nav(trace: ReplayTrace) -> tuple[Decimal, ...]:
     for step in trace.steps:
         pre_flow_value = value_portfolio(
             step.state_before_flows,
-            step.price_snapshot,
+            step.valuation_price_snapshot,
         )
         if step.applied_flows:
             if pre_flow_value <= _ZERO:
@@ -67,7 +67,7 @@ def _unitized_nav(trace: ReplayTrace) -> tuple[Decimal, ...]:
             flow_value = exact_sum(
                 exact_multiply(
                     flow.quantity_delta,
-                    step.price_snapshot.price(flow.asset),
+                    step.valuation_price_snapshot.price(flow.asset),
                 )
                 for flow in step.applied_flows
             )
@@ -76,7 +76,10 @@ def _unitized_nav(trace: ReplayTrace) -> tuple[Decimal, ...]:
                 raise ExperimentSetupError(
                     "external withdrawals exhausted flow-adjusted units"
                 )
-        post_value = value_portfolio(step.state_after, step.price_snapshot)
+        post_value = value_portfolio(
+            step.state_after,
+            step.valuation_price_snapshot,
+        )
         values.append(divide(post_value, units))
     return tuple(values)
 
@@ -89,7 +92,7 @@ def _role_costs(trace: ReplayTrace) -> tuple[Decimal, Decimal, Decimal]:
         fill = step.fill
         if fill is None:
             continue
-        quote_price = step.price_snapshot.price(fill.quote)
+        quote_price = step.valuation_price_snapshot.price(fill.quote)
         fees = exact_add(fees, exact_multiply(fill.fee_amount, quote_price))
         slippage = exact_add(
             slippage,
@@ -109,7 +112,8 @@ def build_role_run(
     trace: ReplayTrace,
 ) -> RoleRun:
     values = tuple(
-        value_portfolio(step.state_after, step.price_snapshot) for step in trace.steps
+        value_portfolio(step.state_after, step.valuation_price_snapshot)
+        for step in trace.steps
     )
     fees, slippage, turnover = _role_costs(trace)
     return RoleRun(

@@ -200,6 +200,14 @@ def test_manifest_requires_predeclared_incremental_control_for_relationship_clai
         ExperimentManifest.model_validate(data)
 
 
+def test_relationship_claim_must_classify_success_against_primary_control() -> None:
+    data = valid_manifest_data()
+    data["primary_metric"] = "hodl_relative_terminal_wealth"
+
+    with pytest.raises(ValidationError, match="relationship-alpha claim"):
+        ExperimentManifest.model_validate(data)
+
+
 def test_manifest_requires_exact_financial_strings_not_json_floats() -> None:
     data = valid_manifest_data()
     execution = deepcopy(data["execution"])

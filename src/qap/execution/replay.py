@@ -67,6 +67,7 @@ class ReplayStep:
     state_before_flows: PortfolioState
     state_at_decision: PortfolioState
     price_snapshot: PriceSnapshot
+    valuation_price_snapshot: PriceSnapshot
     decision: PolicyDecision
     rebalance: RebalanceFilterResult | None
     execution: DirectExecutionResult | None
@@ -175,6 +176,51 @@ def _decision_price_snapshot(
     )
 
 
+def _valuation_price_snapshot(
+    *,
+    aligned: AlignedBarSeries,
+    decision_index: int,
+    decision_time: datetime,
+    numeraire: AssetId,
+) -> PriceSnapshot:
+    """Mark post-decision inventory at the causal execution boundary.
+
+    Non-final steps use the next contiguous bar open for every directly
+    numeraire-priced asset, matching the timestamp and reference used by any
+    modeled fill. The final step has no next bar and therefore uses the last
+    completed close as the terminal mark.
+    """
+
+    has_next_bar = decision_index + 1 < len(aligned.timestamps)
+    mark_index = decision_index + 1 if has_next_bar else decision_index
+    prices: dict[AssetId, Decimal] = {numeraire: _ONE}
+
+    for item in aligned.series:
+        instrument = item.instrument
+        bar = item.bars[mark_index]
+        raw_price = bar.open if has_next_bar else bar.close
+        mark = Decimal(str(raw_price))
+        if instrument.quote == numeraire:
+            priced_asset = instrument.base
+            price = mark
+        elif instrument.base == numeraire:
+            priced_asset = instrument.quote
+            price = divide(_ONE, mark)
+        else:
+            continue
+        if priced_asset in prices:
+            raise ValueError(
+                f"multiple aligned instruments price asset {priced_asset.key}"
+            )
+        prices[priced_asset] = price
+
+    return PriceSnapshot.from_prices(
+        timestamp=decision_time,
+        numeraire=numeraire,
+        prices=prices,
+    )
+
+
 def _empty_evidence(
     histories: tuple[CompletedBarHistory, ...],
 ) -> tuple[str, ...]:
@@ -247,6 +293,12 @@ def run_deterministic_replay(
             next_flow_index += 1
         state_at_decision = ledger.current_state
         price_snapshot = _decision_price_snapshot(
+            aligned=aligned,
+            decision_index=decision_index,
+            decision_time=decision_time,
+            numeraire=numeraire,
+        )
+        valuation_price_snapshot = _valuation_price_snapshot(
             aligned=aligned,
             decision_index=decision_index,
             decision_time=decision_time,
@@ -328,6 +380,7 @@ def run_deterministic_replay(
                 state_before_flows=state_before_flows,
                 state_at_decision=state_at_decision,
                 price_snapshot=price_snapshot,
+                valuation_price_snapshot=valuation_price_snapshot,
                 decision=decision,
                 rebalance=rebalance,
                 execution=execution,
