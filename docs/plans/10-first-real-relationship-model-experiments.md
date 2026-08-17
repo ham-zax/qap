@@ -1,14 +1,15 @@
-# Phase 10 — First Real Relationship-Model Experiments Implementation Plan
+# Phase 10 — First Real Alpha and Relationship-Model Experiments Implementation Plan
 
-**Goal:** Introduce real statistical relationship evidence only after the inventory/accounting/replay/web chain is trustworthy, beginning with transparent pair and asset-level controls, then deciding through an explicit admission gate whether the historically important Student-t Copula hypothesis still deserves implementation.
+**Goal:** Search for incremental long-only spot alpha only after the inventory/accounting/replay/web chain is trustworthy, beginning with one deliberately small slow-trend/momentum family, then transparent pair and asset-level controls, and only later deciding through an explicit admission gate whether the historically important Student-t Copula hypothesis still deserves implementation.
 
-**Architecture:** Statistical models live under `qap.relationship.models` and emit relationship observations only. Research policy converts declared model evidence into target-allocation tilts through the normal Phase-05 boundary. Pairwise models, a simple cross-sectional/common-mode control, and any admitted Copula are evaluated through identical replay/cost/benchmark machinery.
+**Architecture:** Relationship models live under `qap.relationship.models` and emit relationship observations only. A narrow experiment helper may compute non-relationship evidence such as slow time-series momentum without creating a generic signal framework. Research policy converts declared evidence into target-allocation tilts through the normal Phase-05 boundary. Momentum, pairwise models, a simple cross-sectional/common-mode control, and any admitted Copula are evaluated through identical replay/cost/benchmark machinery.
 
 **Tech Stack:** Python 3.14, NumPy, SciPy, Pandas where rolling operations require it, pytest; historical v1/v2 inspected read-only under the admission protocol.
 
 ## Global Constraints
 
-- Neither model is constitutional or automatically production-authoritative.
+- No predictive model is constitutional or automatically production-authoritative.
+- Mechanical/contribution-aware controls and one small slow-momentum family are evaluated before sophisticated relationship models are allowed to claim incremental alpha.
 - Transparent pairwise and asset-level/common-mode controls are implemented before any Copula logic.
 - Historical importance alone never requires reimplementation; the Copula branch may end as `REJECT` after Section 10.1 if there is no present falsifiable question that justifies code.
 - Historical implementation details are re-admitted one claim at a time; no runtime import from v1/v2.
@@ -24,6 +25,7 @@
 - `pyproject.toml` — add SciPy only when Student-t implementation begins.
 
 **Create:**
+- `src/qap/experiment/momentum.py` — narrow completed-bar slow-momentum evidence helper; no generic indicator DSL.
 - `src/qap/relationship/models/__init__.py`
 - `src/qap/relationship/models/rolling_log_ratio.py`
 - `src/qap/relationship/models/cross_sectional_relative.py` — simple asset-level residual/deviation control against the declared basket common mode.
@@ -32,6 +34,7 @@
 - `src/qap/api/schemas.py` — extend pair evidence DTOs for model-series inspection.
 - `src/qap/api/routes/pairs.py` — expose persisted relationship-model evidence for one run/pair.
 - `web/src/features/pair-workbench/RelationshipEvidenceChart.tsx` — render model evidence with the existing Lightweight Charts primitive.
+- `tests/unit/experiment/test_momentum.py`
 - `tests/unit/relationship/models/test_rolling_log_ratio.py`
 - `tests/unit/relationship/models/test_cross_sectional_relative.py`
 - `tests/unit/relationship/models/test_student_t_copula.py` — **conditional:** create only with the admitted Student-t implementation.
@@ -39,6 +42,32 @@
 - `tests/scenarios/test_model_experiment_same_execution_contract.py`
 - `tests/scenarios/test_model_oos_evaluation.py`
 - `docs/research/` — concise experiment result notes only when an actual run is performed; no pre-created bureaucracy.
+
+## Section 10.0 — Simple-First Predictive Alpha Gate
+
+**Purpose:** establish whether a tiny, literature-motivated slow-trend family adds economic value before spending search budget on richer dependence models.
+
+**Interfaces:**
+- Consumes: completed-bar prices through `as_of`, one predeclared lookback per family member, the Phase-07 mechanical/contribution-aware controls, and the normal Phase-05 target/no-action boundary.
+- Produces: a causal signed slow-momentum score plus one bounded long-only policy candidate evaluated through the authoritative replay path.
+
+**Behavior:**
+- Use one transparent slow signal such as `log(P_t / P_{t-L})`, with both endpoints available by `as_of`; missing/insufficient history yields invalid/insufficient evidence rather than fallback lookbacks.
+- Keep the first family deliberately small. A representative family such as 30/90/180-day lookbacks and a few predeclared bands is acceptable; do not turn nearby daily values into hundreds of hidden trials.
+- When explicit external contributions exist, the first candidate is a contribution-aware band with the slow trend signal only gating/bounding deployment. When no external flow stream exists, test the same evidence as a bounded gate/tilt on ordinary rebalancing; do not synthesize contributions.
+- The quote/stable asset, if used, must already be admitted inventory. Do not treat it as risk-free fiat or invent off-ledger cash.
+- Record the whole family denominator, including losses. This family is a predictive control and prior, not proof that momentum is permanent crypto law.
+
+**Steps:**
+- [ ] Write completed-bar/no-lookahead tests and a hand-calculated momentum score fixture.
+- [ ] Implement the narrow helper without an indicator registry or generic signal language.
+- [ ] Evaluate the frozen small family versus strict HODL, matched-contribution HODL when applicable, and the strongest predeclared mechanical control.
+- [ ] Record nearby-parameter, adverse-cost, and one causal-delay diagnostic before using strong alpha language.
+
+**Gate:**
+- A negative result is valid and does not block the rest of Phase 10.
+- Do not begin Copula implementation merely because the momentum family loses; Copula work still needs its own specific falsifiable relationship question and admission decision.
+- If a simple pair-blind predictive/mechanical control explains the apparent gain of a later relationship candidate, QAP must not label that gain pair-specific alpha.
 
 ## Section 10.1 — Historical Admission Review for Copula Work
 
@@ -158,10 +187,11 @@ If Section 10.1 returns `REJECT`, skip Section 10.5 entirely, omit the Copula me
 - Produces: paired economic results under identical data, starting inventory, execution costs, timing, HODL, and simple control.
 
 **Experiments:**
-1. Predeclared periodic/fixed-weight and band/partial controls from Phase 07.
-2. Rolling-log-ratio pair evidence tilt.
-3. Simple cross-sectional/common-mode control.
-4. Student-t Copula evidence policy only when the admission gate allowed implementation.
+1. Strict HODL, matched-contribution HODL when applicable, and predeclared periodic/band/contribution-aware controls from Phase 07.
+2. Slow momentum/trend-gated predictive control from Section 10.0.
+3. Rolling-log-ratio pair evidence tilt.
+4. Simple cross-sectional/common-mode control.
+5. Student-t Copula evidence policy only when the admission gate allowed implementation.
 
 **Behavior:**
 - Freeze the whole comparison family (models, parameters, pair/basket, controls, cost scenarios, and primary incremental benchmark) before one `final_oos` evaluation.
@@ -224,7 +254,7 @@ For any actual experiment run, also verify its manifest/data/code fingerprints a
 
 ## Phase Exit Criteria
 
-- [ ] Transparent rolling pair model and simple cross-sectional/common-mode control work without lookahead.
+- [ ] The small slow-momentum family, transparent rolling pair model, and simple cross-sectional/common-mode control work without lookahead.
 - [ ] Historical Student-t hypothesis has a documented admission decision and is either rejected without code or reimplemented through the clean contract only when a current falsifiable experiment justified it.
 - [ ] Model outputs never bypass policy/allocation/execution boundaries.
 - [ ] Models/controls are compared economically under identical costs/timing/benchmark-ladder semantics.
@@ -251,7 +281,7 @@ For a basket containing only `X` and `Y`, an equal-weight internal common-mode r
 For serious Phase-10 claims, evaluate both terminal relative wealth and the Phase-03 incremental net log-relative series against the predeclared strongest admissible non-pair control. Any uncertainty procedure must respect serial dependence.
 
 ### Student-t admission refinement
-Student-t remains an early serious hypothesis after the transparent relationship control. Keep the first test small: one predeclared pair/small basket, one marginal transform, one lookback/refit schedule, one long-only allocation mapping, one cost model, chronological development, then one sealed final holdout.
+Student-t remains a serious later hypothesis only after the simple predictive/mechanical and transparent relationship controls. Keep the first test small: one predeclared pair/small basket, one marginal transform, one lookback/refit schedule, one long-only allocation mapping, one cost model, chronological development, then one sealed final holdout.
 
 A Gaussian Copula comparator is mandatory only when the claim is specifically that **Student-t tail dependence** adds incremental value. It is useful but not mandatory for the narrower first claim that one frozen Student-t-conditioned long-only policy beats the existing transparent/non-pair controls.
 

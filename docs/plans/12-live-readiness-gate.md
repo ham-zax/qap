@@ -33,9 +33,10 @@
 ## Section 12.1 — Economic Evidence Gate
 
 **Required evidence:**
-- At least one committed/consumed `final_oos` experiment and one later non-overlapping final-OOS or forward-paper evaluation for the candidate policy/model family being considered for live design.
+- At least one committed/consumed historical `final_oos` experiment **and** one genuinely prospective `forward_paper` evaluation that began after the candidate policy/model family, parameters, cost model, and decision semantics were frozen. A second historical split may strengthen research evidence but is not equivalent to prospective deployment evidence.
 - Both use the same authoritative cost/timing/accounting contract as paper operation and preserve research-family lineage.
 - Candidate is compared against matched HODL and the predeclared primary cost-aware simple-rebalance control.
+- When the candidate uses external contributions, it is also compared against matched-contribution static HODL and the same declared external-flow stream is verified across roles.
 - HODL-relative portfolio wealth growth is positive in the declared readiness evidence, or any exception is explicitly justified and cannot be a relabeling of the objective.
 - Cost, turnover, relative-wealth path/drawdown, per-asset contribution, and concentration are reported.
 - A result dominated by one pair/asset/window is labeled concentrated and is not presented as broad evidence.
@@ -50,6 +51,7 @@
 - unresolved accounting mismatch;
 - negative/unstable primary result presented only through favorable secondary metrics;
 - evidence depends on lookahead, relabeled/consumed holdouts presented as fresh final OOS, or changed universe eligibility after inspection;
+- purported forward-paper evidence was inspected and used to retune the same candidate while still being presented as prospective evidence;
 - candidate cannot beat matched HODL and the predeclared primary simple control after declared realistic costs on the readiness windows.
 
 ## Section 12.2 — Determinism and Reconciliation Gate

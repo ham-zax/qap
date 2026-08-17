@@ -40,6 +40,7 @@ The cross-phase master implementation plan is at `docs/superpowers/plans/2026-08
 Decision records that affect multiple phases:
 
 - `docs/research/2026-08-17-quant-oss-integration.md` — quant/backtesting/scanning OSS reuse and authority boundaries.
+- `docs/research/2026-08-17-real-alpha-inventory-compounding.md` — admitted Deep Research refinements for accumulation/HODL/rebalancing controls, simple-first alpha search, falsification, and prospective evidence.
 - `docs/research/document-update-method.md` — short context-retention method for material documentation changes.
 
 ## Global sequencing rule
