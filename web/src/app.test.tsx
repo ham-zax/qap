@@ -35,7 +35,7 @@ describe('QAP route errors', () => {
       await screen.findByRole('heading', { name: 'Evidence could not be loaded' }),
     ).toBeVisible()
     expect(screen.getByRole('link', { name: 'QAP' })).toHaveAttribute('href', '/')
-    expect(screen.getByRole('link', { name: 'Experiments' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Research runs' })).toHaveAttribute(
       'href',
       '/experiments',
     )
