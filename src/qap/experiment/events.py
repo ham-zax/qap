@@ -7,13 +7,31 @@ from pathlib import Path
 from typing import Any, cast
 
 from qap.experiment.runner import ExperimentRun
-from qap.portfolio import AssetId
+from qap.portfolio import AssetId, PortfolioState, holding_values_at_prices
+from qap.portfolio._decimal import divide, exact_sum
 
 _EVENT_SCHEMA = "qap.experiment.event.v1"
 
 
 def _decimal_mapping(values: Mapping[AssetId, Decimal]) -> dict[str, str]:
     return {asset.key: str(value) for asset, value in sorted(values.items())}
+
+
+def _state_weights(
+    run: ExperimentRun,
+    *,
+    state: PortfolioState,
+    prices: Mapping[AssetId, Decimal],
+) -> dict[str, str]:
+    values = holding_values_at_prices(state, prices)
+    total = exact_sum(values.values())
+    result: dict[str, str] = {}
+    for key in run.manifest.basket:
+        asset = run.manifest.asset(key)
+        value = values.get(asset, Decimal("0"))
+        weight = divide(value, total) if total > Decimal("0") else Decimal("0")
+        result[asset.key] = str(weight)
+    return result
 
 
 def _base_record(
@@ -77,6 +95,11 @@ def build_event_records(run: ExperimentRun) -> tuple[dict[str, Any], ...]:
                         "policy_id": step.decision.policy_id,
                         "reason": step.decision.reason.value,
                         "evidence_ids": list(step.decision.evidence_ids),
+                        "current_weights": _state_weights(
+                            run,
+                            state=step.state_at_decision,
+                            prices=step.price_snapshot.prices,
+                        ),
                         "target_weights": (
                             None
                             if target is None
