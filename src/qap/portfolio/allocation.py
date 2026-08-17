@@ -6,10 +6,12 @@ from decimal import Decimal
 from types import MappingProxyType
 from typing import Self
 
+from qap.portfolio._decimal import canonical_decimal, exact_sum
 from qap.portfolio.assets import AssetId
 
 ALLOCATION_SUM_TOLERANCE = Decimal("1e-12")
 _ONE = Decimal("1")
+_NEGATIVE_ONE = Decimal("-1")
 _ZERO = Decimal("0")
 
 
@@ -39,7 +41,7 @@ class AllocationTarget:
         for asset, weight in weights.items():
             cls._validate_asset(asset, context="weight keys")
             cls._validate_weight(asset, weight)
-            normalized.append((asset, weight))
+            normalized.append((asset, canonical_decimal(weight)))
 
         outside = sorted(asset for asset, _ in normalized if asset not in admitted)
         if outside:
@@ -49,15 +51,17 @@ class AllocationTarget:
                 f"{outside_keys}"
             )
 
-        total = sum((weight for _, weight in normalized), start=_ZERO)
-        if abs(total - _ONE) > ALLOCATION_SUM_TOLERANCE:
+        ordered = tuple(sorted(normalized))
+        total = exact_sum(weight for _, weight in ordered)
+        difference = exact_sum((total, _NEGATIVE_ONE)).copy_abs()
+        if difference > ALLOCATION_SUM_TOLERANCE:
             raise ValueError(
                 "allocation weights must sum to 1 within "
                 f"{ALLOCATION_SUM_TOLERANCE}; got {total}"
             )
 
         target = object.__new__(cls)
-        object.__setattr__(target, "_items", tuple(sorted(normalized)))
+        object.__setattr__(target, "_items", ordered)
         return target
 
     @property

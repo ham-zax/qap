@@ -1,6 +1,6 @@
 import string
 from collections.abc import MutableMapping
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from typing import cast
 
 import pytest
@@ -40,9 +40,7 @@ def test_portfolio_state_normalizes_zero_and_orders_deterministically() -> None:
     eth = AssetId("ETH")
     sol = AssetId("SOL")
 
-    first = PortfolioState.from_holdings(
-        {eth: D("2.00"), sol: D("-0"), btc: D("1.0")}
-    )
+    first = PortfolioState.from_holdings({eth: D("2.00"), sol: D("-0"), btc: D("1.0")})
     second = PortfolioState.from_holdings({btc: D("1"), eth: D("2")})
 
     assert first == second
@@ -92,6 +90,30 @@ def test_apply_deltas_rejects_non_decimal_deltas() -> None:
 
     with pytest.raises(TypeError, match="must be Decimal"):
         state.apply_deltas({AssetId("BTC"): cast(Decimal, -1.0)})
+
+
+def test_apply_deltas_is_independent_of_ambient_decimal_precision() -> None:
+    btc = AssetId("BTC")
+    state = PortfolioState.from_holdings({btc: D("0.985")})
+
+    with localcontext() as context:
+        context.prec = 2
+        updated = state.apply_deltas({btc: D("0.001")})
+
+    assert updated.quantity(btc) == D("0.986")
+
+
+def test_apply_deltas_is_independent_of_ambient_decimal_exponent_limits() -> None:
+    btc = AssetId("BTC")
+    state = PortfolioState.from_holdings({btc: D("9.85e999")})
+
+    with localcontext() as context:
+        context.prec = 2
+        context.Emax = 2
+        context.Emin = -2
+        updated = state.apply_deltas({btc: D("0.01e999")})
+
+    assert updated.quantity(btc) == D("9.86e999")
 
 
 _asset_keys = st.text(

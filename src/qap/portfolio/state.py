@@ -6,6 +6,7 @@ from decimal import Decimal
 from types import MappingProxyType
 from typing import Self
 
+from qap.portfolio._decimal import canonical_decimal, exact_add
 from qap.portfolio.assets import AssetId
 
 _ZERO = Decimal("0")
@@ -28,8 +29,9 @@ class PortfolioState:
         for asset, quantity in holdings.items():
             cls._validate_asset(asset)
             cls._validate_quantity(asset, quantity)
-            if quantity != _ZERO:
-                normalized.append((asset, quantity))
+            canonical_quantity = canonical_decimal(quantity)
+            if canonical_quantity != _ZERO:
+                normalized.append((asset, canonical_quantity))
 
         state = object.__new__(cls)
         object.__setattr__(state, "_items", tuple(sorted(normalized)))
@@ -57,7 +59,7 @@ class PortfolioState:
         for asset, delta in deltas.items():
             self._validate_asset(asset)
             self._validate_delta(asset, delta)
-            next_quantity = updated.get(asset, _ZERO) + delta
+            next_quantity = exact_add(updated.get(asset, _ZERO), delta)
             if next_quantity < _ZERO:
                 raise ValueError(f"delta would create negative balance for {asset.key}")
             if next_quantity == _ZERO:
