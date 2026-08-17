@@ -4,22 +4,40 @@ from __future__ import annotations
 
 import os
 import signal
+import socket
 import subprocess
 import sys
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import cast
 from urllib.error import URLError
 from urllib.request import urlopen
 
 _ROOT = Path(__file__).resolve().parents[1]
 _WEB_ROOT = _ROOT / "web"
-_API_PORT = 48765
-_WEB_PORT = 48766
 _DEFAULT_SPECS = (
     "e2e/portfolio-workbench.spec.ts",
     "e2e/pair-anchor-lens.spec.ts",
 )
+
+
+def _available_loopback_ports(count: int) -> tuple[int, ...]:
+    if count <= 0:
+        raise ValueError("count must be positive")
+    reservations: list[socket.socket] = []
+    try:
+        for _ in range(count):
+            reservation = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            reservation.bind(("127.0.0.1", 0))
+            reservations.append(reservation)
+        return tuple(
+            cast(tuple[str, int], reservation.getsockname())[1]
+            for reservation in reservations
+        )
+    finally:
+        for reservation in reservations:
+            reservation.close()
 
 
 def _wait_for_http(
@@ -66,8 +84,9 @@ def _terminate_process_group(process: subprocess.Popen[bytes]) -> None:
 def main(argv: list[str]) -> int:
     normalized_argv = argv[1:] if argv[:1] == ["--"] else argv
     specs = normalized_argv or list(_DEFAULT_SPECS)
-    api_base_url = f"http://127.0.0.1:{_API_PORT}"
-    web_base_url = f"http://127.0.0.1:{_WEB_PORT}"
+    api_port, web_port = _available_loopback_ports(2)
+    api_base_url = f"http://127.0.0.1:{api_port}"
+    web_base_url = f"http://127.0.0.1:{web_port}"
 
     with TemporaryDirectory(prefix="qap-playwright-runner-") as temporary:
         temp_root = Path(temporary)
@@ -84,9 +103,9 @@ def main(argv: list[str]) -> int:
                     "python",
                     "scripts/serve_playwright_fixture_api.py",
                     "--api-port",
-                    str(_API_PORT),
+                    str(api_port),
                     "--frontend-port",
-                    str(_WEB_PORT),
+                    str(web_port),
                 ],
                 cwd=_ROOT,
                 stdout=api_log,
@@ -113,7 +132,7 @@ def main(argv: list[str]) -> int:
                         "--host",
                         "127.0.0.1",
                         "--port",
-                        str(_WEB_PORT),
+                        str(web_port),
                         "--strictPort",
                     ],
                     cwd=_WEB_ROOT,
