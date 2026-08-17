@@ -1,0 +1,67 @@
+# QAP Plan Map
+
+**Status:** Review draft. These plans define intended implementation order; they are not authorization to execute them yet.
+
+## Current wave
+
+**Wave D — Design and planning** is the current wave. The repository is documentation-only until review is complete.
+
+## Implementation waves
+
+| Wave | Purpose | Phases | Exit condition |
+|---|---|---|---|
+| 1 | Prove financial truth | 00–03 | Inventory, market data, valuation, HODL comparison are deterministic and reconciled |
+| 2 | Prove accumulation mechanism | 04–07 | Relationship evidence can drive target allocation through paper replay and reproducible experiments |
+| 3 | Make QAP inspectable | 08–09 | Typed API and web workbench expose the same authoritative results without duplicating financial logic |
+| 4 | Test real relationship models | 10 | At least one transparent control and one historical model can be compared economically OOS |
+| 5 | Harden paper operation | 11 | Larger datasets, explicit routing, reconciliation, and operator workflows are reliable |
+| 6 | Decide live readiness | 12 | Separate go/no-go review; no live trading authority is implied by earlier phases |
+| 7 | Automate development safely | 13 | Approved-plan execution can continue autonomously without becoming part of financial runtime |
+
+## Phase plans
+
+1. `00-constitution-and-repository-foundation.md`
+2. `01-domain-kernel-and-inventory-semantics.md`
+3. `02-market-data-admission-and-reproducibility.md`
+4. `03-accounting-hodl-and-economic-evaluation.md`
+5. `04-relationship-evidence-pairs-and-anchor-lens.md`
+6. `05-policy-target-allocation-and-rebalancing.md`
+7. `06-deterministic-paper-execution-and-replay.md`
+8. `07-experiments-controls-and-research-protocol.md`
+9. `08-fastapi-contract-and-web-boundary.md`
+10. `09-react-analytical-workbench-and-charts.md`
+11. `10-first-real-relationship-model-experiments.md`
+12. `11-paper-operation-hardening.md`
+13. `12-live-readiness-gate.md`
+14. `13-autonomous-development-harness.md`
+
+The cross-phase master implementation plan is at `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md`.
+
+## Global sequencing rule
+
+A later phase may begin only when the prior phase's exit criteria are green or when the user explicitly approves a documented exception. A later plan may be refined as evidence appears, but it may not silently change:
+
+- product economic objective;
+- Shariah/action-space boundary;
+- state ownership;
+- benchmark semantics;
+- point-in-time timing semantics;
+- v1/v2 historical-reference boundary;
+- live-capital authority.
+
+Any proposed change to those items returns to design review.
+
+## Plan granularity
+
+Each phase plan contains:
+
+- goal and non-goals;
+- exact file map;
+- interfaces consumed and produced;
+- numbered implementation sections;
+- test/verification commands;
+- acceptance criteria;
+- explicit stop conditions;
+- phase exit criteria.
+
+This is deliberately less bureaucratic than QAP v2: the plans exist to make implementation executable and bounded, not to create a separate promotion system.
