@@ -109,3 +109,47 @@ def test_model_strategy_variants_share_the_existing_execution_and_evaluation_con
         assert step.execution_reference_time == step.decision_time
         assert step.execution_reference_price is not None
         assert fill.execution_timestamp == step.decision_time
+
+
+def test_slow_momentum_supports_predeclared_completed_bar_evidence_delay() -> None:
+    baseline = _model_manifest(
+        relationship={"component_id": "none", "config": {}},
+        policy={
+            "component_id": "slow_momentum_tilt",
+            "config": {**_pair_tilt_config(), "lookback_bars": 2},
+        },
+    )
+    delayed = _model_manifest(
+        relationship={"component_id": "none", "config": {}},
+        policy={
+            "component_id": "slow_momentum_tilt",
+            "config": {
+                **_pair_tilt_config(),
+                "lookback_bars": 2,
+                "evidence_delay_bars": 1,
+            },
+        },
+    )
+
+    baseline_run = execute_experiment(
+        baseline,
+        data_root=REPOSITORY_ROOT,
+        repository_root=REPOSITORY_ROOT,
+        run_timestamp=RUN_AT,
+    )
+    delayed_run = execute_experiment(
+        delayed,
+        data_root=REPOSITORY_ROOT,
+        repository_root=REPOSITORY_ROOT,
+        run_timestamp=RUN_AT,
+    )
+
+    baseline_fill_times = tuple(
+        fill.execution_timestamp for fill in baseline_run.role("strategy").trace.fills
+    )
+    delayed_fill_times = tuple(
+        fill.execution_timestamp for fill in delayed_run.role("strategy").trace.fills
+    )
+    assert baseline_fill_times
+    assert delayed_fill_times
+    assert delayed_fill_times[0] > baseline_fill_times[0]

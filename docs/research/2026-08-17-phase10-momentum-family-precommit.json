@@ -1,0 +1,73 @@
+{
+  "schema_version": "qap.phase10.momentum_family_precommit.v1",
+  "research_family_id": "phase10-btcusdt-daily-momentum-2023-v1",
+  "frozen_before_results": true,
+  "purpose": "Evaluate a deliberately small slow-momentum family against HODL and predeclared mechanical controls before any richer predictive claim.",
+  "development_data": {
+    "dataset_id": "binance-btcusdt-1d-2023",
+    "relative_path": "tests/fixtures/market/BTCUSDT_1d_2023.parquet",
+    "semantic_fingerprint": "0cff5a7068c2d3e7957b481f826ce8ca80956191873671035a08353cfdb4d5fc",
+    "window_start": "2023-01-01T00:00:00Z",
+    "window_end_exclusive": "2024-01-01T00:00:00Z",
+    "bars": 365
+  },
+  "reserved_final_oos_data": {
+    "dataset_id": "binance-btcusdt-1d-2024",
+    "relative_path": "tests/fixtures/market/BTCUSDT_1d_2024.parquet",
+    "semantic_fingerprint": "b3069c70fb61f1e7fb6a8b1d338194817ba8896dfd2618b96091c8c46686f2a5",
+    "window_start": "2024-01-01T00:00:00Z",
+    "window_end_exclusive": "2025-01-01T00:00:00Z",
+    "bars": 366,
+    "status": "reserved_unconsumed_until_development_survivor"
+  },
+  "portfolio": {
+    "basket": ["BTC", "USDT"],
+    "starting_quantities": {"BTC": "1", "USDT": "16616.75"},
+    "neutral_weights": {"BTC": "0.5", "USDT": "0.5"},
+    "external_flows": []
+  },
+  "execution": {
+    "fee_bps": "10",
+    "slippage_bps": "5",
+    "minimum_rebalance_notional": "10",
+    "adverse_cost_scenario": {"fee_bps": "20", "slippage_bps": "10"}
+  },
+  "controls": {
+    "primary_incremental_benchmark": "periodic-30",
+    "members": [
+      {"kind": "periodic_fixed_weight", "control_id": "periodic-30", "cadence_bars": 30},
+      {"kind": "band_partial", "control_id": "band-5pct-half", "band_width": "0.05", "partial_correction_fraction": "0.5"}
+    ]
+  },
+  "policy_constants": {
+    "maximum_tilt": "0.1",
+    "neutral_mode": "neutral_target"
+  },
+  "bands": {
+    "narrow": {"neutral_threshold": "0.02", "enter_threshold": "0.05"},
+    "wide": {"neutral_threshold": "0.05", "enter_threshold": "0.10"}
+  },
+  "core_members": [
+    {"member_id": "l30-narrow", "lookback_bars": 30, "band": "narrow", "evidence_delay_bars": 0},
+    {"member_id": "l30-wide", "lookback_bars": 30, "band": "wide", "evidence_delay_bars": 0},
+    {"member_id": "l90-narrow", "lookback_bars": 90, "band": "narrow", "evidence_delay_bars": 0},
+    {"member_id": "l90-wide", "lookback_bars": 90, "band": "wide", "evidence_delay_bars": 0},
+    {"member_id": "l180-narrow", "lookback_bars": 180, "band": "narrow", "evidence_delay_bars": 0},
+    {"member_id": "l180-wide", "lookback_bars": 180, "band": "wide", "evidence_delay_bars": 0}
+  ],
+  "diagnostic_members": [
+    {"member_id": "nearby-l60-narrow", "diagnostic": "nearby_parameter", "lookback_bars": 60, "band": "narrow", "evidence_delay_bars": 0},
+    {"member_id": "nearby-l120-narrow", "diagnostic": "nearby_parameter", "lookback_bars": 120, "band": "narrow", "evidence_delay_bars": 0},
+    {"member_id": "delay-l90-narrow-1bar", "diagnostic": "causal_delay", "lookback_bars": 90, "band": "narrow", "evidence_delay_bars": 1}
+  ],
+  "development_survivor_rule": {
+    "eligible_members": "core_members_only",
+    "requires": [
+      "strategy_vs_hodl_terminal_wealth > 0",
+      "strategy_vs_primary_control_terminal_wealth > 0",
+      "adverse_cost_strategy_terminal_wealth > adverse_cost_primary_control_terminal_wealth"
+    ],
+    "selection_if_multiple": "maximum strategy_vs_primary_control_terminal_wealth, then lexicographic member_id"
+  },
+  "final_oos_rule": "Consume the reserved 2024 holdout only if at least one core development member satisfies the frozen survivor rule; otherwise leave it unconsumed and conclude no surviving candidate."
+}

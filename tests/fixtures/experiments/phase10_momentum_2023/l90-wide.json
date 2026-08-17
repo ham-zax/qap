@@ -1,0 +1,96 @@
+{
+  "analysis_anchor": "USDT",
+  "basket": [
+    "BTC",
+    "USDT"
+  ],
+  "benchmarks": {
+    "controls": [
+      {
+        "cadence_bars": 30,
+        "control_id": "periodic-30",
+        "kind": "periodic_fixed_weight"
+      },
+      {
+        "band_width": "0.05",
+        "control_id": "band-5pct-half",
+        "kind": "band_partial",
+        "partial_correction_fraction": "0.5"
+      }
+    ],
+    "primary_incremental_benchmark": "periodic-30",
+    "relationship_alpha_claim": false
+  },
+  "data_role": "development",
+  "data_sources": [
+    {
+      "dataset_id": "binance-btcusdt-1d-2023",
+      "expected_semantic_fingerprint": "0cff5a7068c2d3e7957b481f826ce8ca80956191873671035a08353cfdb4d5fc",
+      "instrument_id": "btc-usdt",
+      "relative_path": "tests/fixtures/market/BTCUSDT_1d_2023.parquet"
+    }
+  ],
+  "data_window": {
+    "end": "2024-01-01T00:00:00Z",
+    "start": "2023-01-01T00:00:00Z"
+  },
+  "description": "Frozen Phase-10 BTCUSDT daily momentum family member l90-wide.",
+  "execution": {
+    "adverse_cost_scenario": {
+      "fee_bps": "20",
+      "slippage_bps": "10"
+    },
+    "base_step": null,
+    "execution_instrument_id": "btc-usdt",
+    "fee_bps": "10",
+    "minimum_rebalance_notional": "10",
+    "numeraire_asset": "USDT",
+    "slippage_bps": "5"
+  },
+  "experiment_name": "Phase10 momentum l90-wide",
+  "external_flows": [],
+  "instruments": [
+    {
+      "base_asset": "BTC",
+      "instrument_id": "btc-usdt",
+      "quote_asset": "USDT",
+      "valid_from": null,
+      "valid_to": null,
+      "venue": "binance",
+      "venue_symbol": "BTCUSDT"
+    }
+  ],
+  "interval": "1d",
+  "parent_run_id": null,
+  "policy": {
+    "component_id": "slow_momentum_tilt",
+    "config": {
+      "base_asset": "BTC",
+      "enter_threshold": "0.10",
+      "evidence_delay_bars": 0,
+      "lookback_bars": 90,
+      "maximum_tilt": "0.1",
+      "neutral_mode": "neutral_target",
+      "neutral_threshold": "0.05",
+      "neutral_weights": {
+        "BTC": "0.5",
+        "USDT": "0.5"
+      },
+      "quote_asset": "USDT"
+    }
+  },
+  "primary_metric": "primary_control_relative_terminal_wealth",
+  "random_seed": 7,
+  "relationship": {
+    "component_id": "none",
+    "config": {}
+  },
+  "research_family_id": "phase10-btcusdt-daily-momentum-2023-v1",
+  "schema_version": "qap.experiment.manifest.v1",
+  "starting_quantities": {
+    "BTC": "1",
+    "USDT": "16616.75"
+  },
+  "success_threshold": "0",
+  "universe_mode": "declared_fixed_basket"
+}

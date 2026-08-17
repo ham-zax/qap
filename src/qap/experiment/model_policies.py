@@ -102,6 +102,14 @@ def _positive_int(value: object, *, field_name: str) -> int:
     return value
 
 
+def _non_negative_int(value: object, *, field_name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ExperimentSetupError(f"{field_name} must be an integer")
+    if value < 0:
+        raise ExperimentSetupError(f"{field_name} must be non-negative")
+    return value
+
+
 def _asset(manifest: ExperimentManifest, value: object, *, field_name: str) -> AssetId:
     if not isinstance(value, str):
         raise ExperimentSetupError(f"{field_name} must be an asset key")
@@ -223,6 +231,7 @@ class _MomentumReplayPolicy:
     policy_id: str
     series: AlignedInstrumentSeries
     lookback_bars: int
+    evidence_delay_bars: int
     tilt: EvidenceTiltPolicy
 
     def decide(
@@ -235,10 +244,13 @@ class _MomentumReplayPolicy:
         evidence_ids: Iterable[str] = (),
     ) -> PolicyDecision:
         del price_snapshot, applied_flows, evidence_ids
+        evidence_as_of = as_of - (
+            self.series.interval.duration * self.evidence_delay_bars
+        )
         evidence = slow_log_momentum(
             self.series,
             lookback_bars=self.lookback_bars,
-            as_of=as_of,
+            as_of=evidence_as_of,
         )
         timestamp = (
             evidence.current_timestamp.isoformat()
@@ -247,7 +259,7 @@ class _MomentumReplayPolicy:
         )
         evidence_id = (
             f"slow_log_momentum:v1:{evidence.asset.key}:"
-            f"{self.lookback_bars}:{timestamp}"
+            f"{self.lookback_bars}:delay={self.evidence_delay_bars}:{timestamp}"
         )
         return self.tilt.decide(
             as_of=as_of,
@@ -343,7 +355,9 @@ def _compose_momentum(
     if manifest.relationship.component_id != "none" or manifest.relationship.config:
         raise ExperimentSetupError("slow_momentum_tilt requires relationship 'none'")
     config = _mapping(manifest.policy.config, field_name="policy.config")
-    if set(config) != {*_PAIR_TILT_KEYS, "lookback_bars"}:
+    allowed = {*_PAIR_TILT_KEYS, "lookback_bars", "evidence_delay_bars"}
+    required = {*_PAIR_TILT_KEYS, "lookback_bars"}
+    if not required <= set(config) or not set(config) <= allowed:
         raise ExperimentSetupError(
             "slow_momentum_tilt config keys must match the frozen Phase-10 contract"
         )
@@ -369,9 +383,17 @@ def _compose_momentum(
             config["lookback_bars"],
             field_name="policy.config.lookback_bars",
         ),
+        evidence_delay_bars=_non_negative_int(
+            config.get("evidence_delay_bars", 0),
+            field_name="policy.config.evidence_delay_bars",
+        ),
         tilt=_pair_policy(
             manifest,
-            {key: value for key, value in config.items() if key != "lookback_bars"},
+            {
+                key: value
+                for key, value in config.items()
+                if key not in {"lookback_bars", "evidence_delay_bars"}
+            },
             policy_id=policy_id,
         ),
     )
