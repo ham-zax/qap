@@ -26,6 +26,9 @@ htmlcov/
 /.env.*
 !/.env.example
 
+# Isolated Git worktrees used for bounded implementation/research changes.
+/.worktrees/
+
 # Editor and operating-system noise.
 .DS_Store
 Thumbs.db
