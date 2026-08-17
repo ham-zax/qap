@@ -7,7 +7,12 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import cast
 
-from qap.execution import CostModel, ReplayPolicy, run_deterministic_replay
+from qap.execution import (
+    CostModel,
+    DirectExecutionReason,
+    ReplayPolicy,
+    run_deterministic_replay,
+)
 from qap.experiment.controls import (
     BandPartialPolicy,
     ContributionAwareBandPolicy,
@@ -26,6 +31,10 @@ from qap.experiment.economics import (
     RoleRun,
     build_experiment_result,
     build_role_run,
+)
+from qap.experiment.final_oos import (
+    FinalOosExecutionPermit,
+    valid_final_oos_execution_permit,
 )
 from qap.experiment.manifest import (
     BandPartialControlSpec,
@@ -235,6 +244,16 @@ def _run_role(
     )
     if trace.unapplied_flows:
         raise ExperimentSetupError(f"role {role} left declared flows unapplied")
+    unsupported = tuple(
+        step
+        for step in trace.steps
+        if step.execution is not None
+        and step.execution.reason is DirectExecutionReason.UNSUPPORTED_DIRECT_ROUTE
+    )
+    if unsupported:
+        raise ExperimentSetupError(
+            f"role {role} produced unsupported_direct_route for an actionable rebalance"
+        )
     return build_role_run(
         role=role,
         policy_id=composition.policy_id,
@@ -281,12 +300,24 @@ def _control_policy(
     )
 
 
-def execute_precommitted_experiment(prepared: PreparedExperiment) -> ExperimentRun:
+def execute_precommitted_experiment(
+    prepared: PreparedExperiment,
+    *,
+    final_oos_permit: FinalOosExecutionPermit | None = None,
+) -> ExperimentRun:
     """Run one strategy and its frozen comparator ladder through shared replay."""
 
     if not isinstance(cast(object, prepared), PreparedExperiment):
         raise TypeError("prepared must be a PreparedExperiment")
     manifest = prepared.manifest
+    permit_valid = valid_final_oos_execution_permit(
+        provenance=prepared.provenance,
+        permit=final_oos_permit,
+    )
+    if manifest.data_role is DataRole.FINAL_OOS and not permit_valid:
+        raise ExperimentSetupError(
+            "final_oos low-level execution requires a reservation permit"
+        )
     flows = manifest.external_inventory_flows()
     hodl = _run_role(
         prepared=prepared,
@@ -349,15 +380,38 @@ def execute_precommitted_experiment(prepared: PreparedExperiment) -> ExperimentR
 
     adverse = manifest.execution.adverse_cost_scenario
     if adverse is not None:
+        adverse_cost_model = adverse.cost_model()
         role_runs.append(
             _run_role(
                 prepared=prepared,
                 role="strategy:adverse_cost",
                 composition=_strategy_policy(manifest, prepared.loaded),
                 flows=flows,
-                cost_model_override=adverse.cost_model(),
+                cost_model_override=adverse_cost_model,
             )
         )
+        primary_id = manifest.benchmarks.primary_incremental_benchmark
+        if primary_id is not None:
+            primary_control = next(
+                control
+                for control in manifest.benchmarks.controls
+                if control.control_id == primary_id
+            )
+            primary_composition = _control_policy(
+                control=primary_control,
+                target=target,
+                first_decision_time=first_decision_time,
+                manifest=manifest,
+            )
+            role_runs.append(
+                _run_role(
+                    prepared=prepared,
+                    role=f"{primary_composition.policy_id}:adverse_cost",
+                    composition=primary_composition,
+                    flows=flows,
+                    cost_model_override=adverse_cost_model,
+                )
+            )
 
     roles = tuple(role_runs)
     return ExperimentRun(

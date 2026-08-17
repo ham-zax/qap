@@ -130,6 +130,14 @@ def test_complete_manifest_is_frozen_normalized_and_domain_convertible() -> None
         manifest.experiment_name = "mutated"  # type: ignore[misc]
 
 
+def test_point_in_time_universe_fails_closed_until_eligibility_replay_exists() -> None:
+    data = valid_manifest_data()
+    data["universe_mode"] = "point_in_time_investable"
+
+    with pytest.raises(ValidationError, match="eligibility-aware replay"):
+        ExperimentManifest.model_validate(data)
+
+
 def test_manifest_rejects_unknown_fields_recursively() -> None:
     data = valid_manifest_data()
     data["unexpected"] = True

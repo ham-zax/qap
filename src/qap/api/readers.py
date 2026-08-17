@@ -26,7 +26,12 @@ from qap.api.schemas import (
     PortfolioPerformanceDto,
     PortfolioSnapshotDto,
 )
-from qap.experiment import LoadedRunArtifacts, read_run_artifacts
+from qap.experiment import (
+    ExperimentManifest,
+    LoadedRunArtifacts,
+    RunProvenance,
+    read_run_artifacts,
+)
 
 _RUN_ID = re.compile(r"run-[0-9a-f]{24}")
 _MIN_UTC = datetime.min.replace(tzinfo=UTC)
@@ -75,20 +80,109 @@ class RunArtifactReader:
                 continue
         return valid
 
+    def _attempt_manifests(self) -> dict[str, ExperimentManifest]:
+        manifests: dict[str, ExperimentManifest] = {}
+        for directory in self._directories():
+            path = directory / "manifest.json"
+            if not path.is_file():
+                continue
+            try:
+                manifests[directory.name] = ExperimentManifest.model_validate_json(
+                    path.read_text(encoding="utf-8")
+                )
+            except OSError, TypeError, ValueError:
+                continue
+        return manifests
+
+    def _attempt_provenances(self) -> dict[str, RunProvenance]:
+        provenances: dict[str, RunProvenance] = {}
+        for directory in self._directories():
+            path = directory / "provenance.json"
+            if not path.is_file():
+                continue
+            try:
+                provenances[directory.name] = RunProvenance.model_validate_json(
+                    path.read_text(encoding="utf-8")
+                )
+            except OSError, TypeError, ValueError:
+                continue
+        return provenances
+
     def list_experiments(self) -> ExperimentListDto:
         valid = self._valid_runs()
+        manifests = self._attempt_manifests()
+        provenances = self._attempt_provenances()
+        family_by_run = {
+            directory.name: (
+                manifests[directory.name].research_family_id
+                if directory.name in manifests
+                else (
+                    provenances[directory.name].research_family_id
+                    if directory.name in provenances
+                    else None
+                )
+            )
+            for directory in self._directories()
+        }
         family_counts = Counter(
-            item.result.research_family_id for item in valid.values()
+            family_id for family_id in family_by_run.values() if family_id is not None
         )
         items: list[ExperimentSummaryDto] = []
         for directory in self._directories():
             loaded = valid.get(directory.name)
             if loaded is None:
                 error = corrupt_artifact(directory.name)
+                manifest = manifests.get(directory.name)
+                provenance = provenances.get(directory.name)
+                family_id = (
+                    manifest.research_family_id
+                    if manifest is not None
+                    else (None if provenance is None else provenance.research_family_id)
+                )
                 items.append(
                     ExperimentSummaryDto(
                         artifact_status="invalid",
                         run_id=directory.name,
+                        experiment_name=(
+                            None if manifest is None else manifest.experiment_name
+                        ),
+                        research_family_id=family_id,
+                        parent_run_id=(
+                            None if manifest is None else manifest.parent_run_id
+                        ),
+                        universe_mode=(
+                            None if manifest is None else manifest.universe_mode.value
+                        ),
+                        basket=None if manifest is None else manifest.basket,
+                        analysis_anchor=(
+                            None if manifest is None else manifest.analysis_anchor
+                        ),
+                        relationship_id=(
+                            None
+                            if manifest is None
+                            else manifest.relationship.component_id
+                        ),
+                        policy_id=(
+                            None if manifest is None else manifest.policy.component_id
+                        ),
+                        data_role=(
+                            manifest.data_role.value
+                            if manifest is not None
+                            else (
+                                None
+                                if provenance is None
+                                else provenance.data_role.value
+                            )
+                        ),
+                        created_timestamp=(
+                            None if provenance is None else provenance.run_timestamp_utc
+                        ),
+                        git_dirty=(
+                            None if provenance is None else provenance.git_dirty
+                        ),
+                        sibling_trial_count=(
+                            None if family_id is None else family_counts[family_id]
+                        ),
                         error=ErrorDetailDto(
                             code=error.code,
                             message=error.message,
@@ -143,9 +237,20 @@ class RunArtifactReader:
 
     def experiment_detail(self, run_id: str) -> ExperimentDetailDto:
         loaded = self.read(run_id)
+        manifests = self._attempt_manifests()
+        provenances = self._attempt_provenances()
         siblings = sum(
-            item.result.research_family_id == loaded.result.research_family_id
-            for item in self._valid_runs().values()
+            (
+                manifests[directory.name].research_family_id
+                if directory.name in manifests
+                else (
+                    provenances[directory.name].research_family_id
+                    if directory.name in provenances
+                    else None
+                )
+            )
+            == loaded.result.research_family_id
+            for directory in self._directories()
         )
         return ExperimentDetailDto(
             run_id=loaded.provenance.run_id,

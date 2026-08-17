@@ -17,6 +17,31 @@ def _decimal_mapping(values: Mapping[AssetId, Decimal]) -> dict[str, str]:
     return {asset.key: str(value) for asset, value in sorted(values.items())}
 
 
+def _state_holdings(
+    run: ExperimentRun,
+    *,
+    state: PortfolioState,
+    prices: Mapping[AssetId, Decimal],
+) -> list[dict[str, str]]:
+    values = holding_values_at_prices(state, prices)
+    total = exact_sum(values.values())
+    holdings: list[dict[str, str]] = []
+    for key in run.manifest.basket:
+        asset = run.manifest.asset(key)
+        quantity = state.quantity(asset)
+        value = values.get(asset, Decimal("0"))
+        weight = divide(value, total) if total > Decimal("0") else Decimal("0")
+        holdings.append(
+            {
+                "asset": asset.key,
+                "quantity": str(quantity),
+                "value": str(value),
+                "weight": str(weight),
+            }
+        )
+    return holdings
+
+
 def _state_weights(
     run: ExperimentRun,
     *,
@@ -62,6 +87,26 @@ def build_event_records(run: ExperimentRun) -> tuple[dict[str, Any], ...]:
     records: list[dict[str, Any]] = []
     sequence = 0
     for role in run.roles:
+        if role.trace.steps:
+            first_step = role.trace.steps[0]
+            records.append(
+                _base_record(
+                    run=run,
+                    role=role.role,
+                    sequence=sequence,
+                    decision_index=first_step.decision_index,
+                    event_type="initial_state",
+                    event_time=first_step.decision_time.isoformat(),
+                    payload={
+                        "holdings": _state_holdings(
+                            run,
+                            state=first_step.state_before_flows,
+                            prices=first_step.price_snapshot.prices,
+                        )
+                    },
+                )
+            )
+            sequence += 1
         for step in role.trace.steps:
             for flow in step.applied_flows:
                 records.append(

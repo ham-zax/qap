@@ -7,7 +7,7 @@ from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Event
-from typing import Never, cast
+from typing import Any, Never, cast
 
 import pyarrow as pa
 import pytest
@@ -28,6 +28,13 @@ from qap.experiment.runner import (
     PreparedExperiment,
     execute_experiment,
 )
+from qap.market import (
+    BarInterval,
+    VenueInstrument,
+    fingerprint_bar_series,
+    load_csv_bar_series,
+)
+from qap.portfolio import AssetId
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 MANIFEST_PATH = REPOSITORY_ROOT / "tests/fixtures/experiments/two_asset_dummy.json"
@@ -113,6 +120,33 @@ def test_completed_run_writes_versioned_exact_readable_artifacts(
 
     with pytest.raises(RunAlreadyExistsError, match=run.provenance.run_id):
         write_run_artifacts(run, run_root=tmp_path)
+
+
+def test_completed_run_rejects_missing_initial_state_event(tmp_path: Path) -> None:
+    run = execute_experiment(
+        load_manifest(MANIFEST_PATH),
+        data_root=REPOSITORY_ROOT,
+        repository_root=REPOSITORY_ROOT,
+        run_timestamp=RUN_AT,
+    )
+    paths = write_run_artifacts(run, run_root=tmp_path)
+    records = [json.loads(line) for line in paths.events.read_text().splitlines()]
+    records = [
+        record
+        for record in records
+        if not (
+            record["event_type"] == "initial_state" and record["role"] == "strategy"
+        )
+    ]
+    for sequence, record in enumerate(records):
+        record["sequence"] = sequence
+    paths.events.write_text(
+        "".join(f"{json.dumps(record, separators=(',', ':'))}\n" for record in records),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ArtifactError, match="initial_state"):
+        read_run_artifacts(paths.run_directory)
 
 
 def test_model_run_writes_versioned_optional_relationship_evidence(
@@ -204,18 +238,27 @@ def test_final_oos_commitment_exists_before_replay_and_blocks_reuse(
     data["data_role"] = "final_oos"
     data["experiment_name"] = "final holdout"
     manifest = ExperimentManifest.model_validate(data)
-    real_execute = artifacts.execute_prepared_experiment
+    real_execute = artifacts.execute_precommitted_experiment
     observed: list[bool] = []
 
-    def checking_execute(prepared: PreparedExperiment) -> ExperimentRun:
+    def checking_execute(
+        prepared: PreparedExperiment,
+        *,
+        final_oos_permit: Any = None,
+    ) -> ExperimentRun:
         path = tmp_path / prepared.provenance.run_id / "commitment.json"
         raw = json.loads(path.read_text(encoding="utf-8"))
         assert raw["execution_status"] == "committed"
         assert raw["consumed"] is False
+        assert final_oos_permit is not None
         observed.append(True)
-        return real_execute(prepared)
+        return real_execute(prepared, final_oos_permit=final_oos_permit)
 
-    monkeypatch.setattr(artifacts, "execute_prepared_experiment", checking_execute)
+    monkeypatch.setattr(
+        artifacts,
+        "execute_precommitted_experiment",
+        checking_execute,
+    )
     paths = run_experiment_to_artifacts(
         manifest,
         data_root=REPOSITORY_ROOT,
@@ -249,6 +292,67 @@ def test_final_oos_commitment_exists_before_replay_and_blocks_reuse(
         )
 
 
+def test_final_oos_identity_uses_exact_evaluated_slice_not_full_source(
+    tmp_path: Path,
+) -> None:
+    data_root = tmp_path / "data"
+    data_root.mkdir()
+    original = (REPOSITORY_ROOT / "tests/fixtures/market/BTCUSDT_1h.csv").read_text(
+        encoding="utf-8"
+    )
+    first_path = data_root / "first.csv"
+    second_path = data_root / "second.csv"
+    first_path.write_text(original, encoding="utf-8")
+    changed_after_window = (
+        "2024-01-01T12:00:00Z,2024-01-01T12:59:59.999000Z,43150,70000,40000,60000,112\n"
+    )
+    second_path.write_text(original + changed_after_window, encoding="utf-8")
+    instrument = VenueInstrument(
+        venue="fixture",
+        venue_symbol="BTCUSDT",
+        base=AssetId("BTC"),
+        quote=AssetId("USDT"),
+    )
+    interval = BarInterval("1h")
+
+    def source_fingerprint(path: Path) -> str:
+        return fingerprint_bar_series(
+            load_csv_bar_series(path, instrument=instrument, interval=interval)
+        )
+
+    first_data = _manifest_data()
+    first_data["data_role"] = "final_oos"
+    first_data["experiment_name"] = "slice identity first"
+    first_source = cast(list[dict[str, object]], first_data["data_sources"])[0]
+    first_source["relative_path"] = "first.csv"
+    first_source["expected_semantic_fingerprint"] = source_fingerprint(first_path)
+    first_manifest = ExperimentManifest.model_validate(first_data)
+    first = run_experiment_to_artifacts(
+        first_manifest,
+        data_root=data_root,
+        repository_root=REPOSITORY_ROOT,
+        run_root=tmp_path / "runs",
+        run_timestamp=RUN_AT,
+    )
+
+    second_data = deepcopy(first_data)
+    second_data["experiment_name"] = "slice identity sibling"
+    second_data["parent_run_id"] = first.run_id
+    second_source = cast(list[dict[str, object]], second_data["data_sources"])[0]
+    second_source["relative_path"] = "second.csv"
+    second_source["expected_semantic_fingerprint"] = source_fingerprint(second_path)
+    second_manifest = ExperimentManifest.model_validate(second_data)
+
+    with pytest.raises(HoldoutAlreadyCommittedError, match="family-two-asset-v1"):
+        run_experiment_to_artifacts(
+            second_manifest,
+            data_root=data_root,
+            repository_root=REPOSITORY_ROOT,
+            run_root=tmp_path / "runs",
+            run_timestamp=RUN_AT,
+        )
+
+
 def test_final_oos_holdout_reservation_is_atomic_for_concurrent_siblings(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -262,17 +366,25 @@ def test_final_oos_holdout_reservation_is_atomic_for_concurrent_siblings(
     second_data["experiment_name"] = "concurrent final holdout second"
     first_manifest = ExperimentManifest.model_validate(first_data)
     second_manifest = ExperimentManifest.model_validate(second_data)
-    real_execute = artifacts.execute_prepared_experiment
+    real_execute = artifacts.execute_precommitted_experiment
     entered = Event()
     release = Event()
 
-    def blocking_execute(prepared: PreparedExperiment) -> ExperimentRun:
+    def blocking_execute(
+        prepared: PreparedExperiment,
+        *,
+        final_oos_permit: Any = None,
+    ) -> ExperimentRun:
         entered.set()
         if not release.wait(timeout=30):
             raise TimeoutError("concurrent final-OOS test did not release replay")
-        return real_execute(prepared)
+        return real_execute(prepared, final_oos_permit=final_oos_permit)
 
-    monkeypatch.setattr(artifacts, "execute_prepared_experiment", blocking_execute)
+    monkeypatch.setattr(
+        artifacts,
+        "execute_precommitted_experiment",
+        blocking_execute,
+    )
     with ThreadPoolExecutor(max_workers=2) as executor:
         first_future = executor.submit(
             run_experiment_to_artifacts,
@@ -317,12 +429,21 @@ def test_failed_final_oos_execution_is_marked_consumed(
     data["experiment_name"] = "failing final holdout"
     manifest = ExperimentManifest.model_validate(data)
 
-    def fail_after_commitment(prepared: PreparedExperiment) -> Never:
+    def fail_after_commitment(
+        prepared: PreparedExperiment,
+        *,
+        final_oos_permit: Any = None,
+    ) -> Never:
         commitment = tmp_path / prepared.provenance.run_id / "commitment.json"
         assert commitment.exists()
+        assert final_oos_permit is not None
         raise RuntimeError("deliberate replay failure")
 
-    monkeypatch.setattr(artifacts, "execute_prepared_experiment", fail_after_commitment)
+    monkeypatch.setattr(
+        artifacts,
+        "execute_precommitted_experiment",
+        fail_after_commitment,
+    )
     with pytest.raises(RuntimeError, match="deliberate replay failure"):
         run_experiment_to_artifacts(
             manifest,
@@ -344,6 +465,9 @@ def test_failed_final_oos_execution_is_marked_consumed(
     assert commitment["execution_status"] == "failed"
     assert commitment["consumed"] is True
     assert (run_directories[0] / "failure.json").exists()
+    assert discover_family_runs(tmp_path, "family-two-asset-v1") == (
+        run_directories[0],
+    )
 
 
 def test_family_and_parent_runs_are_discoverable(tmp_path: Path) -> None:

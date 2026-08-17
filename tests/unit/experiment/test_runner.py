@@ -17,6 +17,7 @@ from qap.experiment.result import ResultStatus
 from qap.experiment.runner import (
     DatasetFingerprintMismatchError,
     execute_experiment,
+    execute_precommitted_experiment,
     load_experiment_data,
 )
 from qap.portfolio._decimal import divide, exact_subtract
@@ -74,6 +75,7 @@ def test_runner_composes_strategy_and_all_declared_controls_on_shared_inputs() -
         "control:periodic-2",
         "control:band-5pct-half",
         "strategy:adverse_cost",
+        "control:periodic-2:adverse_cost",
     }
     assert {role.role for role in run.roles} == expected_roles
     flow_ids = tuple(flow.flow_id for flow in manifest.external_inventory_flows())
@@ -85,6 +87,8 @@ def test_runner_composes_strategy_and_all_declared_controls_on_shared_inputs() -
         assert role.timestamps == run.role("strategy").timestamps
 
     strategy = run.role("strategy")
+    adverse_strategy = run.role("strategy:adverse_cost")
+    adverse_primary = run.role("control:periodic-2:adverse_cost")
     hodl = run.role("hodl")
     matched = run.role("matched_contribution")
     primary = run.role("control:periodic-2")
@@ -101,6 +105,8 @@ def test_runner_composes_strategy_and_all_declared_controls_on_shared_inputs() -
         D("1"),
     )
 
+    assert adverse_strategy.fees_value >= strategy.fees_value
+    assert adverse_primary.fees_value >= run.role("control:periodic-2").fees_value
     assert run.result.primary_metric_value == expected_primary
     assert run.result.strategy_vs_hodl == expected_hodl
     assert run.result.strategy_vs_matched_contribution == expected_matched
@@ -117,6 +123,92 @@ def test_runner_composes_strategy_and_all_declared_controls_on_shared_inputs() -
         assert run.result.status is ResultStatus.NEUTRAL
     else:
         assert run.result.status is ResultStatus.NEGATIVE
+
+
+def test_actionable_unsupported_direct_route_invalidates_experiment() -> None:
+    from qap.market import (
+        BarInterval,
+        VenueInstrument,
+        fingerprint_bar_series,
+        load_csv_bar_series,
+    )
+    from qap.portfolio import AssetId
+
+    raw = load_manifest(MANIFEST_PATH).model_dump(mode="json")
+    raw["experiment_name"] = "unsupported multi-asset direct route"
+    raw["basket"] = ["BTC", "ETH", "USDT"]
+    raw["starting_quantities"] = {"BTC": "1", "ETH": "1", "USDT": "1000"}
+    raw["instruments"].append(
+        {
+            "instrument_id": "eth-usdt",
+            "venue": "fixture",
+            "venue_symbol": "ETHUSDT",
+            "base_asset": "ETH",
+            "quote_asset": "USDT",
+        }
+    )
+    eth_instrument = VenueInstrument(
+        venue="fixture",
+        venue_symbol="ETHUSDT",
+        base=AssetId("ETH"),
+        quote=AssetId("USDT"),
+    )
+    eth_path = REPOSITORY_ROOT / "tests/fixtures/market/ETHUSDT_1h.csv"
+    eth_fingerprint = fingerprint_bar_series(
+        load_csv_bar_series(
+            eth_path,
+            instrument=eth_instrument,
+            interval=BarInterval("1h"),
+        )
+    )
+    raw["data_sources"].append(
+        {
+            "dataset_id": "fixture-ethusdt-1h",
+            "instrument_id": "eth-usdt",
+            "relative_path": "tests/fixtures/market/ETHUSDT_1h.csv",
+            "expected_semantic_fingerprint": eth_fingerprint,
+        }
+    )
+    raw["policy"]["config"] = {
+        "schedule": [
+            {
+                "as_of": "2024-01-01T02:00:00Z",
+                "weights": {"BTC": "0.25", "ETH": "0.25", "USDT": "0.5"},
+            }
+        ]
+    }
+    raw["external_flows"] = []
+    raw["benchmarks"] = {
+        "relationship_alpha_claim": False,
+        "primary_incremental_benchmark": None,
+        "controls": [],
+    }
+    raw["primary_metric"] = "hodl_relative_terminal_wealth"
+    raw["execution"]["adverse_cost_scenario"] = None
+    manifest = ExperimentManifest.model_validate(raw)
+
+    with pytest.raises(ExperimentSetupError, match="unsupported_direct_route"):
+        execute_experiment(
+            manifest,
+            data_root=REPOSITORY_ROOT,
+            repository_root=REPOSITORY_ROOT,
+            run_timestamp=RUN_AT,
+        )
+
+
+def test_low_level_executor_refuses_final_oos_without_reservation_permit() -> None:
+    manifest = load_manifest(MANIFEST_PATH).model_copy(
+        update={"data_role": DataRole.FINAL_OOS}
+    )
+    prepared = prepare_experiment(
+        manifest,
+        data_root=REPOSITORY_ROOT,
+        repository_root=REPOSITORY_ROOT,
+        run_timestamp=RUN_AT,
+    )
+
+    with pytest.raises(ExperimentSetupError, match="reservation permit"):
+        execute_precommitted_experiment(prepared)
 
 
 def test_public_in_memory_execution_refuses_uncommitted_final_oos() -> None:

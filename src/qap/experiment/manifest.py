@@ -436,6 +436,11 @@ class ExperimentManifest(_FrozenModel):
 
     @model_validator(mode="after")
     def validate_cross_fields(self) -> Self:
+        if self.universe_mode is UniverseMode.POINT_IN_TIME_INVESTABLE:
+            raise ValueError(
+                "point_in_time_investable requires eligibility-aware replay; "
+                "current experiment execution only supports declared_fixed_basket"
+            )
         basket = set(self.basket)
         start_keys = set(self.starting_quantities)
         if start_keys != basket:

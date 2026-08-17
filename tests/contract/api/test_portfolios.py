@@ -2,10 +2,14 @@
 # pyright: reportUnknownMemberType=false
 # pyright: reportUnknownArgumentType=false
 
+import json
 from decimal import Decimal
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+
+REPOSITORY_ROOT = Path(__file__).parents[3]
+BASE_MANIFEST = REPOSITORY_ROOT / "tests/fixtures/experiments/two_asset_dummy.json"
 
 
 def test_portfolio_snapshot_uses_persisted_inventory_and_exact_cost_strings(
@@ -59,6 +63,44 @@ def test_portfolio_snapshot_uses_persisted_inventory_and_exact_cost_strings(
     )
 
 
+def test_portfolio_starting_snapshot_is_pre_flow_and_pre_fill(tmp_path: Path) -> None:
+    from qap.api import ApiSettings, create_app
+    from qap.experiment import ExperimentManifest, run_experiment_to_artifacts
+
+    raw = json.loads(BASE_MANIFEST.read_text(encoding="utf-8"))
+    raw["experiment_name"] = "first decision starting snapshot"
+    raw["external_flows"] = []
+    raw["policy"]["config"] = {
+        "schedule": [
+            {
+                "as_of": "2024-01-01T01:00:00Z",
+                "weights": {"BTC": "0.25", "USDT": "0.75"},
+            }
+        ]
+    }
+    manifest = ExperimentManifest.model_validate(raw)
+    run_root = tmp_path / "runs"
+    paths = run_experiment_to_artifacts(
+        manifest,
+        data_root=REPOSITORY_ROOT,
+        repository_root=REPOSITORY_ROOT,
+        run_root=run_root,
+    )
+    client = TestClient(create_app(ApiSettings(run_root=run_root)))
+
+    response = client.get(f"/api/portfolios/{paths.run_id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    starting_quantities = {
+        item["asset"]: item["quantity"] for item in payload["starting"]["holdings"]
+    }
+    assert starting_quantities == {"BTC": "1", "USDT": "1E+3"}
+    first_decision = payload["rebalance_audit"][0]
+    assert first_decision["decision_time"] == "2024-01-01T01:00:00Z"
+    assert first_decision["fills"]
+
+
 def test_portfolio_exposes_all_roles_allocation_history_and_concentration(
     populated_run_root: tuple[Path, str],
 ) -> None:
@@ -78,6 +120,7 @@ def test_portfolio_exposes_all_roles_allocation_history_and_concentration(
         "control:periodic-2",
         "control:band-5pct-half",
         "strategy:adverse_cost",
+        "control:periodic-2:adverse_cost",
     ]
     assert len(payload["allocation_history"]) == 12
     assert payload["allocation_history"][0] == payload["starting"]

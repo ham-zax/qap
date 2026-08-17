@@ -25,7 +25,7 @@ from qap.portfolio._decimal import exact_multiply, exact_subtract, exact_sum
 def portfolio_snapshot(loaded: LoadedRunArtifacts) -> PortfolioSnapshotDto:
     rows = _table_rows(loaded.inventory)
     strategy = loaded.result.role("strategy")
-    starting = _holding_snapshot(rows, role="strategy", first=True)
+    starting = _initial_holding_snapshot(loaded)
     terminal = _holding_snapshot(rows, role="strategy", first=False)
     hodl_terminal = _holding_snapshot(rows, role="hodl", first=False)
     role_terminals = tuple(
@@ -38,13 +38,15 @@ def portfolio_snapshot(loaded: LoadedRunArtifacts) -> PortfolioSnapshotDto:
         if "matched_contribution" in role_names
         else None
     )
+    history = _holding_history(rows, role="strategy")
+    allocation_history = history if history[0] == starting else (starting, *history)
     return PortfolioSnapshotDto(
         run_id=loaded.provenance.run_id,
         starting=starting,
         terminal=terminal,
         hodl_terminal=hodl_terminal,
         role_terminals=role_terminals,
-        allocation_history=_holding_history(rows, role="strategy"),
+        allocation_history=allocation_history,
         concentration=_concentration_summary(starting, terminal),
         strategy_vs_hodl_terminal_deltas=_holding_deltas(terminal, hodl_terminal),
         strategy_vs_matched_contribution_terminal_deltas=(
@@ -128,6 +130,44 @@ def _row_timestamp(row: dict[str, object]) -> datetime:
     if not isinstance(timestamp, datetime):
         raise ValueError("artifact table row is missing its UTC timestamp")
     return timestamp
+
+
+def _initial_holding_snapshot(
+    loaded: LoadedRunArtifacts,
+) -> HoldingsSnapshotDto:
+    event = next(
+        (
+            item
+            for item in loaded.events
+            if item.get("role") == "strategy"
+            and item.get("event_type") == "initial_state"
+        ),
+        None,
+    )
+    if event is None:
+        raise ValueError("event artifact is missing strategy initial_state")
+    payload = _payload(event)
+    raw_holdings = payload.get("holdings")
+    if not isinstance(raw_holdings, list):
+        raise ValueError("initial_state holdings must be a list")
+    holdings: list[HoldingDto] = []
+    for raw in cast(list[object], raw_holdings):
+        if not isinstance(raw, dict):
+            raise ValueError("initial_state holding must be an object")
+        holding = cast(dict[str, object], raw)
+        holdings.append(
+            HoldingDto(
+                asset=str(holding["asset"]),
+                quantity=str(holding["quantity"]),
+                value=str(holding["value"]),
+                weight=str(holding["weight"]),
+            )
+        )
+    return HoldingsSnapshotDto(
+        timestamp=_event_time(event),
+        role="strategy",
+        holdings=tuple(holdings),
+    )
 
 
 def _holdings_at(

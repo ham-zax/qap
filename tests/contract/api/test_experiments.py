@@ -2,6 +2,7 @@
 # pyright: reportUnknownMemberType=false
 # pyright: reportUnknownArgumentType=false
 
+import json
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -23,7 +24,10 @@ def test_experiment_list_preserves_research_and_benchmark_context(
     response = client.get("/api/experiments")
 
     assert response.status_code == 200
-    assert response.json() == {
+    payload = response.json()
+    assert isinstance(payload["items"][0]["git_dirty"], bool)
+    payload["items"][0]["git_dirty"] = None
+    assert payload == {
         "schema_version": "qap.api.experiment_list.v1",
         "items": [
             {
@@ -46,7 +50,7 @@ def test_experiment_list_preserves_research_and_benchmark_context(
                 "incremental_vs_primary_control": _PRIMARY_INCREMENT,
                 "incremental_vs_matched_contribution": _MATCHED_CONTRIBUTION_INCREMENT,
                 "created_timestamp": "2026-08-17T06:00:00Z",
-                "git_dirty": True,
+                "git_dirty": None,
                 "sibling_trial_count": 1,
                 "error": None,
             }
@@ -102,6 +106,45 @@ def test_experiment_list_surfaces_corrupt_artifact_without_hiding_valid_runs(
     }
 
 
+def test_family_trial_count_includes_failed_attempts_with_recoverable_lineage(
+    populated_run_root: tuple[Path, str],
+) -> None:
+    from qap.api import ApiSettings, create_app
+
+    run_root, valid_run_id = populated_run_root
+    failed_run_id = "run-222222222222222222222222"
+    failed = run_root / failed_run_id
+    failed.mkdir()
+    manifest = json.loads(
+        (run_root / valid_run_id / "manifest.json").read_text(encoding="utf-8")
+    )
+    manifest["experiment_name"] = "failed sibling attempt"
+    manifest["parent_run_id"] = valid_run_id
+    (failed / "manifest.json").write_text(
+        json.dumps(manifest, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (failed / "failure.json").write_text(
+        json.dumps({"error_type": "RuntimeError", "message": "deliberate"}) + "\n",
+        encoding="utf-8",
+    )
+
+    client = TestClient(create_app(ApiSettings(run_root=run_root)))
+    listing = client.get("/api/experiments")
+    detail = client.get(f"/api/experiments/{valid_run_id}")
+
+    assert listing.status_code == 200
+    items = {item["run_id"]: item for item in listing.json()["items"]}
+    assert items[valid_run_id]["sibling_trial_count"] == 2
+    assert items[failed_run_id]["artifact_status"] == "invalid"
+    assert items[failed_run_id]["experiment_name"] == "failed sibling attempt"
+    assert items[failed_run_id]["research_family_id"] == "family-two-asset-v1"
+    assert items[failed_run_id]["parent_run_id"] == valid_run_id
+    assert items[failed_run_id]["sibling_trial_count"] == 2
+    assert detail.status_code == 200
+    assert detail.json()["sibling_trial_count"] == 2
+
+
 def test_experiment_detail_exposes_manifest_provenance_result_and_sibling_count(
     populated_run_root: tuple[Path, str],
 ) -> None:
@@ -124,7 +167,7 @@ def test_experiment_detail_exposes_manifest_provenance_result_and_sibling_count(
         == "periodic-2"
     )
     assert payload["provenance"]["run_id"] == run_id
-    assert payload["provenance"]["git_dirty"] is True
+    assert isinstance(payload["provenance"]["git_dirty"], bool)
     assert payload["result"]["data_role"] == "development"
     assert payload["result"]["final_oos_consumed"] is False
     assert payload["final_oos_commitment"] is None

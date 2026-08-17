@@ -15,6 +15,7 @@ import pyarrow.parquet as pq
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from qap.experiment.events import read_event_records, write_event_records
+from qap.experiment.final_oos import issue_final_oos_execution_permit
 from qap.experiment.manifest import DataRole, ExperimentManifest
 from qap.experiment.provenance import (
     DatasetFingerprint,
@@ -26,10 +27,8 @@ from qap.experiment.result import ExperimentResult
 from qap.experiment.runner import (
     ExperimentRun,
     PreparedExperiment,
+    execute_precommitted_experiment,
     prepare_experiment,
-)
-from qap.experiment.runner import (
-    execute_precommitted_experiment as execute_prepared_experiment,
 )
 from qap.experiment.tables import (
     build_evidence_table,
@@ -37,6 +36,7 @@ from qap.experiment.tables import (
     build_performance_table,
     validate_artifact_table,
 )
+from qap.market import fingerprint_bar_series, validate_bar_series
 
 _FINAL_OOS_REGISTRY = ".final-oos-commitments"
 
@@ -186,10 +186,14 @@ def _write_prelude(paths: RunArtifactPaths, prepared: PreparedExperiment) -> Non
 
 
 def _holdout_id(prepared: PreparedExperiment) -> str:
+    evaluated_slice_fingerprints = tuple(
+        sorted(
+            fingerprint_bar_series(validate_bar_series(item.bars))
+            for item in prepared.loaded.aligned.series
+        )
+    )
     payload = {
-        "data_fingerprints": [
-            item.model_dump(mode="json") for item in prepared.loaded.data_fingerprints
-        ],
+        "evaluated_slice_fingerprints": evaluated_slice_fingerprints,
         "data_window_start": prepared.manifest.data_window.start.isoformat(),
         "data_window_end": prepared.manifest.data_window.end.isoformat(),
     }
@@ -405,7 +409,19 @@ def run_experiment_to_artifacts(
         _atomic_write_model(paths.commitment, commitment)
 
     try:
-        run = execute_prepared_experiment(prepared)
+        permit = (
+            issue_final_oos_execution_permit(
+                manifest=prepared.manifest,
+                provenance=prepared.provenance,
+                commitment_path=paths.commitment,
+            )
+            if commitment is not None
+            else None
+        )
+        run = execute_precommitted_experiment(
+            prepared,
+            final_oos_permit=permit,
+        )
         _write_completed_artifacts(paths, run)
     except BaseException as exc:
         _write_failure(paths, exc)
@@ -455,6 +471,32 @@ def _validate_loaded_commitment(
     if not all(matches):
         raise ArtifactError(
             "final_oos commitment does not match manifest, provenance, and result"
+        )
+
+
+def _validate_event_contract(
+    *,
+    result: ExperimentResult,
+    events: tuple[dict[str, Any], ...],
+) -> None:
+    expected_roles = tuple(item.role for item in result.roles)
+    for role in expected_roles:
+        count = sum(
+            event.get("event_type") == "initial_state" and event.get("role") == role
+            for event in events
+        )
+        if count != 1:
+            raise ArtifactError(
+                "event artifact must contain exactly one initial_state per result role"
+            )
+
+    if any(
+        event.get("event_type") == "initial_state"
+        and event.get("role") not in expected_roles
+        for event in events
+    ):
+        raise ArtifactError(
+            "event artifact contains initial_state for an unknown result role"
         )
 
 
@@ -509,6 +551,7 @@ def read_run_artifacts(run_directory: str | Path) -> LoadedRunArtifacts:
             run_id=directory.name,
         )
     events = read_event_records(paths.events, run_id=directory.name)
+    _validate_event_contract(result=result, events=events)
     commitment = (
         FinalOosCommitment.model_validate_json(
             paths.commitment.read_text(encoding="utf-8")
@@ -540,22 +583,25 @@ def discover_family_runs(
     run_root: str | Path,
     research_family_id: str,
 ) -> tuple[Path, ...]:
-    """Return root runs before descendants for one explicit research family."""
+    """Return all durable family attempts, including failed executions."""
 
     root = Path(run_root).resolve()
     discovered: list[tuple[bool, str, Path]] = []
     if not root.exists():
         return ()
-    for result_path in root.glob("*/result.json"):
-        result = ExperimentResult.model_validate_json(
-            result_path.read_text(encoding="utf-8")
-        )
-        if result.research_family_id == research_family_id:
+    for manifest_path in root.glob("*/manifest.json"):
+        try:
+            manifest = ExperimentManifest.model_validate_json(
+                manifest_path.read_text(encoding="utf-8")
+            )
+        except OSError, TypeError, ValueError:
+            continue
+        if manifest.research_family_id == research_family_id:
             discovered.append(
                 (
-                    result.parent_run_id is not None,
-                    result.run_id,
-                    result_path.parent,
+                    manifest.parent_run_id is not None,
+                    manifest_path.parent.name,
+                    manifest_path.parent,
                 )
             )
     return tuple(path for _, _, path in sorted(discovered))
