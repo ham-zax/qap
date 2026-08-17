@@ -6,6 +6,14 @@
 
 **Tech Stack:** React 19.2 latest patched release, TypeScript current stable, Vite 8.1 line, pnpm, TanStack Router, TanStack Query, `openapi-typescript` + a thin typed fetch client, TradingView Lightweight Charts 5.2 line, Vitest, React Testing Library, CSS Modules/CSS custom properties.
 
+## Update context — 2026-08-17 (implemented and rendered)
+
+- **Trigger:** this plan was executed against the Phase 08 API and the approved negative two-asset experiment fixture, including external flows, stronger simple controls, strict HODL, and a reduced common-reference anchor.
+- **Purpose:** deliver a read-only evidence workbench that preserves QAP research boundaries while making negative, invalid, and incomplete evidence inspectable.
+- **Impact:** the SPA now provides typed experiment list/detail, portfolio economics, reciprocal pair, and anchor-lens routes using TanStack Router/Query and generated OpenAPI types. Exact decimal strings remain authoritative in tables/cards; only chart presentation copies become JavaScript numbers. Backend-produced HODL/control/log-relative/time-below diagnostics, inventory deltas, role economics, flow audits, costs, decisions, fills, and post-fill holdings are displayed without browser-side financial recomputation. Pair URL state owns orientation/anchor/view; deterministic identity coordinates are labeled explicitly; typed API failures remain visible and recoverable.
+- **Rendered verification:** `agent-browser` exercised desktop 1440×1000 and mobile 390×844 experiment, portfolio, pair, reciprocal, reduced-anchor, unavailable-anchor, recovery, keyboard skip-link, independently scrollable table, console, and WCAG A/AA paths. Final audited pages had no document-level horizontal overflow, no console errors, and zero accessibility violations or incomplete contrast checks.
+- **Licensing:** Lightweight Charts keeps its built-in TradingView logo and the application footer supplies visible creator/version/Apache-2.0 attribution; `web/THIRD_PARTY_NOTICES.md` records the installed package provenance.
+
 ## Global Constraints
 
 - Frontend never recalculates wallet balances, fill economics, HODL benchmark, or authoritative experiment metrics.

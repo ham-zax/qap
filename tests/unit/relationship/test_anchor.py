@@ -19,6 +19,7 @@ from qap.relationship import (
     FitReciprocity,
     RelationshipDataError,
     build_anchor_lens,
+    identity_source_fingerprint,
 )
 
 ETH = AssetId("ETH")
@@ -172,6 +173,32 @@ def test_common_reference_asset_is_an_explicit_unit_anchor() -> None:
     assert lens.anchor_source_fingerprint is None
     np.testing.assert_allclose(lens.base_to_anchor, [20.0, 40.0, 30.0])
     np.testing.assert_allclose(lens.quote_to_anchor, [5.0, 10.0, 6.0])
+
+
+def test_pair_leg_can_be_the_common_reference_identity_coordinate() -> None:
+    aligned = align_bar_series(
+        (
+            _series(ETH, (20.0, 40.0, 30.0)),
+            _series(BTC, (5.0, 10.0, 6.0)),
+        )
+    )
+
+    lens = build_anchor_lens(
+        aligned,
+        orientation=PairOrientation(base=ETH, quote=USDT),
+        anchor=USDT,
+        source_fingerprints=FINGERPRINTS,
+        as_of=AS_OF,
+    )
+
+    identity_fingerprint = identity_source_fingerprint(USDT)
+    assert lens.reduction is AnchorReduction.ANCHOR_IS_QUOTE
+    assert lens.base_source_fingerprint == FINGERPRINTS[ETH]
+    assert lens.quote_source_fingerprint == identity_fingerprint
+    assert lens.anchor_source_fingerprint == identity_fingerprint
+    np.testing.assert_allclose(lens.pair_ratio, [20.0, 40.0, 30.0])
+    np.testing.assert_allclose(lens.base_to_anchor, [20.0, 40.0, 30.0])
+    np.testing.assert_allclose(lens.quote_to_anchor, [1.0, 1.0, 1.0])
 
 
 def test_anchor_lens_rejects_mismatched_reference_coordinates() -> None:

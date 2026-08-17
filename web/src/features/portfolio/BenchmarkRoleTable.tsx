@@ -1,0 +1,48 @@
+import type { ExperimentDetailDto } from '../../api/types'
+import { TableScroll } from '../../components/TableScroll'
+
+interface BenchmarkRoleTableProps {
+  roles: ExperimentDetailDto['result']['roles']
+}
+
+export function BenchmarkRoleTable({ roles }: BenchmarkRoleTableProps) {
+  return (
+    <section aria-labelledby="benchmark-role-heading">
+      <h2 id="benchmark-role-heading">Terminal economics by role</h2>
+      <TableScroll label="Benchmark role terminal economics">
+        <table aria-label="Benchmark role terminal economics">
+          <thead>
+            <tr>
+              <th scope="col">Role</th>
+              <th scope="col">Policy</th>
+              <th scope="col">Terminal value</th>
+              <th scope="col">Unitized terminal value</th>
+              <th scope="col">Fills</th>
+              <th scope="col">Fees</th>
+              <th scope="col">Slippage</th>
+              <th scope="col">Turnover</th>
+            </tr>
+          </thead>
+          <tbody>
+            {roles.map((role) => (
+              <tr key={role.role}>
+                <th scope="row">{role.role}</th>
+                <td>{role.policy_id}</td>
+                <td>{role.terminal_value}</td>
+                <td>{role.unitized_terminal_value}</td>
+                <td>{role.fill_count}</td>
+                <td>{role.fees_value}</td>
+                <td>{role.slippage_value}</td>
+                <td>{role.turnover_value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableScroll>
+      <p>
+        These are persisted role-level economics. Differences between rungs are
+        frozen policy comparisons, not an additive causal decomposition.
+      </p>
+    </section>
+  )
+}

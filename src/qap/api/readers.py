@@ -104,6 +104,10 @@ class RunArtifactReader:
                     research_family_id=result.research_family_id,
                     parent_run_id=result.parent_run_id,
                     universe_mode=loaded.manifest.universe_mode.value,
+                    basket=loaded.manifest.basket,
+                    analysis_anchor=loaded.manifest.analysis_anchor,
+                    relationship_id=loaded.manifest.relationship.component_id,
+                    policy_id=loaded.manifest.policy.component_id,
                     data_role=result.data_role.value,
                     final_oos_consumed=result.final_oos_consumed,
                     status=result.status.value,
@@ -183,6 +187,7 @@ class RunArtifactReader:
         asset_x: str,
         asset_y: str,
         anchor: str,
+        orientation: str | None,
     ) -> AnchorLensDto:
         return project_anchor_lens(
             self.read(run_id),
@@ -190,6 +195,7 @@ class RunArtifactReader:
             asset_x=asset_x,
             asset_y=asset_y,
             anchor=anchor,
+            orientation=orientation,
         )
 
 

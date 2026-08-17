@@ -154,6 +154,8 @@ def test_portfolio_performance_projects_authoritative_exact_series(
     assert payload["maximum_relative_drawdown_vs_hodl"] == (
         "0.01787789538187533090723874245196399729242482122632"
     )
+    assert payload["time_below_hodl_seconds"] == 36_000
+    assert payload["time_below_primary_control_seconds"] == 36_000
     series = {item["name"]: item["points"] for item in payload["series"]}
     assert series["value::strategy"][-1]["value"] == (
         "43458.90312935201660735468564650059311981020166073547009071975"
@@ -165,3 +167,5 @@ def test_portfolio_performance_projects_authoritative_exact_series(
     assert series["relative::strategy_vs_primary_control"][-1]["value"] == (
         "-0.017914217800326623022828241313706705883140291947"
     )
+    assert series["log_relative::strategy_vs_hodl"][0]["value"] == "0"
+    assert series["log_relative::strategy_vs_primary_control"][0]["value"] == "0"

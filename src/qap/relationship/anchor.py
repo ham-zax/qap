@@ -1,9 +1,12 @@
-"""Transparent anchor decomposition over one admitted aligned dataset."""
+"""Common-reference anchor lenses with explicit reduced identities."""
+
+from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
+from types import MappingProxyType
 
 import numpy as np
 from numpy.typing import NDArray
@@ -14,35 +17,33 @@ from qap.relationship.observation import (
     EvidenceReciprocity,
     FitReciprocity,
     RelationshipDataError,
+    frozen_mapping,
+    validated_as_of,
     validated_source_fingerprints,
     validated_timestamps,
-    validated_utc,
 )
-from qap.relationship.ratio import aligned_leg, log_ratio, positive_vector, raw_ratio
-
-_DECOMPOSITION_RTOL = 1e-12
-_DECOMPOSITION_ATOL = 1e-12
+from qap.relationship.ratio import (
+    aligned_asset_values,
+    frozen_array,
+    log_ratio,
+    raw_ratio,
+    source_fingerprint_for_asset,
+)
 
 
 class AnchorReduction(StrEnum):
-    """Whether an anchor lens has three distinct assets or a reduced identity."""
-
     NONE = "none"
     ANCHOR_IS_BASE = "anchor_is_base"
     ANCHOR_IS_QUOTE = "anchor_is_quote"
 
 
-@dataclass(frozen=True, slots=True, init=False)
+@dataclass(frozen=True, slots=True)
 class AnchorLens:
-    """Synchronized descriptive X/Y, X/A, and Y/A evidence."""
-
     pair_id: PairId
     orientation: PairOrientation
     anchor: AssetId
     interval: BarInterval
     timestamps: tuple[datetime, ...]
-    window_start: datetime
-    window_end_exclusive: datetime
     as_of: datetime
     base_source_fingerprint: str
     quote_source_fingerprint: str
@@ -50,54 +51,43 @@ class AnchorLens:
     fit_reciprocity: FitReciprocity
     evidence_reciprocity: EvidenceReciprocity
     reduction: AnchorReduction
-    pair_ratio: tuple[float, ...]
-    pair_log_ratio: tuple[float, ...]
-    base_to_anchor: tuple[float, ...]
-    quote_to_anchor: tuple[float, ...]
-    base_to_anchor_log: tuple[float, ...]
-    quote_to_anchor_log: tuple[float, ...]
+    identity_values: Mapping[str, float]
+    pair_ratio: NDArray[np.float64]
+    pair_log_ratio: NDArray[np.float64]
+    base_to_anchor: NDArray[np.float64]
+    quote_to_anchor: NDArray[np.float64]
+    base_to_anchor_log: NDArray[np.float64]
+    quote_to_anchor_log: NDArray[np.float64]
     max_ratio_decomposition_error: float
     max_log_decomposition_error: float
-    descriptive_only: bool
 
-    def __init__(self) -> None:
-        raise TypeError("use build_anchor_lens()")
+    def __post_init__(self) -> None:
+        if self.orientation.pair_id != self.pair_id:
+            raise ValueError("orientation must match pair_id")
+        if not isinstance(self.reduction, AnchorReduction):
+            raise TypeError("reduction must be AnchorReduction")
+        if self.max_ratio_decomposition_error < 0 or not np.isfinite(
+            self.max_ratio_decomposition_error
+        ):
+            raise ValueError("max_ratio_decomposition_error must be finite and >= 0")
+        if self.max_log_decomposition_error < 0 or not np.isfinite(
+            self.max_log_decomposition_error
+        ):
+            raise ValueError("max_log_decomposition_error must be finite and >= 0")
+        object.__setattr__(self, "identity_values", frozen_mapping(self.identity_values))
+        for field_name in (
+            "pair_ratio",
+            "pair_log_ratio",
+            "base_to_anchor",
+            "quote_to_anchor",
+            "base_to_anchor_log",
+            "quote_to_anchor_log",
+        ):
+            object.__setattr__(self, field_name, frozen_array(getattr(self, field_name)))
 
-
-def _tuple(array: NDArray[np.float64]) -> tuple[float, ...]:
-    return tuple(float(value) for value in array)
-
-
-def _fingerprints(
-    source_fingerprints: Mapping[AssetId, str],
-    *,
-    orientation: PairOrientation,
-    anchor: AssetId,
-    common_quote: AssetId,
-) -> tuple[str, str, str | None]:
-    fingerprints = validated_source_fingerprints(source_fingerprints)
-    try:
-        base_fingerprint = fingerprints[orientation.base]
-        quote_fingerprint = fingerprints[orientation.quote]
-    except KeyError as exc:
-        missing = exc.args[0]
-        missing_key = missing.key if isinstance(missing, AssetId) else str(missing)
-        raise RelationshipDataError(
-            f"missing source fingerprint for {missing_key}"
-        ) from exc
-    if anchor == orientation.base:
-        return base_fingerprint, quote_fingerprint, base_fingerprint
-    if anchor == orientation.quote:
-        return base_fingerprint, quote_fingerprint, quote_fingerprint
-    if anchor == common_quote:
-        return base_fingerprint, quote_fingerprint, None
-    try:
-        anchor_fingerprint = fingerprints[anchor]
-    except KeyError as exc:
-        raise RelationshipDataError(
-            f"missing source fingerprint for {anchor.key}"
-        ) from exc
-    return base_fingerprint, quote_fingerprint, anchor_fingerprint
+    @property
+    def descriptive_only(self) -> bool:
+        return True
 
 
 def _anchor_values(
@@ -109,39 +99,93 @@ def _anchor_values(
     NDArray[np.float64],
     NDArray[np.float64],
     NDArray[np.float64],
-    AnchorReduction,
     AssetId,
+    bool,
+    bool,
+    bool,
 ]:
-    base_leg = aligned_leg(aligned, orientation.base)
-    quote_leg = aligned_leg(aligned, orientation.quote)
-    common_quote = base_leg.instrument.quote
-    if quote_leg.instrument.quote != common_quote:
+    base_values, base_reference, base_identity = aligned_asset_values(
+        aligned,
+        orientation.base,
+    )
+    quote_values, quote_reference, quote_identity = aligned_asset_values(
+        aligned,
+        orientation.quote,
+    )
+    if base_reference != quote_reference:
         raise RelationshipDataError(
             "oriented legs must share one common quote/reference coordinate"
         )
-
-    base = positive_vector(base_leg.closes, field="base prices")
-    quote = positive_vector(quote_leg.closes, field="quote prices")
-    if anchor == orientation.base:
-        return base, quote, base, AnchorReduction.ANCHOR_IS_BASE, common_quote
-    if anchor == orientation.quote:
-        return base, quote, quote, AnchorReduction.ANCHOR_IS_QUOTE, common_quote
-    if anchor == common_quote:
-        return (
-            base,
-            quote,
-            np.ones(base.shape, dtype=np.float64),
-            AnchorReduction.NONE,
-            common_quote,
-        )
-
-    anchor_leg = aligned_leg(aligned, anchor)
-    if anchor_leg.instrument.quote != common_quote:
+    anchor_values, anchor_reference, anchor_identity = aligned_asset_values(
+        aligned,
+        anchor,
+    )
+    if anchor_reference != base_reference:
         raise RelationshipDataError(
-            "anchor leg must share the pair's common quote/reference coordinate"
+            "anchor path must use the same common quote/reference coordinate"
         )
-    anchor_values = positive_vector(anchor_leg.closes, field="anchor prices")
-    return base, quote, anchor_values, AnchorReduction.NONE, common_quote
+    return (
+        base_values,
+        quote_values,
+        anchor_values,
+        base_reference,
+        base_identity,
+        quote_identity,
+        anchor_identity,
+    )
+
+
+def _fingerprints(
+    *,
+    orientation: PairOrientation,
+    anchor: AssetId,
+    common_quote: AssetId,
+    source_fingerprints: Mapping[AssetId, str],
+    base_identity: bool,
+    quote_identity: bool,
+    anchor_identity: bool,
+) -> tuple[str, str, str | None]:
+    fingerprints = validated_source_fingerprints(source_fingerprints)
+    base_fingerprint = source_fingerprint_for_asset(
+        fingerprints,
+        asset=orientation.base,
+        identity_coordinate=base_identity,
+    )
+    quote_fingerprint = source_fingerprint_for_asset(
+        fingerprints,
+        asset=orientation.quote,
+        identity_coordinate=quote_identity,
+    )
+    if anchor == orientation.base:
+        return base_fingerprint, quote_fingerprint, base_fingerprint
+    if anchor == orientation.quote:
+        return base_fingerprint, quote_fingerprint, quote_fingerprint
+    if anchor == common_quote and anchor_identity:
+        return base_fingerprint, quote_fingerprint, None
+    anchor_fingerprint = source_fingerprint_for_asset(
+        fingerprints,
+        asset=anchor,
+        identity_coordinate=anchor_identity,
+    )
+    return base_fingerprint, quote_fingerprint, anchor_fingerprint
+
+
+def _reduction(
+    *,
+    orientation: PairOrientation,
+    anchor: AssetId,
+) -> tuple[AnchorReduction, Mapping[str, float]]:
+    if anchor == orientation.base:
+        return (
+            AnchorReduction.ANCHOR_IS_BASE,
+            MappingProxyType({f"{orientation.base.key}/{anchor.key}": 1.0}),
+        )
+    if anchor == orientation.quote:
+        return (
+            AnchorReduction.ANCHOR_IS_QUOTE,
+            MappingProxyType({f"{orientation.quote.key}/{anchor.key}": 1.0}),
+        )
+    return AnchorReduction.NONE, MappingProxyType({})
 
 
 def build_anchor_lens(
@@ -152,80 +196,65 @@ def build_anchor_lens(
     source_fingerprints: Mapping[AssetId, str],
     as_of: datetime,
 ) -> AnchorLens:
-    """Build and verify ratio/log anchor identities on one aligned dataset."""
+    """Build pair and anchor paths from one admitted aligned close-price window."""
 
     timestamps = validated_timestamps(aligned.timestamps, interval=aligned.interval)
-    normalized_as_of = validated_utc(as_of, field="as_of")
-    window_end_exclusive = timestamps[-1] + aligned.interval.duration
-    if normalized_as_of < window_end_exclusive:
-        raise RelationshipDataError("as_of must include the entire completed window")
-    base, quote, anchor_values, reduction, common_quote = _anchor_values(
+    validated_time = validated_as_of(as_of, timestamps=timestamps)
+    (
+        base_values,
+        quote_values,
+        anchor_values,
+        common_quote,
+        base_identity,
+        quote_identity,
+        anchor_identity,
+    ) = _anchor_values(
         aligned,
         orientation=orientation,
         anchor=anchor,
     )
     base_fingerprint, quote_fingerprint, anchor_fingerprint = _fingerprints(
-        source_fingerprints,
         orientation=orientation,
         anchor=anchor,
         common_quote=common_quote,
+        source_fingerprints=source_fingerprints,
+        base_identity=base_identity,
+        quote_identity=quote_identity,
+        anchor_identity=anchor_identity,
     )
 
-    direct = raw_ratio(base, quote)
-    direct_log = log_ratio(base, quote)
-    base_anchor = raw_ratio(base, anchor_values)
-    quote_anchor = raw_ratio(quote, anchor_values)
-    base_anchor_log = log_ratio(base, anchor_values)
-    quote_anchor_log = log_ratio(quote, anchor_values)
-    reconstructed = raw_ratio(base_anchor, quote_anchor)
+    pair = raw_ratio(base_values, quote_values)
+    pair_log = log_ratio(base_values, quote_values)
+    base_anchor = raw_ratio(base_values, anchor_values)
+    quote_anchor = raw_ratio(quote_values, anchor_values)
+    base_anchor_log = log_ratio(base_values, anchor_values)
+    quote_anchor_log = log_ratio(quote_values, anchor_values)
+    reconstructed_ratio = raw_ratio(base_anchor, quote_anchor)
     reconstructed_log = base_anchor_log - quote_anchor_log
-    ratio_error = float(np.max(np.abs(direct - reconstructed)))
-    log_error = float(np.max(np.abs(direct_log - reconstructed_log)))
-    if not np.allclose(
-        direct,
-        reconstructed,
-        rtol=_DECOMPOSITION_RTOL,
-        atol=_DECOMPOSITION_ATOL,
-    ):
-        raise RelationshipDataError(
-            "anchor ratio decomposition exceeded the declared tolerance"
-        )
-    if not np.allclose(
-        direct_log,
-        reconstructed_log,
-        rtol=_DECOMPOSITION_RTOL,
-        atol=_DECOMPOSITION_ATOL,
-    ):
-        raise RelationshipDataError(
-            "anchor log decomposition exceeded the declared tolerance"
-        )
+    ratio_error = float(np.max(np.abs(pair - reconstructed_ratio)))
+    log_error = float(np.max(np.abs(pair_log - reconstructed_log)))
+    reduction, identity_values = _reduction(orientation=orientation, anchor=anchor)
 
-    result = object.__new__(AnchorLens)
-    object.__setattr__(result, "pair_id", orientation.pair_id)
-    object.__setattr__(result, "orientation", orientation)
-    object.__setattr__(result, "anchor", anchor)
-    object.__setattr__(result, "interval", aligned.interval)
-    object.__setattr__(result, "timestamps", timestamps)
-    object.__setattr__(result, "window_start", timestamps[0])
-    object.__setattr__(result, "window_end_exclusive", window_end_exclusive)
-    object.__setattr__(result, "as_of", normalized_as_of)
-    object.__setattr__(result, "base_source_fingerprint", base_fingerprint)
-    object.__setattr__(result, "quote_source_fingerprint", quote_fingerprint)
-    object.__setattr__(result, "anchor_source_fingerprint", anchor_fingerprint)
-    object.__setattr__(result, "fit_reciprocity", FitReciprocity.EXACT_TRANSFORM)
-    object.__setattr__(
-        result,
-        "evidence_reciprocity",
-        EvidenceReciprocity.EXACT_TRANSFORM,
+    return AnchorLens(
+        pair_id=orientation.pair_id,
+        orientation=orientation,
+        anchor=anchor,
+        interval=aligned.interval,
+        timestamps=timestamps,
+        as_of=validated_time,
+        base_source_fingerprint=base_fingerprint,
+        quote_source_fingerprint=quote_fingerprint,
+        anchor_source_fingerprint=anchor_fingerprint,
+        fit_reciprocity=FitReciprocity.EXACT_TRANSFORM,
+        evidence_reciprocity=EvidenceReciprocity.EXACT_TRANSFORM,
+        reduction=reduction,
+        identity_values=identity_values,
+        pair_ratio=pair,
+        pair_log_ratio=pair_log,
+        base_to_anchor=base_anchor,
+        quote_to_anchor=quote_anchor,
+        base_to_anchor_log=base_anchor_log,
+        quote_to_anchor_log=quote_anchor_log,
+        max_ratio_decomposition_error=ratio_error,
+        max_log_decomposition_error=log_error,
     )
-    object.__setattr__(result, "reduction", reduction)
-    object.__setattr__(result, "pair_ratio", _tuple(direct))
-    object.__setattr__(result, "pair_log_ratio", _tuple(direct_log))
-    object.__setattr__(result, "base_to_anchor", _tuple(base_anchor))
-    object.__setattr__(result, "quote_to_anchor", _tuple(quote_anchor))
-    object.__setattr__(result, "base_to_anchor_log", _tuple(base_anchor_log))
-    object.__setattr__(result, "quote_to_anchor_log", _tuple(quote_anchor_log))
-    object.__setattr__(result, "max_ratio_decomposition_error", ratio_error)
-    object.__setattr__(result, "max_log_decomposition_error", log_error)
-    object.__setattr__(result, "descriptive_only", True)
-    return result

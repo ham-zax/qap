@@ -80,6 +80,12 @@ def pair_series(
         run_id=loaded.provenance.run_id,
         canonical_pair=(pair_id.first.key, pair_id.second.key),
         requested_orientation=f"{requested.base.key}/{requested.quote.key}",
+        available_anchors=_available_anchors(
+            loaded,
+            aligned=aligned,
+            orientation=requested,
+            source_fingerprints=source_fingerprints,
+        ),
         interval=aligned.interval.label,
         base_source_fingerprint=ratio.base_source_fingerprint,
         quote_source_fingerprint=ratio.quote_source_fingerprint,
@@ -100,6 +106,30 @@ def pair_series(
     )
 
 
+def _available_anchors(
+    loaded: LoadedRunArtifacts,
+    *,
+    aligned: AlignedBarSeries,
+    orientation: PairOrientation,
+    source_fingerprints: dict[AssetId, str],
+) -> tuple[str, ...]:
+    available: list[str] = []
+    for key in loaded.manifest.basket:
+        anchor = loaded.manifest.asset(key)
+        try:
+            build_anchor_lens(
+                aligned,
+                orientation=orientation,
+                anchor=anchor,
+                source_fingerprints=source_fingerprints,
+                as_of=loaded.manifest.data_window.end,
+            )
+        except (KeyError, RelationshipDataError):
+            continue
+        available.append(anchor.key)
+    return tuple(available)
+
+
 def anchor_lens(
     loaded: LoadedRunArtifacts,
     *,
@@ -107,11 +137,12 @@ def anchor_lens(
     asset_x: str,
     asset_y: str,
     anchor: str,
+    orientation: str | None,
 ) -> AnchorLensDto:
     requested = _pair_orientation(
         asset_x=asset_x,
         asset_y=asset_y,
-        orientation=None,
+        orientation=orientation,
     )
     aligned, source_fingerprints = _relationship_inputs(
         loaded,

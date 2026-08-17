@@ -1,4 +1,4 @@
-"""Model-free descriptive relationship evidence over admitted market data."""
+"""Relationship-analysis primitives and admitted descriptive transforms."""
 
 from qap.relationship.anchor import AnchorLens, AnchorReduction, build_anchor_lens
 from qap.relationship.normalized import (
@@ -18,6 +18,7 @@ from qap.relationship.observation import (
 from qap.relationship.ratio import (
     build_log_ratio_series,
     build_ratio_series,
+    identity_source_fingerprint,
     log_ratio,
     raw_ratio,
 )
@@ -36,6 +37,7 @@ __all__ = [
     "build_log_ratio_series",
     "build_normalized_path",
     "build_ratio_series",
+    "identity_source_fingerprint",
     "log_ratio",
     "normalize_to_hundred",
     "normalize_to_one",

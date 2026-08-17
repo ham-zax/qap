@@ -39,6 +39,10 @@ class RunSummaryDto(ApiDto):
     research_family_id: str | None = None
     parent_run_id: str | None = None
     universe_mode: str | None = None
+    basket: tuple[str, ...] | None = None
+    analysis_anchor: str | None = None
+    relationship_id: str | None = None
+    policy_id: str | None = None
     data_role: str | None = None
     final_oos_consumed: bool | None = None
     status: str | None = None
@@ -178,6 +182,8 @@ class PortfolioPerformanceDto(ApiDto):
     run_id: str
     primary_incremental_benchmark: str | None
     maximum_relative_drawdown_vs_hodl: str
+    time_below_hodl_seconds: int
+    time_below_primary_control_seconds: int | None
     series: tuple[PerformanceSeriesDto, ...]
 
 
@@ -199,6 +205,8 @@ class PairSeriesDto(ApiDto):
     run_id: str
     canonical_pair: tuple[str, str]
     requested_orientation: str
+    available_anchors: tuple[str, ...]
+    identity_coordinate_assets: tuple[str, ...]
     interval: str
     base_source_fingerprint: str
     quote_source_fingerprint: str
@@ -218,6 +226,7 @@ class AnchorLensDto(ApiDto):
     canonical_pair: tuple[str, str]
     requested_orientation: str
     anchor: str
+    identity_coordinate_assets: tuple[str, ...]
     interval: str
     base_source_fingerprint: str
     quote_source_fingerprint: str

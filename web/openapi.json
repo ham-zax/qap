@@ -1,0 +1,2670 @@
+{
+  "components": {
+    "schemas": {
+      "AnchorLensDto": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "title": "Anchor",
+            "type": "string"
+          },
+          "anchor_source_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor Source Fingerprint"
+          },
+          "base_source_fingerprint": {
+            "title": "Base Source Fingerprint",
+            "type": "string"
+          },
+          "base_to_anchor": {
+            "items": {
+              "$ref": "#/components/schemas/FloatPointDto"
+            },
+            "title": "Base To Anchor",
+            "type": "array"
+          },
+          "base_to_anchor_log": {
+            "items": {
+              "$ref": "#/components/schemas/FloatPointDto"
+            },
+            "title": "Base To Anchor Log",
+            "type": "array"
+          },
+          "canonical_pair": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Canonical Pair",
+            "type": "array"
+          },
+          "descriptive_only": {
+            "title": "Descriptive Only",
+            "type": "boolean"
+          },
+          "evidence_reciprocity": {
+            "title": "Evidence Reciprocity",
+            "type": "string"
+          },
+          "fit_reciprocity": {
+            "title": "Fit Reciprocity",
+            "type": "string"
+          },
+          "interval": {
+            "title": "Interval",
+            "type": "string"
+          },
+          "max_log_decomposition_error": {
+            "title": "Max Log Decomposition Error",
+            "type": "number"
+          },
+          "max_ratio_decomposition_error": {
+            "title": "Max Ratio Decomposition Error",
+            "type": "number"
+          },
+          "pair_log_ratio": {
+            "items": {
+              "$ref": "#/components/schemas/FloatPointDto"
+            },
+            "title": "Pair Log Ratio",
+            "type": "array"
+          },
+          "pair_ratio": {
+            "items": {
+              "$ref": "#/components/schemas/FloatPointDto"
+            },
+            "title": "Pair Ratio",
+            "type": "array"
+          },
+          "quote_source_fingerprint": {
+            "title": "Quote Source Fingerprint",
+            "type": "string"
+          },
+          "quote_to_anchor": {
+            "items": {
+              "$ref": "#/components/schemas/FloatPointDto"
+            },
+            "title": "Quote To Anchor",
+            "type": "array"
+          },
+          "quote_to_anchor_log": {
+            "items": {
+              "$ref": "#/components/schemas/FloatPointDto"
+            },
+            "title": "Quote To Anchor Log",
+            "type": "array"
+          },
+          "reduction": {
+            "title": "Reduction",
+            "type": "string"
+          },
+          "requested_orientation": {
+            "title": "Requested Orientation",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.anchor_lens.v1",
+            "default": "qap.api.anchor_lens.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "canonical_pair",
+          "requested_orientation",
+          "anchor",
+          "interval",
+          "base_source_fingerprint",
+          "quote_source_fingerprint",
+          "anchor_source_fingerprint",
+          "fit_reciprocity",
+          "evidence_reciprocity",
+          "reduction",
+          "pair_ratio",
+          "pair_log_ratio",
+          "base_to_anchor",
+          "quote_to_anchor",
+          "base_to_anchor_log",
+          "quote_to_anchor_log",
+          "max_ratio_decomposition_error",
+          "max_log_decomposition_error",
+          "descriptive_only"
+        ],
+        "title": "AnchorLensDto",
+        "type": "object"
+      },
+      "ArtifactSeriesMetadataDto": {
+        "additionalProperties": false,
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "row_count": {
+            "title": "Row Count",
+            "type": "integer"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "schema_version",
+          "columns",
+          "row_count"
+        ],
+        "title": "ArtifactSeriesMetadataDto",
+        "type": "object"
+      },
+      "AssetDeltaDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset": {
+            "title": "Asset",
+            "type": "string"
+          },
+          "quantity_delta": {
+            "title": "Quantity Delta",
+            "type": "string"
+          },
+          "value_delta": {
+            "title": "Value Delta",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset",
+          "quantity_delta",
+          "value_delta"
+        ],
+        "title": "AssetDeltaDto",
+        "type": "object"
+      },
+      "BandPartialControlSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "band_width": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Band Width",
+            "type": "string"
+          },
+          "control_id": {
+            "minLength": 1,
+            "title": "Control Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "band_partial",
+            "title": "Kind",
+            "type": "string"
+          },
+          "partial_correction_fraction": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Partial Correction Fraction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "control_id",
+          "band_width",
+          "partial_correction_fraction"
+        ],
+        "title": "BandPartialControlSpec",
+        "type": "object"
+      },
+      "BenchmarkSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "controls": {
+            "default": [],
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "band_partial": "#/components/schemas/BandPartialControlSpec",
+                  "contribution_aware_band": "#/components/schemas/ContributionAwareBandControlSpec",
+                  "periodic_fixed_weight": "#/components/schemas/PeriodicFixedWeightControlSpec"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/PeriodicFixedWeightControlSpec"
+                },
+                {
+                  "$ref": "#/components/schemas/BandPartialControlSpec"
+                },
+                {
+                  "$ref": "#/components/schemas/ContributionAwareBandControlSpec"
+                }
+              ]
+            },
+            "title": "Controls",
+            "type": "array"
+          },
+          "primary_incremental_benchmark": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Incremental Benchmark"
+          },
+          "relationship_alpha_claim": {
+            "default": false,
+            "title": "Relationship Alpha Claim",
+            "type": "boolean"
+          }
+        },
+        "title": "BenchmarkSpec",
+        "type": "object"
+      },
+      "ComponentSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "component_id": {
+            "minLength": 1,
+            "title": "Component Id",
+            "type": "string"
+          },
+          "config": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Config",
+            "type": "object"
+          }
+        },
+        "required": [
+          "component_id"
+        ],
+        "title": "ComponentSpec",
+        "type": "object"
+      },
+      "ConcentrationSummaryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "start_herfindahl": {
+            "title": "Start Herfindahl",
+            "type": "string"
+          },
+          "start_max_weight": {
+            "title": "Start Max Weight",
+            "type": "string"
+          },
+          "terminal_herfindahl": {
+            "title": "Terminal Herfindahl",
+            "type": "string"
+          },
+          "terminal_max_weight": {
+            "title": "Terminal Max Weight",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_max_weight",
+          "terminal_max_weight",
+          "start_herfindahl",
+          "terminal_herfindahl"
+        ],
+        "title": "ConcentrationSummaryDto",
+        "type": "object"
+      },
+      "ContributionAwareBandControlSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "band_width": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Band Width",
+            "type": "string"
+          },
+          "control_id": {
+            "minLength": 1,
+            "title": "Control Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "contribution_aware_band",
+            "title": "Kind",
+            "type": "string"
+          },
+          "partial_correction_fraction": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Partial Correction Fraction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "control_id",
+          "band_width",
+          "partial_correction_fraction"
+        ],
+        "title": "ContributionAwareBandControlSpec",
+        "type": "object"
+      },
+      "CostScenarioSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "fee_bps": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Fee Bps",
+            "type": "string"
+          },
+          "slippage_bps": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Slippage Bps",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fee_bps",
+          "slippage_bps"
+        ],
+        "title": "CostScenarioSpec",
+        "type": "object"
+      },
+      "CostSummaryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "fees_value": {
+            "title": "Fees Value",
+            "type": "string"
+          },
+          "fill_count": {
+            "title": "Fill Count",
+            "type": "integer"
+          },
+          "slippage_value": {
+            "title": "Slippage Value",
+            "type": "string"
+          },
+          "turnover_value": {
+            "title": "Turnover Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fill_count",
+          "fees_value",
+          "slippage_value",
+          "turnover_value"
+        ],
+        "title": "CostSummaryDto",
+        "type": "object"
+      },
+      "DataRole": {
+        "enum": [
+          "exploratory",
+          "development",
+          "final_oos",
+          "forward_paper"
+        ],
+        "title": "DataRole",
+        "type": "string"
+      },
+      "DataSourceSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "minLength": 1,
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "expected_semantic_fingerprint": {
+            "title": "Expected Semantic Fingerprint",
+            "type": "string"
+          },
+          "instrument_id": {
+            "minLength": 1,
+            "title": "Instrument Id",
+            "type": "string"
+          },
+          "relative_path": {
+            "title": "Relative Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "instrument_id",
+          "relative_path",
+          "expected_semantic_fingerprint"
+        ],
+        "title": "DataSourceSpec",
+        "type": "object"
+      },
+      "DataWindowSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "DataWindowSpec",
+        "type": "object"
+      },
+      "DatasetFingerprint": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "minLength": 1,
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "fingerprint": {
+            "title": "Fingerprint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "fingerprint"
+        ],
+        "title": "DatasetFingerprint",
+        "type": "object"
+      },
+      "ErrorDetailDto": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Context",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "context"
+        ],
+        "title": "ErrorDetailDto",
+        "type": "object"
+      },
+      "ExactPointDto": {
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "timestamp",
+          "value"
+        ],
+        "title": "ExactPointDto",
+        "type": "object"
+      },
+      "ExecutionSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "adverse_cost_scenario": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CostScenarioSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "base_step": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Step"
+          },
+          "execution_instrument_id": {
+            "minLength": 1,
+            "title": "Execution Instrument Id",
+            "type": "string"
+          },
+          "fee_bps": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Fee Bps",
+            "type": "string"
+          },
+          "minimum_rebalance_notional": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Minimum Rebalance Notional",
+            "type": "string"
+          },
+          "numeraire_asset": {
+            "minLength": 1,
+            "title": "Numeraire Asset",
+            "type": "string"
+          },
+          "slippage_bps": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Slippage Bps",
+            "type": "string"
+          }
+        },
+        "required": [
+          "execution_instrument_id",
+          "numeraire_asset",
+          "fee_bps",
+          "slippage_bps",
+          "minimum_rebalance_notional"
+        ],
+        "title": "ExecutionSpec",
+        "type": "object"
+      },
+      "ExperimentDetailDto": {
+        "additionalProperties": false,
+        "properties": {
+          "available_series": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactSeriesMetadataDto"
+            },
+            "title": "Available Series",
+            "type": "array"
+          },
+          "final_oos_commitment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FinalOosCommitment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/ExperimentManifest"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/RunProvenance"
+          },
+          "result": {
+            "$ref": "#/components/schemas/ExperimentResult"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.experiment_detail.v1",
+            "default": "qap.api.experiment_detail.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "sibling_trial_count": {
+            "title": "Sibling Trial Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id",
+          "sibling_trial_count",
+          "manifest",
+          "provenance",
+          "result",
+          "final_oos_commitment",
+          "available_series"
+        ],
+        "title": "ExperimentDetailDto",
+        "type": "object"
+      },
+      "ExperimentListDto": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RunSummaryDto"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "qap.api.experiment_list.v1",
+            "default": "qap.api.experiment_list.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ExperimentListDto",
+        "type": "object"
+      },
+      "ExperimentManifest": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_anchor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Anchor"
+          },
+          "basket": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Basket",
+            "type": "array"
+          },
+          "benchmarks": {
+            "$ref": "#/components/schemas/BenchmarkSpec"
+          },
+          "data_role": {
+            "$ref": "#/components/schemas/DataRole"
+          },
+          "data_sources": {
+            "items": {
+              "$ref": "#/components/schemas/DataSourceSpec"
+            },
+            "title": "Data Sources",
+            "type": "array"
+          },
+          "data_window": {
+            "$ref": "#/components/schemas/DataWindowSpec"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "execution": {
+            "$ref": "#/components/schemas/ExecutionSpec"
+          },
+          "experiment_name": {
+            "minLength": 1,
+            "title": "Experiment Name",
+            "type": "string"
+          },
+          "external_flows": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ExternalFlowSpec"
+            },
+            "title": "External Flows",
+            "type": "array"
+          },
+          "instruments": {
+            "items": {
+              "$ref": "#/components/schemas/InstrumentSpec"
+            },
+            "title": "Instruments",
+            "type": "array"
+          },
+          "interval": {
+            "minLength": 1,
+            "title": "Interval",
+            "type": "string"
+          },
+          "parent_run_id": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Run Id"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/ComponentSpec"
+          },
+          "primary_metric": {
+            "$ref": "#/components/schemas/PrimaryMetric"
+          },
+          "random_seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Random Seed"
+          },
+          "relationship": {
+            "$ref": "#/components/schemas/ComponentSpec"
+          },
+          "research_family_id": {
+            "minLength": 1,
+            "title": "Research Family Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.experiment.manifest.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "starting_quantities": {
+            "additionalProperties": {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            "title": "Starting Quantities",
+            "type": "object"
+          },
+          "success_threshold": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Success Threshold",
+            "type": "string"
+          },
+          "universe_mode": {
+            "$ref": "#/components/schemas/UniverseMode"
+          }
+        },
+        "required": [
+          "schema_version",
+          "experiment_name",
+          "description",
+          "research_family_id",
+          "basket",
+          "starting_quantities",
+          "universe_mode",
+          "instruments",
+          "interval",
+          "data_window",
+          "data_sources",
+          "relationship",
+          "policy",
+          "execution",
+          "benchmarks",
+          "data_role",
+          "primary_metric",
+          "success_threshold"
+        ],
+        "title": "ExperimentManifest",
+        "type": "object"
+      },
+      "ExperimentResult": {
+        "additionalProperties": false,
+        "description": "One durable benchmark-ladder result with no promotion side effect.",
+        "properties": {
+          "data_role": {
+            "$ref": "#/components/schemas/DataRole"
+          },
+          "final_oos_consumed": {
+            "title": "Final Oos Consumed",
+            "type": "boolean"
+          },
+          "incremental_log_relative_to_hodl": {
+            "anyOf": [
+              {
+                "items": {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incremental Log Relative To Hodl"
+          },
+          "maximum_relative_drawdown_vs_hodl": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Maximum Relative Drawdown Vs Hodl",
+            "type": "string"
+          },
+          "notes": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "parent_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Run Id"
+          },
+          "primary_incremental_benchmark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Incremental Benchmark"
+          },
+          "primary_metric": {
+            "$ref": "#/components/schemas/PrimaryMetric"
+          },
+          "primary_metric_value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Primary Metric Value",
+            "type": "string"
+          },
+          "research_family_id": {
+            "minLength": 1,
+            "title": "Research Family Id",
+            "type": "string"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/RoleSummary"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "run_id": {
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.experiment.result.v1",
+            "default": "qap.experiment.result.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "start_timestamp": {
+            "format": "date-time",
+            "title": "Start Timestamp",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ResultStatus"
+          },
+          "strategy_unitized_vs_hodl": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Strategy Unitized Vs Hodl",
+            "type": "string"
+          },
+          "strategy_vs_hodl": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Strategy Vs Hodl",
+            "type": "string"
+          },
+          "strategy_vs_matched_contribution": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Vs Matched Contribution"
+          },
+          "strategy_vs_primary_control": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Vs Primary Control"
+          },
+          "success_threshold": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Success Threshold",
+            "type": "string"
+          },
+          "terminal_timestamp": {
+            "format": "date-time",
+            "title": "Terminal Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "research_family_id",
+          "data_role",
+          "final_oos_consumed",
+          "start_timestamp",
+          "terminal_timestamp",
+          "primary_metric",
+          "primary_metric_value",
+          "success_threshold",
+          "status",
+          "strategy_vs_hodl",
+          "strategy_unitized_vs_hodl",
+          "maximum_relative_drawdown_vs_hodl",
+          "roles"
+        ],
+        "title": "ExperimentResult",
+        "type": "object"
+      },
+      "ExternalFlowSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "asset": {
+            "minLength": 1,
+            "title": "Asset",
+            "type": "string"
+          },
+          "effective_time": {
+            "format": "date-time",
+            "title": "Effective Time",
+            "type": "string"
+          },
+          "flow_id": {
+            "minLength": 1,
+            "title": "Flow Id",
+            "type": "string"
+          },
+          "quantity_delta": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Quantity Delta",
+            "type": "string"
+          }
+        },
+        "required": [
+          "flow_id",
+          "effective_time",
+          "asset",
+          "quantity_delta"
+        ],
+        "title": "ExternalFlowSpec",
+        "type": "object"
+      },
+      "FillAuditDto": {
+        "additionalProperties": false,
+        "properties": {
+          "base": {
+            "title": "Base",
+            "type": "string"
+          },
+          "base_quantity": {
+            "title": "Base Quantity",
+            "type": "string"
+          },
+          "execution_price": {
+            "title": "Execution Price",
+            "type": "string"
+          },
+          "fee_amount": {
+            "title": "Fee Amount",
+            "type": "string"
+          },
+          "fee_asset": {
+            "title": "Fee Asset",
+            "type": "string"
+          },
+          "fill_id": {
+            "title": "Fill Id",
+            "type": "string"
+          },
+          "gross_quote_notional": {
+            "title": "Gross Quote Notional",
+            "type": "string"
+          },
+          "quote": {
+            "title": "Quote",
+            "type": "string"
+          },
+          "reference_price": {
+            "title": "Reference Price",
+            "type": "string"
+          },
+          "side": {
+            "title": "Side",
+            "type": "string"
+          },
+          "slippage_value": {
+            "title": "Slippage Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fill_id",
+          "side",
+          "base",
+          "quote",
+          "reference_price",
+          "execution_price",
+          "base_quantity",
+          "gross_quote_notional",
+          "fee_amount",
+          "fee_asset",
+          "slippage_value"
+        ],
+        "title": "FillAuditDto",
+        "type": "object"
+      },
+      "FinalOosCommitment": {
+        "additionalProperties": false,
+        "properties": {
+          "code_fingerprint": {
+            "title": "Code Fingerprint",
+            "type": "string"
+          },
+          "committed_at": {
+            "format": "date-time",
+            "title": "Committed At",
+            "type": "string"
+          },
+          "consumed": {
+            "title": "Consumed",
+            "type": "boolean"
+          },
+          "consumed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumed At"
+          },
+          "data_fingerprints": {
+            "items": {
+              "$ref": "#/components/schemas/DatasetFingerprint"
+            },
+            "title": "Data Fingerprints",
+            "type": "array"
+          },
+          "data_window_end": {
+            "format": "date-time",
+            "title": "Data Window End",
+            "type": "string"
+          },
+          "data_window_start": {
+            "format": "date-time",
+            "title": "Data Window Start",
+            "type": "string"
+          },
+          "execution_status": {
+            "enum": [
+              "committed",
+              "completed",
+              "failed"
+            ],
+            "title": "Execution Status",
+            "type": "string"
+          },
+          "holdout_id": {
+            "title": "Holdout Id",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "parent_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Run Id"
+          },
+          "research_family_id": {
+            "title": "Research Family Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.experiment.final_oos_commitment.v1",
+            "default": "qap.experiment.final_oos_commitment.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "research_family_id",
+          "holdout_id",
+          "manifest_sha256",
+          "code_fingerprint",
+          "data_fingerprints",
+          "data_window_start",
+          "data_window_end",
+          "committed_at",
+          "consumed",
+          "execution_status"
+        ],
+        "title": "FinalOosCommitment",
+        "type": "object"
+      },
+      "FloatPointDto": {
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "timestamp",
+          "value"
+        ],
+        "title": "FloatPointDto",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthDto": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "qap.api.health.v1",
+            "default": "qap.api.health.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "status": {
+            "const": "ok",
+            "default": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "HealthDto",
+        "type": "object"
+      },
+      "HoldingDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset": {
+            "title": "Asset",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset",
+          "quantity",
+          "value",
+          "weight"
+        ],
+        "title": "HoldingDto",
+        "type": "object"
+      },
+      "HoldingsSnapshotDto": {
+        "additionalProperties": false,
+        "properties": {
+          "holdings": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingDto"
+            },
+            "title": "Holdings",
+            "type": "array"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "timestamp",
+          "role",
+          "holdings"
+        ],
+        "title": "HoldingsSnapshotDto",
+        "type": "object"
+      },
+      "InstrumentSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "base_asset": {
+            "minLength": 1,
+            "title": "Base Asset",
+            "type": "string"
+          },
+          "instrument_id": {
+            "minLength": 1,
+            "title": "Instrument Id",
+            "type": "string"
+          },
+          "quote_asset": {
+            "minLength": 1,
+            "title": "Quote Asset",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          },
+          "venue": {
+            "minLength": 1,
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "minLength": 1,
+            "title": "Venue Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "venue",
+          "venue_symbol",
+          "base_asset",
+          "quote_asset"
+        ],
+        "title": "InstrumentSpec",
+        "type": "object"
+      },
+      "JsonValue": {},
+      "PairSeriesDto": {
+        "additionalProperties": false,
+        "properties": {
+          "available_anchors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Available Anchors",
+            "type": "array"
+          },
+          "base_source_fingerprint": {
+            "title": "Base Source Fingerprint",
+            "type": "string"
+          },
+          "canonical_pair": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Canonical Pair",
+            "type": "array"
+          },
+          "descriptive_only": {
+            "title": "Descriptive Only",
+            "type": "boolean"
+          },
+          "evidence_reciprocity": {
+            "title": "Evidence Reciprocity",
+            "type": "string"
+          },
+          "fit_reciprocity": {
+            "title": "Fit Reciprocity",
+            "type": "string"
+          },
+          "interval": {
+            "title": "Interval",
+            "type": "string"
+          },
+          "log_ratio": {
+            "items": {
+              "$ref": "#/components/schemas/FloatPointDto"
+            },
+            "title": "Log Ratio",
+            "type": "array"
+          },
+          "normalized_base": {
+            "items": {
+              "$ref": "#/components/schemas/FloatPointDto"
+            },
+            "title": "Normalized Base",
+            "type": "array"
+          },
+          "normalized_quote": {
+            "items": {
+              "$ref": "#/components/schemas/FloatPointDto"
+            },
+            "title": "Normalized Quote",
+            "type": "array"
+          },
+          "quote_source_fingerprint": {
+            "title": "Quote Source Fingerprint",
+            "type": "string"
+          },
+          "ratio": {
+            "items": {
+              "$ref": "#/components/schemas/FloatPointDto"
+            },
+            "title": "Ratio",
+            "type": "array"
+          },
+          "rebalance_markers": {
+            "items": {
+              "$ref": "#/components/schemas/RebalanceMarkerDto"
+            },
+            "title": "Rebalance Markers",
+            "type": "array"
+          },
+          "requested_orientation": {
+            "title": "Requested Orientation",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.pair_series.v1",
+            "default": "qap.api.pair_series.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "canonical_pair",
+          "requested_orientation",
+          "available_anchors",
+          "interval",
+          "base_source_fingerprint",
+          "quote_source_fingerprint",
+          "fit_reciprocity",
+          "evidence_reciprocity",
+          "ratio",
+          "log_ratio",
+          "normalized_base",
+          "normalized_quote",
+          "rebalance_markers",
+          "descriptive_only"
+        ],
+        "title": "PairSeriesDto",
+        "type": "object"
+      },
+      "PerformanceSeriesDto": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/ExactPointDto"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "points"
+        ],
+        "title": "PerformanceSeriesDto",
+        "type": "object"
+      },
+      "PeriodicFixedWeightControlSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "cadence_bars": {
+            "exclusiveMinimum": 0.0,
+            "title": "Cadence Bars",
+            "type": "integer"
+          },
+          "control_id": {
+            "minLength": 1,
+            "title": "Control Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "periodic_fixed_weight",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "control_id",
+          "cadence_bars"
+        ],
+        "title": "PeriodicFixedWeightControlSpec",
+        "type": "object"
+      },
+      "PortfolioPerformanceDto": {
+        "additionalProperties": false,
+        "properties": {
+          "maximum_relative_drawdown_vs_hodl": {
+            "title": "Maximum Relative Drawdown Vs Hodl",
+            "type": "string"
+          },
+          "primary_incremental_benchmark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Incremental Benchmark"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.portfolio_performance.v1",
+            "default": "qap.api.portfolio_performance.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/PerformanceSeriesDto"
+            },
+            "title": "Series",
+            "type": "array"
+          },
+          "time_below_hodl_seconds": {
+            "title": "Time Below Hodl Seconds",
+            "type": "integer"
+          },
+          "time_below_primary_control_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Below Primary Control Seconds"
+          }
+        },
+        "required": [
+          "run_id",
+          "primary_incremental_benchmark",
+          "maximum_relative_drawdown_vs_hodl",
+          "time_below_hodl_seconds",
+          "time_below_primary_control_seconds",
+          "series"
+        ],
+        "title": "PortfolioPerformanceDto",
+        "type": "object"
+      },
+      "PortfolioSnapshotDto": {
+        "additionalProperties": false,
+        "properties": {
+          "allocation_history": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingsSnapshotDto"
+            },
+            "title": "Allocation History",
+            "type": "array"
+          },
+          "concentration": {
+            "$ref": "#/components/schemas/ConcentrationSummaryDto"
+          },
+          "hodl_terminal": {
+            "$ref": "#/components/schemas/HoldingsSnapshotDto"
+          },
+          "rebalance_audit": {
+            "items": {
+              "$ref": "#/components/schemas/RebalanceDecisionAuditDto"
+            },
+            "title": "Rebalance Audit",
+            "type": "array"
+          },
+          "role_terminals": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingsSnapshotDto"
+            },
+            "title": "Role Terminals",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.portfolio_snapshot.v1",
+            "default": "qap.api.portfolio_snapshot.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "starting": {
+            "$ref": "#/components/schemas/HoldingsSnapshotDto"
+          },
+          "strategy_costs": {
+            "$ref": "#/components/schemas/CostSummaryDto"
+          },
+          "strategy_vs_hodl_terminal_deltas": {
+            "items": {
+              "$ref": "#/components/schemas/AssetDeltaDto"
+            },
+            "title": "Strategy Vs Hodl Terminal Deltas",
+            "type": "array"
+          },
+          "strategy_vs_matched_contribution_terminal_deltas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AssetDeltaDto"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Vs Matched Contribution Terminal Deltas"
+          },
+          "terminal": {
+            "$ref": "#/components/schemas/HoldingsSnapshotDto"
+          }
+        },
+        "required": [
+          "run_id",
+          "starting",
+          "terminal",
+          "hodl_terminal",
+          "role_terminals",
+          "allocation_history",
+          "concentration",
+          "strategy_vs_hodl_terminal_deltas",
+          "strategy_vs_matched_contribution_terminal_deltas",
+          "strategy_costs",
+          "rebalance_audit"
+        ],
+        "title": "PortfolioSnapshotDto",
+        "type": "object"
+      },
+      "PrimaryMetric": {
+        "enum": [
+          "hodl_relative_terminal_wealth",
+          "primary_control_relative_terminal_wealth"
+        ],
+        "title": "PrimaryMetric",
+        "type": "string"
+      },
+      "RebalanceDecisionAuditDto": {
+        "additionalProperties": false,
+        "properties": {
+          "baseline_target_weights": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Target Weights"
+          },
+          "current_weights": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Weights"
+          },
+          "decision_id": {
+            "title": "Decision Id",
+            "type": "string"
+          },
+          "decision_time": {
+            "format": "date-time",
+            "title": "Decision Time",
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "fills": {
+            "items": {
+              "$ref": "#/components/schemas/FillAuditDto"
+            },
+            "title": "Fills",
+            "type": "array"
+          },
+          "modeled_fee_bps": {
+            "title": "Modeled Fee Bps",
+            "type": "string"
+          },
+          "modeled_slippage_bps": {
+            "title": "Modeled Slippage Bps",
+            "type": "string"
+          },
+          "post_fill_holdings": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingDto"
+            },
+            "title": "Post Fill Holdings",
+            "type": "array"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "requested_quantity_deltas": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Quantity Deltas"
+          },
+          "selected": {
+            "title": "Selected",
+            "type": "boolean"
+          },
+          "target_weights": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Weights"
+          }
+        },
+        "required": [
+          "decision_id",
+          "decision_time",
+          "reason",
+          "evidence_ids",
+          "current_weights",
+          "baseline_target_weights",
+          "target_weights",
+          "modeled_fee_bps",
+          "modeled_slippage_bps",
+          "requested_quantity_deltas",
+          "selected",
+          "fills",
+          "post_fill_holdings"
+        ],
+        "title": "RebalanceDecisionAuditDto",
+        "type": "object"
+      },
+      "RebalanceMarkerDto": {
+        "additionalProperties": false,
+        "properties": {
+          "decision_id": {
+            "title": "Decision Id",
+            "type": "string"
+          },
+          "executed": {
+            "title": "Executed",
+            "type": "boolean"
+          },
+          "fill_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fill Id"
+          },
+          "selected": {
+            "title": "Selected",
+            "type": "boolean"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "timestamp",
+          "decision_id",
+          "selected",
+          "executed",
+          "fill_id"
+        ],
+        "title": "RebalanceMarkerDto",
+        "type": "object"
+      },
+      "ResultStatus": {
+        "description": "Economic classification against one predeclared threshold.",
+        "enum": [
+          "positive",
+          "neutral",
+          "negative"
+        ],
+        "title": "ResultStatus",
+        "type": "string"
+      },
+      "RoleSummary": {
+        "additionalProperties": false,
+        "description": "Terminal exact economics for one replay role.",
+        "properties": {
+          "external_flow_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "External Flow Ids",
+            "type": "array"
+          },
+          "fees_value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Fees Value",
+            "type": "string"
+          },
+          "fill_count": {
+            "minimum": 0.0,
+            "title": "Fill Count",
+            "type": "integer"
+          },
+          "policy_id": {
+            "minLength": 1,
+            "title": "Policy Id",
+            "type": "string"
+          },
+          "role": {
+            "minLength": 1,
+            "title": "Role",
+            "type": "string"
+          },
+          "slippage_value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Slippage Value",
+            "type": "string"
+          },
+          "terminal_quantities": {
+            "additionalProperties": {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            "title": "Terminal Quantities",
+            "type": "object"
+          },
+          "terminal_value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Terminal Value",
+            "type": "string"
+          },
+          "turnover_value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Turnover Value",
+            "type": "string"
+          },
+          "unitized_terminal_value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Unitized Terminal Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "policy_id",
+          "terminal_value",
+          "unitized_terminal_value",
+          "terminal_quantities",
+          "fill_count",
+          "fees_value",
+          "slippage_value",
+          "turnover_value"
+        ],
+        "title": "RoleSummary",
+        "type": "object"
+      },
+      "RunProvenance": {
+        "additionalProperties": false,
+        "properties": {
+          "code_fingerprint": {
+            "title": "Code Fingerprint",
+            "type": "string"
+          },
+          "data_fingerprints": {
+            "items": {
+              "$ref": "#/components/schemas/DatasetFingerprint"
+            },
+            "title": "Data Fingerprints",
+            "type": "array"
+          },
+          "data_role": {
+            "$ref": "#/components/schemas/DataRole"
+          },
+          "git_commit": {
+            "minLength": 1,
+            "title": "Git Commit",
+            "type": "string"
+          },
+          "git_dirty": {
+            "title": "Git Dirty",
+            "type": "boolean"
+          },
+          "manifest_sha256": {
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "qap_version": {
+            "minLength": 1,
+            "title": "Qap Version",
+            "type": "string"
+          },
+          "research_family_id": {
+            "minLength": 1,
+            "title": "Research Family Id",
+            "type": "string"
+          },
+          "run_id": {
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_timestamp_utc": {
+            "format": "date-time",
+            "title": "Run Timestamp Utc",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.experiment.provenance.v1",
+            "default": "qap.experiment.provenance.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "manifest_sha256",
+          "data_fingerprints",
+          "code_fingerprint",
+          "git_commit",
+          "git_dirty",
+          "qap_version",
+          "run_timestamp_utc",
+          "research_family_id",
+          "data_role"
+        ],
+        "title": "RunProvenance",
+        "type": "object"
+      },
+      "RunSummaryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_anchor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Anchor"
+          },
+          "artifact_status": {
+            "enum": [
+              "valid",
+              "invalid"
+            ],
+            "title": "Artifact Status",
+            "type": "string"
+          },
+          "basket": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basket"
+          },
+          "created_timestamp": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created Timestamp"
+          },
+          "data_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Role"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorDetailDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "experiment_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experiment Name"
+          },
+          "final_oos_consumed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Oos Consumed"
+          },
+          "git_dirty": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Git Dirty"
+          },
+          "incremental_vs_matched_contribution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incremental Vs Matched Contribution"
+          },
+          "incremental_vs_primary_control": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incremental Vs Primary Control"
+          },
+          "parent_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Run Id"
+          },
+          "policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Id"
+          },
+          "primary_incremental_benchmark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Incremental Benchmark"
+          },
+          "primary_metric": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Metric"
+          },
+          "primary_metric_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Metric Value"
+          },
+          "relationship_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relationship Id"
+          },
+          "research_family_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Family Id"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sibling_trial_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sibling Trial Count"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "universe_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Universe Mode"
+          }
+        },
+        "required": [
+          "artifact_status",
+          "run_id"
+        ],
+        "title": "RunSummaryDto",
+        "type": "object"
+      },
+      "UniverseMode": {
+        "enum": [
+          "declared_fixed_basket",
+          "point_in_time_investable"
+        ],
+        "title": "UniverseMode",
+        "type": "string"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Read-only access to validated immutable QAP experiment artifacts.",
+    "title": "QAP Research Evidence API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/experiments": {
+      "get": {
+        "operationId": "listExperiments",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentListDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Experiments",
+        "tags": [
+          "experiments"
+        ]
+      }
+    },
+    "/api/experiments/{run_id}": {
+      "get": {
+        "operationId": "getExperiment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentDetailDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Experiment Detail",
+        "tags": [
+          "experiments"
+        ]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/pairs/{asset_x}/{asset_y}/anchor": {
+      "get": {
+        "operationId": "getAnchorLens",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_x",
+            "required": true,
+            "schema": {
+              "title": "Asset X",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_y",
+            "required": true,
+            "schema": {
+              "title": "Asset Y",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "anchor",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Anchor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "orientation",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minLength": 3,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Orientation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnchorLensDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Anchor Lens",
+        "tags": [
+          "pairs"
+        ]
+      }
+    },
+    "/api/pairs/{asset_x}/{asset_y}/series": {
+      "get": {
+        "operationId": "getPairSeries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_x",
+            "required": true,
+            "schema": {
+              "title": "Asset X",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_y",
+            "required": true,
+            "schema": {
+              "title": "Asset Y",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "orientation",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minLength": 3,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Orientation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairSeriesDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pair Series",
+        "tags": [
+          "pairs"
+        ]
+      }
+    },
+    "/api/portfolios/{run_id}": {
+      "get": {
+        "operationId": "getPortfolio",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioSnapshotDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Portfolio",
+        "tags": [
+          "portfolios"
+        ]
+      }
+    },
+    "/api/portfolios/{run_id}/performance": {
+      "get": {
+        "operationId": "getPortfolioPerformance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioPerformanceDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Portfolio Performance",
+        "tags": [
+          "portfolios"
+        ]
+      }
+    }
+  }
+}

@@ -37,6 +37,8 @@ def test_pair_series_preserves_canonical_identity_and_explicit_orientation(
     assert reverse_payload["canonical_pair"] == ["BTC", "ETH"]
     assert forward_payload["requested_orientation"] == "ETH/BTC"
     assert reverse_payload["requested_orientation"] == "BTC/ETH"
+    assert forward_payload["available_anchors"] == ["BTC", "ETH", "USDT"]
+    assert forward_payload["identity_coordinate_assets"] == ["USDT"]
     assert forward_payload["fit_reciprocity"] == "exact_transform"
     assert forward_payload["evidence_reciprocity"] == "exact_transform"
     assert forward_payload["base_source_fingerprint"] == (
@@ -77,6 +79,55 @@ def test_pair_series_includes_persisted_strategy_rebalance_markers(
     assert markers == []
 
 
+def test_pair_series_supports_the_run_common_quote_as_an_identity_leg(
+    populated_run_root: tuple[Path, str],
+) -> None:
+    from qap.api import ApiSettings, create_app
+    from qap.portfolio import AssetId
+    from qap.relationship import identity_source_fingerprint
+
+    run_root, run_id = populated_run_root
+    client = TestClient(
+        create_app(ApiSettings(run_root=run_root, market_data_root=REPOSITORY_ROOT))
+    )
+
+    direct = client.get(
+        f"/api/pairs/BTC/USDT/series?run_id={run_id}&orientation=BTC/USDT"
+    )
+    reverse = client.get(
+        f"/api/pairs/BTC/USDT/series?run_id={run_id}&orientation=USDT/BTC"
+    )
+
+    assert direct.status_code == 200
+    assert reverse.status_code == 200
+    direct_payload = direct.json()
+    reverse_payload = reverse.json()
+    identity_fingerprint = identity_source_fingerprint(AssetId("USDT"))
+    assert direct_payload["canonical_pair"] == ["BTC", "USDT"]
+    assert direct_payload["available_anchors"] == ["BTC", "USDT"]
+    assert direct_payload["identity_coordinate_assets"] == ["USDT"]
+    assert direct_payload["quote_source_fingerprint"] == identity_fingerprint
+    assert reverse_payload["base_source_fingerprint"] == identity_fingerprint
+    assert all(
+        point["value"] == 1.0 for point in direct_payload["normalized_quote"]
+    )
+    assert (
+        direct_payload["ratio"][0]["value"]
+        * reverse_payload["ratio"][0]["value"]
+    ) == pytest.approx(1.0)
+
+    anchor = client.get(
+        f"/api/pairs/BTC/USDT/anchor?run_id={run_id}"
+        "&anchor=USDT&orientation=BTC/USDT"
+    )
+    assert anchor.status_code == 200
+    anchor_payload = anchor.json()
+    assert anchor_payload["reduction"] == "anchor_is_quote"
+    assert anchor_payload["quote_source_fingerprint"] == identity_fingerprint
+    assert anchor_payload["anchor_source_fingerprint"] == identity_fingerprint
+    assert all(point["value"] == 1.0 for point in anchor_payload["quote_to_anchor"])
+
+
 def test_pair_series_rejects_orientation_not_matching_path_assets(
     pair_run_root: tuple[Path, str],
 ) -> None:
@@ -109,19 +160,22 @@ def test_anchor_lens_uses_committed_common_reference_and_rejects_unknown_anchor(
         create_app(ApiSettings(run_root=run_root, market_data_root=REPOSITORY_ROOT))
     )
 
-    response = client.get(f"/api/pairs/ETH/BTC/anchor?run_id={run_id}&anchor=USDT")
+    response = client.get(
+        f"/api/pairs/ETH/BTC/anchor?run_id={run_id}&anchor=USDT&orientation=BTC/ETH"
+    )
 
     assert response.status_code == 200
     payload = response.json()
     assert payload["schema_version"] == "qap.api.anchor_lens.v1"
     assert payload["canonical_pair"] == ["BTC", "ETH"]
-    assert payload["requested_orientation"] == "ETH/BTC"
+    assert payload["requested_orientation"] == "BTC/ETH"
+    assert payload["identity_coordinate_assets"] == ["USDT"]
     assert payload["anchor"] == "USDT"
     assert payload["reduction"] == "none"
     assert payload["anchor_source_fingerprint"] is None
-    assert payload["pair_ratio"][0]["value"] == pytest.approx(2205.0 / 42050.0)
-    assert payload["base_to_anchor"][0]["value"] == 2205.0
-    assert payload["quote_to_anchor"][0]["value"] == 42050.0
+    assert payload["pair_ratio"][0]["value"] == pytest.approx(42050.0 / 2205.0)
+    assert payload["base_to_anchor"][0]["value"] == 42050.0
+    assert payload["quote_to_anchor"][0]["value"] == 2205.0
     assert math.isfinite(payload["max_ratio_decomposition_error"])
     assert payload["max_ratio_decomposition_error"] <= 1e-12
 

@@ -6,6 +6,13 @@
 
 **Tech Stack:** Python 3.14, NumPy, existing market/portfolio domain types, pytest.
 
+## Update context — 2026-08-17 (Phase 09 compatibility finding)
+
+- **Trigger:** rendered API/workbench validation of the approved two-asset run exposed that the relationship layer required every requested asset to have its own market base leg. That excluded the declared common quote/numeraire from otherwise valid ratio, reciprocal, normalized, and anchor evidence.
+- **Purpose:** admit a unique common reference as an explicit deterministic unit coordinate without representing it as observed market data.
+- **Impact:** when and only when aligned data has one unique quote reference and the requested asset equals that reference, the relationship layer supplies an all-ones identity path. The coordinate receives a domain-separated SHA-256 identity fingerprint, is listed in API `identity_coordinate_assets`, obeys exact reciprocal/log identities, and supports reduced anchor lenses. Multiple or mismatched reference coordinates still fail closed.
+- **Evidence:** focused ratio, normalized-path, anchor-lens, and two-asset API contract regressions cover direct/reverse orientation, deterministic provenance, all-ones normalization, reduced anchor identity, and preservation of prior common-reference rejection behavior.
+
 ## Global Constraints
 
 - Pair identity is canonical; orientation is explicit.

@@ -9,9 +9,10 @@ from typing import Any
 
 import pyarrow as pa
 
+from qap.evaluation import incremental_log_relative_series
 from qap.experiment.data import ExperimentSetupError
 from qap.experiment.runner import ExperimentRun
-from qap.portfolio._decimal import divide, exact_multiply, exact_subtract
+from qap.portfolio._decimal import divide, exact_add, exact_multiply, exact_subtract
 
 _ONE = Decimal("1")
 _ZERO = Decimal("0")
@@ -36,6 +37,22 @@ def _relative(candidate: Decimal, control: Decimal) -> str:
     if control <= _ZERO:
         raise ExperimentSetupError("artifact relative comparator must be positive")
     return str(exact_subtract(divide(candidate, control), _ONE))
+
+
+def _log_relative_path(
+    candidate: tuple[Decimal, ...],
+    control: tuple[Decimal, ...],
+) -> list[str] | None:
+    try:
+        increments = incremental_log_relative_series(candidate, control)
+    except ValueError:
+        return None
+    cumulative = _ZERO
+    path = [str(cumulative)]
+    for increment in increments:
+        cumulative = exact_add(cumulative, increment)
+        path.append(str(cumulative))
+    return path
 
 
 def build_performance_table(run: ExperimentRun) -> Any:
@@ -65,6 +82,9 @@ def build_performance_table(run: ExperimentRun) -> Any:
             strict=True,
         )
     ]
+    log_hodl = _log_relative_path(strategy.values, hodl.values)
+    if log_hodl is not None:
+        columns["log_relative::strategy_vs_hodl"] = log_hodl
     primary_id = run.result.primary_incremental_benchmark
     if primary_id is not None:
         primary = run.role(f"control:{primary_id}")
@@ -76,6 +96,18 @@ def build_performance_table(run: ExperimentRun) -> Any:
                 strict=True,
             )
         ]
+        log_primary = _log_relative_path(strategy.values, primary.values)
+        if log_primary is not None:
+            columns["log_relative::strategy_vs_primary_control"] = log_primary
+
+    try:
+        matched = run.role("matched_contribution")
+    except KeyError:
+        matched = None
+    if matched is not None:
+        log_matched = _log_relative_path(strategy.values, matched.values)
+        if log_matched is not None:
+            columns["log_relative::strategy_vs_matched_contribution"] = log_matched
 
     fields = [pa.field("timestamp", pa.timestamp("us", tz="UTC"), nullable=False)]
     fields.extend(pa.field(name, pa.string(), nullable=False) for name in columns)

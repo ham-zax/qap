@@ -13,6 +13,13 @@ Purpose: Clarify existing timing and research-integrity contracts without changi
 Impact: Decisions remain completed-data-only; post-decision accounting uses same-boundary marks, and final-OOS computation requires durable precommitment. Relationship claims are classified relative to their predeclared primary control.
 Evidence: Phase 06 and Phase 07 regression suites and plans.
 
+## Update context — 2026-08-17 (Phase 09 evidence workbench)
+
+- **Trigger:** end-to-end API and rendered-browser validation connected the relationship, experiment, portfolio, and UI layers for the first time and exposed one real compatibility defect: a declared common quote could not act as an explicit relationship coordinate.
+- **Purpose:** preserve one authoritative analytical chain from admitted data and immutable artifacts through typed read-only projections to browser evidence, including honest negative and invalid states.
+- **Impact:** a unique common reference may be represented only as a labeled deterministic all-ones identity coordinate, never as market observations. API DTOs identify those assets explicitly. Portfolio compounding diagnostics, time below control, benchmark ladders, inventory attribution, costs, and audit records remain backend-owned. The React workbench consumes generated contracts, stores analytical selection in the URL, performs no financial recomputation, and keeps final-OOS/research-family boundaries visible.
+- **Evidence:** relationship/API contracts, strict Python and TypeScript checks, deterministic generation, component interaction tests, production build, and rendered desktop/mobile WCAG verification cover the integrated contract.
+
 ## 1. Product definition
 
 QAP is a **spot-only crypto wealth-compounding system whose economic state is owned inventory**.

@@ -48,12 +48,14 @@ def anchor_lens(
     request: Request,
     run_id: str = Query(min_length=1),
     anchor: str = Query(min_length=1),
+    orientation: str | None = Query(default=None, min_length=3),
 ) -> AnchorLensDto:
     return _reader(request).anchor_lens(
         run_id=run_id,
         asset_x=asset_x,
         asset_y=asset_y,
         anchor=anchor,
+        orientation=orientation,
     )
 
 

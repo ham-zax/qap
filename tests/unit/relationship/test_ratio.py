@@ -24,6 +24,7 @@ from qap.relationship import (
     RelationshipSeries,
     build_log_ratio_series,
     build_ratio_series,
+    identity_source_fingerprint,
     log_ratio,
     raw_ratio,
 )
@@ -245,6 +246,52 @@ def test_relationship_series_preserves_pair_orientation_and_provenance() -> None
 
     with pytest.raises(FrozenInstanceError):
         ratio.as_of = datetime(2024, 1, 1, 14, tzinfo=UTC)  # type: ignore[misc]
+
+
+def test_common_quote_is_a_deterministic_identity_coordinate() -> None:
+    aligned = _aligned()
+    fingerprints = {BTC: "a" * 64, ETH: "b" * 64}
+    as_of = datetime(2024, 1, 1, 13, tzinfo=UTC)
+    identity_fingerprint = identity_source_fingerprint(USDT)
+
+    direct = build_ratio_series(
+        aligned,
+        orientation=PairOrientation(base=BTC, quote=USDT),
+        source_fingerprints=fingerprints,
+        as_of=as_of,
+    )
+    reverse = build_ratio_series(
+        aligned,
+        orientation=PairOrientation(base=USDT, quote=BTC),
+        source_fingerprints=fingerprints,
+        as_of=as_of,
+    )
+    direct_log = build_log_ratio_series(
+        aligned,
+        orientation=PairOrientation(base=BTC, quote=USDT),
+        source_fingerprints=fingerprints,
+        as_of=as_of,
+    )
+    reverse_log = build_log_ratio_series(
+        aligned,
+        orientation=PairOrientation(base=USDT, quote=BTC),
+        source_fingerprints=fingerprints,
+        as_of=as_of,
+    )
+
+    assert direct.values == (100.0, 200.0, 300.0)
+    assert direct.base_source_fingerprint == "a" * 64
+    assert direct.quote_source_fingerprint == identity_fingerprint
+    assert reverse.base_source_fingerprint == identity_fingerprint
+    assert reverse.quote_source_fingerprint == "a" * 64
+    np.testing.assert_allclose(
+        np.array(direct.values) * np.array(reverse.values),
+        np.ones(3),
+    )
+    np.testing.assert_allclose(
+        np.array(direct_log.values),
+        -np.array(reverse_log.values),
+    )
 
 
 def test_relationship_series_rejects_plain_strings_for_enum_metadata() -> None:

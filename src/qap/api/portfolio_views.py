@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime
 from decimal import Decimal
+from itertools import pairwise
 from typing import Any, cast
 
 from qap.api.schemas import (
@@ -83,8 +84,39 @@ def portfolio_performance(loaded: LoadedRunArtifacts) -> PortfolioPerformanceDto
         maximum_relative_drawdown_vs_hodl=str(
             loaded.result.maximum_relative_drawdown_vs_hodl
         ),
+        time_below_hodl_seconds=_time_below_seconds(
+            rows,
+            column="relative::strategy_vs_hodl",
+        ),
+        time_below_primary_control_seconds=(
+            _time_below_seconds(
+                rows,
+                column="relative::strategy_vs_primary_control",
+            )
+            if "relative::strategy_vs_primary_control"
+            in loaded.performance.schema.names
+            else None
+        ),
         series=series,
     )
+
+
+def _time_below_seconds(
+    rows: tuple[dict[str, object], ...],
+    *,
+    column: str,
+) -> int:
+    total = 0
+    for current, following in pairwise(rows):
+        if Decimal(str(current[column])) >= 0:
+            continue
+        interval = _row_timestamp(following) - _row_timestamp(current)
+        if interval.total_seconds() <= 0 or interval.microseconds != 0:
+            raise ValueError(
+                "performance timestamps must be strictly increasing whole seconds"
+            )
+        total += interval.days * 86_400 + interval.seconds
+    return total
 
 
 def _table_rows(table: Any) -> tuple[dict[str, object], ...]:

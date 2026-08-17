@@ -15,6 +15,7 @@ from qap.relationship import (
     NormalizationScale,
     RelationshipDataError,
     build_normalized_path,
+    identity_source_fingerprint,
     normalize_to_hundred,
     normalize_to_one,
 )
@@ -132,6 +133,22 @@ def test_normalized_path_uses_the_aligned_common_timestamp_index() -> None:
     assert path.source_fingerprint == "f" * 64
     assert path.values == (1.0, 0.25)
     assert path.descriptive_only is True
+
+
+def test_normalized_common_quote_is_an_identity_path() -> None:
+    fingerprint = identity_source_fingerprint(USDT)
+
+    path = build_normalized_path(
+        _aligned(),
+        asset=USDT,
+        scale=NormalizationScale.ONE,
+        source_fingerprint=fingerprint,
+        as_of=datetime(2024, 1, 1, 13, tzinfo=UTC),
+    )
+
+    assert path.asset == USDT
+    assert path.source_fingerprint == fingerprint
+    assert path.values == (1.0, 1.0, 1.0)
 
 
 def test_normalized_path_rejects_asset_not_in_aligned_pair() -> None:

@@ -6,6 +6,13 @@
 
 **Tech Stack:** Python 3.14, FastAPI, Pydantic, Uvicorn, HTTPX/TestClient, OpenAPI.
 
+## Update context — 2026-08-17 (Phase 09 consumer contract)
+
+- **Trigger:** implementation of the typed analytical workbench exercised the read-only API with real two-asset, external-flow, negative-evidence, reciprocal-orientation, and anchor-lens runs.
+- **Purpose:** make every browser-visible analytical choice and failure state an authoritative API contract rather than a frontend inference.
+- **Impact:** pair responses now expose `available_anchors` and `identity_coordinate_assets`; anchor responses honor an explicit reciprocal `orientation`; portfolio performance exposes backend-produced cumulative log-relative paths plus exact elapsed seconds below HODL and the predeclared primary control. OpenAPI generation is deterministic from either `web/openapi.json` or an explicit exported schema path. Typed errors continue to carry code, message, HTTP status, and recovery context.
+- **Evidence:** contract tests cover reciprocal pair/anchor identity, common-quote unit coordinates, unavailable anchors, persisted markers, exact portfolio diagnostics, and deterministic OpenAPI generation consumed by strict TypeScript.
+
 ## Global Constraints
 
 - API never owns wallet/accounting/model truth.

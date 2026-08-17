@@ -1,0 +1,287 @@
+import { render, screen, within } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+
+import type {
+  ExperimentDetailDto,
+  PortfolioPerformanceDto,
+  PortfolioSnapshotDto,
+} from '../../api/types'
+import { PortfolioOverview } from './PortfolioOverview'
+
+const experiment = {
+  schema_version: 'qap.api.experiment_detail.v1',
+  run_id: 'run-portfolio-boundary',
+  sibling_trial_count: 4,
+  manifest: {
+    experiment_name: 'relationship candidate',
+    description: 'A candidate that beats HODL but loses to stronger controls.',
+    research_family_id: 'family-alpha',
+    parent_run_id: null,
+    basket: ['BTC', 'USDT'],
+    universe_mode: 'declared_fixed_basket',
+    analysis_anchor: 'USDT',
+    relationship: { component_id: 'ratio-band-v1', config: {} },
+    policy: { component_id: 'relationship-target-v1', config: {} },
+    benchmarks: {
+      relationship_alpha_claim: true,
+      primary_incremental_benchmark: 'periodic-2',
+      controls: [],
+    },
+    external_flows: [
+      {
+        flow_id: 'deposit-1',
+        effective_time: '2025-02-01T00:00:00Z',
+        asset: 'USDT',
+        quantity_delta: '1000',
+      },
+    ],
+  },
+  result: {
+    run_id: 'run-portfolio-boundary',
+    research_family_id: 'family-alpha',
+    data_role: 'final_oos',
+    final_oos_consumed: true,
+    status: 'negative',
+    primary_metric: 'primary_control_relative_terminal_wealth',
+    primary_metric_value: '-0.012',
+    primary_incremental_benchmark: 'periodic-2',
+    strategy_vs_hodl: '0.018',
+    strategy_vs_matched_contribution: '-0.006',
+    strategy_vs_primary_control: '-0.012',
+    maximum_relative_drawdown_vs_hodl: '0.031',
+    roles: [
+      {
+        role: 'strategy',
+        policy_id: 'relationship-target-v1',
+        terminal_value: '62500',
+        unitized_terminal_value: '1.08',
+        terminal_quantities: { BTC: '0.75', USDT: '17500' },
+        fill_count: 6,
+        fees_value: '124.50',
+        slippage_value: '63.25',
+        turnover_value: '124500',
+        external_flow_ids: ['deposit-1'],
+      },
+      {
+        role: 'hodl',
+        policy_id: 'hodl',
+        terminal_value: '61400',
+        unitized_terminal_value: '1.07',
+        terminal_quantities: { BTC: '1', USDT: '8000' },
+        fill_count: 0,
+        fees_value: '0',
+        slippage_value: '0',
+        turnover_value: '0',
+        external_flow_ids: ['deposit-1'],
+      },
+      {
+        role: 'control:periodic-2',
+        policy_id: 'periodic-2',
+        terminal_value: '63260',
+        unitized_terminal_value: '1.09',
+        terminal_quantities: { BTC: '0.8', USDT: '15000' },
+        fill_count: 3,
+        fees_value: '70',
+        slippage_value: '35',
+        turnover_value: '70000',
+        external_flow_ids: ['deposit-1'],
+      },
+      {
+        role: 'matched_contribution',
+        policy_id: 'matched-contribution-hodl',
+        terminal_value: '62877',
+        unitized_terminal_value: '1.085',
+        terminal_quantities: { BTC: '0.85', USDT: '12500' },
+        fill_count: 1,
+        fees_value: '0',
+        slippage_value: '0',
+        turnover_value: '1000',
+        external_flow_ids: ['deposit-1'],
+      },
+    ],
+  },
+  provenance: {},
+  final_oos_commitment: {},
+  available_series: [],
+} as unknown as ExperimentDetailDto
+
+const snapshot = {
+  schema_version: 'qap.api.portfolio_snapshot.v1',
+  run_id: 'run-portfolio-boundary',
+  starting: {
+    timestamp: '2025-01-01T00:00:00Z',
+    role: 'strategy',
+    holdings: [
+      { asset: 'BTC', quantity: '1', value: '42000', weight: '0.84' },
+      { asset: 'USDT', quantity: '8000', value: '8000', weight: '0.16' },
+    ],
+  },
+  terminal: {
+    timestamp: '2025-06-01T00:00:00Z',
+    role: 'strategy',
+    holdings: [
+      { asset: 'BTC', quantity: '0.75', value: '45000', weight: '0.72' },
+      { asset: 'USDT', quantity: '17500', value: '17500', weight: '0.28' },
+    ],
+  },
+  hodl_terminal: {
+    timestamp: '2025-06-01T00:00:00Z',
+    role: 'hodl',
+    holdings: [],
+  },
+  role_terminals: [],
+  allocation_history: [],
+  concentration: {
+    start_max_weight: '0.84',
+    terminal_max_weight: '0.72',
+    start_herfindahl: '0.7312',
+    terminal_herfindahl: '0.5968',
+  },
+  strategy_vs_hodl_terminal_deltas: [
+    { asset: 'BTC', quantity_delta: '-0.25', value_delta: '-15000' },
+    { asset: 'USDT', quantity_delta: '10500', value_delta: '10500' },
+  ],
+  strategy_vs_matched_contribution_terminal_deltas: [
+    { asset: 'BTC', quantity_delta: '-0.10', value_delta: '-6000' },
+    { asset: 'USDT', quantity_delta: '5000', value_delta: '5000' },
+  ],
+  strategy_costs: {
+    fill_count: 6,
+    fees_value: '124.50',
+    slippage_value: '63.25',
+    turnover_value: '124500',
+  },
+  rebalance_audit: [
+    {
+      decision_id: 'decision-1',
+      decision_time: '2025-03-01T00:00:00Z',
+      reason: 'relationship band crossed',
+      evidence_ids: ['relationship-evidence-1'],
+      current_weights: { BTC: '0.8', USDT: '0.2' },
+      baseline_target_weights: { BTC: '0.75', USDT: '0.25' },
+      target_weights: { BTC: '0.7', USDT: '0.3' },
+      modeled_fee_bps: '10',
+      modeled_slippage_bps: '5',
+      requested_quantity_deltas: { BTC: '-0.05', USDT: '3000' },
+      selected: true,
+      fills: [],
+      post_fill_holdings: [
+        { asset: 'BTC', quantity: '0.95', value: '57000', weight: '0.74' },
+        { asset: 'USDT', quantity: '20000', value: '20000', weight: '0.26' },
+      ],
+    },
+  ],
+} satisfies PortfolioSnapshotDto
+
+const performance = {
+  schema_version: 'qap.api.portfolio_performance.v1',
+  run_id: 'run-portfolio-boundary',
+  primary_incremental_benchmark: 'periodic-2',
+  maximum_relative_drawdown_vs_hodl: '0.031',
+  time_below_hodl_seconds: 36000,
+  time_below_primary_control_seconds: 36000,
+  series: [
+    {
+      name: 'relative::strategy_vs_hodl',
+      points: [
+        { timestamp: '2025-01-01T00:00:00Z', value: '0' },
+        { timestamp: '2025-06-01T00:00:00Z', value: '0.018' },
+      ],
+    },
+    {
+      name: 'relative::strategy_vs_primary_control',
+      points: [
+        { timestamp: '2025-01-01T00:00:00Z', value: '0' },
+        { timestamp: '2025-06-01T00:00:00Z', value: '-0.012' },
+      ],
+    },
+    {
+      name: 'log_relative::strategy_vs_hodl',
+      points: [
+        { timestamp: '2025-01-01T00:00:00Z', value: '0' },
+        { timestamp: '2025-06-01T00:00:00Z', value: '0.017840' },
+      ],
+    },
+    {
+      name: 'log_relative::strategy_vs_primary_control',
+      points: [
+        { timestamp: '2025-01-01T00:00:00Z', value: '0' },
+        { timestamp: '2025-06-01T00:00:00Z', value: '-0.012073' },
+      ],
+    },
+  ],
+} satisfies PortfolioPerformanceDto
+
+describe('PortfolioOverview', () => {
+  it('does not relabel HODL outperformance as relationship or accumulation alpha', () => {
+    render(
+      <PortfolioOverview
+        experiment={experiment}
+        snapshot={snapshot}
+        performance={performance}
+      />,
+    )
+
+    expect(
+      screen.getByRole('heading', { name: 'Portfolio economics' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Final OOS - consumed')).toBeInTheDocument()
+    expect(screen.getByText('HODL-relative wealth')).toBeInTheDocument()
+    expect(screen.getByText('0.018')).toBeInTheDocument()
+    expect(screen.getByText('Primary control increment')).toBeInTheDocument()
+    expect(screen.getByText('-0.012')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Relative wealth through time' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'QAP vs primary control (relative wealth) - latest -0.012',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Log relative wealth through time' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'QAP vs primary control (cumulative net log-relative wealth) - latest -0.012073',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Evidence boundary: Final OOS - consumed; research family family-alpha.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Relationship intelligence did not add incremental value over periodic-2.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Contribution timing did not beat matched-contribution static HODL.',
+      ),
+    ).toBeInTheDocument()
+
+    const deltas = screen.getByRole('table', {
+      name: 'Strategy versus HODL terminal deltas',
+    })
+    const btcRow = within(deltas).getByRole('row', { name: /BTC/ })
+    expect(within(btcRow).getByText('-0.25')).toBeInTheDocument()
+    expect(within(btcRow).getByText('-15000')).toBeInTheDocument()
+    expect(screen.getByText('Time below HODL')).toBeInTheDocument()
+    expect(screen.getAllByText('36000 seconds')).toHaveLength(2)
+    expect(screen.getByText('Fees: 124.50')).toBeInTheDocument()
+    expect(screen.getByText('Slippage: 63.25')).toBeInTheDocument()
+    expect(
+      screen.getByRole('table', { name: 'Benchmark role terminal economics' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('control:periodic-2')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'External-flow context' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('deposit-1')).toBeInTheDocument()
+    expect(
+      screen.getByRole('table', { name: 'Post-fill holdings for decision-1' }),
+    ).toBeInTheDocument()
+  })
+})
