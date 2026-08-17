@@ -149,6 +149,19 @@ class PaperOperationReader:
             operation_file = directory / "paper_operation.json"
             if not operation_file.is_file():
                 continue
+            if not valid_paper_operation_id(directory.name):
+                summaries.append(
+                    PaperOperationSummaryDto(
+                        artifact_status="invalid",
+                        operation_id=directory.name,
+                        error=PaperOperationErrorDto(
+                            code="corrupt_paper_operation",
+                            message="Paper operation artifact is corrupt.",
+                            context={"operation_id": directory.name},
+                        ),
+                    )
+                )
+                continue
             try:
                 detail = self.detail(directory.name)
             except ApiBoundaryError as error:

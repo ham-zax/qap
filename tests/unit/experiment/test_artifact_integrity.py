@@ -106,3 +106,71 @@ def test_reader_rejects_semantically_inconsistent_performance_with_fresh_digests
 
     with pytest.raises(ArtifactError, match="semantic"):
         read_run_artifacts(run_directory)
+
+
+def test_reader_rejects_undeclared_optional_evidence_file(tmp_path: Path) -> None:
+    run_directory = _completed_run(tmp_path)
+    run_id = run_directory.name
+    schema = pa.schema(
+        [
+            pa.field("timestamp", pa.timestamp("us", tz="UTC"), nullable=False),
+            pa.field("canonical_first", pa.string(), nullable=False),
+            pa.field("canonical_second", pa.string(), nullable=False),
+            pa.field("orientation_base", pa.string(), nullable=False),
+            pa.field("orientation_quote", pa.string(), nullable=False),
+            pa.field("model_id", pa.string(), nullable=False),
+            pa.field("model_version", pa.string(), nullable=False),
+            pa.field("evidence_field", pa.string(), nullable=False),
+            pa.field("value", pa.float64(), nullable=True),
+            pa.field("status", pa.string(), nullable=False),
+            pa.field("fit_reciprocity", pa.string(), nullable=False),
+            pa.field("evidence_reciprocity", pa.string(), nullable=False),
+            pa.field("window_observations", pa.int32(), nullable=False),
+            pa.field("required_observations", pa.int32(), nullable=False),
+            pa.field("coverage_observations", pa.int32(), nullable=False),
+            pa.field("input_fingerprint", pa.string(), nullable=False),
+            pa.field("base_source_fingerprint", pa.string(), nullable=False),
+            pa.field("quote_source_fingerprint", pa.string(), nullable=False),
+        ],
+        metadata={
+            b"qap_schema": b"qap.experiment.evidence.v1",
+            b"qap_run_id": run_id.encode("utf-8"),
+        },
+    )
+    table = pa.Table.from_pylist(
+        [
+            {
+                "timestamp": RUN_AT,
+                "canonical_first": "BTC",
+                "canonical_second": "USDT",
+                "orientation_base": "BTC",
+                "orientation_quote": "USDT",
+                "model_id": "forged-model",
+                "model_version": "1",
+                "evidence_field": "score",
+                "value": 123.0,
+                "status": "valid",
+                "fit_reciprocity": "reciprocal",
+                "evidence_reciprocity": "reciprocal",
+                "window_observations": 1,
+                "required_observations": 1,
+                "coverage_observations": 1,
+                "input_fingerprint": "a" * 64,
+                "base_source_fingerprint": "b" * 64,
+                "quote_source_fingerprint": "c" * 64,
+            }
+        ],
+        schema=schema,
+    )
+    pq.write_table(table, run_directory / "evidence.parquet")
+
+    with pytest.raises(ArtifactError, match="integrity"):
+        read_run_artifacts(run_directory)
+
+
+def test_reader_rejects_undeclared_optional_commitment_file(tmp_path: Path) -> None:
+    run_directory = _completed_run(tmp_path)
+    (run_directory / "commitment.json").write_text("{}\n", encoding="utf-8")
+
+    with pytest.raises(ArtifactError, match="integrity"):
+        read_run_artifacts(run_directory)

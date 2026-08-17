@@ -118,7 +118,7 @@ Do not use this runner to execute commands copied from untrusted network text wi
 - porcelain status and a status fingerprint;
 - content fingerprints for every dirty path.
 
-`assert_safe_scope()` compares a current snapshot with the section baseline. It preserves unrelated pre-existing dirt by requiring its status/content fingerprint to remain unchanged. New/changed paths must be in the reviewed allowed set. Deletions fail by default unless the caller explicitly declares the deletion allowed.
+`assert_safe_scope()` compares a current snapshot with the section baseline. It preserves unrelated pre-existing dirt by requiring its status/content fingerprint to remain unchanged. New/changed paths must be in the reviewed allowed set. Deletions fail by default unless the caller explicitly declares the deletion allowed. HEAD and branch identity are also fail-closed: by default they must still equal the baseline snapshot; a reviewed transition must pass the exact resulting `expected_head=` and/or `expected_branch=` value rather than accepting arbitrary movement.
 
 The guard returns the planned changed paths that are safe candidates for staging. It does **not** stage, commit, reset, stash, clean, merge, rebase, push, or delete branches automatically.
 

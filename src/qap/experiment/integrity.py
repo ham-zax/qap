@@ -101,6 +101,18 @@ def read_and_validate_integrity(
         raise ValueError(
             f"artifact integrity record contains unexpected files: {unexpected}"
         )
+    physical_authoritative = frozenset(
+        name for name in allowed_files if (root / name).is_file()
+    )
+    if physical_authoritative != declared:
+        undeclared = ", ".join(sorted(physical_authoritative - declared))
+        missing = ", ".join(sorted(declared - physical_authoritative))
+        detail: list[str] = []
+        if undeclared:
+            detail.append(f"undeclared authoritative files: {undeclared}")
+        if missing:
+            detail.append(f"declared authoritative files missing: {missing}")
+        raise ValueError("artifact integrity file set mismatch: " + "; ".join(detail))
     for name, expected in integrity.files.items():
         candidate = root / name
         if not candidate.is_file():

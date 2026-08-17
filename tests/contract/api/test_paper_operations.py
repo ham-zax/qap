@@ -150,6 +150,28 @@ def test_paper_operation_list_surfaces_corrupt_entry_without_hiding_valid(
     assert items["broken-operation"]["error"]["code"] == "corrupt_paper_operation"
 
 
+def test_paper_operation_list_isolates_invalid_directory_name(
+    paper_operation_run_root: tuple[Path, str],
+) -> None:
+    from qap.api import ApiSettings, create_app
+
+    run_root, operation_id = paper_operation_run_root
+    malformed = run_root / "paper-operations" / "Invalid Operation"
+    malformed.mkdir()
+    (malformed / "paper_operation.json").write_text("{}\n", encoding="utf-8")
+    client = TestClient(
+        create_app(ApiSettings(run_root=run_root, market_data_root=ROOT))
+    )
+
+    response = client.get("/api/paper-operations")
+
+    assert response.status_code == 200
+    items = {item["operation_id"]: item for item in response.json()}
+    assert items[operation_id]["artifact_status"] == "valid"
+    assert items["Invalid Operation"]["artifact_status"] == "invalid"
+    assert items["Invalid Operation"]["error"]["code"] == "corrupt_paper_operation"
+
+
 def test_missing_paper_operation_has_stable_error_envelope(tmp_path: Path) -> None:
     from qap.api import ApiSettings, create_app
 

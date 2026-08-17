@@ -148,11 +148,25 @@ def assert_safe_scope(
     current: GitSnapshot,
     allowed_paths: set[str] | frozenset[str],
     allowed_deletions: set[str] | frozenset[str] = frozenset(),
+    expected_head: str | None = None,
+    expected_branch: str | None = None,
 ) -> tuple[str, ...]:
     """Return planned changed paths or fail if current mutations escape the baseline."""
 
     if baseline.worktree_path != current.worktree_path:
         raise GitGuardError("Git snapshots refer to different worktrees")
+    accepted_head = baseline.head if expected_head is None else expected_head
+    if current.head != accepted_head:
+        raise GitGuardError(
+            "unexpected Git HEAD movement: "
+            f"expected {accepted_head}, observed {current.head}"
+        )
+    accepted_branch = baseline.branch if expected_branch is None else expected_branch
+    if current.branch != accepted_branch:
+        raise GitGuardError(
+            "unexpected Git branch movement: "
+            f"expected {accepted_branch}, observed {current.branch}"
+        )
     allowed = frozenset(allowed_paths)
     deletions = frozenset(allowed_deletions)
     before = {item.path: item for item in baseline.paths}

@@ -124,6 +124,60 @@ def test_scope_rejects_unplanned_new_path_and_deletion(tmp_path: Path) -> None:
         )
 
 
+def test_scope_rejects_unexpected_head_movement_and_accepts_exact_transition(
+    tmp_path: Path,
+) -> None:
+    repository = _repository(tmp_path)
+    baseline = snapshot_git(repository)
+    (repository / "allowed.txt").write_text("committed change\n", encoding="utf-8")
+    _git(repository, "add", "allowed.txt")
+    _git(repository, "commit", "-qm", "advance head")
+    current = snapshot_git(repository)
+
+    with pytest.raises(GitGuardError, match="HEAD"):
+        assert_safe_scope(
+            baseline=baseline,
+            current=current,
+            allowed_paths=set(),
+        )
+
+    assert (
+        assert_safe_scope(
+            baseline=baseline,
+            current=current,
+            allowed_paths=set(),
+            expected_head=current.head,
+        )
+        == ()
+    )
+
+
+def test_scope_rejects_unexpected_branch_change_and_accepts_exact_transition(
+    tmp_path: Path,
+) -> None:
+    repository = _repository(tmp_path)
+    baseline = snapshot_git(repository)
+    _git(repository, "checkout", "-qb", "reviewed-transition")
+    current = snapshot_git(repository)
+
+    with pytest.raises(GitGuardError, match="branch"):
+        assert_safe_scope(
+            baseline=baseline,
+            current=current,
+            allowed_paths=set(),
+        )
+
+    assert (
+        assert_safe_scope(
+            baseline=baseline,
+            current=current,
+            allowed_paths=set(),
+            expected_branch="reviewed-transition",
+        )
+        == ()
+    )
+
+
 def test_second_live_writer_is_blocked_but_inspection_is_read_only(
     tmp_path: Path,
 ) -> None:
