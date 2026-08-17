@@ -102,7 +102,7 @@
 - Decimal values serialize as strings when exact financial precision matters; chart-only float series serialize as JSON numbers.
 - UTC timestamps serialize in RFC3339 `Z` form.
 - Run/experiment DTOs include research family/parent, universe mode, data role, final-OOS consumption state, primary incremental benchmark, and sibling-trial count where available.
-- Pair/model DTO metadata exposes `orientation_behavior` when fitted evidence exists.
+- Pair/model DTO metadata exposes separate `fit_reciprocity` and `evidence_reciprocity` when fitted evidence exists.
 - DTO conversion functions live beside schemas/readers, not in domain objects.
 - No API schema is imported into core financial packages.
 
@@ -155,7 +155,7 @@ GET /api/pairs/{asset_x}/{asset_y}/anchor?run_id=...&anchor=BTC
 ```
 
 **Behavior:**
-- Pair series response includes canonical pair, requested orientation, ratio/log ratio, normalized path values or references, source fingerprints, and rebalance markers from the run trace. Model-evidence responses, when present, also state the model's reciprocal `orientation_behavior`.
+- Pair series response includes canonical pair, requested orientation, ratio/log ratio, normalized path values or references, source fingerprints, and rebalance markers from the run trace. Model-evidence responses, when present, state both the fitted model's `fit_reciprocity` and the oriented output's `evidence_reciprocity`.
 - Anchor endpoint returns synchronized X/Y, X/A, Y/A series when source data exists.
 - Inverse orientation is explicit in response metadata.
 - Missing required source series returns explicit error; API never substitutes another quote/anchor.
@@ -211,3 +211,9 @@ uv run python scripts/export_openapi.py /tmp/qap-openapi.json
 ## Stop Conditions
 
 Do not add a second backend, GraphQL, websocket streaming, async job infrastructure, public deployment, user accounts, or experiment-mutation endpoints merely for UI convenience. Add a run-trigger endpoint only when an operator workflow and long-run execution semantics are explicitly designed.
+
+## Targeted Quant Review Addendum — Reciprocal Metadata and Holdout Safety
+
+Relationship-model DTOs expose `fit_reciprocity` and `evidence_reciprocity` separately rather than one ambiguous orientation flag. APIs expose persisted final-OOS results only after the committed run consumes that holdout; responses preserve consumed state so the frontend cannot imply an inspected holdout is still sealed.
+
+For TypeScript contracts, prefer a small OpenAPI-derived tool over handwritten duplicate DTOs. `openapi-typescript` plus its lightweight fetch client is the default Phase-08 candidate; evaluate Hey API only if generated TanStack Query integration demonstrably removes enough glue to justify the larger codegen surface.

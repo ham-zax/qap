@@ -201,3 +201,21 @@ uv run pyright src tests
 ## Stop Conditions
 
 Do not add Sharpe/Sortino optimization, portfolio optimizer libraries, graph valuation routing, benchmark registries, or model-specific metrics here. Economic truth must remain small and interpretable before research sophistication arrives.
+
+## Targeted Quant Review Addendum — Incremental Relative-Wealth Series
+
+The terminal wealth ratio remains the primary economic headline, but Phase 03 must also expose an aligned incremental relative-performance series for later statistical inference.
+
+For candidate policy `C` and declared benchmark/control `B`, when both marked wealth paths are strictly positive at aligned evaluation timestamps:
+
+```text
+d_t = delta_log(W_C,t) - delta_log(W_B,t)
+```
+
+The sum of `d_t` must reconcile, within declared numerical tolerance, to the log of the candidate-vs-control gross wealth-growth ratio. This is an accounting/evaluation artifact, not an alpha claim by itself.
+
+- [ ] Strategy and control use identical evaluation timestamps and authoritative `PriceSnapshot` values.
+- [ ] Refuse log-relative computation if either wealth path is non-positive; never silently clip/offset wealth.
+- [ ] Test cumulative incremental log performance against the terminal relative-growth log ratio.
+- [ ] Preserve terminal relative wealth, turnover, fees, slippage, drawdown, and concentration alongside the series.
+- [ ] Phase 07 may consume this series for dependence-aware inference without moving statistics into `qap.evaluation`.

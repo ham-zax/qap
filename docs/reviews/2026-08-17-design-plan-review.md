@@ -229,3 +229,32 @@ These are not missing plan details; they are hypotheses or later operator decisi
 The independent review was strong and materially improved the scientific contract, but it did not reveal a reason to redesign the architecture. The design/planning package is now **ready to begin Phase 00 after the user's current review/research handoff**.
 
 One narrow research question remains useful before Phase 10 is eventually executed: what is the minimum statistically defensible protocol for separating pair-specific incremental value from simple rebalancing/common-mode effects under many pair/model/horizon trials? That answer may refine Phase 07/10, but it should not delay repository foundation, domain, data, accounting, or deterministic replay work unless it uncovers a critical contradiction.
+
+## Final Targeted Quantitative Review Reconciliation
+
+**External verdict:** `GO`; no critical Phase-00 blocker.
+**Internal reconciliation:** accepted with bounded clarifications; architecture remains frozen for build.
+
+| Finding | Decision | QAP correction |
+|---|---|---|
+| Benchmark ladder is counterfactual, not unique additive causal decomposition | ACCEPT | Phase 07 now limits claims to incremental value relative to declared controls. |
+| Terminal wealth ratio alone is insufficient for statistical uncertainty | ACCEPT | Phase 03 emits aligned incremental net log-relative performance series while retaining terminal wealth as the economic headline. |
+| Common-mode control should be executable/pair-blind | ACCEPT | Phase 10 requires a real pair-blind allocation policy through identical mechanics/costs. |
+| Two-asset internal common-mode control is degenerate | ACCEPT | Two-asset studies cannot claim common-mode-independent pair alpha without an external proxy/additional assets. |
+| Reciprocal semantics need joint-fit vs directional-evidence distinction | ACCEPT AND STRENGTHEN | Phase 04 separates `fit_reciprocity` from `evidence_reciprocity`; refit orientation selection stays inside one correlated research family. |
+| Formal multiplicity methods should be claim-triggered | ACCEPT | SPA preferred for searched-family superiority on reused evaluation data; PBO/DSR only for the questions they actually answer. |
+| Student-t remains early candidate; Gaussian required only for a tail-specific claim | ACCEPT | Phase 10 first Copula experiment remains deliberately narrow. |
+
+### Independent verification
+
+The log-relative reconciliation is exact for strictly positive aligned wealth paths. The two-asset common-mode warning is exact: with `m=(r_X+r_Y)/2`, `r_X-m=(r_X-r_Y)/2` and `r_Y-m=-(r_X-r_Y)/2`.
+
+Primary literature independently supports the governance corrections: White's Reality Check addresses best-model claims after specification search; Hansen's SPA improves robustness/power when poor alternatives contaminate the family; Phillips-Ouliaris developed residual-based cointegration tests including a normalization-invariant variant, supporting caution around conventional normalized residual fits; Demarta-McNeil establishes the t-Copula as a serious tail-dependence model while also motivating richer variants. The maintained `arch` library already implements block-bootstrap SPA/RealityCheck/StepM, so QAP should not recreate these procedures.
+
+### Review-loop stop rule
+
+This closes the broad pre-build research review loop. New evidence does not reopen architecture unless it exposes a critical contradiction in primary objective, long-only Spot action space, accounting ownership, causal timing, benchmark logic, or reproducibility. Remaining questions are Phase-07/10 admission questions and must not delay Phase 00.
+
+### OSS consequence
+
+The parallel OSS audit does not change architecture; it changes implementation tactics. Use maintained commodity libraries where they save code, but retain QAP-owned economic truth. See `docs/OSS_REUSE_BOUNDARY.md`.

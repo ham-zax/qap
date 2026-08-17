@@ -286,3 +286,11 @@ Implementation stops and returns to design review when any task would:
 ## Completion Definition
 
 The master plan is complete only when Phase 11 has produced a trustworthy paper product and Phase 12 has recorded a deliberate live-readiness decision. Phase 13 is a development-productivity capability and does not affect whether QAP's financial core is economically valid.
+
+## Final Pre-Build Quant Review and OSS Reuse Gate
+
+The final targeted quantitative review returned **Phase-00 GO with no critical pre-build blocker**. Validated corrections are phase-local: Phase 03 exposes incremental log-relative wealth paths; Phase 04 separates fitted-model reciprocity from directional evidence; Phase 07 defines minimal selection/inference rules; Phase 10 requires an executable pair-blind control and recognizes two-asset common-mode degeneracy. These refinements do not reopen the primary objective, action space, modular-monolith architecture, or phase order.
+
+OSS policy: use mature libraries to remove commodity work, but never outsource QAP's authoritative inventory, valuation/HODL semantics, allocation contracts, deterministic spot execution, final-OOS/research-family semantics, or economic success criteria. See `docs/OSS_REUSE_BOUNDARY.md`.
+
+Broad pre-build review is closed. New evidence alters the build only if it exposes a critical contradiction in a constitutional invariant. Phase-specific library spikes and statistical-method choices occur when their phase is reached and do not block Phase 00.

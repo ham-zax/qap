@@ -217,3 +217,19 @@ uv run pyright src tests
 ## Stop Conditions
 
 Do not add promotion workflows, candidate registries, experiment databases, notebooks as authoritative runners, distributed job queues, automatic hyperparameter search, or a generalized backtest framework. Do not implement White/SPA/PBO/Deflated-Sharpe machinery merely because the literature exists; add a family-level multiplicity method only when an actual broad search is used to support a serious superiority claim. Phase 07 records the family/trials so that method remains possible later.
+
+## Targeted Quant Review Addendum — Minimal Inference Standard
+
+The benchmark ladder is an ordered set of **counterfactual policies**, not a uniquely identified additive decomposition of causal alpha. QAP may state that one frozen policy added net value relative to another frozen control; it must not present rung differences as orthogonal causal components without a separate identification argument.
+
+For inferential work, consume the Phase-03 aligned incremental net log-relative performance series rather than a terminal endpoint alone. Preserve temporal dependence. If block bootstrap inference is used, alternatives evaluated over the same history use common time blocks so overlapping assets/pairs are not treated as independent.
+
+Minimum method-selection rules:
+- One predeclared candidate vs one predeclared control on one untouched final holdout: no automatic White RC, SPA, PBO, or DSR requirement; report net economics plus dependence-aware uncertainty when making an inferential claim.
+- Winner selected from a family on the same evaluation information used for the superiority claim: family-level inference required; Hansen SPA is the default candidate unless the claim requires a different procedure.
+- White Reality Check: use for replication/comparability or specific justification; do not ritualistically run both RC and SPA.
+- PBO: diagnostic for a genuinely large structured optimization/search matrix; it does not repair a consumed holdout.
+- DSR: admit when Sharpe itself was materially optimized/selected or advertised as evidence; it is not constitutional for QAP's relative-wealth objective.
+- No arbitrary trial-count threshold triggers multiplicity correction. The trigger is reuse of evaluation information for selection and inference.
+
+OSS rule: do not implement bootstrap/SPA machinery from scratch. `arch` is the preferred first library to adopt when these procedures are actually required; its block-bootstrap and SPA/RealityCheck/StepM implementations remain outside the QAP kernel.

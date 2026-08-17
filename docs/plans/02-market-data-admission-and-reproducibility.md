@@ -244,3 +244,11 @@ uv run pyright src tests
 ## Stop Conditions
 
 Do not add CCXT/exchange SDKs, exchange authentication, private account access, trading/order endpoints, websocket streaming, database storage, auto-gap repair, dynamic-universe discovery, or implicit symbol inversion in this phase. A current venue listing record may not be used to fabricate historical point-in-time eligibility.
+
+## OSS Reuse Addendum — Public Data and Columnar Storage
+
+Reuse mature infrastructure selectively:
+- `httpx` is sufficient for the intentionally tiny public-market adapter unless a bounded spike shows official `binance-sdk-spot` materially reduces code without leaking private/trading semantics into QAP contracts.
+- CCXT is mature and MIT-licensed, but its enormous exchange/instrument/trading surface is not the default Phase-02 dependency. Treat it as reference or a later multi-venue adapter candidate.
+- Use PyArrow for Parquet/Arrow serialization rather than implementing columnar storage logic. Do not add Polars alongside pandas/NumPy merely for fashion; another dataframe engine needs measured justification.
+- Keep Binance Spot public endpoint/filter semantics behind `qap.market.adapters`; third-party response objects never cross into domain contracts.

@@ -167,3 +167,7 @@ uv run pyright src tests
 ## Stop Conditions
 
 Return to design review if implementing the domain requires an exchange SDK, database, mutable global registry, environment-variable business state, or trade lifecycle objects such as OPEN/CLOSED positions. Those indicate the architecture is drifting away from inventory ownership.
+
+## OSS Reuse Addendum — Property-Based Invariants
+
+Adopt Hypothesis when Phase 01 starts for high-value domain invariants rather than building bespoke random generators. Initial properties cover non-negative inventory, deterministic quantity arithmetic, no-op identity, and later accounting/replay invariants as those modules arrive. Example-based tests remain preferred where a few hand-calculated scenarios communicate semantics better.

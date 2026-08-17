@@ -26,7 +26,7 @@
 - `src/qap/__init__.py` — package marker/version surface only.
 - `tests/test_smoke.py` — proves the package imports under the managed environment.
 - `scripts/check_source_size.py` — repository maintainability guard for hand-written Python/TypeScript/TSX source and tests.
-- `scripts/check_architecture.py` — small standard-library import-boundary guard that prevents outer layers from leaking into the financial core as packages appear.
+- `.importlinter` — declarative Import Linter contracts that prevent outer layers from leaking into the financial core as packages appear.
 
 **Existing design inputs:**
 
@@ -149,14 +149,14 @@ uv run python scripts/check_source_size.py
 - The checker ignores packages that do not exist yet and is updated only through an explicit architecture change, not ad hoc per-file exceptions.
 
 **Steps:**
-- [ ] Implement `scripts/check_architecture.py` with the standard library only.
+- [ ] Configure `import-linter` contracts for the approved package dependency direction.
 - [ ] Verify one temporary forbidden-import probe fails and a permitted import direction passes.
 - [ ] Add the command to `AGENTS.md` and phase verification.
 
 **Verification:**
 
 ```bash
-uv run python scripts/check_architecture.py
+uv run lint-imports
 ```
 
 **Acceptance criteria:**
@@ -182,7 +182,7 @@ uv run ruff check .
 uv run ruff format --check .
 uv run pyright src tests scripts
 uv run python scripts/check_source_size.py
-uv run python scripts/check_architecture.py
+uv run lint-imports
 ```
 
 **Acceptance criteria:**
@@ -203,3 +203,11 @@ uv run python scripts/check_architecture.py
 ## Stop Conditions
 
 Return to design review instead of expanding Phase 00 if repository setup appears to require Docker, a database, a JS workspace, CI, plugin architecture, or historical-repo runtime coupling. None is justified here.
+
+## OSS Reuse Correction — Architecture Enforcement
+
+Do not build a custom import-graph linter unless a demonstrated QAP rule cannot be expressed by an existing maintained tool. Supersede the planned bespoke import-topology checker with an `import-linter` configuration if a Phase-00 spike confirms the declared package-layer contracts are expressible cleanly. Keep any QAP-owned guard only for non-import rules such as file-size limits, generated-file exemptions, or forbidden dependency names.
+
+- [ ] `import-linter` enforces core dependency direction in local/CI verification.
+- [ ] QAP does not reimplement generic import-graph traversal merely to duplicate Import Linter.
+- [ ] If a required boundary is not expressible, document the concrete gap before adding a custom check.

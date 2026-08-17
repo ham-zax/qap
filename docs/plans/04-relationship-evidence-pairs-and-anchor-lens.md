@@ -152,3 +152,24 @@ uv run pyright src tests
 ## Stop Conditions
 
 Do not add a model framework, pair-ranking system, network graph, thresholds, predictive labels, or automatic anchor selection. Those are separate hypotheses and must not contaminate the transparent relationship baseline.
+
+## Targeted Quant Review Addendum — Reciprocal Fit vs Evidence Semantics
+
+One `orientation_behavior` field is too coarse for fitted statistical models. QAP distinguishes reciprocity of the **fitted joint object** from reciprocity of the **oriented evidence derived from it**.
+
+```text
+fit_reciprocity:
+  exact_transform | refit_required | model_specific
+
+evidence_reciprocity:
+  exact_transform | directional_transform | model_specific
+```
+
+Examples later phases must preserve:
+- raw/log ratio: exact representation/oriented transform;
+- Pearson/Spearman/Kendall dependence: symmetric under coordinate exchange;
+- conventional Engle-Granger residual construction: refit required when regression normalization reverses;
+- ordinary bivariate Gaussian or Student-t joint Copula: one exchangeable fitted joint model, while conditional/h-function evidence is directional;
+- rotated or explicitly asymmetric Copulas: model/rotation-specific semantics must be declared.
+
+Trial accounting follows the research operation: exact reversals are not new trials; deterministic directional views from one joint fit are not independent discoveries; separately refitted reciprocal orientations are correlated variants in the same `research_family_id`; choosing the better orientation after seeing performance counts as selection.

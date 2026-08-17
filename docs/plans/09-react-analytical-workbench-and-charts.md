@@ -294,3 +294,11 @@ uv run pytest -q tests/contract/api
 ## Stop Conditions
 
 Do not add topology graphs, heatmap universes, live streaming, mobile app, SSR, user accounts, drag-and-drop dashboard builders, ECharts, or model configuration editors merely because the frontend exists. Those require a concrete analytical/operator need and a separate bounded plan.
+
+## Targeted Quant Review Addendum — Incremental Wealth and Research Boundaries
+
+Add two decision-relevant visualizations:
+1. `log(QAP/control relative wealth)` through time, using backend-produced aligned values, so one exceptional episode cannot hide behind a terminal ratio;
+2. explicit exploratory/development/final-holdout boundaries plus final-OOS consumed state on research charts.
+
+The UI performs no authoritative financial calculation. Lightweight Charts remains the preferred renderer; Phase 09 must explicitly satisfy its Apache-2.0 NOTICE/TradingView attribution requirement.

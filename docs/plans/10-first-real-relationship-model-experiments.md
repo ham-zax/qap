@@ -68,7 +68,7 @@
 
 **Interfaces:**
 - Consumes: Phase-04 log-ratio series through `as_of` only, declared rolling window length.
-- Produces: `RelationshipObservation` with signed standardized deviation score, coverage metadata, and `orientation_behavior=exact_transform`.
+- Produces: `RelationshipObservation` with signed standardized deviation score, coverage metadata, and `fit_reciprocity=exact_transform` and `evidence_reciprocity=exact_transform`.
 
 **Formula:**
 
@@ -236,3 +236,26 @@ For any actual experiment run, also verify its manifest/data/code fingerprints a
 ## Stop Conditions
 
 Return to research/design review if Copula implementation requires restoring v1's fixed constitutional thresholds, global model registry, BTC-only objective, giant gate stack, or hidden model state. A statistically elegant model that cannot demonstrate incremental economic value over the predeclared simple rebalancing control remains research-only. Do not expand Phase 10 into a full asset-pricing/factor-data platform merely to satisfy attribution; report the limitation and admit richer factor data only when a surviving candidate makes that question material.
+
+## Final Targeted Phase-10 Admission Clarifications
+
+### Executable pair-blind control
+The common-mode/cross-sectional control is a real allocation policy, not merely an explanatory regression. It cannot see the explicitly mined canonical pair identity and must pass through the same target-allocation bounds, no-trade logic, timing, fees, slippage, quantization, and deterministic execution machinery as the pair-conditioned candidate.
+
+Do not force realized turnover to match between control and candidate: deciding not to trade may be legitimate value. Report gross performance, turnover, concentration, explicit costs, and net incremental wealth separately.
+
+### Two-asset degeneracy
+For a basket containing only `X` and `Y`, an equal-weight internal common-mode residual is algebraically proportional to `r_X-r_Y`; it is not an independent falsification of pair information. A two-asset experiment may claim incremental value beyond HODL/mechanical/cost-aware rebalancing, but a stronger common-mode-independent pair claim needs a predeclared external broad-market proxy or additional basket assets.
+
+### Incremental inferential object
+For serious Phase-10 claims, evaluate both terminal relative wealth and the Phase-03 incremental net log-relative series against the predeclared strongest admissible non-pair control. Any uncertainty procedure must respect serial dependence.
+
+### Student-t admission refinement
+Student-t remains an early serious hypothesis after the transparent relationship control. Keep the first test small: one predeclared pair/small basket, one marginal transform, one lookback/refit schedule, one long-only allocation mapping, one cost model, chronological development, then one sealed final holdout.
+
+A Gaussian Copula comparator is mandatory only when the claim is specifically that **Student-t tail dependence** adds incremental value. It is useful but not mandatory for the narrower first claim that one frozen Student-t-conditioned long-only policy beats the existing transparent/non-pair controls.
+
+### Reuse statistical libraries
+- Use `statsmodels` for established regression/econometric primitives instead of hand-rolling them.
+- Evaluate `pyvinecopulib` before implementing Copula estimation/family logic ourselves; keep it behind `qap.relationship.models` so third-party types never become domain contracts.
+- Use `arch` for block-bootstrap/family-level procedures when the research claim actually requires them.
