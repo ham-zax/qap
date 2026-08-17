@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import type { PaperOperationDetailDto } from '../../api/types'
@@ -92,23 +92,22 @@ describe('PaperOperationDetail', () => {
   it('keeps no-fill constraints and the research boundary explicit', () => {
     render(<PaperOperationDetail data={detail} />)
 
-    expect(screen.getByRole('heading', { name: 'forward-paper-no-fill' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Paper rebalance' })).toBeVisible()
+    expect(screen.getByText('Reconciled')).toBeVisible()
     expect(
-      screen.getByText('Forward-paper operational dry run — not prospective candidate evidence'),
+      screen.getByText('Forward paper only — not valid for parameter selection, model promotion, or deployment evidence.'),
     ).toBeVisible()
-    expect(screen.getByText('No fill: below_minimum_notional')).toBeVisible()
+    expect(screen.getByText('No fill · SOL · Below Minimum Notional')).toBeVisible()
     expect(
       screen.getByText('This artifact is an operational dry run, not prospective candidate evidence.'),
     ).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Target tracking' })).toBeVisible()
-    expect(screen.getByText('-49.27')).toBeVisible()
+    expect(screen.getByText('−49.27')).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Independent reconciliation' })).toBeVisible()
     expect(screen.getAllByText('198.54')).toHaveLength(2)
     expect(screen.getByText('No fills were realized.')).toBeVisible()
 
-    const boundary = screen.getByRole('heading', { name: 'Research boundary' }).parentElement
-    expect(boundary).not.toBeNull()
-    expect(within(boundary as HTMLElement).getAllByText('Not eligible')).toHaveLength(3)
+    expect(screen.getByText('Technical execution details')).toBeVisible()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 })

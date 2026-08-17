@@ -1,12 +1,15 @@
 import type { PaperOperationSummaryDto } from '../../api/types'
 import { ExactNumber } from '../../components/ExactNumber'
+import { Badge } from '../../components/ui/Badge'
+import { formatResearchTimestamp } from '../../lib/format'
 
 interface PaperOperationListProps {
   items: PaperOperationSummaryDto[]
 }
 
-function statusLabel(item: PaperOperationSummaryDto): string {
-  return item.reconciliation_matches ? 'Reconciled' : 'Reconciliation mismatch'
+function shortId(value: string): string {
+  if (value.length <= 28) return value
+  return `${value.slice(0, 15)}…${value.slice(-8)}`
 }
 
 export function PaperOperationList({ items }: PaperOperationListProps) {
@@ -15,62 +18,89 @@ export function PaperOperationList({ items }: PaperOperationListProps) {
   }
 
   return (
-    <section aria-labelledby="paper-operation-list-heading">
-      <h1 id="paper-operation-list-heading">Forward-paper operations</h1>
-      <p>
-        These are read-only operational dry-run artifacts. They are not prospective
-        candidate or deployment evidence and cannot execute orders from the browser.
-      </p>
-      {items.map((item) => (
-        <article key={item.operation_id} aria-label={item.operation_id}>
-          <h2>{item.operation_id}</h2>
-          <dl>
-            <div>
-              <dt>Status</dt>
-              <dd>{statusLabel(item)}</dd>
-            </div>
-            <div>
-              <dt>Evidence class</dt>
-              <dd>Operational dry run</dd>
-            </div>
-            <div>
-              <dt>Prospective candidate evidence</dt>
-              <dd>
-                {item.prospective_candidate_evidence
-                  ? 'Eligible'
-                  : 'Not prospective candidate evidence'}
-              </dd>
-            </div>
-            <div>
-              <dt>Execution time</dt>
-              <dd>{item.execution_timestamp}</dd>
-            </div>
-            <div>
-              <dt>Fill count</dt>
-              <dd>{item.fill_count}</dd>
-            </div>
-            <div>
-              <dt>Total fees</dt>
-              <dd><ExactNumber value={item.total_fee_quote} /></dd>
-            </div>
-            <div>
-              <dt>Total slippage</dt>
-              <dd><ExactNumber value={item.total_slippage_quote} /></dd>
-            </div>
-            <div>
-              <dt>Bridge residual</dt>
-              <dd><ExactNumber value={item.bridge_residual} /></dd>
-            </div>
-            <div>
-              <dt>Routes</dt>
-              <dd>{item.route_ids.length > 0 ? item.route_ids.join(' · ') : 'None'}</dd>
-            </div>
-          </dl>
-          <a href={`/paper-operations/${encodeURIComponent(item.operation_id)}`}>
-            Inspect paper operation
-          </a>
-        </article>
-      ))}
+    <section className="min-w-0" aria-labelledby="paper-operation-list-heading">
+      <header className="mb-8 max-w-3xl">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
+          Operational evidence
+        </p>
+        <h1
+          id="paper-operation-list-heading"
+          className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl"
+        >
+          Paper operations
+        </h1>
+        <p className="m-0 text-sm leading-6 text-secondary md:text-base">
+          Read-only forward-paper dry runs. They show execution and reconciliation
+          outcomes, but they are not candidate or deployment evidence and cannot place
+          orders from the browser.
+        </p>
+      </header>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        {items.map((item) => {
+          const reconciled = item.reconciliation_matches
+          return (
+            <article
+              key={item.operation_id}
+              aria-label={item.operation_id}
+              className={`flex min-w-0 flex-col rounded-lg border bg-panel p-4 md:p-5 ${reconciled ? 'border-border' : 'border-negative/45'}`}
+            >
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <Badge tone={reconciled ? 'positive' : 'negative'}>
+                  {reconciled ? 'Reconciled' : 'Reconciliation mismatch'}
+                </Badge>
+                <Badge tone="info">Forward paper · operational dry run</Badge>
+              </div>
+
+              <h2 className="mb-2 text-base font-semibold text-foreground">Paper rebalance</h2>
+              <p className="mt-0 mb-5 text-sm text-secondary">
+                {formatResearchTimestamp(item.execution_timestamp)}
+              </p>
+
+              <div className="grid grid-cols-2 gap-3 border-y border-border py-4">
+                <div>
+                  <p className="m-0 text-xs text-muted">Fills</p>
+                  <p className="mt-1 mb-0 text-lg font-semibold tabular-nums text-foreground">
+                    {item.fill_count}
+                  </p>
+                </div>
+                <div>
+                  <p className="m-0 text-xs text-muted">Fees</p>
+                  <p className="mt-1 mb-0 text-lg font-semibold tabular-nums text-foreground">
+                    <ExactNumber value={item.total_fee_quote} />
+                  </p>
+                </div>
+                <div>
+                  <p className="m-0 text-xs text-muted">Slippage</p>
+                  <p className="mt-1 mb-0 font-semibold tabular-nums text-foreground">
+                    <ExactNumber value={item.total_slippage_quote} />
+                  </p>
+                </div>
+                <div>
+                  <p className="m-0 text-xs text-muted">Bridge residual</p>
+                  <p className="mt-1 mb-0 font-semibold tabular-nums text-foreground">
+                    <ExactNumber value={item.bridge_residual} />
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-4 mb-0 text-xs font-medium text-warning">
+                Not candidate or deployment evidence
+              </p>
+              <p className="mt-2 mb-0 break-all text-xs text-muted" title={item.operation_id}>
+                Operation {shortId(item.operation_id)}
+              </p>
+
+              <a
+                className="mt-5 inline-flex min-h-11 w-fit items-center rounded-md bg-accent px-4 py-2 text-sm font-semibold text-canvas no-underline hover:opacity-90"
+                href={`/paper-operations/${encodeURIComponent(item.operation_id)}`}
+              >
+                Inspect operation
+              </a>
+            </article>
+          )
+        })}
+      </div>
     </section>
   )
 }

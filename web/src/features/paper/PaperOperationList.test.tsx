@@ -23,12 +23,12 @@ describe('PaperOperationList', () => {
   it('surfaces reconciled forward-paper evidence without execution controls', () => {
     render(<PaperOperationList items={[item]} />)
 
-    expect(screen.getByRole('heading', { name: 'Forward-paper operations' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Paper operations' })).toBeVisible()
     expect(screen.getByText('Reconciled')).toBeVisible()
-    expect(screen.getByText('Operational dry run')).toBeVisible()
-    expect(screen.getByText('Not prospective candidate evidence')).toBeVisible()
+    expect(screen.getByText('Forward paper · operational dry run')).toBeVisible()
+    expect(screen.getByText('Not candidate or deployment evidence')).toBeVisible()
     expect(screen.getByText('0.42')).toBeVisible()
-    expect(screen.getByRole('link', { name: 'Inspect paper operation' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Inspect operation' })).toHaveAttribute(
       'href',
       '/paper-operations/forward-paper-1',
     )
