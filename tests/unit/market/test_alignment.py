@@ -88,11 +88,21 @@ def test_alignment_preserves_instrument_orientation_metadata() -> None:
     assert aligned.for_instrument(eth.instrument).instrument.base == AssetId("ETH")
 
 
-def test_alignment_requires_two_distinct_series_with_one_interval() -> None:
+def test_alignment_accepts_one_series_for_direct_replay() -> None:
     btc = _series("BTC", range(10, 13))
 
-    with pytest.raises(ValueError, match="at least two"):
-        align_bar_series([btc])
+    aligned = align_bar_series([btc])
+
+    assert aligned.instruments == (btc.instrument,)
+    assert aligned.timestamps == btc.timestamps
+    assert aligned.for_instrument(btc.instrument).bars == btc.bars
+
+
+def test_alignment_requires_distinct_series_with_one_interval() -> None:
+    btc = _series("BTC", range(10, 13))
+
+    with pytest.raises(ValueError, match="at least one"):
+        align_bar_series([])
 
     with pytest.raises(ValueError, match="duplicate instrument"):
         align_bar_series([btc, btc])

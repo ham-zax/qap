@@ -9,6 +9,7 @@ from qap.market import (
     BarInterval,
     CompletedBarHistory,
     MarketBar,
+    PriceSnapshot,
     VenueInstrument,
     align_bar_series,
     validate_bar_series,
@@ -193,8 +194,11 @@ class _NoActionPolicy:
         *,
         as_of: datetime,
         current_state: PortfolioState,
+        price_snapshot: PriceSnapshot,
+        applied_flows: tuple[ExternalInventoryFlow, ...],
         evidence_ids: Iterable[str] = (),
     ) -> PolicyDecision:
+        del price_snapshot, applied_flows
         return PolicyDecision.no_action_decision(
             decision_id=f"structural:{as_of.isoformat()}",
             as_of=as_of,
@@ -233,8 +237,11 @@ class _MismatchedDecisionPolicy:
         *,
         as_of: datetime,
         current_state: PortfolioState,
+        price_snapshot: PriceSnapshot,
+        applied_flows: tuple[ExternalInventoryFlow, ...],
         evidence_ids: Iterable[str] = (),
     ) -> PolicyDecision:
+        del price_snapshot, applied_flows
         decision_time = as_of + INTERVAL.duration if self._mismatch == "time" else as_of
         decision_state = (
             PortfolioState.from_holdings({BTC: D("1")})
@@ -349,3 +356,60 @@ def test_replay_preserves_declared_order_for_flows_at_the_same_time() -> None:
 
     assert trace.applied_flows == (deposit, withdrawal)
     assert trace.ending_state.holdings == {}
+
+
+class _ContextCapturingPolicy:
+    def __init__(self) -> None:
+        self.calls: list[
+            tuple[datetime, PriceSnapshot, tuple[ExternalInventoryFlow, ...]]
+        ] = []
+
+    def decide(
+        self,
+        *,
+        as_of: datetime,
+        current_state: PortfolioState,
+        price_snapshot: PriceSnapshot,
+        applied_flows: tuple[ExternalInventoryFlow, ...],
+        evidence_ids: Iterable[str] = (),
+    ) -> PolicyDecision:
+        self.calls.append((as_of, price_snapshot, applied_flows))
+        return PolicyDecision.no_action_decision(
+            decision_id=f"context:{as_of.isoformat()}",
+            as_of=as_of,
+            policy_id="context-capturing-v1",
+            current_state=current_state,
+            reason=DecisionReason.INSUFFICIENT_EVIDENCE,
+            evidence_ids=evidence_ids,
+        )
+
+
+def test_replay_passes_decision_prices_and_exact_due_flows_to_policy() -> None:
+    decision_time = START + INTERVAL.duration
+    due = ExternalInventoryFlow(
+        flow_id="context-deposit",
+        effective_time=decision_time,
+        asset=USDT,
+        quantity_delta=D("25"),
+    )
+    policy = _ContextCapturingPolicy()
+
+    trace = run_deterministic_replay(
+        run_id="context-run",
+        aligned=_aligned(),
+        ledger=PortfolioLedger(PortfolioState.from_holdings({BTC: D("1")})),
+        policy=policy,
+        execution_instrument=BTC_USDT,
+        numeraire=USDT,
+        cost_model=CostModel.zero(),
+        min_rebalance_notional=D("0"),
+        external_flows=(due,),
+    )
+
+    first_time, first_prices, first_flows = policy.calls[0]
+    assert first_time == decision_time
+    assert first_prices.timestamp == decision_time
+    assert first_prices.price(BTC) == D("10")
+    assert first_prices.price(USDT) == D("1")
+    assert first_flows == (due,)
+    assert trace.steps[0].price_snapshot is first_prices

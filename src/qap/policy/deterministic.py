@@ -6,6 +6,7 @@ from datetime import datetime
 from types import MappingProxyType
 from typing import cast
 
+from qap.market import PriceSnapshot
 from qap.policy.decision import (
     DecisionReason,
     PolicyDecision,
@@ -13,7 +14,11 @@ from qap.policy.decision import (
     validated_state,
     validated_utc,
 )
-from qap.portfolio import AllocationTarget, PortfolioState
+from qap.portfolio import (
+    AllocationTarget,
+    ExternalInventoryFlow,
+    PortfolioState,
+)
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -62,10 +67,13 @@ class ScheduledTargetPolicy:
         *,
         as_of: datetime,
         current_state: PortfolioState,
+        price_snapshot: PriceSnapshot | None = None,
+        applied_flows: Iterable[ExternalInventoryFlow] = (),
         evidence_ids: Iterable[str] = (),
     ) -> PolicyDecision:
         """Return the exact scheduled target or an explicit no-action."""
 
+        del price_snapshot, applied_flows
         normalized_as_of = validated_utc(as_of)
         current = validated_state(current_state)
         decision_id = f"{self.policy_id}:{normalized_as_of.isoformat()}"

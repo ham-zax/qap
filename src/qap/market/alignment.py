@@ -59,7 +59,7 @@ class AlignedInstrumentSeries:
 
 @dataclass(frozen=True, slots=True, init=False)
 class AlignedBarSeries:
-    """Two or more instruments sharing one exact immutable candle-open index."""
+    """One or more instruments sharing one exact immutable candle-open index."""
 
     interval: BarInterval
     timestamps: tuple[datetime, ...]
@@ -143,8 +143,8 @@ def align_bar_series(
     """Align validated series by exact intersection without filling any price."""
 
     sources = _copied_series(series)
-    if len(sources) < 2:
-        raise BarAlignmentError("alignment requires at least two series")
+    if not sources:
+        raise BarAlignmentError("alignment requires at least one series")
 
     instruments = [source.instrument for source in sources]
     if len(set(instruments)) != len(instruments):

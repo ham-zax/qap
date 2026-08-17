@@ -44,6 +44,8 @@ class ReplayPolicy(Protocol):
         *,
         as_of: datetime,
         current_state: PortfolioState,
+        price_snapshot: PriceSnapshot,
+        applied_flows: tuple[ExternalInventoryFlow, ...],
         evidence_ids: Iterable[str] = (),
     ) -> PolicyDecision: ...
 
@@ -64,6 +66,7 @@ class ReplayStep:
     applied_flows: tuple[ExternalInventoryFlow, ...]
     state_before_flows: PortfolioState
     state_at_decision: PortfolioState
+    price_snapshot: PriceSnapshot
     decision: PolicyDecision
     rebalance: RebalanceFilterResult | None
     execution: DirectExecutionResult | None
@@ -243,6 +246,12 @@ def run_deterministic_replay(
             applied_flows.append(flow)
             next_flow_index += 1
         state_at_decision = ledger.current_state
+        price_snapshot = _decision_price_snapshot(
+            aligned=aligned,
+            decision_index=decision_index,
+            decision_time=decision_time,
+            numeraire=numeraire,
+        )
 
         histories = tuple(
             series.history_through(decision_time) for series in validated_series
@@ -254,6 +263,8 @@ def run_deterministic_replay(
         decision = policy.decide(
             as_of=decision_time,
             current_state=state_at_decision,
+            price_snapshot=price_snapshot,
+            applied_flows=tuple(applied_flows),
             evidence_ids=evidence_ids,
         )
         if not isinstance(cast(object, decision), PolicyDecision):
@@ -272,16 +283,10 @@ def run_deterministic_replay(
         execution_reference_price: Decimal | None = None
 
         if decision.target is not None:
-            prices = _decision_price_snapshot(
-                aligned=aligned,
-                decision_index=decision_index,
-                decision_time=decision_time,
-                numeraire=numeraire,
-            )
             requested_plan = build_rebalance_plan(
                 current_state=state_at_decision,
                 target=decision.target,
-                prices=prices,
+                prices=price_snapshot,
             )
             rebalance = filter_minimum_notional(
                 requested_plan,
@@ -322,6 +327,7 @@ def run_deterministic_replay(
                 applied_flows=tuple(applied_flows),
                 state_before_flows=state_before_flows,
                 state_at_decision=state_at_decision,
+                price_snapshot=price_snapshot,
                 decision=decision,
                 rebalance=rebalance,
                 execution=execution,

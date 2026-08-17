@@ -1,0 +1,98 @@
+{
+  "analysis_anchor": "USDT",
+  "basket": [
+    "btc",
+    "usdt"
+  ],
+  "benchmarks": {
+    "controls": [
+      {
+        "cadence_bars": 2,
+        "control_id": "periodic-2",
+        "kind": "periodic_fixed_weight"
+      },
+      {
+        "band_width": "0.05",
+        "control_id": "band-5pct-half",
+        "kind": "band_partial",
+        "partial_correction_fraction": "0.5"
+      }
+    ],
+    "primary_incremental_benchmark": "periodic-2",
+    "relationship_alpha_claim": true
+  },
+  "data_role": "development",
+  "data_sources": [
+    {
+      "dataset_id": "fixture-btcusdt-1h",
+      "expected_semantic_fingerprint": "1443f2d96c061b5d143242d84821de94f67d05e9eaca64c7eb1f89c12b655cff",
+      "instrument_id": "btc-usdt",
+      "relative_path": "tests/fixtures/market/BTCUSDT_1h.csv"
+    }
+  ],
+  "data_window": {
+    "end": "2024-01-01T12:00:00Z",
+    "start": "2024-01-01T00:00:00Z"
+  },
+  "description": "Deterministic Phase 07 fixture.",
+  "execution": {
+    "adverse_cost_scenario": {
+      "fee_bps": "20",
+      "slippage_bps": "10"
+    },
+    "base_step": null,
+    "execution_instrument_id": "btc-usdt",
+    "fee_bps": "10",
+    "minimum_rebalance_notional": "1",
+    "numeraire_asset": "USDT",
+    "slippage_bps": "5"
+  },
+  "experiment_name": "two-asset dummy",
+  "external_flows": [
+    {
+      "asset": "USDT",
+      "effective_time": "2024-01-01T03:00:00Z",
+      "flow_id": "deposit-1",
+      "quantity_delta": "100"
+    }
+  ],
+  "instruments": [
+    {
+      "base_asset": "BTC",
+      "instrument_id": "btc-usdt",
+      "quote_asset": "USDT",
+      "venue": "fixture",
+      "venue_symbol": "BTCUSDT"
+    }
+  ],
+  "interval": "1h",
+  "parent_run_id": null,
+  "policy": {
+    "component_id": "scheduled_target",
+    "config": {
+      "schedule": [
+        {
+          "as_of": "2024-01-01T02:00:00Z",
+          "weights": {
+            "BTC": "0.25",
+            "USDT": "0.75"
+          }
+        }
+      ]
+    }
+  },
+  "primary_metric": "primary_control_relative_terminal_wealth",
+  "random_seed": 7,
+  "relationship": {
+    "component_id": "none",
+    "config": {}
+  },
+  "research_family_id": "family-two-asset-v1",
+  "schema_version": "qap.experiment.manifest.v1",
+  "starting_quantities": {
+    "BTC": "1",
+    "USDT": "1000"
+  },
+  "success_threshold": "0",
+  "universe_mode": "declared_fixed_basket"
+}
