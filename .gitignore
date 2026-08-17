@@ -18,6 +18,7 @@ htmlcov/
 # Runtime data and generated experiment output.
 /data/
 /runs/
+/.qap-agent/
 /web/node_modules/
 /web/dist/
 /web/test-results/
