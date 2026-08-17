@@ -19,7 +19,8 @@ from qap.market.validation import ValidatedBarSeries, validate_bar_series
 from qap.portfolio import AssetId
 
 _STORAGE_SCHEMA_VERSION = "qap.market.parquet.v1"
-_EVIDENCE_ROLE = "development"
+_STORAGE_EVIDENCE_ROLE = "role_neutral_market_data"
+_LEGACY_EVIDENCE_ROLES = frozenset({"development"})
 _UNIVERSE_MODE = "declared_fixed_basket"
 _CSV_COLUMNS = (
     "candle_open_time",
@@ -175,7 +176,7 @@ def _parquet_metadata(
     return {
         b"qap_schema_version": _STORAGE_SCHEMA_VERSION.encode("utf-8"),
         b"qap_fingerprint": fingerprint.encode("ascii"),
-        b"qap_evidence_role": _EVIDENCE_ROLE.encode("ascii"),
+        b"qap_evidence_role": _STORAGE_EVIDENCE_ROLE.encode("ascii"),
         b"qap_universe_mode": _UNIVERSE_MODE.encode("ascii"),
         b"venue": instrument.venue.encode("utf-8"),
         b"venue_symbol": instrument.venue_symbol.encode("utf-8"),
@@ -305,7 +306,8 @@ def read_parquet_bar_series(path: str | Path) -> ValidatedBarSeries:
     metadata = cast(Mapping[bytes, bytes], raw_metadata)
     if _required_metadata(metadata, b"qap_schema_version") != _STORAGE_SCHEMA_VERSION:
         raise MarketDataStorageError("unsupported Parquet market schema version")
-    if _required_metadata(metadata, b"qap_evidence_role") != _EVIDENCE_ROLE:
+    evidence_role = _required_metadata(metadata, b"qap_evidence_role")
+    if evidence_role not in {_STORAGE_EVIDENCE_ROLE, *_LEGACY_EVIDENCE_ROLES}:
         raise MarketDataStorageError("unexpected Parquet evidence role")
     if _required_metadata(metadata, b"qap_universe_mode") != _UNIVERSE_MODE:
         raise MarketDataStorageError("unexpected Parquet universe mode")

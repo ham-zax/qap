@@ -60,6 +60,37 @@ def test_csv_to_parquet_roundtrip_is_semantic_and_path_independent(
     assert fingerprint_bar_series(second) == expected_fingerprint
 
 
+def test_parquet_storage_is_research_role_neutral(tmp_path: Path) -> None:
+    source = load_csv_bar_series(
+        FIXTURES / "BTCUSDT_1h.csv",
+        instrument=_instrument("BTC"),
+        interval=BarInterval("1h"),
+    )
+    destination = tmp_path / "role-neutral.parquet"
+
+    write_parquet_bar_series(destination, source)
+
+    metadata = pq.read_metadata(destination).metadata or {}
+    assert metadata[b"qap_evidence_role"] == b"role_neutral_market_data"
+    assert read_parquet_bar_series(destination) == source
+
+
+def test_reserved_final_oos_fixture_storage_metadata_is_role_neutral() -> None:
+    path = FIXTURES / "BTCUSDT_1d_2024.parquet"
+
+    metadata = pq.read_metadata(path).metadata or {}
+    assert metadata[b"qap_evidence_role"] == b"role_neutral_market_data"
+    assert fingerprint_bar_series(read_parquet_bar_series(path)) == (
+        "b3069c70fb61f1e7fb6a8b1d338194817ba8896dfd2618b96091c8c46686f2a5"
+    )
+
+
+def test_legacy_development_parquet_role_remains_read_compatible() -> None:
+    series = read_parquet_bar_series(FIXTURES / "BTCUSDT_1d_2023.parquet")
+
+    assert len(series) == 365
+
+
 def test_two_fixture_datasets_align_without_imputation() -> None:
     interval = BarInterval("1h")
     btc = load_csv_bar_series(
