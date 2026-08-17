@@ -155,6 +155,7 @@ runs/scans/<scan_id>.partial/
   neighbors.parquet
   scout_trials.parquet
   promotions.parquet
+  replay_attempts.parquet
   manifest.json            # written last inside staging
 ```
 After all artifact counts/hashes reconcile, atomically publish/rename the directory to:
@@ -482,11 +483,13 @@ The adapter supplies the existing experiment engine with:
 - frozen thresholds/window/template;
 - `50/50` neutral target and `0.10` maximum tilt;
 - authoritative `CostModel`;
-- existing execution/fill/precision rules;
+- the existing deterministic historical replay/fill rules and any execution precision evidence that is actually present;
 - matched HODL;
 - strongest applicable predeclared simple admissible control.
 
 The authoritative replay uses the same horizon evaluation start/end and information cutoff as the candidate. It may use earlier admitted rows only as causal warm-up and may not extend into reserved final OOS.
+
+Slice 1 establishes **historical research economics**, not retroactive venue-capacity truth. If contemporaneous venue precision metadata or Binance/Gate MARKET notional-reference evidence was not captured for the historical timestamp, the replay must not invent it, backfill it from today's exchange state, or describe the result as historically executable at venue limits. OHLCV plus the frozen QAP cost model is sufficient for the Slice-1 research comparison because strategy, HODL, and the predeclared simple control share the same deterministic execution model. Slice 2 owns prospective/current microstructure capture and the `research_only` / `small_capacity` / `tradable_now` qualification. Multi-asset bridge execution is outside pair-native Slice 1 and becomes a Slice-3 concern only if that separate design is approved.
 
 A candidate becomes a historical `deep_replay_survivor` only when, after declared costs:
 ```text
@@ -543,7 +546,17 @@ automatic_neighbor_selected manual_pinned
 candidate_id promotion_rank promotion_status budget_reason
 deep_replay_run_id deep_replay_status economic_gate_status
 ```
-The automatic denominator is reconstructible from the PIT universe, deterministic SSD generator, fixed trial enumeration, and complete trial table. Manual additions remain visibly separate.
+
+Before invoking `qap.experiment` for any promoted candidate, persist a replay-attempt row in `replay_attempts.parquet`:
+```text
+attempt_id scan_id candidate_id promotion_rank
+attempt_status: enumerated | setup_failed | replay_failed | completed
+failure_stage failure_reason
+deep_replay_run_id
+```
+`attempt_id` is deterministic from the frozen scan/candidate/promotion identity. The `enumerated` row must exist durably before experiment preparation, data admission, manifest construction, or replay can fail. A setup failure updates that same attempt row to `setup_failed`; it does not disappear because no experiment `manifest.json` was produced. Publication must reconcile the enumerated promotion count against replay-attempt rows and promotion outcomes.
+
+The automatic denominator is reconstructible from the PIT universe, deterministic SSD generator, fixed trial enumeration, complete trial table, promotion table, and pre-enumerated replay-attempt ledger. Manual additions remain visibly separate.
 ## 14. Statistical semantics
 
 Slice 1 uses one simple rule:
@@ -575,6 +588,7 @@ Benchmark realistic 500- and 1,000-asset datasets during implementation and opti
 - one asset fails coverage;
 - one pair lacks common observations;
 - one trial fit/signal is invalid;
+- one promoted candidate fails experiment setup/data admission after its replay attempt has been durably enumerated;
 - one promoted candidate fails authoritative replay for candidate-specific reasons.
 ### Abort the generation
 
@@ -624,6 +638,7 @@ The CLI reports:
 - common horizon evaluation windows and deterministic warm-up mapping;
 - candidate/protocol/hash determinism;
 - ranking, pair/family + per-asset caps, and negative-valid-candidate promotion behavior.
+- replay attempts are durably enumerated before experiment preparation and setup failures remain counted.
 ### Scenario contracts
 
 One synthetic market proves:
@@ -644,6 +659,7 @@ A negative scenario proves that an attractive scout can fail authoritative repla
 - changing graph windows, `k`, thresholds, orientation enumeration, or promotion caps changes protocol identity;
 - final-OOS rows cannot enter scanner replay/warm-up;
 - manual pins cannot masquerade as automatic discovery;
+- historical OHLCV without contemporaneous venue execution evidence cannot produce a historical capacity/venue-feasibility claim;
 - `qap.scanner` cannot import policy/execution/evaluation/experiment layers;
 - interrupted `.partial` scans resume only against the exact frozen definition/slices.
 

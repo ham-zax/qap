@@ -13,6 +13,17 @@ the reciprocal/anchor Playwright flow; `scripts/run_playwright_e2e.py` then pass
 The Phase-12 economic `NO-GO` conclusion below is unchanged because it was already
 forced by zero development survivors before any browser/live-capital question.
 
+**Post-hardening update (2026-08-18):** the subsequent baseline-hardening and
+Phase-14 acceptance work is now recorded in
+`docs/reviews/2026-08-18-pre-rearchitecture-hardening.md` and
+`docs/reviews/2026-08-18-phase14-browser-acceptance.md`. The current workbench is
+rendered-green at desktop/mobile/reflow, including negative, invalid, consumed
+final-OOS, reconciled paper, no-fill paper, Pair reciprocal/anchor, and shell-error
+states. Experiment and paper artifacts now have stricter content-integrity and
+read-time semantic checks, final-OOS reservation recovery is durable, and Pair
+Workbench identity is backend-owned. These repairs strengthen evidence integrity;
+they do not change the economic `NO-GO`.
+
 QAP has **not** earned the right to begin a live-execution design. The paper/research system is materially stronger and its current accounting/execution boundaries are verified, but the Phase-12 economic evidence gate fails before any live-capital question is reached: the predeclared real-data Phase-10 family produced zero development survivors, therefore no candidate consumed the reserved final-OOS window, and no genuinely prospective post-freeze candidate evaluation exists.
 
 `NO-GO` means continue paper/research work with the blockers below. It does **not** authorize a live-execution design, private API credentials, authenticated exchange code, order placement/cancel code, a live scheduler, or automated capital deployment.
@@ -93,6 +104,20 @@ to Experiment Detail. Fresh deterministic fixture verification after that change
 passed both critical Phase-11.9 Playwright flows.
 
 **Determinism/accounting gate: PASS; browser operational acceptance PASS as of the Phase-11.9 remediation.**
+
+The later Phase-14 rendered acceptance is also green. The final Agent Browser sweep
+reported zero failed application Fetch/XHR requests, zero console warnings/errors,
+zero page errors, and zero axe violations/incomplete findings in the required
+states. The not-found route contains exactly one application shell/main landmark.
+
+The later scanner architecture review also corrects one overly strong precondition
+from the early audit: historical OHLCV cannot honestly reconstruct contemporaneous
+spread/depth or Binance/Gate MARKET-filter reference-price truth. Slice 1 may use
+QAP's deterministic historical replay for matched research economics, but it must
+not claim historical venue capacity from missing observations. The user-approved
+Slice 2 owns prospective/current execution-capacity evidence and fails closed when
+that evidence is absent. This research/product clarification does not make the
+system live-ready.
 
 ## Current venue semantic mapping
 
@@ -225,6 +250,8 @@ Even if these were answered today, the economic final-OOS/prospective-evidence b
 | Spot-only mechanical boundary | pass in current production code | no |
 | Current legal/account/venue eligibility | unresolved | yes |
 | Critical browser operational flow | pass after `7ea1a66`; direct Portfolio -> Pair navigation verified | no |
+| Phase-14 rendered workbench acceptance | pass; desktop/mobile/reflow + axe/runtime gates green | no |
+| Historical venue-capacity evidence for old OHLCV-only research | unknown unless contemporaneously captured; scanner may not synthesize it | yes for any historical capacity claim, not for Slice-1 research economics |
 
 ## Recommendation
 

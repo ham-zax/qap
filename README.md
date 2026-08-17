@@ -17,7 +17,7 @@ QAP is an implemented local research product, not a documentation-only scaffold.
 
 **Phase 12 remains `NO-GO` for live operation.** QAP has no private exchange credentials, authenticated trading API, browser order controls, live scheduler, or live-capital authority. The recorded decision is in [`docs/reviews/2026-08-17-live-readiness.md`](docs/reviews/2026-08-17-live-readiness.md).
 
-Phase 14's analytical-workbench implementation is present and is closed only when its rendered browser acceptance contract is green. Phase 15's scanner design is frozen for review, but **scanner implementation is not yet authorized**. A separate implementation plan/approval is required, and the historical/paper execution-contract and complete attempt-ledger prerequisites must be resolved before scanner execution work begins.
+Phase 14's analytical-workbench implementation has passed its rendered browser acceptance contract; see [`docs/reviews/2026-08-18-phase14-browser-acceptance.md`](docs/reviews/2026-08-18-phase14-browser-acceptance.md). Phase 15 Scanner V1 Slices 1 and 2 are now user-approved for implementation; Slice 3 remains a separate design gate. Slice 1 may establish historical research economics only under QAP's declared deterministic replay/cost model. It must not retroactively claim historical venue capacity or contemporaneous Binance/Gate MARKET-filter reference truth from OHLCV alone. Slice 2 owns the forward capture needed for current execution/capacity qualification, and scanner replay attempts must be durably enumerated before experiment preparation so setup failures remain in the search denominator.
 
 ## Requirements and setup
 

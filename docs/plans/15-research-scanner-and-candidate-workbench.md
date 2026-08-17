@@ -32,6 +32,7 @@ Do not implement Slice 3 merely because this umbrella plan describes its intende
 - Primary objective remains net portfolio wealth relative to matched passive HODL.
 - Relationship intelligence earns incremental credit only over the strongest applicable predeclared simple admissible control.
 - Scanner results are hypotheses; only authoritative QAP replay produces official historical economics.
+- Slice-1 authoritative replay establishes historical research economics under the frozen QAP replay/cost model; it does not retroactively certify venue precision, historical MARKET-filter reference prices, spread/depth, or executable capacity when those observations were not captured contemporaneously.
 - Same-sample screening/ranking/replay remains development/search evidence.
 - Prospective evidence requires a frozen rule/candidate before outcome data exists.
 - Reserved final OOS cannot be searched, previewed, or consumed by ordinary scanner work.
@@ -131,9 +132,11 @@ Use focused current-schema artifacts rather than deriving research state from fi
 
 ### Scan generation
 
-Slice 1 persists immutable scan intent, PIT universe evidence, candidate graph, all fixed scout trials, promotion decisions, and references to authoritative QAP run artifacts.
+Slice 1 persists immutable scan intent, PIT universe evidence, candidate graph, all fixed scout trials, promotion decisions, a pre-enumerated replay-attempt ledger, and references to authoritative QAP run artifacts.
 
 A scan is incomplete until its final manifest publishes atomically. Interrupted staging state may support deterministic resume but is not completed evidence.
+
+Every promoted candidate gets a deterministic replay-attempt record before `qap.experiment` preparation/data admission begins. Preparation/setup failures remain explicit failed attempts and therefore remain in the search denominator even when no experiment run manifest could be produced.
 
 ### Candidate lineage
 
@@ -148,6 +151,12 @@ A candidate binds:
 - authoritative replay run identity/status.
 
 No scanner table becomes an alternative owner of run economics.
+
+### Historical execution claim boundary
+
+Slice 1 is pair-native and may use the existing deterministic historical direct replay to compare QAP, matched HODL, and the strongest declared simple control under identical costs/timing. It must not synthesize historical venue metadata or Binance/Gate MARKET notional-reference truth from current exchange state or OHLCV. Missing contemporaneous execution/capacity observations remain unknown.
+
+Slice 2 is the first scanner slice allowed to turn captured current public order constraints/spread/depth/reference evidence into `research_only`, `small_capacity`, or `tradable_now` statements. A future approved Slice 3 must use the existing Phase-11 multi-asset/bridge executor for basket execution rather than creating scanner-owned routing.
 
 ### Forward evidence
 

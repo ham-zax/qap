@@ -1,6 +1,6 @@
 # Pre-Rearchitecture Baseline Hardening Implementation Plan
 
-**Goal:** Close the mechanically reproducible integrity, safety, auditability, and status defects identified by the 2026-08-18 pre-rearchitecture audit, while keeping scanner Slice 1 unauthorized and treating unified historical/paper execution as an explicit architecture-design prerequisite rather than silently changing research semantics.
+**Goal:** Close the mechanically reproducible integrity, safety, auditability, and status defects identified by the 2026-08-18 pre-rearchitecture audit, then reconcile the audit's scanner assumptions with the subsequently user-approved Scanner-V1 Slice-1/Slice-2 boundary without silently changing research semantics.
 
 **Architecture:** Preserve QAP's existing ownership boundaries: market data remains role-neutral storage, experiment preparation owns research-role admission, policy/execution/accounting remain authoritative, and the browser only projects persisted evidence. Add trusted research-data seals and explicit content-integrity/read-time reconciliation at artifact boundaries; harden value objects and paper-operation reads; integrate the already-completed Phase-13 harness onto current main; remove UI/documentation assumptions that contradict current product reality. Do not add compatibility shims for obsolete artifacts: current-schema artifacts must be regenerated when integrity contracts change.
 
@@ -14,7 +14,9 @@
 - No live/private exchange API, credentials, order placement, leverage, borrowing, derivatives, or live-capital authority.
 - Do not consume the reserved 2024 final-OOS evidence while testing the seal; tests may inspect file metadata but must not deserialize its price/bar contents.
 - Add regression tests only for serious repeatable defects/invariants.
-- Phase-15 scanner Slice 1 remains unauthorized for implementation. The execution/venue-precision unification and scanner-attempt ledger are design prerequisites, not permission to start the scanner.
+- Phase-15 Scanner V1 Slices 1 and 2 are now user-approved for implementation. Historical research economics and prospective/current execution-capacity qualification remain separate evidence layers; no historical venue precision/notional-reference truth may be synthesized. The scanner-attempt ledger remains a mandatory Slice-1 contract.
+
+**Execution status — 2026-08-18:** Tasks 1–9 are implemented and freshly re-verified in `docs/reviews/2026-08-18-pre-rearchitecture-hardening.md`. Their original procedural checkboxes are retained as plan-history rather than rewritten to imply a new RED/GREEN run. Task 10 records the later scanner-architecture reconciliation explicitly.
 
 ### Task 1: Mechanically seal reserved final-OOS datasets
 
@@ -208,7 +210,7 @@
 **Acceptance criteria:**
 - Phase 14 has durable repository evidence for its required rendered acceptance matrix.
 
-### Task 10: Preserve the two architecture problems as explicit preconditions, not hidden baseline bugs
+### Task 10: Reconcile scanner architecture findings with the approved Slice-1/Slice-2 evidence boundary
 
 **Files:**
 - Modify: `docs/superpowers/specs/2026-08-18-qap-scanner-slice1-design.md`
@@ -216,18 +218,19 @@
 - Modify: `implementation_prompt.md` only if authorization wording still conflicts
 
 **Scope:**
-- Historical experiment replay still lacks the full Phase-11 venue-precision/notional-reference/multi-asset bridge execution contract.
+- Historical experiment replay still does not contain contemporaneous Phase-11 venue-capacity evidence (including historical MARKET notional-reference truth), and that evidence cannot be reconstructed honestly from OHLCV/current exchange state. This is a claim-boundary issue, not a reason to fabricate a unified historical venue simulator.
 - Pre-execution setup failures are not a durable Phase-07 family-attempt ledger; Phase 15's pre-enumerated `ScanAttempt` ledger is the intended solution.
 
 **Steps:**
-- [ ] Make Slice-1 implementation explicitly blocked on a separately approved execution/data rearchitecture that unifies historical and paper execution without synthesizing venue notional-reference truth.
-- [ ] Require scanner attempts to be enumerated/persisted before preparation so setup failures remain in the denominator.
-- [ ] Keep Gate/second-venue support as an explicit architecture decision requiring approval, not an implementation default.
-- [ ] Ensure the newer specific scanner stop/authorization boundary wins over broad 00-15 mission wording.
+- [x] State explicitly that Slice 1 may establish historical research economics but cannot retroactively certify venue precision/capacity or synthesize historical MARKET notional-reference truth; Slice 2 owns forward/current execution-capacity evidence, and any approved Slice 3 must reuse Phase-11 multi-asset routing.
+- [x] Require promoted scanner replay attempts to be durably enumerated before experiment preparation/data admission so setup failures remain in the denominator.
+- [x] Record that Binance/Gate support is no longer an implicit default: both venues are explicitly part of the subsequently user-approved Scanner-V1 design; implementation must still fail closed until each venue's required public evidence adapter exists.
+- [x] Reconcile the newer explicit Slice-1/Slice-2 authorization with the older baseline-hardening stop wording while preserving all research/economic protected boundaries.
 
 **Acceptance criteria:**
-- No autonomous path can start scanner implementation while the execution contract is split.
-- The plan does not pretend item 4 or item 9 is mechanically solved by the baseline-hardening commits.
+- Slice 1 cannot turn missing historical execution/capacity evidence into a venue-feasibility claim.
+- A promoted candidate that fails before experiment manifest publication still has a durable scanner replay-attempt row and remains counted.
+- The plan does not pretend historical capacity is mechanically solved by the baseline-hardening commits or by current OHLCV.
 
 ## Final Verification
 

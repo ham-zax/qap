@@ -172,6 +172,72 @@ flow also uses the current accessible orientation/anchor controls and remains
 URL-owned. Therefore the browser item below is a historical blocker at review
 creation time, not a current Phase-11 blocker.
 
+### 3.1 Post-hardening / Phase-14 rendered evidence — 2026-08-18
+
+The later hardening review and rendered acceptance supersede the earlier browser
+state for current product verification without rewriting the historical record
+above.
+
+Focused hardening verification:
+
+```text
+99 passed
+```
+
+The 99-test set covers reserved-holdout admission, experiment integrity/tamper
+rejection, paper-operation self-audit/path containment, relationship observation
+invariants, final-OOS reservation recovery, experiment API/family-attempt/pair
+projection, and the Phase-13 harness.
+
+Fresh frontend/browser verification after the rendered fixes:
+
+```text
+pnpm typecheck        -> pass
+pnpm typecheck:e2e    -> pass
+pnpm test             -> 20 files / 47 tests passed
+pnpm build            -> pass
+run_playwright_e2e.py -> 2 passed
+
+Agent Browser final runtime sweep:
+failed application Fetch/XHR requests -> 0
+console warnings/errors               -> 0
+page errors                           -> 0
+axe required states                   -> 0 violations / 0 incomplete
+```
+
+Durable rendered evidence:
+
+- `docs/reviews/2026-08-18-phase14-browser-acceptance.md`
+- `docs/reviews/2026-08-18-pre-rearchitecture-hardening.md`
+
+Two serious browser defects found during that pass were fixed rather than waived:
+the root not-found component no longer nests a second `AppShell`, and same-name /
+different-unit anchor-chart series no longer collide on React keys.
+
+The hardening review also records the scanner execution-evidence boundary. Missing
+historical spread/depth/MARKET notional-reference observations remain unknown;
+current exchange state or OHLCV must not be used to fabricate historical venue
+capacity. Slice-1 scanner replay may establish historical research economics under
+the frozen QAP execution/cost model, while user-approved Slice 2 owns prospective
+current execution/capacity qualification.
+
+Final integrated repository verification after this reconciliation:
+
+```text
+pytest                 -> 455 passed, 1 skipped
+Ruff / format          -> clean
+Pyright                -> 0 errors, 0 warnings
+import contracts       -> 5 kept, 0 broken
+source-size            -> hard cap green, 8 review warnings
+uv lock                -> clean
+frontend typechecks    -> clean
+Vitest                 -> 20 files / 47 tests passed
+production build       -> pass
+OpenAPI export         -> byte-identical
+critical Playwright    -> 2 passed
+git diff --check       -> pass
+```
+
 ## 4. Repository secret/access boundary
 
 Tracked-source secret-pattern scan on the current repository found no matches for common private-key/API-secret patterns. Production `src/qap`/`scripts` paths also contain no authenticated Binance trading adapter, private order-placement path, margin/borrow/futures/perpetual execution code, or live scheduler.
@@ -280,6 +346,11 @@ Additional live-design blockers:
 7. actual legal/tax/account jurisdiction and venue eligibility are not confirmed;
 8. Phase-11.9 browser acceptance was incomplete when this report was first written;
    it is resolved by `7ea1a66` with both critical Playwright flows passing.
+
+Current product verification goes further: the Phase-14 rendered acceptance matrix
+is green and the baseline-hardening review closes the reproducible artifact,
+reservation, pair-identity, and presentation-integrity defects. These repairs do not
+remove blockers 1–7 and therefore do not change the `NO-GO` recommendation.
 
 The unresolved economic/live-design blockers above remain sufficient for `NO-GO`.
 No private API key or live-order implementation is warranted by the current evidence.

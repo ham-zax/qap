@@ -4,7 +4,7 @@
 
 ## Current wave
 
-Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is the implemented analytical-workbench UX overhaul and is being closed against its integrated acceptance contract. **Phase 15 — Research Scanner and Candidate Workbench** is the next product wave after Phase 14 is green. Later phases still begin only after the prior phase's exit criteria are green or the user explicitly approves a documented exception.
+Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is implemented and its integrated rendered acceptance is green. **Phase 15 — Research Scanner and Candidate Workbench** is the active next product wave; Scanner V1 Slices 1 and 2 are user-approved for implementation, while Slice 3 remains a separate design gate. Later dependent slices still begin only after their predecessor exit criteria are green or the user explicitly approves a documented exception.
 
 ## Implementation waves
 
