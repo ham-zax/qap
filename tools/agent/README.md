@@ -107,7 +107,7 @@ uv run python tools/agent/qap_agent.py verify \
 
 The runner records exact command, exit code, duration and a bounded output tail in progress state. When invoked through the CLI, full command output is written under the plan's local `.qap-agent/.../logs/` directory. A timeout terminates the command process group and records exit code `124` with `timed_out=true`.
 
-Do not use this runner to execute commands copied from untrusted network text without review.
+Do not use this runner to execute commands copied from untrusted network text without review. The runner also rejects known destructive Git commands such as hard reset/clean, push, rebase, merge, and branch deletion instead of treating them as verification.
 
 ## Git scope guard
 

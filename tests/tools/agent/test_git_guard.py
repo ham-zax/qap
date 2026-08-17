@@ -157,6 +157,29 @@ def test_second_live_writer_is_blocked_but_inspection_is_read_only(
     assert second.writer_id == "writer-two"
 
 
+def test_same_writer_id_cannot_replace_a_different_live_owner_pid(
+    tmp_path: Path,
+) -> None:
+    repository = _repository(tmp_path)
+    sleeper = subprocess.Popen(["sleep", "5"])
+    try:
+        acquire_writer(
+            repository_root=repository,
+            writer_id="shared-writer-id",
+            owner_pid=sleeper.pid,
+        )
+
+        with pytest.raises(WriterOwnershipError, match="shared-writer-id"):
+            acquire_writer(
+                repository_root=repository,
+                writer_id="shared-writer-id",
+                owner_pid=os.getpid(),
+            )
+    finally:
+        sleeper.terminate()
+        sleeper.wait(timeout=2)
+
+
 def test_stale_writer_is_replaced_after_process_evidence(tmp_path: Path) -> None:
     repository = _repository(tmp_path)
     acquire_writer(

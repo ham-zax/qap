@@ -13,6 +13,14 @@ from pathlib import Path
 from tools.agent.state import VerificationEvidence
 
 _TIMEOUT_EXIT_CODE = 124
+_FORBIDDEN_GIT_PATTERNS = (
+    "git reset --hard",
+    "git clean -f",
+    "git push",
+    "git rebase",
+    "git merge",
+    "git branch -d",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +67,12 @@ def _write_log(log_dir: Path, *, command: str, output: str) -> Path:
     return path
 
 
+def _assert_verification_command_safe(command: str) -> None:
+    normalized = " ".join(command.lower().split())
+    if any(pattern in normalized for pattern in _FORBIDDEN_GIT_PATTERNS):
+        raise ValueError("destructive Git command is not allowed as verification")
+
+
 def run_verification(
     command: str,
     *,
@@ -71,6 +85,7 @@ def run_verification(
 
     if not command.strip():
         raise ValueError("verification command must be a non-empty string")
+    _assert_verification_command_safe(command)
     if timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be positive")
     if output_tail_chars <= 0:

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import os
 import subprocess
 import tempfile
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -198,6 +200,18 @@ def _lease_path(repository_root: Path) -> Path:
     return repository_root.resolve() / ".qap-agent" / "worktree-writer.json"
 
 
+@contextmanager
+def _lease_lock(repository_root: Path):  # type: ignore[no-untyped-def]
+    lock_path = repository_root.resolve() / ".qap-agent" / "worktree-writer.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
 def _lease_from_object(value: object) -> WriterLease:
     if not isinstance(value, dict):
         raise WriterOwnershipError("writer lease is corrupt")
@@ -302,42 +316,45 @@ def acquire_writer(
     if isinstance(owner_pid, bool) or owner_pid <= 0:
         raise ValueError("owner_pid must be positive")
     root = Path(repository_root).resolve()
-    current = inspect_writer(root)
-    if (
-        current is not None
-        and current.writer_id != writer_id
-        and _pid_alive(current.owner_pid)
-    ):
-        raise WriterOwnershipError(
-            f"worktree is owned by live writer {current.writer_id} "
-            f"(pid {current.owner_pid})"
+    with _lease_lock(root):
+        current = inspect_writer(root)
+        if current is not None and _pid_alive(current.owner_pid):
+            same_owner = (
+                current.writer_id == writer_id and current.owner_pid == owner_pid
+            )
+            if not same_owner:
+                raise WriterOwnershipError(
+                    f"worktree is owned by live writer {current.writer_id} "
+                    f"(pid {current.owner_pid})"
+                )
+            return current
+        snapshot = snapshot_git(root)
+        lease = WriterLease(
+            writer_id=writer_id,
+            owner_pid=owner_pid,
+            worktree_path=str(snapshot.worktree_path),
+            branch=snapshot.branch,
+            head=snapshot.head,
+            acquired_at=datetime.now(UTC).isoformat(),
+            note=note,
         )
-    snapshot = snapshot_git(root)
-    lease = WriterLease(
-        writer_id=writer_id,
-        owner_pid=owner_pid,
-        worktree_path=str(snapshot.worktree_path),
-        branch=snapshot.branch,
-        head=snapshot.head,
-        acquired_at=datetime.now(UTC).isoformat(),
-        note=note,
-    )
-    _write_lease(_lease_path(root), lease)
-    return lease
+        _write_lease(_lease_path(root), lease)
+        return lease
 
 
 def release_writer(*, repository_root: str | Path, writer_id: str) -> None:
     """Release cooperative ownership only for the current recorded writer."""
 
     root = Path(repository_root).resolve()
-    current = inspect_writer(root)
-    if current is None:
-        return
-    if current.writer_id != writer_id:
-        raise WriterOwnershipError(
-            f"cannot release writer {current.writer_id} as {writer_id}"
-        )
-    _lease_path(root).unlink(missing_ok=True)
+    with _lease_lock(root):
+        current = inspect_writer(root)
+        if current is None:
+            return
+        if current.writer_id != writer_id:
+            raise WriterOwnershipError(
+                f"cannot release writer {current.writer_id} as {writer_id}"
+            )
+        _lease_path(root).unlink(missing_ok=True)
 
 
 __all__ = [

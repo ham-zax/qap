@@ -48,6 +48,17 @@ def test_verification_timeout_is_explicit(tmp_path: Path) -> None:
     assert "start" in result.output_tail
 
 
+def test_verification_refuses_known_destructive_git_command(tmp_path: Path) -> None:
+    import pytest
+
+    with pytest.raises(ValueError, match="destructive Git"):
+        run_verification(
+            "git reset --hard",
+            cwd=tmp_path,
+            timeout_seconds=5,
+        )
+
+
 def test_verification_bounds_state_tail_but_preserves_full_log(tmp_path: Path) -> None:
     log_dir = tmp_path / "logs"
     result = run_verification(
