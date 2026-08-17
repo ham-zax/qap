@@ -8,8 +8,10 @@ interface BenchmarkRoleTableProps {
 
 export function BenchmarkRoleTable({ roles }: BenchmarkRoleTableProps) {
   return (
-    <section aria-labelledby="benchmark-role-heading">
-      <h2 id="benchmark-role-heading">Terminal economics by role</h2>
+    <section className="min-w-0" aria-labelledby="benchmark-role-heading">
+      <h2 id="benchmark-role-heading" className="mb-4 text-lg font-semibold text-foreground">
+        Terminal economics by role
+      </h2>
       <TableScroll label="Benchmark role terminal economics">
         <table aria-label="Benchmark role terminal economics">
           <thead>
@@ -40,7 +42,7 @@ export function BenchmarkRoleTable({ roles }: BenchmarkRoleTableProps) {
           </tbody>
         </table>
       </TableScroll>
-      <p>
+      <p className="mt-4 mb-0 text-sm leading-6 text-secondary">
         These are persisted role-level economics. Differences between rungs are
         frozen policy comparisons, not an additive causal decomposition.
       </p>

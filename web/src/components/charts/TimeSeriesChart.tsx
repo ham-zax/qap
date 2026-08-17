@@ -65,11 +65,22 @@ interface TimeSeriesChartProps {
   sharedVisibleRange?: ChartVisibleRange | null
 }
 
-const SERIES_COLORS = ['#78a9ff', '#68d391', '#f6d365', '#c4a7e7', '#ff9b9b']
+const SERIES_COLOR_VARS = [
+  '--chart-series-1',
+  '--chart-series-2',
+  '--chart-series-3',
+  '--chart-series-4',
+  '--chart-series-5',
+] as const
 const EMPTY_MARKERS: readonly ChartMarker[] = Object.freeze([])
+
+function cssColor(styles: CSSStyleDeclaration, name: string, fallback: string): string {
+  return styles.getPropertyValue(name).trim() || fallback
+}
 
 function toSeriesMarkers(
   markers: readonly ChartMarker[],
+  colors: { executed: string; selected: string; inactive: string },
 ): SeriesMarker<UTCTimestamp>[] {
   return markers
     .map((marker) => ({
@@ -77,10 +88,10 @@ function toSeriesMarkers(
       position: 'aboveBar' as const,
       shape: marker.executed ? ('arrowUp' as const) : ('square' as const),
       color: marker.executed
-        ? '#68d391'
+        ? colors.executed
         : marker.selected
-          ? '#f6d365'
-          : '#aeb8c7',
+          ? colors.selected
+          : colors.inactive,
       text: `${marker.label} - ${marker.executed ? 'executed' : marker.selected ? 'selected' : 'not selected'}`,
     }))
     .sort((left, right) => Number(left.time) - Number(right.time))
@@ -110,23 +121,31 @@ export function TimeSeriesChart({
     const container = containerRef.current
     if (!container || typeof ResizeObserver === 'undefined') return
 
+    const styles = getComputedStyle(document.documentElement)
+    const seriesColors = SERIES_COLOR_VARS.map((name, index) =>
+      cssColor(styles, name, ['#78a9ff', '#c4a7e7', '#7dd3c7', '#f6d365', '#9fb7ff'][index] ?? '#78a9ff'),
+    )
+    const borderColor = cssColor(styles, '--border-default', '#303a4a')
     const chart = createChart(container, {
       autoSize: true,
       height,
       layout: {
         attributionLogo: true,
-        background: { type: ColorType.Solid, color: '#121720' },
-        textColor: '#aeb8c7',
+        background: {
+          type: ColorType.Solid,
+          color: cssColor(styles, '--surface-panel', '#121720'),
+        },
+        textColor: cssColor(styles, '--text-muted', '#9ca8b8'),
       },
       grid: {
-        horzLines: { color: '#242d3b' },
-        vertLines: { color: '#242d3b' },
+        horzLines: { color: cssColor(styles, '--chart-grid', '#242d3b') },
+        vertLines: { color: cssColor(styles, '--chart-grid', '#242d3b') },
       },
       rightPriceScale: {
-        borderColor: '#303a4a',
+        borderColor,
       },
       timeScale: {
-        borderColor: '#303a4a',
+        borderColor,
         timeVisible: true,
         secondsVisible: false,
       },
@@ -138,7 +157,7 @@ export function TimeSeriesChart({
       api: ISeriesApi<'Line'>
     }> = series.map((definition, index) => {
       const api = chart.addSeries(LineSeries, {
-        color: SERIES_COLORS[index % SERIES_COLORS.length],
+        color: seriesColors[index % seriesColors.length],
         lineWidth: 2,
         title: `${definition.name} (${definition.unit})`,
       })
@@ -149,7 +168,14 @@ export function TimeSeriesChart({
 
     const markerPlugin =
       markers.length > 0 && chartSeries[0]
-        ? createSeriesMarkers(chartSeries[0].api, toSeriesMarkers(markers))
+        ? createSeriesMarkers(
+            chartSeries[0].api,
+            toSeriesMarkers(markers, {
+              executed: cssColor(styles, '--status-positive', '#68d391'),
+              selected: cssColor(styles, '--status-warning', '#f6d365'),
+              inactive: cssColor(styles, '--text-muted', '#9ca8b8'),
+            }),
+          )
         : null
 
     chart.timeScale().fitContent()

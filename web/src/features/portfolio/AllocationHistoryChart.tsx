@@ -29,8 +29,13 @@ export function AllocationHistoryChart({ snapshot }: AllocationHistoryChartProps
   }))
 
   return (
-    <section aria-labelledby="allocation-history-heading">
-      <h2 id="allocation-history-heading">Allocation history</h2>
+    <section
+      className="rounded-lg border border-border bg-panel p-5 md:p-6"
+      aria-labelledby="allocation-history-heading"
+    >
+      <h2 id="allocation-history-heading" className="mb-4 text-lg font-semibold text-foreground">
+        Allocation history
+      </h2>
       {series.length > 0 ? (
         <TimeSeriesChart
           title="Allocation history"
@@ -38,7 +43,7 @@ export function AllocationHistoryChart({ snapshot }: AllocationHistoryChartProps
           series={series}
         />
       ) : (
-        <p>No allocation-history series is available.</p>
+        <p className="m-0 text-sm text-secondary">No allocation-history series is available.</p>
       )}
     </section>
   )

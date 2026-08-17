@@ -64,9 +64,11 @@ export function LogRelativeWealthChart({
   })
 
   return (
-    <section aria-labelledby="log-relative-wealth-heading">
-      <h2 id="log-relative-wealth-heading">Log relative wealth through time</h2>
-      <p>{evidenceBoundary(experiment)}</p>
+    <section className="min-w-0" aria-labelledby="log-relative-wealth-heading">
+      <h2 id="log-relative-wealth-heading" className="mb-2 text-lg font-semibold text-foreground">
+        Log relative wealth through time
+      </h2>
+      <p className="mt-0 mb-5 text-sm text-secondary">{evidenceBoundary(experiment)}</p>
       {series.length > 0 ? (
         <TimeSeriesChart
           title="Cumulative net log-relative wealth"
@@ -74,7 +76,7 @@ export function LogRelativeWealthChart({
           series={series}
         />
       ) : (
-        <p>No authoritative log-relative wealth series is available.</p>
+        <p className="m-0 text-sm text-secondary">No authoritative log-relative wealth series is available.</p>
       )}
     </section>
   )
