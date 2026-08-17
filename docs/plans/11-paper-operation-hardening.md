@@ -193,9 +193,12 @@ acquire/validate declared data through the Phase-02 public adapter
  -> record conclusion and holdout-consumption status
 ```
 
+For any policy being considered beyond research-only status, include a genuinely prospective `forward_paper` run that begins only after the candidate family/rule, cost model, and decision semantics are frozen. Forward-paper observations may reveal defects and justify a new research generation, but once used to retune the rule they become development evidence and the next deployment candidate requires a new prospective period.
+
 **Steps:**
 - [ ] Document exact commands in a concise operator section of README or `docs/operator-paper.md` only after commands exist.
 - [ ] Keep experiment launch command-based; do not add async web jobs unless a later operator review demonstrates the need.
+- [ ] Document the freeze timestamp/manifest for any prospective `forward_paper` candidate and preserve its no-retuning boundary in the resulting artifact/research note.
 
 ## Phase Verification
 
@@ -221,6 +224,7 @@ If the optional Phase-02 live-network smoke remains present, run it separately a
 - [ ] Multi-asset rebalance remains long-only and reconciled.
 - [ ] Independent reconciliation detects tampering/drift.
 - [ ] Critical web inspection flows work end-to-end.
+- [ ] A frozen survivor can accrue prospective `forward_paper` evidence without silently reusing that observed period for retuning.
 - [ ] No live/private exchange API or infrastructure platform was introduced.
 
 ## Stop Conditions
