@@ -10,6 +10,19 @@ Your mission is to take QAP from its current repository state to the complete,
 verified local end product defined by the approved implementation program across
 Phases 00 through 15.
 
+Update context — 2026-08-18
+Trigger: user approval of the bounded Scanner-V1 architecture, Slice 1 corrections,
+Slice 2 prospective/liquidity design, and Phase-15 reconciliation.
+Purpose: authorize the implementation mission to execute the new scanner slices in
+dependency order without reverting to the earlier generic NxM scanner concept.
+Impact: Phases 14 and 15 are now explicit mission scope. Slice 1 and Slice 2 are
+approved for implementation. Slice 3 remains a separate design gate and must not be
+invented from the umbrella plan.
+Evidence: docs/plans/15-research-scanner-and-candidate-workbench.md;
+docs/superpowers/specs/2026-08-18-qap-scanner-slice1-design.md;
+docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md;
+commit f53f00b.
+
 This is ONE continuous mission.
 
 Do not treat phases as separate conversations.
@@ -193,8 +206,19 @@ Start with a bounded orientation pass:
 4. `docs/plans/README.md`.
 5. `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md`.
 6. Current phase plan.
-7. Cross-phase decision/research/OSS records referenced by that phase.
-8. Existing implementation/tests/artifacts produced by previous work.
+7. For Phase 15, always read:
+   - `docs/plans/15-research-scanner-and-candidate-workbench.md`;
+   - `docs/superpowers/specs/2026-08-18-qap-scanner-slice1-design.md`;
+   - `docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md`;
+   - any later user-approved Slice-3 design/implementation plan actually present in
+     the repository.
+8. Cross-phase decision/research/OSS records referenced by that phase.
+9. Existing implementation/tests/artifacts produced by previous work.
+
+For Scanner V1, detailed approved slice specs outrank less-specific older Phase-15
+or master-plan wording. Do not use generic historical Phase-15 wording to
+reintroduce selector choice, arbitrary parameter grids, adaptive routing, or a
+Cartesian scan builder that the slice architecture explicitly removed.
 
 Do not blindly recreate files simply because a plan says "Create".
 
@@ -223,6 +247,8 @@ Default ordering:
        -> 11
        -> 12
        -> 13
+       -> 14
+       -> 15
 
 Respect predecessor exit criteria.
 
@@ -241,6 +267,142 @@ At a successful phase boundary:
     -> continue automatically
 
 Do not ask for permission between normal phases.
+
+
+======================================================================
+5A. PHASE 15 — BOUNDED SCANNER EXECUTION CONTRACT
+======================================================================
+
+Phase 15 is implemented as approved slices above the existing QAP economic kernel.
+The scanner is candidate-production/research orchestration. It is never a second
+backtester, ledger, execution authority, HODL calculator, or portfolio owner.
+
+The currently approved execution sequence is:
+
+    Phase 14 exit green
+      -> Slice 1 implementation plan if absent
+      -> Slice 1 implementation + verification
+      -> Slice 2 implementation plan if absent
+      -> Slice 2 implementation + verification
+      -> Slice 3 design gate
+      -> Slice 3 implementation only after a user-approved design/plan exists
+      -> integrated Phase-15 exit verification
+
+The user's 2026-08-18 instruction explicitly authorizes implementation of the
+approved Slice-1 and Slice-2 designs. Their earlier header text saying that
+implementation was not yet authorized is superseded by this mission update. Keep
+the repository documents themselves consistent with that authorization.
+
+If a detailed implementation plan for an approved scanner slice does not yet
+exist, invoke `writing-plans` for that slice before coding. Use the frozen design as
+the requirements source. Do not reopen architecture brainstorming or change the
+design merely because an implementation-plan artifact is missing.
+
+------------------------------
+Slice 1 — bounded pair discovery
+------------------------------
+
+Implement the approved Slice-1 spec exactly in spirit:
+
+- one `qap.scanner` discovery boundary above `qap.market`;
+- existing `qap.experiment` remains the adapter into authoritative QAP replay;
+- point-in-time eligibility is three-valued and fails closed for official scans;
+- separate Binance-USDT and Gate-USDT universes/graphs;
+- one frozen normalized-log-price SSD generator;
+- `k=8` nearest-neighbor candidate graph per horizon;
+- fixed short/medium/swing horizon-resolution mappings;
+- pair-native `log_ratio_mean_reversion` and `residual_mean_reversion` only;
+- log-ratio reciprocal evidence is exact-transform; residual OLS refits both
+  orientations and orientation is part of trial identity;
+- three frozen coarse templates per family/horizon;
+- scout uses the exact neutral / NO_ACTION / entry-state semantics specified by
+  the design and remains explicitly non-authoritative;
+- valid negative scout proxies remain rankable; zero is not an admission gate;
+- automatic authoritative replay is hard-capped at ten per horizon with the
+  approved asset-diversity and pair/family caps;
+- source-artifact identity and exact evaluated-slice identity are both preserved;
+- manual pins preserve both automatic/manual lineage facts without duplicate
+  semantic trials;
+- interrupted scan staging is recoverable but is not completed evidence until
+  final atomic publication;
+- every promoted candidate goes through existing QAP policy/execution/inventory/
+  evaluation and the mandatory HODL + strongest simple-control gates;
+- same-sample search/replay remains development evidence, never confirmed alpha.
+
+Do NOT add in Slice 1:
+
+- adaptive diagnostic routing;
+- competing pair generators;
+- Bayesian/AutoML/continuous optimization;
+- Copulas;
+- broad pairwise momentum;
+- automatic basket discovery;
+- database/queue/scheduler infrastructure;
+- scanner UI;
+- live/private exchange behavior.
+
+------------------------------
+Slice 2 — prospective evidence + liquidity
+------------------------------
+
+After Slice 1 is green, implement the approved Slice-2 design without merging it
+into paper-operation semantics.
+
+Required boundaries:
+
+- only frozen Slice-1 survivors enter canonical automatic prospective cohorts;
+- freeze must occur strictly before each candidate's first prospective decision/
+  outcome boundary;
+- repeated active semantic candidates link to the existing unmatured freeze rather
+  than manufacturing overlapping duplicate hypotheses;
+- future checkpoints use only observations completed after the freeze boundary;
+- existing QAP replay remains the source of candidate forward economics;
+- do not algebraically sum overlapping pair candidate P&Ls into a fake scanner
+  portfolio return;
+- scanner-policy evidence records what the frozen selection procedure produced,
+  while combined capital allocation waits for Slice 3's one-inventory resolver;
+- `forward_paper` remains operational dry-run evidence and may not masquerade as
+  prospective scanner-alpha evidence;
+- capture promoted/pinned instruments' L1/book-ticker and shallow depth using the
+  approved lightweight cadence/evidence contract;
+- historical OHLCV can support research discovery but cannot retroactively prove
+  historical executable capacity;
+- liquidity state is timestamp/capital specific: `research_only`,
+  `small_capacity`, or `tradable_now`;
+- empirical capacity comes from captured book sweep cost relative to QAP's already
+  declared adverse friction budget, including the frozen safety haircut;
+- requested capital is explicit hypothetical input; never invent the user's actual
+  capital or a universal ADV percentage;
+- prospective/liquidity evidence grants no live-capital authority.
+
+Do NOT add in Slice 2:
+
+- scheduler platform;
+- live trading;
+- maker fill-probability/queue simulation;
+- giant historical L2 reconstruction;
+- new alpha families;
+- basket optimizer;
+- scanner mutation UI.
+
+------------------------------
+Slice 3 / Phase-15 completion gate
+------------------------------
+
+Slice 3 is intentionally NOT authorized from the Phase-15 umbrella description
+alone. Its current intended future boundary is asset-native momentum plus manual
+3-6 asset basket research with one deterministic long-only combined target and one
+QAP inventory.
+
+Before implementing Slice 3, require a user-approved detailed design/implementation
+plan actually present in the repository. Do not infer missing mathematical,
+portfolio-resolution, API, or UI semantics from the umbrella plan. If Phase 15
+reaches this point before that approval exists, checkpoint completed Slice-1/2 work
+and stop for the smallest missing design authorization.
+
+Once an approved Slice-3 spec exists, implement it in the same mission and then run
+the integrated Phase-15 exit criteria. A negative/no-survivor scanner result is a
+valid research outcome; never loosen rules to force a candidate.
 
 
 ======================================================================
@@ -305,8 +467,10 @@ Examples include:
 - `verification-before-completion` before claiming a slice/phase is complete or
   creating its completion commit;
 - `using-git-worktrees` when isolation is actually required;
-- `writing-plans` only when a genuinely new approved design needs a plan rather
-  than when an existing executable phase plan already answers the question.
+- `writing-plans` when a user-approved design has no executable implementation
+  plan yet; this explicitly applies to Phase-15 Slice 1 and Slice 2 unless their
+  detailed implementation plans already exist. Do not use it to reopen approved
+  architecture.
 
 Follow the exact trigger/instructions of the installed Skill rather than invoking
 skills ceremonially. Do not run a review workflow merely to manufacture process.
@@ -1163,6 +1327,9 @@ The mission is complete only when ALL of the following are true:
 
 7. Planned backend/frontend integration works locally, including the Phase-14
    critical workbench flows and the Phase-15 bounded scanner/candidate workflow.
+   Phase 15 must include verified Slice-1 bounded discovery and Slice-2 prospective/
+   liquidity behavior, plus Slice 3 only after its separately approved design is
+   present and implemented.
 
 8. Agent-browser product inspection has been performed when applicable and material
    UI/integration defects found there have been addressed or documented.

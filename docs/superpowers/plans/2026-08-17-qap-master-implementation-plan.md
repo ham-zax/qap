@@ -223,9 +223,14 @@ Reorganize the existing read-only analytical frontend around verdict first, prim
 
 **Plan:** `docs/plans/15-research-scanner-and-candidate-workbench.md`
 
-Build an explicit bounded active-research workflow over existing QAP experiment/replay authority: admitted universe/portfolio selection, candidate-set generation, model/parameter-family declaration, finite scan execution, control-aware ranking/falsification, candidate-combination replay, and immutable candidate freeze. Completed-run browsing remains a separate Phase-14 evidence archive.
+**Detailed designs:**
+- `docs/superpowers/specs/2026-08-18-qap-scanner-slice1-design.md`
+- `docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md`
+- Slice 3 only after a separate user-approved design exists.
 
-**Exit:** scans are finite/deterministic/reproducible, exact family-attempt accounting is visible, mandatory HODL/primary-control/threshold gates cannot be bypassed, reserved final OOS is excluded from ordinary search, and one eligible candidate can be frozen for a next research stage without granting live authority.
+Build the bounded Scanner-V1 workflow above existing QAP experiment/replay authority. Slice 1 owns point-in-time venue-local pair discovery with one frozen SSD generator, fixed pair-native mean-reversion templates, an auditable scout, and a hard authoritative replay budget. Slice 2 freezes historical survivors before genuinely future outcomes and adds evidence-backed liquidity/capacity qualification. The later Slice 3 may add broad asset-native momentum and manual 3–6 asset basket research through one long-only QAP inventory. Do not reinterpret this phase as a generic generator/model/parameter-grid builder. Completed-run browsing remains the separate Phase-14 evidence archive.
+
+**Exit:** all user-approved Phase-15 slices reach their own exit criteria; scanner search is bounded/deterministic/reproducible; QAP remains sole financial authority; historical search is not mislabeled prospective/final OOS; forward outcomes are frozen before observation; liquidity claims fail closed without captured evidence; and any later basket combination is replayed through one authoritative QAP target/inventory without granting live authority.
 
 ## Cross-Phase Verification Strategy
 

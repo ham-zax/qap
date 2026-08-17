@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-18
 
-**Status:** Design frozen for written-spec review. Implementation is not yet authorized; the next step after user review is a separate implementation plan.
+**Status:** User-approved design. Implementation is authorized by the 2026-08-18 `implementation_prompt.md` mission update; a detailed implementation plan must be written before code if one does not already exist.
 
 **Scope:** First implementation slice of the QAP research scanner. It creates bounded, reproducible pair hypotheses and spends a fixed authoritative replay budget without creating a second economic engine.
 
