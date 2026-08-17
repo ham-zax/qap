@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-17
 
-**Status:** Review draft; not implementation authorization
+**Status:** Approved design baseline; implementation authorized phase-by-phase under `docs/plans/` sequencing and stop conditions.
 
 **Product:** QAP — crypto wealth-compounding and relative-rebalancing system
 

@@ -1,10 +1,10 @@
 # QAP Plan Map
 
-**Status:** Review draft. These plans define intended implementation order; they are not authorization to execute them yet.
+**Status:** Implementation authorized. Execute these plans phase-by-phase subject to their sequencing, verification, and stop conditions.
 
 ## Current wave
 
-**Wave D — Design and planning** is the current wave. The repository is documentation-only until review is complete.
+**Phase 00 — Constitution and repository foundation** is the current implementation wave. The design/research gate is closed; later phases begin only after the prior phase's exit criteria are green or the user explicitly approves a documented exception.
 
 ## Implementation waves
 

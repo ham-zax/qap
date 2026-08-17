@@ -2,15 +2,22 @@
 
 **Goal:** Build a local development harness that can continue executing already-approved QAP plan sections autonomously, with bounded scope, explicit verification, progress persistence, and hard escalation on architecture/economic/live-capital changes.
 
-**Architecture:** The harness lives under `tools/agent/` and `.qap-agent/`; it is development tooling only and never becomes a dependency of `src/qap`. It launches one supported local coding-agent runtime at a time with a narrowly scoped mission extracted from an approved plan, then independently checks repository state and required verification before advancing.
+**Architecture:** The harness lives under `tools/agent/` and `.qap-agent/`; it is development tooling only and never becomes a dependency of `src/qap`. The confirmed local execution path is the installed Codex CLI in WSL. The initial harness gives one write-owning Codex process a narrowly scoped mission extracted from an approved plan, then independently checks repository state and required verification before advancing. A separate Codex invocation may perform risk-proportional independent review after the writer is stable; no concurrent overlapping writers are allowed.
 
-**Tech Stack:** Python 3.14 standard library first, Git, one actually installed/authenticated local agent CLI selected at Phase-13 start, existing Superpowers workflow conventions. No orchestration framework or multi-agent platform unless a later measured need exists.
+**Tech Stack:** Python 3.14 standard library first, Git, the installed/authenticated local Codex CLI, existing Superpowers workflow conventions, and the outer WSL harness Terminal/wait primitives when a long-lived Codex process must survive ordinary RPC boundaries. No generic orchestration framework or multi-agent platform unless a later measured need exists.
+
+## Update context — 2026-08-17
+
+- **Trigger:** local WSL verification confirmed `codex` is installed and exposes noninteractive `codex exec`; the mission workflow also has durable Terminal/wait primitives.
+- **Purpose:** replace the earlier hypothetical-runtime/subagent wording with the actual Codex execution path and admit independent Codex review without inventing a new agent framework.
+- **Impact:** Codex becomes the preferred local coding runtime; bounded jobs use noninteractive execution, long-lived outer-orchestrator jobs may use persistent Terminal sessions, and one separate reviewer invocation is allowed after a writer stabilizes. Phase ordering, protected economic boundaries, and the no-swarm rule are unchanged.
+- **Evidence:** local executable/version/help probe plus the repository's approved autonomous-mission and harness-routing rules.
 
 ## Global Constraints
 
 - Implement this phase only after the manual QAP engineering workflow is proven through earlier phases.
 - The harness executes approved plans; it does not invent product roadmap or economic policy.
-- One agent process works on one bounded plan section at a time in the initial harness.
+- One Codex process owns writes for one bounded plan section at a time in the initial harness; an independent reviewer may run after the write phase, but overlapping writers are forbidden.
 - No runtime import from `tools/agent` into `src/qap`.
 - Preserve unrelated user changes and never run destructive Git operations automatically.
 - No secret/password/MFA input through agent prompts or chat logs.
@@ -51,20 +58,21 @@
 **Acceptance criteria:**
 - One concise root context plus exact mission/plan section is sufficient for an agent to act without scanning the entire docs tree.
 
-## Section 13.2 — Select One Real Local Agent Runtime
+## Section 13.2 — Verify the Local Codex Runtime
 
-**Purpose:** use the machine's actual available agent rather than building a fictional adapter layer.
+**Purpose:** use the machine's actual Codex CLI rather than building a fictional adapter layer.
 
 **Deterministic selection process at Phase-13 start:**
-1. Probe known supported installed CLIs in the user's preferred order at that time.
-2. Select exactly one CLI that is installed, non-interactively invokable, and already authenticated without exposing a secret.
-3. Record its executable/version and verified noninteractive invocation in `tools/agent/README.md`.
-4. Implement only that runtime in `runtime.py`.
-5. If no suitable runtime exists, stop Phase 13; do not create a generic adapter framework for hypothetical agents.
+1. Probe the local `codex` executable/version and `codex exec` help/config surface.
+2. Verify one non-writing noninteractive invocation against a temporary repository fixture without exposing a secret.
+3. Record the executable/version, verified invocation, sandbox/approval mode, and supported model/reasoning configuration in `tools/agent/README.md`.
+4. Use the strongest available Codex/Sol coding configuration with high reasoning for substantive work when the installed CLI exposes it; never invent an unsupported model ID/flag.
+5. Implement only this Codex runtime in `runtime.py`; do not build a generic provider/agent adapter hierarchy.
+6. If Codex is no longer installed/authenticated/non-interactively invokable when Phase 13 begins, stop Phase 13 and report that concrete runtime blocker instead of silently substituting a different framework.
 
 **Steps:**
-- [ ] Run bounded `command -v`/version probes.
-- [ ] Execute one harmless non-writing probe against a temporary prompt/repository fixture.
+- [ ] Run bounded `command -v codex`, version, and relevant `codex exec --help`/config probes.
+- [ ] Execute one harmless non-writing `codex exec` probe against a temporary prompt/repository fixture.
 - [ ] Capture exit-code/stdout/stderr behavior needed by the harness.
 
 ## Section 13.3 — Approved Plan Parser
@@ -163,17 +171,19 @@ load approved plan/progress
  -> select next pending section
  -> git safety snapshot
  -> mark in_progress
- -> launch one agent runtime
+ -> launch one write-owning Codex runtime
  -> collect exit/evidence
  -> inspect git diff
  -> run required verification
  -> inline review against section acceptance/stop conditions
+ -> optional independent Codex review for materially risky slices
  -> complete+commit OR one bounded repair attempt OR blocked
  -> continue to next section
 ```
 
 **Behavior:**
 - Agent process must have a finite per-mission timeout configured by operator/harness; timeout marks blocked rather than spawning duplicates.
+- The standalone Phase-13 harness uses noninteractive Codex execution for bounded section missions. When the outer persistent-agent workflow needs a worker to survive ordinary RPC boundaries, it may host that Codex process in a named persistent Terminal session and observe it with durable waits; do not reimplement tmux/polling inside the Phase-13 Python harness.
 - A successful agent exit is not sufficient; verification and diff guard must pass.
 - First failed verification may trigger one repair prompt containing only failure evidence and original mission.
 - Second failure blocks and stops the loop for human review.
@@ -213,7 +223,10 @@ load approved plan/progress
 
 **Behavior:**
 - Review can reject a technically passing diff for scope/architecture violation.
-- The harness does not invent an independent "reviewer agent" unless actual subagent tooling is later available and deliberately adopted.
+- For materially risky accounting, timing, execution, research-integrity, or cross-cutting architecture changes, the harness may invoke the same local Codex CLI a second time with a review-only mission after the writer has stopped mutating the slice.
+- The reviewer receives the plan/acceptance criteria plus the resulting diff and verification evidence, does not own mission truth, and must not concurrently edit the author's files.
+- Reviewer feedback is evidence; the harness/orchestrator verifies findings before applying repairs or advancing.
+- Trivial/mechanical changes do not require a second Codex review.
 
 ## Section 13.10 — Commit Discipline
 
@@ -277,8 +290,9 @@ Then run the documented toy-repository dry run and inspect its progress/commits 
 
 ## Phase Exit Criteria
 
-- [ ] One real local agent runtime is supported and verified.
+- [ ] The real local Codex runtime is supported and verified non-interactively.
 - [ ] Harness executes exact approved plan sections sequentially.
+- [ ] Risk-proportional independent Codex review can run after a stable write phase without concurrent overlapping writers.
 - [ ] Progress survives interruption.
 - [ ] Unrelated dirty state is preserved.
 - [ ] Required verification/diff review gates advancement.
@@ -290,4 +304,4 @@ Then run the documented toy-repository dry run and inspect its progress/commits 
 
 ## Stop Conditions
 
-Do not add multi-agent swarms, distributed queues, speculative planner agents, autonomous roadmap generation, auto-merge/push, broad self-modifying context, or a persistent service until the single-agent approved-plan loop has demonstrated a concrete limitation that justifies the added mechanism.
+Do not add multi-agent swarms, distributed queues, speculative planner agents, autonomous roadmap generation, auto-merge/push, broad self-modifying context, or a persistent service. The admitted second Codex invocation is a bounded independent reviewer, not a new orchestration architecture. Broader concurrent worker pools require a concrete measured limitation plus disjoint ownership contracts; overlapping writers remain forbidden.
