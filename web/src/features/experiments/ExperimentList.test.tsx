@@ -41,22 +41,19 @@ describe('ExperimentList', () => {
     const card = screen.getByRole('article', {
       name: 'relationship candidate',
     })
-    expect(within(card).getByText('Negative')).toBeInTheDocument()
-    expect(within(card).getByText('family-alpha')).toBeInTheDocument()
+    expect(within(card).getByText('Negative evidence')).toBeInTheDocument()
     expect(within(card).getByText('Development')).toBeInTheDocument()
     expect(within(card).getByText('BTC · USDT')).toBeInTheDocument()
-    expect(within(card).getByText('Anchor: USDT')).toBeInTheDocument()
-    expect(within(card).getByText('Model: none')).toBeInTheDocument()
-    expect(within(card).getByText('Policy: scheduled_target')).toBeInTheDocument()
+    expect(within(card).getByText('None')).toBeInTheDocument()
+    expect(within(card).getByText('Scheduled Target')).toBeInTheDocument()
+
+    const comparison = within(card).getByText('−1.79%')
+    expect(comparison).toHaveAttribute('data-exact', '-0.0179')
+    expect(within(card).getByText('vs Periodic-2')).toBeInTheDocument()
+    expect(within(card).getByText(/Family family-alpha/)).toBeInTheDocument()
+    expect(within(card).getByText(/Dirty snapshot/)).toBeInTheDocument()
     expect(
-      within(card).getByText('Primary control: periodic-2'),
-    ).toBeInTheDocument()
-    expect(
-      within(card).getByText('Increment vs primary control: -0.0179'),
-    ).toBeInTheDocument()
-    expect(within(card).getByText('Dirty code snapshot')).toBeInTheDocument()
-    expect(
-      within(card).getByRole('link', { name: 'Inspect evidence' }),
+      within(card).getByRole('link', { name: 'View result' }),
     ).toHaveAttribute(
       'href',
       '/experiments/run-0123456789abcdef01234567',

@@ -1,5 +1,10 @@
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
 @import './tokens.css';
 
+@layer base {
 * {
   box-sizing: border-box;
 }
@@ -663,4 +668,5 @@ details[open] > summary {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
 }
