@@ -3,27 +3,44 @@
 # pyright: reportUnknownVariableType=false
 """Immutable experiment run directories and final-OOS commitment discipline."""
 
-import hashlib
 import json
 import os
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal, Self
+from typing import Any
 
 import pyarrow.parquet as pq
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel
 
 from qap.experiment.artifact_semantics import validate_run_artifact_semantics
 from qap.experiment.events import read_event_records, write_event_records
 from qap.experiment.final_oos import issue_final_oos_execution_permit
+from qap.experiment.final_oos_reservation import (
+    FinalOosCommitment,
+    HoldoutAlreadyCommittedError,
+)
+from qap.experiment.final_oos_reservation import (
+    assert_holdout_available as _assert_holdout_available,
+)
+from qap.experiment.final_oos_reservation import (
+    consume_commitment as _consume_commitment,
+)
+from qap.experiment.final_oos_reservation import (
+    initial_commitment as _initial_commitment,
+)
+from qap.experiment.final_oos_reservation import (
+    reservation_failed_commitment as _reservation_failed_commitment,
+)
+from qap.experiment.final_oos_reservation import (
+    reserve_holdout_registry as _reserve_holdout_registry,
+)
 from qap.experiment.integrity import (
     build_integrity_record,
     read_and_validate_integrity,
 )
 from qap.experiment.manifest import DataRole, ExperimentManifest
 from qap.experiment.provenance import (
-    DatasetFingerprint,
     RunProvenance,
     canonical_manifest_bytes,
     manifest_sha256,
@@ -41,9 +58,6 @@ from qap.experiment.tables import (
     build_performance_table,
     validate_artifact_table,
 )
-from qap.market import fingerprint_bar_series, validate_bar_series
-
-_FINAL_OOS_REGISTRY = ".final-oos-commitments"
 
 
 class ArtifactError(RuntimeError):
@@ -52,61 +66,6 @@ class ArtifactError(RuntimeError):
 
 class RunAlreadyExistsError(ArtifactError):
     """Raised when a run ID already has a directory and cannot be overwritten."""
-
-
-class HoldoutAlreadyCommittedError(ArtifactError):
-    """Raised when a research family already committed the same final holdout."""
-
-
-class _FrozenModel(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-
-class FinalOosCommitment(_FrozenModel):
-    schema_version: Literal["qap.experiment.final_oos_commitment.v1"] = (
-        "qap.experiment.final_oos_commitment.v1"
-    )
-    run_id: str
-    research_family_id: str
-    parent_run_id: str | None = None
-    holdout_id: str
-    manifest_sha256: str
-    code_fingerprint: str
-    data_fingerprints: tuple[DatasetFingerprint, ...]
-    data_window_start: datetime
-    data_window_end: datetime
-    committed_at: datetime
-    consumed: bool
-    execution_status: Literal["committed", "completed", "failed"]
-    consumed_at: datetime | None = None
-
-    @field_validator(
-        "data_window_start",
-        "data_window_end",
-        "committed_at",
-        "consumed_at",
-    )
-    @classmethod
-    def validate_utc(
-        cls,
-        value: datetime | None,
-    ) -> datetime | None:
-        if value is None:
-            return None
-        if value.tzinfo is None or value.utcoffset() != timedelta(0):
-            raise ValueError("commitment timestamps must be timezone-aware UTC")
-        return value.astimezone(UTC)
-
-    @model_validator(mode="after")
-    def validate_status(self) -> Self:
-        if self.data_window_start >= self.data_window_end:
-            raise ValueError("commitment data window must be ordered")
-        if self.execution_status == "committed":
-            if self.consumed or self.consumed_at is not None:
-                raise ValueError("unexecuted commitment cannot be consumed")
-        elif not self.consumed or self.consumed_at is None:
-            raise ValueError("completed or failed commitment must be consumed")
-        return self
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,135 +149,6 @@ def _write_prelude(paths: RunArtifactPaths, prepared: PreparedExperiment) -> Non
         canonical_manifest_bytes(prepared.manifest) + b"\n",
     )
     _atomic_write_model(paths.provenance, prepared.provenance)
-
-
-def _holdout_id(prepared: PreparedExperiment) -> str:
-    evaluated_slice_fingerprints = tuple(
-        sorted(
-            fingerprint_bar_series(validate_bar_series(item.bars))
-            for item in prepared.loaded.aligned.series
-        )
-    )
-    payload = {
-        "evaluated_slice_fingerprints": evaluated_slice_fingerprints,
-        "data_window_start": prepared.manifest.data_window.start.isoformat(),
-        "data_window_end": prepared.manifest.data_window.end.isoformat(),
-    }
-    encoded = json.dumps(
-        payload,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return f"holdout-{hashlib.sha256(encoded).hexdigest()[:24]}"
-
-
-def _holdout_registry_path(
-    run_root: Path,
-    commitment: FinalOosCommitment,
-) -> Path:
-    identity = (f"{commitment.research_family_id}\0{commitment.holdout_id}").encode(
-        "utf-8"
-    )
-    filename = f"{hashlib.sha256(identity).hexdigest()}.json"
-    return run_root.resolve() / _FINAL_OOS_REGISTRY / filename
-
-
-def _reserve_holdout_registry(
-    run_root: Path,
-    commitment: FinalOosCommitment,
-) -> Path:
-    """Atomically reserve one family/holdout pair before replay can begin."""
-
-    root = run_root.resolve()
-    root.mkdir(parents=True, exist_ok=True)
-    registry = root / _FINAL_OOS_REGISTRY
-    registry.mkdir(exist_ok=True)
-    path = _holdout_registry_path(root, commitment)
-    payload = (commitment.model_dump_json(indent=2) + "\n").encode("utf-8")
-    try:
-        descriptor = os.open(
-            path,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL,
-            0o600,
-        )
-    except FileExistsError as exc:
-        raise HoldoutAlreadyCommittedError(
-            "final OOS holdout is already committed for research family "
-            f"{commitment.research_family_id}: {commitment.holdout_id}"
-        ) from exc
-    try:
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
-        directory_descriptor = os.open(registry, os.O_RDONLY | os.O_DIRECTORY)
-        try:
-            os.fsync(directory_descriptor)
-        finally:
-            os.close(directory_descriptor)
-    except BaseException:
-        path.unlink(missing_ok=True)
-        raise
-    return path
-
-
-def _existing_commitments(run_root: Path) -> tuple[FinalOosCommitment, ...]:
-    commitments: list[FinalOosCommitment] = []
-    if not run_root.exists():
-        return ()
-    for path in sorted(run_root.glob("*/commitment.json")):
-        commitments.append(
-            FinalOosCommitment.model_validate_json(path.read_text(encoding="utf-8"))
-        )
-    return tuple(commitments)
-
-
-def _assert_holdout_available(
-    run_root: Path,
-    prepared: PreparedExperiment,
-) -> None:
-    holdout_id = _holdout_id(prepared)
-    for commitment in _existing_commitments(run_root.resolve()):
-        if (
-            commitment.research_family_id == prepared.manifest.research_family_id
-            and commitment.holdout_id == holdout_id
-        ):
-            raise HoldoutAlreadyCommittedError(
-                "final OOS holdout is already committed for research family "
-                f"{prepared.manifest.research_family_id}: {holdout_id}"
-            )
-
-
-def _initial_commitment(prepared: PreparedExperiment) -> FinalOosCommitment:
-    return FinalOosCommitment(
-        run_id=prepared.provenance.run_id,
-        research_family_id=prepared.manifest.research_family_id,
-        parent_run_id=prepared.manifest.parent_run_id,
-        holdout_id=_holdout_id(prepared),
-        manifest_sha256=prepared.provenance.manifest_sha256,
-        code_fingerprint=prepared.provenance.code_fingerprint,
-        data_fingerprints=prepared.loaded.data_fingerprints,
-        data_window_start=prepared.manifest.data_window.start,
-        data_window_end=prepared.manifest.data_window.end,
-        committed_at=prepared.provenance.run_timestamp_utc,
-        consumed=False,
-        execution_status="committed",
-        consumed_at=None,
-    )
-
-
-def _consume_commitment(
-    commitment: FinalOosCommitment,
-    *,
-    status: Literal["completed", "failed"],
-) -> FinalOosCommitment:
-    return commitment.model_copy(
-        update={
-            "consumed": True,
-            "execution_status": status,
-            "consumed_at": datetime.now(UTC),
-        }
-    )
 
 
 def _write_failure(paths: RunArtifactPaths, error: BaseException) -> None:
@@ -435,11 +265,19 @@ def run_experiment_to_artifacts(
     if manifest.data_role is DataRole.FINAL_OOS:
         _assert_holdout_available(root, prepared)
         commitment = _initial_commitment(prepared)
-        registry_path = _reserve_holdout_registry(root, commitment)
     paths = _reserve_run_directory(root, prepared.provenance.run_id)
     _write_prelude(paths, prepared)
     if commitment is not None:
         _atomic_write_model(paths.commitment, commitment)
+        try:
+            registry_path = _reserve_holdout_registry(root, commitment)
+        except BaseException as exc:
+            _atomic_write_model(
+                paths.commitment,
+                _reservation_failed_commitment(commitment),
+            )
+            _write_failure(paths, exc)
+            raise
 
     try:
         permit = (
