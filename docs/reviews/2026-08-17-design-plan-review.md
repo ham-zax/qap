@@ -258,3 +258,7 @@ This closes the broad pre-build research review loop. New evidence does not reop
 ### OSS consequence
 
 The parallel OSS audit does not change architecture; it changes implementation tactics. Use maintained commodity libraries where they save code, but retain QAP-owned economic truth. See `docs/OSS_REUSE_BOUNDARY.md`.
+
+### Focused quant OSS follow-up
+
+A second OSS pass specifically covering backtesting, pair/universe scanning, quant research, portfolio tooling, and diagnostics did not justify replacing the QAP replay/accounting kernel. It did justify using DuckDB/Polars for research scanning when needed, established statistical libraries instead of custom estimators, NautilusTrader as a bounded differential oracle, and optional vectorbt/skfolio/QuantStats spikes behind QAP-owned contracts. The accepted details are recorded in `docs/research/2026-08-17-quant-oss-integration.md`.

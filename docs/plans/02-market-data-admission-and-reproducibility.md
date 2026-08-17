@@ -251,4 +251,6 @@ Reuse mature infrastructure selectively:
 - `httpx` is sufficient for the intentionally tiny public-market adapter unless a bounded spike shows official `binance-sdk-spot` materially reduces code without leaking private/trading semantics into QAP contracts.
 - CCXT is mature and MIT-licensed, but its enormous exchange/instrument/trading surface is not the default Phase-02 dependency. Treat it as reference or a later multi-venue adapter candidate.
 - Use PyArrow for Parquet/Arrow serialization rather than implementing columnar storage logic. Do not add Polars alongside pandas/NumPy merely for fashion; another dataframe engine needs measured justification.
+- For bulk Binance history, prefer the official public-data archives and published checksums where they fit the requested window; feed them through the same QAP admission/fingerprint path as API data.
+- DuckDB/Polars remain deferred until broad scanning actually begins; they do not become Phase-02 storage authorities.
 - Keep Binance Spot public endpoint/filter semantics behind `qap.market.adapters`; third-party response objects never cross into domain contracts.

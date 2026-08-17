@@ -294,3 +294,17 @@ The final targeted quantitative review returned **Phase-00 GO with no critical p
 OSS policy: use mature libraries to remove commodity work, but never outsource QAP's authoritative inventory, valuation/HODL semantics, allocation contracts, deterministic spot execution, final-OOS/research-family semantics, or economic success criteria. See `docs/OSS_REUSE_BOUNDARY.md`.
 
 Broad pre-build review is closed. New evidence alters the build only if it exposes a critical contradiction in a constitutional invariant. Phase-specific library spikes and statistical-method choices occur when their phase is reached and do not block Phase 00.
+
+## Quant OSS integration decision
+
+Use mature OSS aggressively where the capability is commodity, but keep QAP's deterministic inventory replay/accounting and research authority intact. The detailed decision record is `docs/research/2026-08-17-quant-oss-integration.md`.
+
+- PyArrow/Parquet remains canonical research interchange; add DuckDB/Polars only when broad scanning begins.
+- Reuse statsmodels/arch/pyvinecopulib instead of implementing standard estimators/bootstrap/Copula families ourselves.
+- Evaluate vectorbt only as research acceleration, skfolio only for candidate target weights/CV, QuantStats only for diagnostics, and NautilusTrader only as a differential oracle.
+- Use Binance public archives/checksums and current metadata sources where useful, while QAP retains point-in-time universe and Spot-admissibility semantics.
+- No third-party engine may bypass QAP replay, matched benchmarks, costs, OOS/search-family rules, or Shariah action constraints.
+
+### Documentation update context
+
+Before materially revising a long-lived design, plan, research, or decision document, follow `docs/research/document-update-method.md`: recover related context, record date/trigger/purpose/impact/evidence, preserve superseded rationale when useful, then check directly dependent docs for consistency.

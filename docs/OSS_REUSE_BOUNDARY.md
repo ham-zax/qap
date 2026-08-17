@@ -71,3 +71,17 @@ Library defaults are hypotheses, not QAP constants. Record versions, seeds, impo
 ## Phase-spike rule
 
 Every dependency spike asks one bounded question: **does this remove meaningful code while preserving QAP contracts?** Inspect API ergonomics, version compatibility, determinism, numeric types, dependency weight, and license. Do not create architecture around a candidate before its phase admits it.
+
+## Quant research/scanning extension
+
+QAP uses a two-speed quant workflow: mature OSS may accelerate exploratory screening and commodity mathematics, but every material candidate must pass through QAP's deterministic replay, accounting, benchmark, cost, and OOS contracts before it can support an economic claim.
+
+- **DuckDB + Polars:** admit when broad pair/universe scanning creates a measured need for Parquet query pruning and vectorized feature computation. Keep them research-only; PyArrow/Parquet remains the canonical interchange layer.
+- **statsmodels / arch / pyvinecopulib:** prefer these for established econometrics, bootstrap/multiple-comparison procedures, and Copula fitting/conditional calculations rather than reimplementing estimators.
+- **vectorbt Community:** optional research-acceleration spike only. It may screen candidates but cannot become QAP's final backtest authority; review its current license before adoption.
+- **skfolio:** optional target-weight/CV spike only after transparent rebalancing controls exist. QAP still owns target admission, execution, inventory, and accounting.
+- **QuantStats:** diagnostic/tear-sheet consumer of QAP-produced wealth/return series only; it cannot redefine benchmark or accounting semantics.
+- **NautilusTrader:** differential/reference oracle for deliberately simple replay parity cases, never QAP's portfolio/accounting owner.
+- **Binance Public Data / CCXT:** use public historical archives/checksums and current market metadata where appropriate, while QAP retains historical-universe, provenance, and Spot-admissibility semantics.
+
+Detailed decision record: `docs/research/2026-08-17-quant-oss-integration.md`.

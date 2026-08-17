@@ -259,3 +259,6 @@ A Gaussian Copula comparator is mandatory only when the claim is specifically th
 - Use `statsmodels` for established regression/econometric primitives instead of hand-rolling them.
 - Evaluate `pyvinecopulib` before implementing Copula estimation/family logic ourselves; keep it behind `qap.relationship.models` so third-party types never become domain contracts.
 - Use `arch` for block-bootstrap/family-level procedures when the research claim actually requires them.
+- When pair/model/horizon scanning becomes large enough to justify acceleration, use DuckDB for Parquet pruning and Polars for vectorized feature computation rather than creating a custom scan engine.
+- `vectorbt` may be evaluated as an isolated exploratory parameter-sweep accelerator; any surviving candidate must be replayed through QAP before economic/OOS conclusions.
+- `skfolio` may be evaluated for candidate long-only target weights/CV only after transparent controls exist; it never mutates QAP inventory or defines success.

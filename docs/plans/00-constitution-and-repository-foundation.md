@@ -93,6 +93,7 @@ rm data/_probe runs/_probe
 - [ ] Create `AGENTS.md` with only: product one-liner, core economic object, spot-only action boundary, one-state-one-owner rule, benchmark ladder (HODL -> predeclared simple rebalancing control -> relationship policy), fixed-basket-vs-point-in-time-universe claim boundary, final-OOS consumption rule, v1/v2 read-only reference rule, no-live-execution gate, source-size/God-object rule, commands, and instruction to follow `docs/plans/` for approved work.
 - [ ] State that an autonomous agent must escalate before changing benchmark definitions, cost/fill semantics, dataset role/holdout status, universe eligibility, or the Shariah/action-space boundary.
 - [ ] Explicitly forbid copying the old repository architecture by default.
+- [ ] Link `docs/research/document-update-method.md` and require its short context note before materially revising long-lived design/plan/research/decision docs.
 - [ ] Keep `AGENTS.md` short enough to be read in one screenful; link to design docs instead of repeating them.
 
 **Verification:**

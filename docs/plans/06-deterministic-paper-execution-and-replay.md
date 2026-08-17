@@ -193,3 +193,7 @@ uv run pyright src tests
 ## Stop Conditions
 
 Do not add market orders to a live venue, websocket feeds, partial venue fills, bridge routing, leverage, margin, order books, sophisticated impact models, or multiple simultaneous conversion legs. Phase 06 proves semantics first; operational realism comes later.
+
+## Optional Differential-Oracle Check
+
+After the QAP baseline replay is green, perform one bounded NautilusTrader spike for a deliberately simple case such as periodic rebalance with fixed costs. Compare holdings, fill direction, explicit costs, and terminal wealth. Treat mismatches as semantic-review evidence, not as proof that the third-party engine is authoritative. Do not make NautilusTrader a runtime dependency of `src/qap`.

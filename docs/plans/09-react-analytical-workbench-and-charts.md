@@ -302,3 +302,5 @@ Add two decision-relevant visualizations:
 2. explicit exploratory/development/final-holdout boundaries plus final-OOS consumed state on research charts.
 
 The UI performs no authoritative financial calculation. Lightweight Charts remains the preferred renderer; Phase 09 must explicitly satisfy its Apache-2.0 NOTICE/TradingView attribution requirement.
+
+For standard return/drawdown tear-sheet diagnostics, QuantStats may be added only after QAP-produced wealth/return series and metric conventions are golden-fixture verified. It consumes QAP outputs; it does not compute authoritative wallet, benchmark, or cost semantics.
