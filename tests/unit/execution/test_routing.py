@@ -170,6 +170,10 @@ def test_two_leg_execution_charges_costs_twice_and_uses_actual_bridge_output() -
         source_quantity=D("2"),
         current_state=starting,
         reference_prices={ETHUSDT: D("2000"), BTCUSDT: D("40000")},
+        market_notional_reference_prices={
+            ETHUSDT: D("2000"),
+            BTCUSDT: D("40000"),
+        },
         market_metadata={
             ETHUSDT: _metadata(ETHUSDT, step="0.001"),
             BTCUSDT: _metadata(BTCUSDT, step="0.000001"),
@@ -219,6 +223,10 @@ def test_two_leg_route_preflights_all_reference_prices_before_any_fill() -> None
         source_quantity=D("2"),
         current_state=starting,
         reference_prices={ETHUSDT: D("2000")},
+        market_notional_reference_prices={
+            ETHUSDT: D("2000"),
+            BTCUSDT: D("40000"),
+        },
         market_metadata={
             ETHUSDT: _metadata(ETHUSDT, step="0.001"),
             BTCUSDT: _metadata(BTCUSDT, step="0.000001"),
@@ -257,11 +265,53 @@ def test_two_leg_route_preflights_all_metadata_before_any_fill() -> None:
         source_quantity=D("2"),
         current_state=starting,
         reference_prices={ETHUSDT: D("2000"), BTCUSDT: D("40000")},
+        market_notional_reference_prices={
+            ETHUSDT: D("2000"),
+            BTCUSDT: D("40000"),
+        },
         market_metadata={ETHUSDT: _metadata(ETHUSDT, step="0.001")},
         cost_model=CostModel.zero(),
     )
 
     assert result.reason is RoutedExecutionReason.MISSING_MARKET_METADATA
+    assert result.failed_leg_index == 1
+    assert result.fills == ()
+    assert result.ending_state == starting
+
+
+def test_two_leg_route_preflights_market_notional_reference_prices() -> None:
+    from qap.execution.routing import (
+        RoutedExecutionReason,
+        execute_routed_conversion,
+        plan_execution_route,
+    )
+
+    route = plan_execution_route(
+        source=ETH,
+        destination=BTC,
+        instruments=(ETHUSDT, BTCUSDT),
+        declared_assets={ETH, BTC, USDT},
+        bridge=USDT,
+    )
+    starting = PortfolioState.from_holdings({ETH: D("2")})
+
+    result = execute_routed_conversion(
+        route=route,
+        fill_id_prefix="missing-notional-reference",
+        decision_id="decision-notional",
+        execution_timestamp=AT,
+        source_quantity=D("2"),
+        current_state=starting,
+        reference_prices={ETHUSDT: D("2000"), BTCUSDT: D("40000")},
+        market_notional_reference_prices={ETHUSDT: D("2000")},
+        market_metadata={
+            ETHUSDT: _metadata(ETHUSDT, step="0.001"),
+            BTCUSDT: _metadata(BTCUSDT, step="0.000001"),
+        },
+        cost_model=CostModel.zero(),
+    )
+
+    assert result.reason is RoutedExecutionReason.MISSING_NOTIONAL_REFERENCE_PRICE
     assert result.failed_leg_index == 1
     assert result.fills == ()
     assert result.ending_state == starting

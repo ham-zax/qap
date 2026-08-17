@@ -138,5 +138,17 @@ class MarketMetadata:
         object.__setattr__(self, "market_minimum_quantity", market_minimum_quantity)
         object.__setattr__(self, "market_maximum_quantity", market_maximum_quantity)
 
+    @property
+    def requires_market_notional_reference_price(self) -> bool:
+        """Whether MARKET notional checks require a venue reference price."""
+
+        return (
+            self.minimum_notional is not None
+            and self.minimum_notional_applies_to_market
+        ) or (
+            self.maximum_notional is not None
+            and self.maximum_notional_applies_to_market
+        )
+
 
 __all__ = ["MarketMetadata"]

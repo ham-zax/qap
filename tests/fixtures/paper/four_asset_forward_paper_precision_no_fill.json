@@ -11,7 +11,8 @@
       "reference_price": "63643.03000000",
       "venue_base_asset": "BTC",
       "venue_quote_asset": "USDT",
-      "venue_symbol": "BTCUSDT"
+      "venue_symbol": "BTCUSDT",
+      "notional_reference_price": "63643.03000000"
     },
     {
       "base": "ETH",
@@ -19,7 +20,8 @@
       "reference_price": "1906.42000000",
       "venue_base_asset": "ETH",
       "venue_quote_asset": "USDT",
-      "venue_symbol": "ETHUSDT"
+      "venue_symbol": "ETHUSDT",
+      "notional_reference_price": "1906.42000000"
     },
     {
       "base": "SOL",
@@ -27,13 +29,14 @@
       "reference_price": "75.80000000",
       "venue_base_asset": "SOL",
       "venue_quote_asset": "USDT",
-      "venue_symbol": "SOLUSDT"
+      "venue_symbol": "SOLUSDT",
+      "notional_reference_price": "75.80000000"
     }
   ],
   "operation_id": "forward-paper-precision-no-fill-20260817",
   "schema_version": "qap.paper_operation_spec.v1",
   "slippage_bps": "10",
-  "source_note": "Recorded public Binance Spot inputs with an intentionally sub-minimum SOL rebalance leg to verify explicit paper no-fill handling.",
+  "source_note": "Recorded public Binance Spot inputs with an intentionally sub-minimum SOL rebalance leg to verify explicit paper no-fill handling. The explicit notional-reference prices equal the recorded ticker references for this deterministic dry run; they are not a reconstructed historical Binance avgPrice.",
   "starting_holdings": {
     "BTC": "0.001571263970304367",
     "ETH": "0.052454338498337197",

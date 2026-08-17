@@ -28,6 +28,7 @@ class RoutedExecutionReason(StrEnum):
 
     MISSING_REFERENCE_PRICE = "missing_reference_price"
     MISSING_MARKET_METADATA = "missing_market_metadata"
+    MISSING_NOTIONAL_REFERENCE_PRICE = "missing_notional_reference_price"
     LEG_NO_FILL = "leg_no_fill"
 
 
@@ -254,6 +255,7 @@ def _preflight_route(
     route: ExecutionRoute,
     *,
     reference_prices: Mapping[VenueInstrument, Decimal],
+    market_notional_reference_prices: Mapping[VenueInstrument, Decimal],
     market_metadata: Mapping[VenueInstrument, MarketMetadata],
     current_state: PortfolioState,
 ) -> RoutedExecutionResult | None:
@@ -283,6 +285,20 @@ def _preflight_route(
             )
         if metadata.instrument != leg.instrument:
             raise ValueError("market metadata key must match metadata instrument")
+        if (
+            metadata.requires_market_notional_reference_price
+            and leg.instrument not in market_notional_reference_prices
+        ):
+            return RoutedExecutionResult(
+                route=route,
+                fills=(),
+                ending_state=current_state,
+                intermediate_state=None,
+                bridge_residue=Decimal("0"),
+                reason=RoutedExecutionReason.MISSING_NOTIONAL_REFERENCE_PRICE,
+                failed_leg_index=index,
+                leg_reason=None,
+            )
     return None
 
 
@@ -303,6 +319,7 @@ def execute_routed_conversion(
     source_quantity: Decimal,
     current_state: PortfolioState,
     reference_prices: Mapping[VenueInstrument, Decimal],
+    market_notional_reference_prices: Mapping[VenueInstrument, Decimal],
     market_metadata: Mapping[VenueInstrument, MarketMetadata],
     cost_model: CostModel,
 ) -> RoutedExecutionResult:
@@ -318,6 +335,7 @@ def execute_routed_conversion(
     preflight = _preflight_route(
         route,
         reference_prices=reference_prices,
+        market_notional_reference_prices=market_notional_reference_prices,
         market_metadata=market_metadata,
         current_state=current_state,
     )
@@ -340,6 +358,9 @@ def execute_routed_conversion(
             ),
             current_state=state,
             reference_price=reference_prices[leg.instrument],
+            market_notional_reference_price=market_notional_reference_prices.get(
+                leg.instrument
+            ),
             cost_model=cost_model,
             market_metadata=market_metadata[leg.instrument],
         )

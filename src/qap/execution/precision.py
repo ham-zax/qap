@@ -143,6 +143,7 @@ class MarketPrecision:
         *,
         base_quantity: Decimal,
         execution_price: Decimal,
+        market_notional_reference_price: Decimal | None = None,
         order_type: PaperOrderType | str = PaperOrderType.MARKET,
     ) -> None:
         """Fail closed when rounded quantity/price/notional violates venue bounds."""
@@ -183,13 +184,28 @@ class MarketPrecision:
             ):
                 raise MarketPrecisionError(MarketPrecisionReason.BELOW_MINIMUM_QUANTITY)
 
-        notional = exact_multiply(quantity, price)
         minimum_applies = (
             kind is PaperOrderType.LIMIT or metadata.minimum_notional_applies_to_market
         )
         maximum_applies = (
             kind is PaperOrderType.LIMIT or metadata.maximum_notional_applies_to_market
         )
+        notional_price = price
+        market_notional_applies = kind is PaperOrderType.MARKET and (
+            (minimum_applies and metadata.minimum_notional is not None)
+            or (maximum_applies and metadata.maximum_notional is not None)
+        )
+        if market_notional_applies:
+            if market_notional_reference_price is None:
+                raise ValueError(
+                    "market_notional_reference_price is required when a MARKET "
+                    "notional filter applies"
+                )
+            notional_price = _validated_positive(
+                market_notional_reference_price,
+                field="market_notional_reference_price",
+            )
+        notional = exact_multiply(quantity, notional_price)
         if (
             minimum_applies
             and metadata.minimum_notional is not None

@@ -301,6 +301,20 @@ def _build_record(
     target_weights = _decimal_mapping(
         spec.get("target_weights"), field="target_weights"
     )
+    missing_owned_assets = tuple(
+        sorted(
+            asset.key
+            for asset, quantity in starting_holdings.items()
+            if asset != bridge
+            and quantity > Decimal("0")
+            and asset not in target_weights
+        )
+    )
+    if missing_owned_assets:
+        raise ValueError(
+            "owned non-bridge assets missing from target: "
+            + ", ".join(missing_owned_assets)
+        )
     valuation_prices = _decimal_mapping(
         spec.get("valuation_prices"), field="valuation_prices"
     )
@@ -315,6 +329,7 @@ def _build_record(
     raw_instruments = _array(spec.get("instruments"), field="instruments")
     instruments: list[VenueInstrument] = []
     reference_prices: dict[VenueInstrument, Decimal] = {}
+    market_notional_reference_prices: dict[VenueInstrument, Decimal] = {}
     metadata_by_instrument: dict[VenueInstrument, object] = {}
     for position, raw_item in enumerate(raw_instruments):
         item = _object(raw_item, field=f"instruments[{position}]")
@@ -340,6 +355,10 @@ def _build_record(
         reference_prices[instrument] = _decimal(
             item.get("reference_price"), field=f"{symbol}.reference_price"
         )
+        market_notional_reference_prices[instrument] = _decimal(
+            item.get("notional_reference_price"),
+            field=f"{symbol}.notional_reference_price",
+        )
         metadata_by_instrument[instrument] = metadata
 
     from qap.market import MarketMetadata
@@ -363,6 +382,7 @@ def _build_record(
         bridge=bridge,
         instruments=tuple(instruments),
         reference_prices=reference_prices,
+        market_notional_reference_prices=market_notional_reference_prices,
         market_metadata=typed_metadata,
         cost_model=cost_model,
     )
@@ -396,6 +416,13 @@ def _build_record(
             instrument.venue_symbol: str(price)
             for instrument, price in sorted(
                 reference_prices.items(), key=lambda item: item[0].venue_symbol
+            )
+        },
+        "market_notional_reference_prices": {
+            instrument.venue_symbol: str(price)
+            for instrument, price in sorted(
+                market_notional_reference_prices.items(),
+                key=lambda item: item[0].venue_symbol,
             )
         },
         "market_metadata": {

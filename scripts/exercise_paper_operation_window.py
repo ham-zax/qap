@@ -113,6 +113,7 @@ def _paper_window(output_root: Path, *, days: int) -> dict[str, object]:
                     "venue_base_asset": symbol.removesuffix("USDT"),
                     "venue_quote_asset": "USDT",
                     "reference_price": closes[symbol],
+                    "notional_reference_price": closes[symbol],
                 }
                 for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
             ],

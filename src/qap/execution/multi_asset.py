@@ -186,6 +186,7 @@ def _preflight_order_data(
     orders: tuple[_PlannedOrder, ...],
     *,
     reference_prices: Mapping[VenueInstrument, Decimal],
+    market_notional_reference_prices: Mapping[VenueInstrument, Decimal],
     market_metadata: Mapping[VenueInstrument, MarketMetadata],
 ) -> None:
     for order in orders:
@@ -198,6 +199,13 @@ def _preflight_order_data(
             if metadata.instrument != leg.instrument:
                 raise MultiAssetPreflightError(
                     order.asset, "metadata_instrument_mismatch"
+                )
+            if (
+                metadata.requires_market_notional_reference_price
+                and leg.instrument not in market_notional_reference_prices
+            ):
+                raise MultiAssetPreflightError(
+                    order.asset, "missing_notional_reference_price"
                 )
 
 
@@ -267,6 +275,7 @@ def _execute_planned_orders(
     bridge_target: Decimal,
     valuation_prices: PriceSnapshot,
     reference_prices: Mapping[VenueInstrument, Decimal],
+    market_notional_reference_prices: Mapping[VenueInstrument, Decimal],
     market_metadata: Mapping[VenueInstrument, MarketMetadata],
     cost_model: CostModel,
 ) -> _ExecutionPass:
@@ -306,6 +315,7 @@ def _execute_planned_orders(
             source_quantity=requested_source,
             current_state=state,
             reference_prices=reference_prices,
+            market_notional_reference_prices=market_notional_reference_prices,
             market_metadata=market_metadata,
             cost_model=cost_model,
         )
@@ -345,6 +355,7 @@ def execute_multi_asset_rebalance(
     bridge: AssetId,
     instruments: Iterable[VenueInstrument],
     reference_prices: Mapping[VenueInstrument, Decimal],
+    market_notional_reference_prices: Mapping[VenueInstrument, Decimal],
     market_metadata: Mapping[VenueInstrument, MarketMetadata],
     cost_model: CostModel,
 ) -> MultiAssetRebalanceResult:
@@ -375,6 +386,7 @@ def execute_multi_asset_rebalance(
     _preflight_order_data(
         planned,
         reference_prices=reference_prices,
+        market_notional_reference_prices=market_notional_reference_prices,
         market_metadata=market_metadata,
     )
 
@@ -394,6 +406,7 @@ def execute_multi_asset_rebalance(
         bridge_target=bridge_target,
         valuation_prices=valuation_prices,
         reference_prices=reference_prices,
+        market_notional_reference_prices=market_notional_reference_prices,
         market_metadata=market_metadata,
         cost_model=cost_model,
     )
@@ -406,6 +419,7 @@ def execute_multi_asset_rebalance(
         bridge_target=bridge_target,
         valuation_prices=valuation_prices,
         reference_prices=reference_prices,
+        market_notional_reference_prices=market_notional_reference_prices,
         market_metadata=market_metadata,
         cost_model=cost_model,
     )

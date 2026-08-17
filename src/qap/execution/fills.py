@@ -236,6 +236,7 @@ def build_buy_fill(
     instrument: VenueInstrument,
     quote_budget: Decimal,
     reference_price: Decimal,
+    market_notional_reference_price: Decimal | None = None,
     cost_model: CostModel,
     quantization: ExecutionQuantization = ExecutionQuantization(),
     market_metadata: MarketMetadata | None = None,
@@ -271,6 +272,7 @@ def build_buy_fill(
         precision.validate_fill(
             base_quantity=base_quantity,
             execution_price=execution_price,
+            market_notional_reference_price=market_notional_reference_price,
         )
     elif base_quantity <= _ZERO:
         raise ValueError("quote_budget is too small for a positive base fill")
@@ -311,6 +313,7 @@ def build_sell_fill(
     instrument: VenueInstrument,
     base_quantity: Decimal,
     reference_price: Decimal,
+    market_notional_reference_price: Decimal | None = None,
     cost_model: CostModel,
     quantization: ExecutionQuantization = ExecutionQuantization(),
     market_metadata: MarketMetadata | None = None,
@@ -346,6 +349,7 @@ def build_sell_fill(
         precision.validate_fill(
             base_quantity=filled_base,
             execution_price=execution_price,
+            market_notional_reference_price=market_notional_reference_price,
         )
     gross_quote_notional = exact_multiply(filled_base, execution_price)
     fee_amount = exact_multiply(gross_quote_notional, costs.fee_rate)

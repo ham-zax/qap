@@ -94,7 +94,11 @@ def test_market_precision_rejects_post_rounding_minimums_explicitly() -> None:
     assert quantity_error.value.reason is MarketPrecisionReason.BELOW_MINIMUM_QUANTITY
 
     with pytest.raises(MarketPrecisionError) as notional_error:
-        precision.validate_fill(base_quantity=D("0.1"), execution_price=D("50"))
+        precision.validate_fill(
+            base_quantity=D("0.1"),
+            execution_price=D("50"),
+            market_notional_reference_price=D("50"),
+        )
     assert notional_error.value.reason is MarketPrecisionReason.BELOW_MINIMUM_NOTIONAL
 
 
@@ -131,6 +135,7 @@ def test_direct_execution_applies_market_precision_without_overspending() -> Non
         quantity_deltas={BTC: D("100"), USDT: D("-100")},
         current_state=PortfolioState.from_holdings({USDT: D("100")}),
         reference_price=D("3.031"),
+        market_notional_reference_price=D("3.031"),
         cost_model=CostModel.zero(),
         market_metadata=_metadata(),
     )
@@ -143,6 +148,31 @@ def test_direct_execution_applies_market_precision_without_overspending() -> Non
     assert -result.fill.balance_deltas[USDT] <= D("100")
 
 
+def test_direct_market_execution_uses_separate_notional_reference_price() -> None:
+    result = execute_direct_rebalance_leg(
+        fill_id="precision:notional-reference",
+        decision_id="precision",
+        execution_timestamp=AT,
+        instrument=INSTRUMENT,
+        quantity_deltas={BTC: D("10"), USDT: D("-100")},
+        current_state=PortfolioState.from_holdings({USDT: D("100")}),
+        reference_price=D("90"),
+        market_notional_reference_price=D("110"),
+        cost_model=CostModel.zero(),
+        market_metadata=_metadata(
+            minimum_quantity=None,
+            maximum_quantity=None,
+            minimum_notional="100",
+            maximum_notional=None,
+        ),
+    )
+
+    assert result.reason is None
+    assert result.fill is not None
+    assert result.fill.execution_price == D("90")
+    assert result.fill.gross_quote_notional == D("99")
+
+
 def test_direct_execution_returns_explicit_minimum_notional_no_fill() -> None:
     result = execute_direct_rebalance_leg(
         fill_id="precision:min-notional",
@@ -152,6 +182,7 @@ def test_direct_execution_returns_explicit_minimum_notional_no_fill() -> None:
         quantity_deltas={BTC: D("1"), USDT: D("-5")},
         current_state=PortfolioState.from_holdings({USDT: D("5")}),
         reference_price=D("50"),
+        market_notional_reference_price=D("50"),
         cost_model=CostModel.zero(),
         market_metadata=_metadata(minimum_notional="10"),
     )
@@ -183,6 +214,39 @@ def test_market_order_enforces_market_lot_size_in_addition_to_lot_size() -> None
         execution_price=D("1906.42"),
         order_type="limit",
     )
+
+
+def test_market_order_notional_uses_explicit_venue_reference_price() -> None:
+    from qap.execution.precision import MarketPrecision, MarketPrecisionError
+
+    precision = MarketPrecision(
+        _metadata(
+            minimum_quantity=None,
+            maximum_quantity=None,
+            minimum_notional="100",
+            maximum_notional=None,
+        )
+    )
+
+    precision.validate_fill(
+        base_quantity=D("0.95"),
+        execution_price=D("90"),
+        market_notional_reference_price=D("110"),
+        order_type="market",
+    )
+    with pytest.raises(MarketPrecisionError, match="below_minimum_notional"):
+        precision.validate_fill(
+            base_quantity=D("0.95"),
+            execution_price=D("110"),
+            market_notional_reference_price=D("100"),
+            order_type="market",
+        )
+    with pytest.raises(ValueError, match="market_notional_reference_price"):
+        precision.validate_fill(
+            base_quantity=D("0.95"),
+            execution_price=D("110"),
+            order_type="market",
+        )
 
 
 def test_market_order_notional_bounds_respect_apply_to_market_flags() -> None:

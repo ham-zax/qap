@@ -75,6 +75,7 @@ def test_four_asset_rebalance_sells_then_buys_without_double_spending_bridge() -
         bridge=USDT,
         instruments=INSTRUMENTS,
         reference_prices=REFERENCE_PRICES,
+        market_notional_reference_prices=REFERENCE_PRICES,
         market_metadata=METADATA,
         cost_model=CostModel(fee_bps=D("10"), slippage_bps=D("10")),
     )
@@ -118,6 +119,7 @@ def test_four_asset_rebalance_sells_then_buys_without_double_spending_bridge() -
         bridge=USDT,
         instruments=INSTRUMENTS,
         reference_prices=REFERENCE_PRICES,
+        market_notional_reference_prices=REFERENCE_PRICES,
         market_metadata=METADATA,
         cost_model=CostModel(fee_bps=D("10"), slippage_bps=D("10")),
     )
@@ -139,6 +141,7 @@ def test_multi_asset_precision_no_fill_is_explicit_and_leaves_dust_owned() -> No
         bridge=USDT,
         instruments=INSTRUMENTS,
         reference_prices=REFERENCE_PRICES,
+        market_notional_reference_prices=REFERENCE_PRICES,
         market_metadata=metadata,
         cost_model=CostModel.zero(),
     )
@@ -177,6 +180,7 @@ def test_multi_asset_dry_preflights_all_precision_outcomes_before_execution(
         bridge=USDT,
         instruments=INSTRUMENTS,
         reference_prices=REFERENCE_PRICES,
+        market_notional_reference_prices=REFERENCE_PRICES,
         market_metadata=metadata,
         cost_model=CostModel.zero(),
     )
@@ -206,6 +210,7 @@ def test_multi_asset_preflights_all_order_data_before_any_execution() -> None:
             bridge=USDT,
             instruments=INSTRUMENTS,
             reference_prices=references,
+            market_notional_reference_prices=REFERENCE_PRICES,
             market_metadata=METADATA,
             cost_model=CostModel.zero(),
         )
@@ -234,6 +239,7 @@ def test_execution_only_bridge_need_not_be_an_economic_target_asset() -> None:
         bridge=USDT,
         instruments=(BTCUSDT, ETHUSDT),
         reference_prices={BTCUSDT: D("100"), ETHUSDT: D("50")},
+        market_notional_reference_prices={BTCUSDT: D("100"), ETHUSDT: D("50")},
         market_metadata={BTCUSDT: METADATA[BTCUSDT], ETHUSDT: METADATA[ETHUSDT]},
         cost_model=CostModel.zero(),
     )
@@ -265,6 +271,7 @@ def test_multi_asset_orders_by_descending_target_value_change_then_asset_key() -
         bridge=USDT,
         instruments=INSTRUMENTS,
         reference_prices=REFERENCE_PRICES,
+        market_notional_reference_prices=REFERENCE_PRICES,
         market_metadata=METADATA,
         cost_model=CostModel.zero(),
     )
@@ -289,6 +296,7 @@ def test_multi_asset_result_reports_authoritative_tracking_and_unfilled_remainde
         bridge=USDT,
         instruments=INSTRUMENTS,
         reference_prices=REFERENCE_PRICES,
+        market_notional_reference_prices=REFERENCE_PRICES,
         market_metadata=metadata,
         cost_model=CostModel.zero(),
     )

@@ -44,6 +44,11 @@ def test_forward_paper_operator_writes_reconciled_replayable_artifact(
     assert len(loaded["fills"]) == 3
     assert all(DecimalString(fill["fee_quote"]) > 0 for fill in loaded["fills"])
     assert all(DecimalString(fill["slippage_quote"]) > 0 for fill in loaded["fills"])
+    assert loaded["market_notional_reference_prices"] == {
+        "BTCUSDT": "63643.03000000",
+        "ETHUSDT": "1906.42000000",
+        "SOLUSDT": "75.80000000",
+    }
     assert set(loaded["market_metadata"]) == {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
     assert all(
         DecimalString(item["quantity_step"]) > 0
@@ -142,6 +147,28 @@ def test_paper_spec_cannot_self_declare_prospective_candidate_evidence(
     spec.write_text(json.dumps(payload), encoding="utf-8")
 
     with pytest.raises(ValueError, match="prospective candidate evidence cannot be"):
+        run_paper_operation_to_artifact(
+            spec,
+            repository_root=ROOT,
+            output_root=tmp_path / "paper-operations",
+        )
+
+
+def test_paper_spec_requires_every_owned_non_bridge_asset_in_target(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(SPEC.read_text(encoding="utf-8"))
+    payload["target_weights"] = {
+        "BTC": "0.5",
+        "ETH": "0.2",
+        "USDT": "0.3",
+    }
+    spec = tmp_path / "omitted-owned-asset.json"
+    spec.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(
+        ValueError, match="owned non-bridge assets missing from target: SOL"
+    ):
         run_paper_operation_to_artifact(
             spec,
             repository_root=ROOT,
