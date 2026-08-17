@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatRelativePercent } from './format'
+import { formatPercent, formatRelativePercent } from './format'
+
+describe('formatPercent', () => {
+  it('preserves the sign of tiny nonzero absolute percentages', () => {
+    expect(formatPercent('-0.0000005')).toEqual({
+      display: '−<0.01%',
+      exact: '-0.0000005',
+    })
+    expect(formatPercent('0.0000005')).toEqual({
+      display: '<0.01%',
+      exact: '0.0000005',
+    })
+  })
+})
 
 describe('formatRelativePercent', () => {
   it('preserves sign and exact source while formatting a relative decimal as percent', () => {

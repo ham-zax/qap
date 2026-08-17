@@ -40,7 +40,7 @@ export function formatPercent(value: string): FormattedValue {
   const percent = numeric * 100
   const magnitude = Math.abs(percent)
   if (magnitude > 0 && magnitude < 0.01) {
-    return { display: '<0.01%', exact: value }
+    return { display: `${numeric < 0 ? '−' : ''}<0.01%`, exact: value }
   }
 
   const display = new Intl.NumberFormat('en-US', {
