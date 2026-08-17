@@ -264,11 +264,29 @@ Do the substantive repository work yourself through the connected WSL harness:
 
 Do NOT launch another model as an implementation worker, reviewer, investigator,
 debugger, or second opinion. Do not create secondary-agent delegation merely
-because the runtime can support it.
+because the runtime can support it. This mission does not authorize Codex or any
+other separately metered external model/CLI as a substitute reviewer or helper; a
+workflow instruction to request review is not authorization to spend external-model
+usage. Use such a model only if the user explicitly authorizes that model for the
+current task.
 
 Use bounded Bash for ordinary commands and Terminal + durable waits only for
 processes that genuinely need persistence or a PTY. A persistent process is a tool
 owned by this same implementation mission, not another agent.
+
+For connected-WSL facts, `mcp-harness-local` is authoritative. Diagnose execution
+through four distinct layers:
+
+    presentation/UI
+      -> MCP proxy/provider transport
+      -> WSL process/filesystem
+      -> Git/repository state
+
+Evidence at one layer does not silently prove the next. Hidden, skipped, redacted,
+or otherwise opaque presentation is UNOBSERVABLE, not success and not failure. If
+WSL observability becomes uncertain, perform at most one bounded repository health
+probe and continue from that evidence. Do not switch to ChatGPT container/Python,
+Files, or public web as a substitute copy of the WSL repository.
 
 
 ======================================================================
@@ -328,9 +346,18 @@ Phase dependency ordering remains authoritative.
 Do not spawn concurrent coding/review agents. Do not create implementation swarms,
 parallel writers, reviewer agents, or worker pools.
 
-You may batch independent reads/searches and run compatible tool operations
-efficiently, but repository reasoning, mutation, integration, and review remain in
-one sequential implementation thread owned by you.
+Maintain exactly one writable autonomous process/session per Git worktree. Before
+mutating a worktree, establish that no other Terminal/Codex/agent/session still owns
+it as a writer. PTY ownership and Git writer ownership are separate contracts; a
+Terminal being model-owned does not prove the worktree is free. If another writer
+exists, wait for or explicitly complete the handoff instead of becoming a second
+writer.
+
+You may batch independent reads/searches and run compatible read-only tool
+operations efficiently, but repository reasoning, mutation, integration, and review
+remain in one sequential implementation thread owned by you. Separate worktrees are
+for genuine isolation needs, not a way to bypass this mission's no-secondary-agent
+rule.
 
 When a persistent build/server/experiment is running, you may perform unrelated
 read-only reasoning while waiting if repository ownership remains clear, but do not
@@ -362,8 +389,10 @@ apply `verification-before-completion` before claiming success.
 If review exposes a failure, use `systematic-debugging` when applicable, repair the
 root cause, and re-run the evidence that proves the corrected claim.
 
-Do not request an external model review by default. A future independent manual
-review can be performed deliberately after the implementation if the user wants it.
+Use self-review from fresh authoritative repository evidence by default. Do not
+invoke an external or separately metered model for review unless the user explicitly
+authorizes that model for the current task. A future independent manual review may
+be performed deliberately if the user requests it.
 
 
 ======================================================================
@@ -589,7 +618,7 @@ LEVEL 3 — phase boundary
     the phase's complete stated verification
     phase exit criteria
     diff review
-    independent review when warranted
+    fresh risk-proportional self-review from authoritative repository evidence
 
 LEVEL 4 — integration/final milestones
     broad cross-phase/full-suite checks
@@ -939,9 +968,14 @@ Examples:
     "review this"
     "wait longer"
 
-Handle the steering.
+Handle the steering promptly. For progress/status/checkpoint questions, answer from
+already-verified state and perform at most one small authoritative probe when the
+status cannot be stated safely without it. Do not run a broad test suite, external
+review, or unrelated cleanup merely to produce the steering response.
 
-Then resume the mission automatically.
+Then resume the mission automatically in the same active turn. Additional context,
+reprioritization, or a compatible side task changes what happens next; it does not
+implicitly stop the current work.
 
 Only stop/pause when the user explicitly says to stop/pause/replace the mission or
 a genuine hard-stop boundary is encountered.
@@ -953,8 +987,14 @@ a genuine hard-stop boundary is encountered.
 
 Before editing:
 
-    inspect Git status
+    inspect Git status / branch / HEAD
+    confirm this session is the sole writer for the worktree
     preserve unrelated user work
+
+Read-only processes may coexist with the writer. A second writable autonomous
+session may not share the worktree, even when it intends to touch different files.
+Do not merge, rebase, reset, switch shared branches, or rewrite another writer's
+history as part of an implicit handoff.
 
 Commit meaningful verified slices.
 
@@ -1143,8 +1183,9 @@ The mission is complete only when ALL of the following are true:
 
 16. No required phase was silently skipped.
 
-Then perform one final independent review proportional to the risk of the final
-integrated product.
+Then perform one final fresh, risk-proportional self-review of the integrated
+product from authoritative repository evidence. Do not substitute Codex or another
+external/metered reviewer unless the user explicitly authorizes it for this task.
 
 Run final fresh verification.
 

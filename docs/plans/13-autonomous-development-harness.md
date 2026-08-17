@@ -2,7 +2,7 @@
 
 **Goal:** Build a small local development-support harness that helps the same ChatGPT implementation agent continue approved QAP work sequentially across long sessions, preserving progress, verification evidence, Git safety, and hard escalation boundaries without spawning another coding model.
 
-**Architecture:** The harness lives under `tools/agent/` and `.qap-agent/`; it is development tooling only and never becomes a dependency of `src/qap`. The implementation agent remains the sole reasoning/writing owner. The harness parses approved plans, records progress, checks Git scope, runs declared verification commands, and preserves recoverable mission state. It does **not** launch subagents, reviewer agents, worker pools, or another autonomous coding runtime.
+**Architecture:** The harness lives under `tools/agent/` and `.qap-agent/`; it is development tooling only and never becomes a dependency of `src/qap`. The implementation agent remains the sole reasoning/writing owner. The harness parses approved plans, records progress, checks Git scope/writer ownership, runs declared verification commands, and preserves recoverable mission state. It does **not** launch subagents, reviewer agents, worker pools, or another autonomous coding runtime. Transport, Terminal/tmux lifetime, durable waits/timers, Bash output/spool retention, MCP health, log rotation, and primitive routing remain responsibilities of the connected `satori_bridge`/`mcp-harness-local` harness and must not be reimplemented inside QAP.
 
 **Tech Stack:** Python 3.14 standard library first, Git, existing Superpowers Skills/workflows, and the connected WSL harness primitives already available to the implementation session. No generic agent framework, provider abstraction, multi-agent platform, queue, scheduler, or service.
 
@@ -17,12 +17,15 @@
 - Implement this phase only after the manual/direct QAP engineering workflow is proven through earlier phases.
 - The harness supports execution of approved plans; it does not invent product roadmap or economic policy.
 - The implementation agent owns all repository reasoning and mutations sequentially.
-- Do not invoke another model for implementation, review, debugging, investigation, or second opinions.
+- Maintain one writable autonomous process/session per Git worktree; read-only inspection may coexist, but a second writer must wait for an explicit handoff or use a separately assigned worktree only when isolation is actually required.
+- Terminal/PTY ownership and Git worktree writer ownership are separate contracts.
+- Do not invoke another model for implementation, review, debugging, investigation, or second opinions. Codex and any other separately metered external model/CLI are explicit opt-in only; a Skill/workflow request for delegated review does not authorize substituting one.
 - No runtime import from `tools/agent` into `src/qap`.
 - Preserve unrelated user changes and never run destructive Git operations automatically.
 - No secret/password/MFA input through prompts, logs, or checkpoint files.
 - Architecture/economic/action-space/live-capital changes stop and escalate.
 - Long-running local commands may use Terminal + durable waits, but they remain tools of the same implementation mission, not independent agents.
+- Treat connected-harness evidence in layers: presentation/UI -> MCP/provider transport -> WSL process/filesystem -> Git/repository state. Opaque presentation is unobservable, not proof of success or failure; use at most one bounded authoritative WSL health probe when execution state is uncertain.
 
 ## File Map
 
@@ -47,7 +50,8 @@
 - prompt dispatchers for another model;
 - worker/reviewer process managers;
 - autonomous merge/push logic;
-- background coding daemons.
+- background coding daemons;
+- replacement MCP transports, Terminal/session managers, timer schedulers, log rotators, spool managers, or tool-routing layers already provided by `satori_bridge`.
 
 ## Section 13.1 — Context Audit Before Harness Code
 
@@ -87,6 +91,8 @@ main ChatGPT implementation agent
 - The harness never launches another coding model.
 - The harness never marks a section complete merely because a command exited successfully.
 - Persistent Terminal processes are allowed only for builds, servers, experiments, browser sessions, or other real tools requiring durable lifetime.
+- Status/progress steering is answered promptly from already-recorded/verified state; the harness must not trigger broad verification, review, or cleanup merely to answer `status`. Mission execution then continues automatically.
+- The implementation agent verifies writer ownership before each mutating slice; read-only status/inspection is allowed while another writer exists, but mutation is not.
 - `verification-before-completion` is the required review/completion workflow before the agent claims a substantive slice/phase is complete or creates its completion commit.
 - `systematic-debugging` is used when a bug, failing test, or unexpected behavior triggers that workflow.
 - Other installed Skills are invoked only when their own trigger conditions apply; do not create ceremony by invoking irrelevant Skills.
@@ -128,6 +134,8 @@ uv run python tools/agent/qap_agent.py section docs/plans/05-policy-target-alloc
 **State per section:**
 - `pending | in_progress | complete | blocked`;
 - baseline Git commit/status fingerprint;
+- canonical worktree path, branch, and writer identity/ownership note when the section is `in_progress`;
+- active persistent process/wait identifiers when they affect safe recovery;
 - start/end timestamps;
 - resulting commit hash when committed;
 - verification commands and exit codes;
@@ -136,7 +144,7 @@ uv run python tools/agent/qap_agent.py section docs/plans/05-policy-target-alloc
 
 **Behavior:**
 - State writes are atomic (`tempfile` + replace).
-- On a later session, repository/Git reality outranks stale progress state.
+- On a later session, repository/Git/process reality outranks stale progress state; an inherited writer record must be reconciled against fresh worktree/process evidence before mutation resumes.
 - Progress is local/gitignored; plans and code commits remain durable Git truth.
 - Checkpoints never contain secrets or private credentials.
 
@@ -152,7 +160,8 @@ uv run python tools/agent/qap_agent.py section docs/plans/05-policy-target-alloc
 - Produces: safe-to-proceed/safe-to-commit evidence.
 
 **Behavior:**
-- Capture `git status --porcelain=v1`, current branch, and HEAD.
+- Capture canonical worktree path, `git status --porcelain=v1`, current branch, and HEAD.
+- Track cooperative writer ownership for the worktree while a mutating slice is active. A different active writer blocks mutation but not read-only `status`/inspection. Stale ownership may be cleared only after fresh process/worktree evidence proves the previous writer is no longer active.
 - Preserve unrelated dirty state; never reset/stash/clean it automatically.
 - Compare changed paths against the current plan section's file map plus necessary dependency/lock/config files.
 - Unexpected broad/deletion changes become a self-review blocker before commit.
@@ -161,6 +170,7 @@ uv run python tools/agent/qap_agent.py section docs/plans/05-policy-target-alloc
 **Steps:**
 - [ ] Test with temporary Git repository containing unrelated dirty files.
 - [ ] Test an allowed planned change and an unexpected destructive change.
+- [ ] Test that a second writer identity is blocked from mutation in the same worktree while read-only status remains allowed, and that explicit/stale-verified handoff permits the next writer.
 
 ## Section 13.6 — Verification Runner
 
@@ -171,6 +181,7 @@ uv run python tools/agent/qap_agent.py section docs/plans/05-policy-target-alloc
 **Behavior:**
 - Commands originate from reviewed repository plans or explicit direct-agent verification decisions, not arbitrary untrusted network text.
 - Run section-focused verification first.
+- A read-only `status` request never invokes this runner implicitly.
 - Do not automatically run every historical phase/full suite when the claim does not require it.
 - Output is bounded in progress state; full logs may be stored under `.qap-agent/<plan>/logs/`.
 - A zero exit code is evidence for that command only; plan acceptance and protected-contract review remain the implementation agent's responsibility.
@@ -201,7 +212,8 @@ read current plan section
 
 **Behavior:**
 - No background coding worker exists.
-- No second model is launched for review.
+- No second model is launched for review. Codex or any other separately metered model/CLI requires explicit user authorization for the current task and is otherwise forbidden.
+- Writer ownership is acquired/reconciled before mutation and released/checkpointed at a safe handoff boundary; Terminal ownership alone does not satisfy this check.
 - A failed verification leaves the slice `in_progress` or `blocked`; the same agent diagnoses and repairs it.
 - Repeated failure does not automatically consume new research holdouts or weaken acceptance criteria.
 - A blocked dependent section prevents later dependent work from being claimed complete.
@@ -228,9 +240,9 @@ After each coherent slice, the implementation agent re-reads the relevant diff a
 - use `systematic-debugging` when its trigger applies;
 - use `verification-before-completion` before success/phase-complete claims and completion commits;
 - inspect actual repository state rather than trusting a prior command summary;
-- do not invoke another reviewer model casually or by default.
+- do not invoke another reviewer model or separately metered agent/CLI unless the user explicitly authorizes that model for the current task.
 
-A future independent manual review may be performed deliberately after implementation if the user requests it; it is outside this autonomous sequential loop.
+Self-review from fresh repository evidence is the autonomous-loop default. A future independent manual review may be performed deliberately after implementation if the user requests it; it is outside this autonomous sequential loop.
 
 ## Section 13.9 — Commit Discipline
 
@@ -271,10 +283,10 @@ The progress record names the exact section and evidence that caused escalation.
 
 **Steps:**
 - [ ] Create a temporary toy Git repository and a tiny approved plan with two sequential sections.
-- [ ] Exercise plan parsing, progress/checkpointing, Git guard, verification capture, commit recording, and restart recovery without launching another coding model.
+- [ ] Exercise plan parsing, progress/checkpointing, Git guard, writer-ownership handoff, verification capture, commit recording, and restart recovery without launching another coding model.
 - [ ] Inject an unrelated dirty file and verify preservation.
 - [ ] Inject a failing verification and verify the state remains non-complete until the same implementation agent repairs/re-verifies it.
-- [ ] Confirm no automatic push/destructive Git actions occur.
+- [ ] Confirm read-only `status` performs no verification/review side effects and no automatic push/destructive Git actions occur.
 
 ## Phase Verification
 
@@ -290,9 +302,10 @@ Then run the documented toy-repository dry run and inspect its progress/commit e
 
 ## Phase Exit Criteria
 
-- [ ] Harness supports one sequential direct implementation agent; it launches no secondary coding/review model.
+- [ ] Harness supports one sequential direct implementation agent; it launches no secondary coding/review model and never invokes Codex/another metered model without explicit user authorization.
 - [ ] Approved plan sections and progress are recoverable across session interruption.
 - [ ] Relevant Skills remain the implementation agent's review/debugging workflow rather than secondary-agent substitutes.
+- [ ] One-writer-per-worktree ownership is enforced for mutations while read-only status/inspection remains available.
 - [ ] Unrelated dirty state is preserved.
 - [ ] Required verification/diff/self-review gates completion.
 - [ ] Architecture/economic/live-capital changes escalate.
@@ -302,4 +315,4 @@ Then run the documented toy-repository dry run and inspect its progress/commit e
 
 ## Stop Conditions
 
-Do not add external coding-model integration, model providers, subagents, reviewer agents, worker pools, distributed queues, speculative planner agents, autonomous roadmap generation, auto-merge/push, broad self-modifying context, or a persistent coding service. The implementation agent remains the single sequential owner of QAP engineering and self-review.
+Do not add external coding-model integration, model providers, subagents, reviewer agents, worker pools, distributed queues, speculative planner agents, autonomous roadmap generation, auto-merge/push, broad self-modifying context, a persistent coding service, or duplicate MCP/Terminal/wait/logging/spool-management infrastructure already owned by `satori_bridge`. The implementation agent remains the single sequential owner of QAP engineering and self-review.
