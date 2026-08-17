@@ -290,7 +290,7 @@ export function TimeSeriesChart({
           {series.map((item) => {
             const last = item.points.at(-1)
             return (
-              <li key={item.name}>
+              <li key={`${item.name}:${item.unit}`}>
                 {item.name} ({item.unit}) - latest {last?.value ?? 'unavailable'}
               </li>
             )
@@ -303,7 +303,7 @@ export function TimeSeriesChart({
           <>
             <strong>{cursor.timestamp}</strong>
             {cursor.values.map((item) => (
-              <span key={item.name}>
+              <span key={`${item.name}:${item.unit}`}>
                 {item.name}: {item.value} {item.unit}
               </span>
             ))}
