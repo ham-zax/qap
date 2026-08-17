@@ -2,191 +2,186 @@
 
 **Date:** 2026-08-18
 
-**Status:** Design frozen for written-spec review. Implementation is not yet authorized; the next step after review is a separate implementation plan.
+**Status:** Design frozen for written-spec review. Implementation is not yet authorized; the next step after user review is a separate implementation plan.
 
-**Scope:** First implementation slice of the QAP adaptive research scanner. This slice creates bounded, reproducible pair hypotheses and replays only a fixed number through the existing authoritative QAP economic kernel.
+**Scope:** First implementation slice of the QAP research scanner. It creates bounded, reproducible pair hypotheses and spends a fixed authoritative replay budget without creating a second economic engine.
 
-## 1. Goal
+> **Update context — 2026-08-18**
+> **Trigger:** User-approved option B after review of the first frozen Slice-1 spec (`aa2330c`) against the two Deep Research reports and the current QAP model/orientation contracts.
+> **Purpose:** Correct residual-model orientation, exact data-slice identity, scout no-action semantics, promotion policy, manual-pin lineage, and interrupted-scan recovery; clarify that broad asset-native momentum remains future Scanner-V1 intent.
+> **Impact:** Slice 1 remains the bounded pair-native foundation. The scanner still uses one SSD generator and at most ten automatic deep replays per horizon, but all valid candidates may reach that replay budget and residual-MR orientations are independent trials. Phase 15 is an umbrella plan; slice specs own detailed Scanner-V1 semantics.
+> **Evidence:** Deep Research reviews supplied in the 2026-08-18 design session; QAP orientation behavior in `docs/plans/04-relationship-evidence-pairs-and-anchor-lens.md`; existing authoritative experiment/policy/accounting contracts.
+## 1. Goal and protected boundary
 
 Build the smallest scanner foundation that can answer:
 
-> As of timestamp `t`, using only point-in-time-admissible Binance/Gate market evidence, which recent pair-relative mean-reversion hypotheses are worth spending authoritative QAP replay budget on?
+> As of timestamp `t`, using only point-in-time-admissible Binance/Gate evidence, which recent pair-relative mean-reversion hypotheses deserve the fixed authoritative QAP replay budget?
 
-The slice must make broad discovery possible without turning QAP into a Cartesian `pair x model x parameter x timeframe` optimizer.
+The slice must make broad discovery possible without becoming a Cartesian `pair x model x parameter x timeframe` optimizer.
 
-It must preserve the existing economic constitution:
+The following remain constitutional:
 
-- spot-only, long-only owned inventory;
-- portfolio/inventory remains the economic owner;
-- matched HODL and the strongest predeclared simple admissible rebalance/control remain the economic benchmarks;
-- scanner results are hypotheses, not financial truth;
-- only existing QAP policy/execution/accounting/evaluation may determine economic success;
-- no historical point-in-time discovery claim may be made from today's survivor list;
-- no automatic final-OOS consumption.
+- owned spot inventory only; no leverage, margin, borrowing, derivatives, or unowned shorts;
+- `PortfolioState` remains the only economic inventory owner;
+- scanner output is a hypothesis, not financial truth;
+- matched HODL and the strongest predeclared simple admissible control remain mandatory economic comparisons;
+- only the existing QAP policy -> execution -> inventory -> evaluation path may establish economic performance;
+- today's survivor list cannot establish a historical point-in-time discovery universe;
+- scanner exploration is development/search evidence and cannot consume reserved final OOS automatically.
+## 2. Scanner decomposition
 
-## 2. Scope decomposition
-
-The overall scanner effort is intentionally split into three implementation slices.
-
+The broader scanner program is intentionally split.
 ```text
 Slice 1 — bounded pair discovery foundation
   PIT universe
-  SSD candidate graph
-  fixed pair-native scouts
-  hard deep-replay budget
+  one SSD neighborhood generator
+  residual-MR + ratio-MR scouts
+  fixed deep-replay budget
   search ledger
   candidate -> existing QAP replay adapter
 
-Slice 2 — prospective evidence and liquidity
-  forward cohorts / scanner-policy evidence
+Slice 2 — prospective evidence + liquidity qualification
+  immutable forward cohorts
+  candidate prospective evidence
   lightweight L1 + shallow-depth capture
-  research_only / small_capacity / tradable_now
+  capacity / research_only / small_capacity / tradable_now
 
-Slice 3 — manual basket research workbench
-  3–6 asset user-selected baskets
-  asset-native relative momentum
-  one ternary opinion per pair/horizon
-  simple component-neutral resolver
+Slice 3 — basket + broader Scanner-V1 research surface
+  broad asset-native relative momentum discovery
+  manual 3–6 asset baskets
+  one active opinion per pair/horizon
+  deterministic long-only resolver
   scanner API/workbench projections
 ```
+Slice 1 must preserve interfaces for later slices without implementing them early.
+## 3. Architectural ownership
 
-Slice 1 must leave clean interfaces for Slices 2 and 3, but it must not implement their machinery early.
-
-## 3. Architectural boundary
-
-Add one package, `qap.scanner`, for discovery semantics only.
-
+Add `qap.scanner` for discovery semantics only.
 ```text
-market data / lifecycle evidence
-          |
-          v
-      qap.market
-          |
-          v
-     qap.scanner
-  universe / SSD graph
-  scout / ranking / ledger
-          |
-          v
- immutable scanner candidate
-          |
-          v
-    qap.experiment
-  candidate replay adapter
-          |
-          v
-existing relationship -> policy -> execution -> inventory -> evaluation
-```
-
-The import direction becomes:
-
-```text
-qap.api
-qap.experiment
-qap.evaluation
-qap.execution
-qap.policy
-qap.scanner
-qap.relationship
 qap.market
-qap.portfolio
+  admitted bars + lifecycle evidence
+      |
+      v
+qap.scanner
+  PIT universe
+  SSD graph
+  pair-native scout
+  ranking + search ledger
+      |
+      v
+immutable ScannerCandidate
+      |
+      v
+qap.experiment
+  candidate replay adapter
+      |
+      v
+existing relationship -> policy -> execution -> portfolio -> evaluation
 ```
+`qap.scanner` may consume `qap.market`, `qap.relationship`, and stable portfolio identity/value types. It must not import `qap.policy`, `qap.execution`, `qap.evaluation`, or `qap.experiment`.
 
-`qap.scanner` may consume `qap.relationship`, `qap.market`, and stable portfolio identity/value types below it. It may not import `qap.policy`, `qap.execution`, `qap.evaluation`, or `qap.experiment`.
+The candidate-to-replay adapter belongs in `qap.experiment`. This is the structural defense against the scanner becoming a second backtester.
+### Scanner never owns
 
-The candidate-to-economic-replay adapter belongs in `qap.experiment`, not in `qap.scanner`. This prevents the scanner from becoming a second backtester.
-
-### Scanner must never own
-
-- portfolio cash/inventory balances;
-- fill generation;
-- fee/slippage truth;
-- matched-HODL construction;
-- simple-control economics;
-- terminal wealth or official relative-wealth claims;
+- balances or actual inventory;
+- fill generation or venue precision;
+- authoritative fee/slippage truth;
+- matched-HODL or simple-control construction;
+- official terminal/relative wealth;
 - final-OOS authority.
 
-The scout may calculate an explicitly approximate ranking proxy. That value must be named and typed as a proxy and must never be exposed as authoritative QAP performance.
+The scout may calculate only a clearly named approximate ranking proxy.
+## 4. Frozen Slice-1 protocol
 
-## 4. Storage and execution model
-
-Keep the existing file-oriented architecture. Do not add a database, queue, worker platform, scheduler service, or plugin registry.
-
-Canonical admitted market observations remain Parquet with source fingerprints. Scanner outputs are compact JSON manifests plus Parquet tables.
-
-One scan generation writes:
-
-```text
-runs/scans/<scan_id>/
-  manifest.json
-  eligible_assets.parquet
-  neighbors.parquet
-  scout_trials.parquet
-  promotions.parquet
-```
-
-Authoritative deep replays remain normal QAP experiment/run artifacts and are referenced by run ID from `promotions.parquet`; their economics are not copied into scanner-owned accounting tables.
-
-Write a generation atomically: temporary files first, then publish the complete manifest last. A scan with no complete manifest is incomplete evidence.
-
-The scan command consumes only admitted local snapshots. It must not call an exchange during candidate computation. Exchange/network ingestion is a separate market-data operation so the same scan can be reproduced later.
-
-## 5. Scanner protocol v1-s1
-
-Every canonical scan is governed by a frozen protocol object. Meaningful rule changes create a new protocol version rather than silently rewriting historical evidence.
-
+Every canonical scan binds a protocol identity. Any meaningful rule change creates a new protocol version.
 ```text
 protocol_id: scanner-v1-s1
 normal_history: 365d
-maximum_normal_history: 730d
+maximum_normal_discovery_history: 730d   # project ceiling, not used automatically by Slice 1
 venues: BINANCE, GATE
-quote: USDT
+quote_asset: USDT
 candidate_generator: normalized-log-price-ssd-v1
 neighbors_per_asset: 8
 automatic_deep_replay_cap_per_horizon: 10
 max_automatic_promotions_per_asset_per_horizon: 2
+max_automatic_promotions_per_pair_family_per_horizon: 1
 ```
+The automatic Slice-1 path uses the most recent 365 days only. The project's 730-day discovery ceiling remains documented future/manual intent; Slice 1 does not add a second automatic history mode merely to exercise it.
+### 4.1 Horizons and common evaluation windows
 
-The last two values are engineering research-budget limits, not empirically optimized alpha parameters.
+| Horizon | Meaning | SSD graph bars/window | Allowed model resolutions | Common scout/deep evaluation window |
+|---|---|---|---|---:|
+| `short` | hours–2 days | `1h`, trailing `30d` | `15m`, `1h` | trailing `30d` |
+| `medium` | 2–10 days | `4h`, trailing `90d` | `1h`, `4h` | trailing `90d` |
+| `swing` | 1–4 weeks | `1d`, trailing `180d` | `4h`, `1d` | trailing `180d` |
 
-### 5.1 Horizons
+All templates within one horizon are ranked over the same evaluation start/end. Earlier rows inside the 365-day history are warm-up only. This avoids comparing terminal wealth over different effective durations.
 
-The product supports three distinct research horizons. Slice 1 keeps them separate.
+The longest Slice-1 warm-up plus evaluation requirement is the swing `slow` template: `180d + 180d = 360d`, which fits the normal 365-day history policy.
 
-| Horizon | Meaning | Candidate-graph bars | Candidate-graph window | Allowed model resolutions |
-|---|---|---|---:|---|
-| `short` | hours–2 days | `1h` | trailing 30 days | `15m`, `1h` |
-| `medium` | 2–10 days | `4h` | trailing 90 days | `1h`, `4h` |
-| `swing` | 1–4 weeks | `1d` | trailing 180 days | `4h`, `1d` |
+These mappings are frozen engineering defaults, not historically selected optima.
+## 5. Storage, exact data identity, and recovery
 
-These are frozen engineering defaults. Do not search alternative graph windows or horizon-resolution mappings inside the same research generation.
+Keep QAP file-oriented. Do not add a database, queue, distributed worker system, scheduler service, or plugin framework.
 
-### 5.2 Recency
+A scan uses only admitted local snapshots. Network/exchange ingestion is a separate market-data operation.
+### 5.1 Source identity versus evaluated-slice identity
 
-Normal discovery uses at most the most recent 365 days available through `eligible_information_end`. A model may consume less history.
+Whole-file/source identity is not enough. Every admitted series used by a scan records both:
+```text
+source_artifact_fingerprint
+selection_slice_fingerprint
+```
+`source_artifact_fingerprint` identifies the admitted source artifact.
 
-A deliberately requested extended discovery run may use at most 730 days and must be labeled as such. Older history remains stress/regime material and is outside canonical scanner selection.
+`selection_slice_fingerprint` identifies the exact canonical rows visible to the scan through `eligible_information_end`, after interval/venue/instrument selection and before any model computation. Appending future rows to the source file therefore does not change the historical selection slice.
 
+Candidate/trial identity binds to the exact slice fingerprints, not merely to the mutable extent of a source artifact.
+
+The slice hash must be deterministic over canonical row serialization, including at least:
+```text
+venue instrument interval
+bar_open bar_end_exclusive observation_complete_at
+OHLCV/source row identity needed by current admission semantics
+```
+No row whose observation was incomplete at the information cutoff may enter the slice hash or computation.
+### 5.2 Generation layout and atomic completion
+
+Use recoverable staging:
+```text
+runs/scans/<scan_id>.partial/
+  definition.json          # written first; immutable scan intent
+  eligible_assets.parquet
+  neighbors.parquet
+  scout_trials.parquet
+  promotions.parquet
+  manifest.json            # written last inside staging
+```
+After all artifact counts/hashes reconcile, atomically publish/rename the directory to:
+```text
+runs/scans/<scan_id>/
+```
+`definition.json` freezes protocol, `as_of`, information cutoff, input slice fingerprints, and manual pins before work begins. An interrupted `.partial` generation may resume only when those identities still match.
+
+A completed `manifest.json` in the final directory is the evidence-completion marker. Partial state is recovery state, not completed research evidence.
+
+Authoritative deep replays remain ordinary QAP run artifacts referenced by run ID. Scanner tables do not copy or become owners of their financial accounting.
 ## 6. Point-in-time universe contract
 
-Historical universe admission is three-valued:
-
+Historical admission is three-valued:
 ```text
 known_eligible
 known_ineligible
 historical_eligibility_unknown
 ```
+Only `known_eligible` instruments may enter an official automatic graph.
 
-Only `known_eligible` instruments enter an official point-in-time scan.
+`historical_eligibility_unknown` may remain available to explicitly labeled forensic/manual research but cannot silently participate in official point-in-time discovery claims.
+### 6.1 Lifecycle evidence
 
-`historical_eligibility_unknown` remains queryable for forensic/manual research but may not silently enter the official candidate graph.
+Extend `qap.market` with event-oriented lifecycle evidence rather than a mutable `listed=true/false` field.
 
-### 6.1 Minimal lifecycle evidence
-
-Extend `qap.market` with event-oriented lifecycle evidence rather than one mutable `listed` boolean.
-
-Conceptual record:
-
+Conceptual event:
 ```text
 InstrumentLifecycleEvent
   canonical_asset_id
@@ -201,9 +196,7 @@ InstrumentLifecycleEvent
   source_id
   confidence
 ```
-
-Required event types for Slice 1:
-
+Required event types:
 ```text
 listing_or_trading_started
 trading_suspended
@@ -213,248 +206,258 @@ delisted
 symbol_renamed
 contract_or_token_migrated
 ```
+Do not concatenate histories across rename/migration unless official evidence establishes continuity and the mapping is recorded explicitly.
+### 6.2 Evidence priority
 
-Do not join price histories across a rename/migration unless official evidence establishes continuity and QAP records the identity mapping explicitly.
+When evidence conflicts, prefer:
 
-### 6.2 Source priority
+1. QAP's own timestamped append-only venue snapshot;
+2. official exchange lifecycle announcement with effective timestamp;
+3. official exchange metadata referring to the historical lifecycle event;
+4. official exchange-native historical trade/bar evidence as positive evidence trading occurred near that timestamp;
+5. current survivor/status metadata for current state only;
+6. third-party metadata as corroboration only.
 
-Use this evidence order when sources conflict:
+Absence of a bar is not proof a market did not exist. One historical trade is not proof of uninterrupted eligibility across a formation window.
+### 6.3 Venue-local graphs
 
-1. QAP's own timestamped append-only venue snapshot.
-2. Official exchange lifecycle/listing/delisting/suspension announcement with effective time.
-3. Official exchange lifecycle metadata field referring to the historical event.
-4. Official exchange-native historical trade/bar evidence as positive evidence that trading occurred near that timestamp.
-5. Current survivor/current-status metadata only for current state.
-6. Third-party metadata only as corroboration; never sufficient by itself for official historical eligibility.
-
-Absence of a bar/file does not prove that a market did not exist. Presence of one historical trade does not prove uninterrupted eligibility for an entire formation window.
-
-### 6.3 Venue-local universe
-
-Build two independent USDT spot universes:
-
+Build independent USDT spot universes:
 ```text
-BINANCE:<base>/USDT
-GATE:<base>/USDT
+BINANCE:<asset>/USDT
+GATE:<asset>/USDT
 ```
+Do not splice venues into synthetic execution histories and do not add cross-exchange arbitrage mechanics.
 
-Do not splice Gate and Binance observations into one synthetic execution history. Do not perform cross-exchange arbitrage research in Slice 1.
+`USDT` is the venue quote coordinate, not an automatic candidate base asset. Scanner admission never invents a Shariah/stablecoin taxonomy from ticker text.
+## 7. One frozen SSD candidate generator
 
-The quote asset `USDT` is a coordinate/venue quote and is not itself inserted as a candidate base asset. Other base assets enter only when the operator/project admission metadata marks them scanner-eligible; QAP does not invent an automatic Shariah/stablecoin taxonomy from ticker text.
+For each venue/horizon, use normalized log-price path squared distance.
 
-## 7. Candidate graph: one frozen SSD generator
-
-Slice 1 uses exactly one automatic pair-neighborhood generator: normalized log-price path squared distance. It is chosen for transparency and auditability, not because QAP claims it is the optimal 2026 crypto pair selector.
-
-For asset `i` with completed close prices on the generator grid:
-
+For asset `i`:
 ```text
 x_i(t) = log(P_i(t)) - log(P_i(t0))
-
 d(i,j) = mean_t((x_i(t) - x_j(t))^2)
 ```
+Smaller distance means more similar recent normalized paths. It is a search-bearing selector, not a cointegration claim.
+### 7.1 Data-quality rules
 
-Smaller `d(i,j)` means more similar recent normalized paths.
+For each graph:
 
-The SSD score is search-bearing selection input. It is not evidence that the pair is cointegrated and must never be labeled as such.
-
-### 7.1 Data-quality semantics
-
-For each asset/horizon graph:
-
-- use only fully completed bars known by `as_of`;
+- use only fully completed bars available by `eligible_information_end`;
 - reindex to the expected timestamp grid;
-- no forward fill;
-- no interpolation;
-- prices must be positive and finite;
-- asset coverage must be at least 95%;
-- pair common-bar coverage must be at least 95%;
-- longest missing run may not exceed two generator bars;
+- no forward fill or interpolation;
+- require positive finite prices;
+- asset bar coverage >= 95%;
+- pair common-bar coverage >= 95%;
+- longest missing run <= two generator bars;
 - invalid/insufficient distances are excluded rather than assigned artificial values.
 
-The 95% and two-bar limits are conservative data-policy constants. They may be changed only by versioning the universe/generator policy, not by choosing whichever values improve historical P&L.
-
+These are fixed data-policy constants. Changing them requires a new policy version and prospective evidence; they are not tuned against P&L.
 ### 7.2 Neighbor selection
 
-For each eligible asset:
+For every eligible asset:
 
-1. rank every other eligible asset on the same venue by `(distance, canonical_pair_id)`;
-2. keep the nearest `k=8`;
-3. take the union of all directed selections;
+1. rank same-venue peers by `(distance, canonical_pair_id)`;
+2. retain nearest `k=8`;
+3. union all directed selections;
 4. canonicalize to one unordered `PairId`;
 5. deduplicate.
 
-A pair survives when either asset selected the other as a nearest neighbor.
+A pair survives if either side selected the other.
 
-The implementation may compute a quadratic distance matrix because this is one cheap vector operation per pair, not an economic replay. The expensive model layer remains bounded approximately by `N * k` retained edges rather than all `N(N-1)/2` edges.
+The quadratic distance matrix is allowed because it is one cheap vector comparison per unordered pair. The expensive model layer is bounded by the retained graph rather than all `N(N-1)/2` pairs.
 
-The full distance matrix does not need to become millions of persistent ledger rows. Persist:
-
-- eligible asset count;
-- total valid pair comparisons;
-- data fingerprint;
-- generator version/configuration;
-- `distance_digest`: SHA-256 over canonically sorted `(pair_id, float.hex(distance))` records for every valid comparison;
-- retained neighbor edges and ranks.
-
-## 8. Manual pins
-
-Manual intuition is allowed without pretending it was automatic discovery.
-
-A scan request may contain explicit pinned same-venue pairs. A pinned pair:
-
-- bypasses only the SSD `k=8` neighbor cutoff;
-- must still satisfy instrument identity, point-in-time eligibility, and required data-quality rules for an official scan;
-- is marked `selection_source=manual_pin`;
-- remains part of the search ledger;
-- does not change the automatic nearest-neighbor algorithm.
-
-Manual forced research that intentionally accepts `historical_eligibility_unknown` must run in a separate forensic mode and cannot contribute to official point-in-time discovery scoreboards.
-
-Manual deep-replay investigations are separate from the canonical automatic `10/horizon` budget so they cannot silently alter the automatic policy's forward record.
-
-## 9. Slice-1 model menu
-
-Slice 1 implements only the pair-native mean-reversion vertical slice:
-
+Persist:
 ```text
-A. residual mean reversion
-B. log-ratio mean reversion
+eligible_asset_count
+total_valid_pair_comparisons
+generator_version/config
+input selection_slice_fingerprints
+distance_digest
+retained neighbor edges + ranks
 ```
+`distance_digest` is SHA-256 over canonically sorted `(pair_id, float.hex(distance))` records for every valid pair comparison.
 
-Asset-native relative momentum remains part of the overall Scanner V1 intent, but is deferred to Slice 3 because forcing an asset-native mechanism into the pair-candidate topology would create a second discovery topology before the pair scanner is proven. Existing momentum research remains evidence/reference, not scanner machinery.
+The full matrix need not become millions of permanent rows because it is deterministically reconstructible from the frozen inputs and digest.
+## 8. Manual pins without duplicate trial identity
 
-Copulas, learned routing, regime classifiers, automatic strategy-family expansion, and nonlinear family search are not Slice-1 features.
+Manual intuition is allowed and must remain visible.
 
-### 9.1 Ratio mean reversion
+A pinned same-venue pair bypasses only the SSD `k=8` cutoff. It still needs official identity, point-in-time eligibility, and data-quality admission.
 
-Use the existing log-ratio evidence semantics:
-
+For every retained pair persist independent lineage facts:
 ```text
-r_t = log(P_base(t) / P_quote(t))
-z_t = (r_t - rolling_mean(r)) / rolling_std(r)
+automatic_neighbor_selected: bool
+manual_pinned: bool
 ```
+If a pair is both automatically selected and manually pinned, it remains one pair/trial identity. Do not duplicate it and do not erase either provenance fact.
 
-The economic preference is mean-reverting:
-
+A derived display label may be:
 ```text
-z_t > 0  -> base relatively expensive -> prefer quote
-z_t < 0  -> base relatively cheap     -> prefer base
+automatic
+manual_pin
+automatic_and_manual
 ```
+Manual investigations that intentionally admit `historical_eligibility_unknown` run only in forensic mode and cannot contribute to official automatic scoreboards.
 
-Therefore the preference signal passed into the existing evidence-tilt policy is `-z_t`, not the raw deviation sign.
+Manual deep replays are outside the canonical automatic `10/horizon` budget and are attributed separately.
+## 9. Slice-1 model menu and orientation semantics
 
-### 9.2 Residual mean reversion
-
-Fit, on completed common bars inside the declared rolling window:
-
+Slice 1 has only two pair-native families:
 ```text
-log(P_base) = alpha + beta * log(P_quote) + residual
+A. residual_mean_reversion
+B. log_ratio_mean_reversion
 ```
+Broad relative momentum remains Scanner-V1 intent but is asset-native and deferred to Slice 3. It must not be forced through the SSD pair topology merely to reuse Slice-1 code.
 
-The scout uses deterministic ordinary least squares and standardizes the latest residual over the same rolling fit window.
+No Copulas, learned router, regime classifier, nonlinear family search, or automatic family expansion is admitted here.
+### 9.1 Canonical pair versus oriented model trial
 
+`PairId` is one unordered economic relationship. Model trials may still be oriented.
+
+Use `numerator_asset` / `denominator_asset` for relationship orientation; do not confuse those names with the venue's USDT quote asset.
+
+**Log-ratio MR** has exact reciprocal evidence semantics:
 ```text
-z_residual > 0 -> base expensive relative to fitted relation -> prefer quote
-z_residual < 0 -> base cheap relative to fitted relation     -> prefer base
+r_t = log(P_numerator(t) / P_denominator(t))
 ```
+Reversing orientation negates the log ratio and standardized score. Evaluate only the canonical orientation as one scout trial; the inverse display/action semantics are an exact transform.
 
-The preference signal is `-z_residual`.
+Declare:
+```text
+fit_reciprocity = exact_transform
+evidence_reciprocity = exact_transform
+```
+**Residual MR** is directional and must refit:
+```text
+log(P_numerator/USDT)
+  = alpha + beta * log(P_denominator/USDT) + residual
+```
+`X~Y` and `Y~X` are not assumed equivalent. For every retained unordered pair, enumerate both residual orientations as separate scout trials under the same pair/research family.
 
-The family name is deliberately `residual_mean_reversion`, not `cointegration_alpha`. Formal cointegration/ADF statistics may be added later as recorded diagnostics; they are not required to route or admit this Slice-1 model and must not be smuggled in as a hidden selector.
+Declare:
+```text
+fit_reciprocity = refit_required
+evidence_reciprocity = model_specific
+```
+Trial identity includes orientation. The scanner must never choose orientation from lexical asset ordering and then present that arbitrary choice as model truth.
+### 9.2 Mean-reversion preference sign
 
-### 9.3 Fixed template set
+For log ratio:
+```text
+z > 0 -> numerator relatively expensive -> prefer denominator
+z < 0 -> numerator relatively cheap     -> prefer numerator
+preference_score = -z
+```
+For residual MR, fit deterministic OLS on completed common bars inside the declared rolling window and standardize the latest residual over that same fit window:
+```text
+z_residual > 0 -> numerator expensive relative to fitted relation -> prefer denominator
+z_residual < 0 -> numerator cheap relative to fitted relation     -> prefer numerator
+preference_score = -z_residual
+```
+The family is deliberately named `residual_mean_reversion`, not `cointegration_alpha`. ADF/cointegration diagnostics may be recorded later but cannot become hidden Slice-1 admission/router rules.
+### 9.3 Fixed templates
 
-Both pair-native families use the same three rolling-window templates per horizon. Thresholds do not vary across templates.
+Both families use three predeclared rolling windows per horizon:
 
-| Horizon | `fast` | `base` | `slow` | neutral band | entry band |
+| Horizon | fast | base | slow | neutral band | entry band |
 |---|---:|---:|---:|---:|---:|
-| short | 2 days | 7 days | 14 days | `|z| <= 0.5` | `|z| >= 1.5` |
-| medium | 14 days | 30 days | 60 days | `|z| <= 0.5` | `|z| >= 1.5` |
-| swing | 30 days | 90 days | 180 days | `|z| <= 0.5` | `|z| >= 1.5` |
+| short | 2d | 7d | 14d | `|z| <= 0.5` | `|z| >= 1.5` |
+| medium | 14d | 30d | 60d | `|z| <= 0.5` | `|z| >= 1.5` |
+| swing | 30d | 90d | 180d | `|z| <= 0.5` | `|z| >= 1.5` |
 
-Durations convert deterministically to bars for each allowed resolution. Minimum observations are 95% of the expected window and the existing no-interpolation rule remains in force.
+Durations convert deterministically to bars for each allowed resolution. Required warm-up coverage is >=95% with no interpolation.
 
-`fast/base/slow`, `0.5`, and `1.5` are engineering defaults chosen to create a small coarse neighborhood. They are not claimed optimal and must not be tuned against the same historical scanner results. Changing them creates a new template/protocol version requiring new prospective evidence.
+`fast/base/slow`, `0.5`, and `1.5` are engineering defaults. Changing them creates a new protocol/template version and starts new prospective evidence.
 
-Deep replay uses the existing two-asset neutral target and bounded policy shape:
-
+Deep replay reuses the existing bounded two-asset target shape:
 ```text
-neutral target: 50% / 50%
-maximum pair tilt: 10 percentage points
+neutral target: 50/50
+maximum tilt: 10 percentage points
+active extremes: 60/40 or 40/60
 ```
+## 10. Cheap scout semantics
 
-so an active preference can request at most `60/40` or `40/60`. This reuses the existing QAP bounded-tilt semantics instead of adding a new sizing model.
+The scout is an approximate ranking mechanism, not a second fill/accounting system.
 
-## 10. Cheap scout: approximate ranking, not a second backtester
+For each retained `pair x allowed resolution x family x template x required orientation`:
 
-The scout may use NumPy/Polars/DuckDB-style vectorized computation, but it must not reproduce QAP fills/accounting.
+1. compute causal completed-bar evidence;
+2. map evidence into the exact discrete policy states below;
+3. maintain approximate float quantities for the two assets so `NO_ACTION` means holdings truly remain unchanged;
+4. execute a simple next-observation target rebalance approximation only when a target is emitted;
+5. compute target-weight turnover and subtract a one-way friction proxy derived from the declared QAP cost-policy reference;
+6. compare against passive ownership from the same synthetic 50/50 starting quantities;
+7. score every template over the horizon's common evaluation window.
+### 10.1 Discrete state contract
 
-For each retained pair x allowed resolution x family x template:
+The scout must match existing `EvidenceTiltPolicy` state semantics:
+```text
+|z| <= 0.5
+  -> target 50/50
 
-1. compute the causal completed-bar model signal;
-2. convert it to the same fixed `50/50`, `60/40`, `40/60` target states used by deep replay;
-3. shift decisions so a signal cannot earn the return of the bar that produced it;
-4. calculate an approximate float-based two-asset target-weight wealth path;
-5. subtract a simple one-way turnover friction proxy supplied by the orchestration layer from the declared QAP cost policy;
-6. compare the proxy path to the same starting `50/50` passive ownership path.
+0.5 < |z| < 1.5
+  -> NO_ACTION
+  -> quantities remain unchanged; weights may drift
 
-The output metric is named:
+preference_score >= +1.5
+  -> target 60/40 toward numerator
 
+preference_score <= -1.5
+  -> target 40/60 toward denominator
+```
+The signal cannot earn the return of the bar that produced it.
+
+The ranking metric is named exactly:
 ```text
 scout_relative_wealth_proxy
 ```
+It must never be labeled QAP return, alpha, official economic success, or OOS performance.
 
-It must not be named `QAP return`, `alpha`, `economic success`, or `OOS`.
+The scanner owns no precision, min-notional, bridge, fill, fee-asset, or official benchmark calculation.
+### 10.2 Rankable versus invalid
 
-The scanner owns no fill model, precision rules, bridge routing, minimum notional handling, or official HODL/control calculation. Those remain deep-replay responsibilities.
+A trial is invalid/unrankable when:
 
-### 10.1 Deterministic scout failure rules
+- model warm-up/common observations are insufficient;
+- fit/signal is non-finite;
+- no active signal occurs during the common evaluation window;
+- target/no-action path cannot be constructed causally;
+- proxy wealth is invalid/non-finite.
 
-A trial is not rankable when any of these holds:
-
-- model window has insufficient valid common observations;
-- fitted values/signals are non-finite;
-- no active signal occurs in the evaluated formation window;
-- target path cannot be constructed causally;
-- the proxy wealth path is invalid/non-finite.
-
-A valid but negative proxy remains recorded. It simply cannot consume automatic deep-replay budget while positive candidates exist.
-
-Do not create an additional adaptive diagnostic router or statistical significance gate in the scout.
-
+A valid negative proxy remains a valid trial and remains rankable. Do not treat the proxy's zero line as an admission gate.
 ## 11. Promotion policy
 
-For each horizon, rank automatic valid trials by:
+For each horizon, sort automatic valid trials by:
 
 1. `scout_relative_wealth_proxy` descending;
 2. lower approximate turnover;
-3. canonical venue/pair/model/resolution/template identifier.
+3. canonical venue/pair/model/orientation/resolution/template ID.
 
-Apply these deterministic budgets:
-
+Then greedily apply:
 ```text
 max automatic authoritative replays per horizon = 10
 max automatic promoted trials involving one asset per horizon = 2
+max automatic promoted trials for one pair/model-family per horizon = 1
 ```
+The top valid trial may be negative. Slice 1 still deep-replays it if budget remains, because the scout is deliberately approximate and the fixed 30-replay all-horizon ceiling is the calibration cost of verifying that approximation.
 
-Only trials with positive `scout_relative_wealth_proxy` are automatically promoted. If fewer than ten qualify, promote fewer; do not fill the budget with negative trials.
+If fewer than ten valid candidates survive diversity constraints, replay fewer. Never invent filler trials.
 
-The per-asset cap is a diversity/compute rule intended to prevent one hub asset from consuming the entire deep-replay budget. It is not an alpha parameter and must be versioned if changed.
+The pair/family cap prevents both residual orientations of one unordered pair from consuming duplicate authoritative budget; the higher-ranked orientation wins that family slot. The per-asset and pair/family caps are search-bearing selection policy even though their purpose is diversity/compute control. They are frozen/versioned and judged prospectively.
 
-No separate 90-candidate robustness tournament, Bayesian optimizer, Hyperband controller, or learned racing policy is implemented in Slice 1.
+Do not add a 90-candidate tournament, Bayesian optimizer, Hyperband controller, significance gate, or learned routing rule.
+## 12. Authoritative replay adapter and economic gates
 
-## 12. Authoritative QAP replay adapter
+`qap.experiment` converts each promoted immutable `ScannerCandidate` into an ordinary development-role QAP experiment.
 
-`qap.experiment` converts a promoted `ScannerCandidate` into an ordinary development-role QAP experiment specification.
-
-The candidate must contain enough immutable information to reconstruct the replay:
-
+Candidate identity includes at least:
 ```text
 candidate_id
 scan_id
 scanner_protocol_version
-selection_source
+automatic_neighbor_selected
+manual_pinned
 as_of
 eligible_information_end
 venue
@@ -465,250 +468,127 @@ resolution
 model_family
 template_id
 model_parameters
-source_data_fingerprints
+source_artifact_fingerprints
+selection_slice_fingerprints
 universe_snapshot_id
-candidate_generator_version
-candidate_generator_rank
+candidate_generator_version/rank
 scout_relative_wealth_proxy
 scout_turnover_proxy
 ```
+The adapter supplies the existing experiment engine with:
 
-The adapter then supplies the existing QAP machinery with:
-
-- the pair's admitted market observations and exact fingerprints;
-- the declared relationship model semantics;
-- the fixed neutral/entry thresholds;
+- exact admitted market slices/fingerprints;
+- declared relationship/model orientation behavior;
+- frozen thresholds/window/template;
 - `50/50` neutral target and `0.10` maximum tilt;
-- the declared authoritative `CostModel`;
-- the existing execution/fill/precision contract;
+- authoritative `CostModel`;
+- existing execution/fill/precision rules;
 - matched HODL;
-- the strongest applicable predeclared simple admissible rebalance/control.
+- strongest applicable predeclared simple admissible control.
 
-The authoritative deep replay must use the same information cutoff as the scanner candidate. It may not extend into a sealed final-OOS region merely because that data exists locally.
+The authoritative replay uses the same horizon evaluation start/end and information cutoff as the candidate. It may use earlier admitted rows only as causal warm-up and may not extend into reserved final OOS.
 
-### 12.1 Economic gates
-
-A promoted historical candidate becomes a `deep_replay_survivor` only when authoritative QAP replay shows, after declared costs:
-
+A candidate becomes a historical `deep_replay_survivor` only when, after declared costs:
 ```text
 terminal QAP wealth > matched HODL wealth
 AND
 terminal QAP wealth > strongest simple admissible control wealth
 ```
-
-This remains development/formation evidence. Slice 1 must not call it confirmed alpha.
-
-The later Slice-2 freeze/forward registry is what turns surviving hypotheses into genuinely prospective evidence.
-
+That remains searched development evidence. It is not confirmed alpha.
 ## 13. Search ledger and denominator
 
-The search ledger preserves the procedure that produced a candidate; it is not itself a multiple-testing correction.
+The ledger preserves the search procedure; it is not a multiple-testing correction.
 
-`manifest.json` records generation-level provenance:
-
+`definition.json` / final `manifest.json` bind generation provenance:
 ```text
 scan_id
 scanner_protocol_version
 as_of
 eligible_information_end
 created_at
-data_snapshot_ids
 universe_policy_version
 candidate_generator_version
 template_set_version
 promotion_policy_version
 cost_policy_reference
-venues
-horizons requested
-manual pins / forensic flags
+venues/horizons
+source_artifact_fingerprints
+selection_slice_fingerprints
+manual pins / forensic mode
 ```
-
 `eligible_assets.parquet` records at least:
-
 ```text
-scan_id
-venue
-horizon
-asset_id
-venue_symbol
-eligibility_state
-eligibility_reason
-lifecycle_evidence_refs
-data_fingerprint
-bar_coverage
-longest_missing_run
+scan_id venue horizon asset_id venue_symbol
+eligibility_state eligibility_reason lifecycle_evidence_refs
+source_artifact_fingerprint selection_slice_fingerprint
+bar_coverage longest_missing_run
 ```
-
 `neighbors.parquet` records at least:
-
 ```text
-scan_id
-venue
-horizon
-pair_id
-asset_a
-asset_b
-ssd_distance
-rank_from_a
-rank_from_b
-selected_by_a
-selected_by_b
-selection_source
+scan_id venue horizon pair_id asset_a asset_b
+ssd_distance rank_from_a rank_from_b
+selected_by_a selected_by_b
+automatic_neighbor_selected manual_pinned
 ```
-
-`scout_trials.parquet` records every enumerated fixed trial, including losers:
-
+`scout_trials.parquet` records every enumerated fixed trial, including losers and both residual orientations:
 ```text
-candidate_id
-scan_id
-venue
-horizon
-pair_id
-resolution
-model_family
-template_id
-trial_status
-failure_reason
-scout_relative_wealth_proxy
-scout_turnover_proxy
-signal_count
-selection_source
+candidate_id scan_id venue horizon pair_id orientation
+resolution model_family template_id
+trial_status failure_reason
+scout_relative_wealth_proxy scout_turnover_proxy signal_count
+automatic_neighbor_selected manual_pinned
 ```
-
 `promotions.parquet` records:
-
 ```text
-candidate_id
-promotion_rank
-promotion_status
-budget_reason
-deep_replay_run_id
-deep_replay_status
+candidate_id promotion_rank promotion_status budget_reason
+deep_replay_run_id deep_replay_status economic_gate_status
 ```
-
-The automatic search denominator for one generation is reconstructible from the eligible universe, deterministic SSD generator, fixed model/template enumeration, and full scout-trial table. Manual pins/forced investigations remain visibly separate.
-
+The automatic denominator is reconstructible from the PIT universe, deterministic SSD generator, fixed trial enumeration, and complete trial table. Manual additions remain visibly separate.
 ## 14. Statistical semantics
 
-Slice 1 follows a deliberately simple rule:
-
+Slice 1 uses one simple rule:
 ```text
-same historical data used for screening + ranking + replay
-    -> development/search evidence
+same historical data influences screening/ranking/replay
+  -> search/development evidence
 
-future observations unavailable at freeze time
-    -> potential confirmatory evidence
+future observations unavailable when a rule/candidate was frozen
+  -> possible prospective evidence (Slice 2)
 ```
+SSD, model scores, orientation trials, template choice, proxy ranking, diversity caps, and deep-replay selection are all part of the search procedure.
 
-SSD distance, residual statistics, ratio z-scores, template choice, and scout ranking are all search-bearing when computed from the same formation history.
+Predeclaration improves reproducibility; it does not make price-derived selection statistically independent.
 
-Predeclaring them improves reproducibility but does not make them statistically independent.
+Do not use SPA, Reality Check, Romano-Wolf, DSR, PBO, or naive per-row p-values as Slice-1 promotion gates. Later formal tests may audit frozen comparable forward return series; prospective economics is the primary confirmation path.
+## 15. Performance, failure handling, and dependencies
 
-Do not use SPA, White Reality Check, Romano-Wolf, DSR, or PBO as per-row promotion gates in Slice 1. Those are optional later research-review tools over frozen comparable return series. Causal prospective performance remains the primary confirmation mechanism.
-
-## 15. Dependencies and performance
-
-The architecture permits DuckDB and Polars for research scanning as already anticipated by QAP's OSS integration review, but the implementation must not build wrappers/frameworks around them.
-
-Use the smallest stack that benchmarks adequately:
-
-- PyArrow/Parquet remains canonical storage;
-- NumPy handles dense numerical kernels where sufficient;
-- Polars may handle vectorized reshaping/features;
-- DuckDB may handle Parquet window/universe pruning.
-
-Do not add distributed compute.
-
-The required complexity shape is:
-
+The permitted complexity shape is:
 ```text
-SSD candidate generation: O(H * N^2 * T) cheap vector comparisons
-pair model trials after k=8 graph: approximately O(H * N * k * F * R * P)
-authoritative automatic deep replay: O(30) max per canonical all-horizon scan
+SSD generation: O(H * N^2 * T) cheap vector comparisons
+pair scout after k=8 graph: approximately O(H * N * k * F * R * P * O)
+automatic authoritative replay: <= 30 per all-horizon scan
 ```
+where `H=3`, `k=8`, `F=2`, `R=2`, `P=3`, and `O` is model-orientation multiplicity (`1` ratio, `2` residual).
 
-where `H=3`, `k=8`, `F=2` pair-native families, `R=2` allowed resolutions/horizon, and `P=3` templates.
+Benchmark realistic 500- and 1,000-asset datasets during implementation and optimize only measured bottlenecks. PyArrow remains canonical storage; NumPy is sufficient for dense kernels; Polars/DuckDB are permitted only where they materially simplify/accelerate measured scanner work. No distributed compute.
+### Exclude/record and continue
 
-The important invariant is that expensive deep replay does not grow with the universe size.
+- one asset fails coverage;
+- one pair lacks common observations;
+- one trial fit/signal is invalid;
+- one promoted candidate fails authoritative replay for candidate-specific reasons.
+### Abort the generation
 
-Benchmark realistic 500- and 1,000-asset synthetic/admitted universes during implementation. Optimize only measured bottlenecks; do not pre-build a compute platform.
+- a frozen input slice fingerprint changes;
+- `as_of`/information cutoff becomes inconsistent;
+- PIT universe snapshot cannot be reproduced;
+- frozen protocol/definition is malformed;
+- deterministic IDs collide;
+- staging/final artifact counts or hashes do not reconcile.
+## 16. Operator surface
 
-## 16. Failure handling
+No scanner web UI in Slice 1.
 
-Fail closed on research-integrity boundaries, but do not let one bad asset destroy an otherwise valid generation.
-
-### Exclude and record, continue scan
-
-- one asset has insufficient coverage;
-- one pair has insufficient common observations;
-- one model trial has an invalid fit/no signal;
-- one promoted candidate fails authoritative QAP replay for candidate-specific reasons.
-
-### Abort the whole generation
-
-- admitted source fingerprint changes during the run;
-- `as_of`/information cutoff is inconsistent;
-- universe snapshot cannot be reproduced;
-- scanner protocol/config is malformed;
-- deterministic candidate IDs collide;
-- published artifact counts/hashes do not reconcile.
-
-Unknown historical eligibility is not an exception: it is an explicit state that is excluded from official scanning.
-
-## 17. Testing strategy
-
-### Unit/property tests
-
-- normalized log-path SSD symmetry;
-- scale invariance from initial-price normalization;
-- deterministic tie handling;
-- `k=8` union/deduplication;
-- no cross-venue edges;
-- no use of incomplete/future bars;
-- coverage/gap fail-closed rules;
-- three-state eligibility resolution;
-- manual pin attribution;
-- ratio-MR sign inversion;
-- residual-MR sign inversion;
-- template-duration-to-bars mapping;
-- candidate ID/protocol hash determinism;
-- ranking and per-asset promotion caps.
-
-### Scenario tests
-
-A small synthetic market must prove end to end:
-
-```text
-PIT universe
- -> expected SSD graph
- -> fixed trial enumeration
- -> deterministic scout ranking
- -> <=10 promotions/horizon
- -> normal QAP deep replay
- -> HODL/simple-control economic gates
-```
-
-A negative scenario must prove that an attractive scout candidate can fail authoritative QAP replay without the scanner rewriting or hiding the negative result.
-
-### Research-integrity tests
-
-- today's current exchange metadata cannot backfill historical eligibility;
-- `historical_eligibility_unknown` cannot enter an official scan;
-- changing `k`, graph windows, thresholds, or promotion caps changes the protocol/version identity;
-- final-OOS data is not consumed by scanner deep replay;
-- manual pins cannot be mislabeled as automatic discovery;
-- scanner package cannot import policy/execution/evaluation/experiment layers.
-
-### Reproducibility
-
-Two runs with identical admitted data fingerprints, protocol version, as-of timestamp, and manual inputs must produce byte/logically equivalent candidate sets and rankings, apart from explicitly non-semantic creation timestamps.
-
-## 18. Slice-1 user/operator surface
-
-No scanner web UI is built in this slice.
-
-Expose one deterministic argparse entry point matching the repository's existing module-CLI style:
-
+Expose one deterministic argparse entry point consistent with the repository's module-CLI style:
 ```text
 python -m qap.scanner.cli \
   --as-of <ISO-8601-UTC> \
@@ -717,71 +597,95 @@ python -m qap.scanner.cli \
   --run-root <path> \
   [--pins-file <json-path>]
 ```
+The CLI reports:
 
-`--pins-file` contains only explicit same-venue pair pins and optional forensic-mode flags; it does not override the frozen automatic protocol. Reuse `argparse`; do not add a CLI framework merely for scanning.
-
-The output should report:
-
-- admitted/excluded asset counts by venue/horizon;
-- retained SSD edge counts;
-- enumerated/valid scout-trial counts;
+- admitted/excluded counts by venue/horizon;
+- retained SSD edges;
+- enumerated/valid/invalid scout trials;
 - automatic promotions and budget exclusions;
-- deep replay survivors/failures;
-- artifact path/scan ID.
+- authoritative replay survivors/failures;
+- scan ID and artifact path.
 
-## 19. Explicit non-goals
+`--pins-file` can add same-venue pair pins and explicit forensic-mode requests; it cannot mutate the automatic protocol.
+## 17. Testing and acceptance
+### Unit/property contracts
+
+- normalized-log SSD symmetry and initial-price scale invariance;
+- deterministic ties and `k=8` union/deduplication;
+- no cross-venue edges;
+- no incomplete/future bars;
+- source fingerprint versus exact slice fingerprint behavior under future-row append;
+- three-state PIT admission;
+- manual/automatic overlap creates one trial identity with both lineage flags;
+- log-ratio exact reciprocal transform;
+- residual MR enumerates both orientations and refits;
+- ratio/residual mean-reversion sign semantics;
+- neutral/NO_ACTION/entry target-state parity with existing policy semantics;
+- common horizon evaluation windows and deterministic warm-up mapping;
+- candidate/protocol/hash determinism;
+- ranking, pair/family + per-asset caps, and negative-valid-candidate promotion behavior.
+### Scenario contracts
+
+One synthetic market proves:
+```text
+PIT universe
+ -> expected SSD graph
+ -> fixed oriented trial enumeration
+ -> deterministic approximate ranking
+ -> <=10 automatic promotions/horizon
+ -> ordinary QAP deep replay
+ -> HODL/simple-control gates
+```
+A negative scenario proves that an attractive scout can fail authoritative replay and that a negative scout can still be deep-replayed when it ranks inside the fixed budget.
+### Research-integrity contracts
+
+- current exchange state cannot silently backfill historical eligibility;
+- `historical_eligibility_unknown` cannot enter official scans;
+- changing graph windows, `k`, thresholds, orientation enumeration, or promotion caps changes protocol identity;
+- final-OOS rows cannot enter scanner replay/warm-up;
+- manual pins cannot masquerade as automatic discovery;
+- `qap.scanner` cannot import policy/execution/evaluation/experiment layers;
+- interrupted `.partial` scans resume only against the exact frozen definition/slices.
+
+Two scans with identical frozen definition, data slices, protocol, and manual inputs produce logically equivalent candidate sets/rankings, apart from explicitly non-semantic creation timestamps.
+## 18. Explicit non-goals
 
 Do not build in Slice 1:
 
-- predictive diagnostic routing;
-- multiple pair generators or selector competition;
-- parameter optimization/Bayesian optimization;
-- Copulas/tail-family broad scanning;
-- asset-native momentum broad scanning;
-- automatic 3–6 asset basket discovery;
-- learned pair/edge quality weights;
-- portfolio optimizer;
+- adaptive diagnostic routing;
+- multiple pair generators/selector competition;
+- parameter/Bayesian optimization;
+- Copula/tail broad scans;
+- broad asset-native momentum;
+- automatic portfolio/basket discovery;
+- learned edge weights or portfolio optimization;
 - multi-horizon portfolio aggregation;
-- prospective forward-result registry/scoreboards;
-- automated L1/depth capture or capacity graduation;
-- full historical L2 reconstruction;
-- live trading;
+- prospective forward registry/scoreboards;
+- L1/depth capture/capacity graduation;
+- historical L2 reconstruction;
 - scanner scheduler/platform;
-- scanner mutation UI;
-- statistical-governance service.
+- scanner web mutation UI;
+- live/private exchange authority.
+## 19. Future interface and acceptance boundary
 
-## 20. Future interfaces intentionally preserved
-
-Slice 1 artifacts must be sufficient for later work without designing that work prematurely.
-
-Slice 2 can attach to a surviving candidate:
-
+Slice 2 may attach to a survivor without changing Slice-1 identity:
 ```text
 freeze_id
 forward_cohort_id
-liquidity_state
-capacity_estimate
-prospective outcome
+prospective evidence checkpoints
+liquidity evidence/status
+capacity estimate
 ```
-
-Slice 3 can consume admitted pair candidates and add:
-
+Slice 3 may add a separate asset-native discovery stream and consume pair evidence for manually selected baskets:
 ```text
-manual basket of 3–6 assets
-asset-native momentum evidence
-one active opinion per pair/horizon
-ternary {-1,0,+1} preference
+asset-native relative momentum
+manual 3–6 asset basket
+one active opinion per unordered pair/horizon
+ternary {-1,0,+1} pair preference
 fixed equal edge weight
-degree-normalized/component-neutral allocation resolver
+degree-normalized/component-neutral resolver
 one final long-only QAP target
 ```
+Slice 1 succeeds when QAP can reproducibly take one admitted point-in-time Binance/Gate universe snapshot and one `as_of`, produce a bounded SSD graph, enumerate the fixed pair-native mean-reversion trials with correct orientation semantics, rank them using a clearly non-authoritative proxy, spend no more than ten automatic authoritative replays per horizon, and preserve exactly how each hypothesis arose.
 
-No Slice-1 data model should require future routing, optimizer, Copula, or graph-clustering fields.
-
-## 21. Acceptance boundary
-
-Slice 1 is successful when QAP can reproducibly take one point-in-time Binance/Gate universe snapshot and one `as_of`, produce a bounded SSD pair graph, enumerate the fixed pair-native mean-reversion family, rank it with a clearly non-authoritative proxy, spend no more than ten automatic authoritative replays per horizon, and preserve exactly how every promoted hypothesis was produced.
-
-It is **not** successful merely because the scanner finds a profitable historical candidate.
-
-The architecture earns the next slice when it demonstrates that broad discovery is computationally manageable and that scanner/QAP boundaries remain intact. Alpha efficacy remains intentionally unresolved until later prospective evidence exists.
+It is not successful merely because it finds a profitable historical candidate. Alpha efficacy remains unresolved until prospective evidence exists.
