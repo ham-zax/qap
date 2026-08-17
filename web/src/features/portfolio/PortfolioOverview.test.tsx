@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import type {
@@ -26,6 +26,13 @@ const experiment = {
       relationship_alpha_claim: true,
       primary_incremental_benchmark: 'periodic-2',
       controls: [],
+    },
+    data_window: {
+      start: '2025-01-01T00:00:00Z',
+      end: '2025-06-01T00:00:00Z',
+    },
+    execution: {
+      numeraire_asset: 'USDT',
     },
     external_flows: [
       {
@@ -233,9 +240,10 @@ describe('PortfolioOverview', () => {
       />,
     )
 
+    expect(screen.getByText('Negative evidence')).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Relationship intelligence added positive incremental value over periodic-2, but this run did not meet the predeclared success threshold 0.02.',
+        'Relationship intelligence added a 1.00% increment over Periodic-2, but this run did not meet the predeclared 2.00% success threshold.',
       ),
     ).toBeInTheDocument()
   })
@@ -252,11 +260,11 @@ describe('PortfolioOverview', () => {
     expect(
       screen.getByRole('heading', { name: 'Portfolio economics' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Final OOS - consumed')).toBeInTheDocument()
-    expect(screen.getByText('HODL-relative wealth')).toBeInTheDocument()
-    expect(screen.getByText('0.018')).toBeInTheDocument()
-    expect(screen.getByText('Primary control increment')).toBeInTheDocument()
-    expect(screen.getByText('-0.012')).toBeInTheDocument()
+    expect(screen.getByText('Negative evidence')).toBeInTheDocument()
+    expect(screen.getAllByText('Final OOS · consumed').length).toBeGreaterThan(0)
+    expect(screen.getByText('Underperformed Periodic-2 by 1.20%')).toBeInTheDocument()
+    expect(screen.getAllByText('−1.20%').some((node) => node.getAttribute('data-exact') === '-0.012')).toBe(true)
+    expect(screen.getAllByText('+1.80%').some((node) => node.getAttribute('data-exact') === '0.018')).toBe(true)
     expect(
       screen.getByRole('heading', { name: 'Relative wealth through time' }),
     ).toBeInTheDocument()
@@ -266,49 +274,21 @@ describe('PortfolioOverview', () => {
       ),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'Log relative wealth through time' }),
-    ).toBeInTheDocument()
-    expect(
       screen.getByText(
-        'QAP vs primary control (cumulative net log-relative wealth) - latest -0.012073',
+        'Relationship intelligence underperformed Periodic-2 by 1.20%.',
       ),
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Evidence boundary: Final OOS - consumed; research family family-alpha.',
+        'Contribution timing underperformed matched-contribution static HODL by 0.60%.',
       ),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(
-        'Relationship intelligence did not add incremental value over periodic-2.',
-      ),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText(
-        'Contribution timing did not beat matched-contribution static HODL.',
-      ),
-    ).toBeInTheDocument()
-
-    const deltas = screen.getByRole('table', {
-      name: 'Strategy versus HODL terminal deltas',
-    })
-    const btcRow = within(deltas).getByRole('row', { name: /BTC/ })
-    expect(within(btcRow).getByText('-0.25')).toBeInTheDocument()
-    expect(within(btcRow).getByText('-15000')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'What changed vs HODL?' })).toBeInTheDocument()
+    expect(screen.getByText('−15,000')).toBeInTheDocument()
+    expect(screen.getByText('+10,500')).toBeInTheDocument()
     expect(screen.getByText('Time below HODL')).toBeInTheDocument()
-    expect(screen.getAllByText('36000 seconds')).toHaveLength(2)
-    expect(screen.getByText('Fees: 124.50')).toBeInTheDocument()
-    expect(screen.getByText('Slippage: 63.25')).toBeInTheDocument()
-    expect(
-      screen.getByRole('table', { name: 'Benchmark role terminal economics' }),
-    ).toBeInTheDocument()
-    expect(screen.getByText('control:periodic-2')).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { name: 'External-flow context' }),
-    ).toBeInTheDocument()
-    expect(screen.getByText('deposit-1')).toBeInTheDocument()
-    expect(
-      screen.getByRole('table', { name: 'Post-fill holdings for decision-1' }),
-    ).toBeInTheDocument()
+    expect(screen.getAllByText('10h')).toHaveLength(2)
+    expect(screen.getByRole('heading', { name: 'Rebalance decisions' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Rebalance 1 of 1' })).toBeInTheDocument()
   })
 })

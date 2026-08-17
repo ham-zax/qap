@@ -4,6 +4,7 @@ import {
   exactPointsToPresentation,
   type TimeSeriesDefinition,
 } from '../../components/charts/chartData'
+import { formatRelativePercent } from '../../lib/format'
 
 interface RelativeWealthChartProps {
   performance: PortfolioPerformanceDto
@@ -40,22 +41,59 @@ export function RelativeWealthChart({ performance }: RelativeWealthChartProps) {
       : []
   })
 
+  const primaryExact = performance.series
+    .find((item) => item.name === 'relative::strategy_vs_primary_control')
+    ?.points.at(-1)?.value
+  const hodlExact = performance.series
+    .find((item) => item.name === 'relative::strategy_vs_hodl')
+    ?.points.at(-1)?.value
+
   if (series.length === 0) {
     return (
-      <section aria-labelledby="relative-wealth-heading">
-        <h2 id="relative-wealth-heading">Relative wealth through time</h2>
-        <p>No authoritative relative-wealth series is available.</p>
+      <section
+        className="rounded-lg border border-border bg-panel p-5 md:p-6"
+        aria-labelledby="relative-wealth-heading"
+      >
+        <h2 id="relative-wealth-heading" className="mb-2 text-lg font-semibold text-foreground">
+          Relative wealth through time
+        </h2>
+        <p className="m-0 text-sm text-secondary">No authoritative relative-wealth series is available.</p>
       </section>
     )
   }
 
   return (
-    <section aria-labelledby="relative-wealth-heading">
-      <h2 id="relative-wealth-heading">Relative wealth through time</h2>
-      <p>
-        Backend-produced aligned wealth comparisons. Chart numbers are
-        presentation copies; exact values remain in the API and metric cards.
+    <section
+      className="rounded-lg border border-border bg-panel p-5 md:p-6"
+      aria-labelledby="relative-wealth-heading"
+    >
+      <h2 id="relative-wealth-heading" className="mb-2 text-lg font-semibold text-foreground">
+        Relative wealth through time
+      </h2>
+      <p className="mt-0 mb-4 max-w-3xl text-sm leading-6 text-secondary">
+        Zero is parity. The curves show persisted aligned wealth comparisons after
+        the modeled execution economics.
       </p>
+      {primaryExact || hodlExact ? (
+        <p className="mb-5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-secondary">
+          {primaryExact ? (
+            <span>
+              Latest vs primary control:{' '}
+              <strong className="tabular-nums text-foreground" data-exact={primaryExact}>
+                {formatRelativePercent(primaryExact).display}
+              </strong>
+            </span>
+          ) : null}
+          {hodlExact ? (
+            <span>
+              Latest vs HODL:{' '}
+              <strong className="tabular-nums text-foreground" data-exact={hodlExact}>
+                {formatRelativePercent(hodlExact).display}
+              </strong>
+            </span>
+          ) : null}
+        </p>
+      ) : null}
       <TimeSeriesChart
         title="QAP relative wealth curves"
         description="Zero is parity; positive values favor QAP and negative values favor the named passive or simple control."

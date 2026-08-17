@@ -1,6 +1,7 @@
 import type { ExperimentDetailDto } from '../../api/types'
-import { ExactNumber } from '../../components/ExactNumber'
-import { MetricCard } from '../../components/MetricCard'
+import { ComparisonBars } from '../../components/visuals/ComparisonBars'
+import { formatPercent, formatRelativePercent } from '../../lib/format'
+import { humanizeIdentifier } from '../experiments/presentation'
 
 type ExactSign = -1 | 0 | 1
 
@@ -14,11 +15,8 @@ function exactSign(value: string): ExactSign {
   return negative ? -1 : 1
 }
 
-function metricStatus(value: string): 'positive' | 'neutral' | 'negative' {
-  const sign = exactSign(value)
-  if (sign > 0) return 'positive'
-  if (sign < 0) return 'negative'
-  return 'neutral'
+function magnitudePercent(value: string): string {
+  return formatRelativePercent(value).display.replace(/^[+−]/, '')
 }
 
 interface BenchmarkLadderProps {
@@ -35,69 +33,73 @@ export function BenchmarkLadder({ experiment }: BenchmarkLadderProps) {
     result.primary_metric === 'primary_control_relative_terminal_wealth'
   const missedDeclaredThreshold =
     primaryControlIsSuccessMetric && result.status === 'negative'
+  const primaryLabel = humanizeIdentifier(primaryControl ?? 'primary control')
+  const comparisons = [
+    ...(primaryIncrement != null
+      ? [{ label: `Primary control · ${primaryLabel}`, value: primaryIncrement }]
+      : []),
+    { label: 'Strict inventory HODL', value: result.strategy_vs_hodl },
+    ...(matchedIncrement != null
+      ? [{ label: 'Matched-contribution HODL', value: matchedIncrement }]
+      : []),
+  ]
 
   return (
-    <section aria-labelledby="benchmark-ladder-heading">
-      <h2 id="benchmark-ladder-heading">Benchmark ladder</h2>
-      <div className="metric-grid">
-        <MetricCard
-          label="HODL-relative wealth"
-          value={<ExactNumber value={result.strategy_vs_hodl} />}
-          status={metricStatus(result.strategy_vs_hodl)}
-          detail="Strategy terminal wealth relative to strict inventory HODL."
-        />
-        {primaryIncrement != null ? (
-          <MetricCard
-            label="Primary control increment"
-            value={<ExactNumber value={primaryIncrement} />}
-            status={metricStatus(primaryIncrement)}
-            detail={`Relative to ${primaryControl ?? 'the predeclared simple control'}.`}
-          />
+    <section
+      className="rounded-lg border border-border bg-panel p-5 md:p-6"
+      aria-labelledby="benchmark-ladder-heading"
+    >
+      <h2 id="benchmark-ladder-heading" className="mb-2 text-lg font-semibold text-foreground">
+        Benchmark comparison
+      </h2>
+      <p className="mt-0 mb-5 max-w-3xl text-sm leading-6 text-secondary">
+        Every comparison uses the persisted matched run economics. Zero is parity;
+        the research verdict still follows the predeclared success rule.
+      </p>
+      <ComparisonBars items={comparisons} />
+
+      <div className="mt-6 space-y-3 border-t border-border pt-5 text-sm leading-6 text-secondary">
+        {manifest.benchmarks.relationship_alpha_claim && primaryIncrement != null ? (
+          exactSign(primaryIncrement) > 0 ? (
+            <p className="m-0">
+              Relationship intelligence added a {magnitudePercent(primaryIncrement)} increment over{' '}
+              {primaryLabel}
+              {missedDeclaredThreshold && result.success_threshold != null ? (
+                <>
+                  , but this run did not meet the predeclared{' '}
+                  {formatPercent(result.success_threshold).display} success threshold.
+                </>
+              ) : (
+                <> in this run.</>
+              )}
+            </p>
+          ) : exactSign(primaryIncrement) < 0 ? (
+            <p className="m-0">
+              Relationship intelligence underperformed {primaryLabel} by{' '}
+              {magnitudePercent(primaryIncrement)}.
+            </p>
+          ) : (
+            <p className="m-0">Relationship intelligence was at parity with {primaryLabel}.</p>
+          )
         ) : null}
-        {matchedIncrement != null ? (
-          <MetricCard
-            label="Matched-contribution increment"
-            value={<ExactNumber value={matchedIncrement} />}
-            status={metricStatus(matchedIncrement)}
-            detail="Relative to matched-contribution static HODL."
-          />
+
+        {hasExternalFlows && matchedIncrement != null ? (
+          exactSign(matchedIncrement) > 0 ? (
+            <p className="m-0">
+              Contribution timing outperformed matched-contribution static HODL by{' '}
+              {magnitudePercent(matchedIncrement)}; that is necessary evidence for
+              timing value, not automatic proof of alpha.
+            </p>
+          ) : exactSign(matchedIncrement) < 0 ? (
+            <p className="m-0">
+              Contribution timing underperformed matched-contribution static HODL by{' '}
+              {magnitudePercent(matchedIncrement)}.
+            </p>
+          ) : (
+            <p className="m-0">Contribution timing was at parity with matched-contribution static HODL.</p>
+          )
         ) : null}
       </div>
-
-      {manifest.benchmarks.relationship_alpha_claim && primaryIncrement != null ? (
-        exactSign(primaryIncrement) > 0 ? (
-          <p>
-            Relationship intelligence added positive incremental value over{' '}
-            {primaryControl ?? 'the predeclared primary control'}
-            {missedDeclaredThreshold ? (
-              <>
-                , but this run did not meet the predeclared success threshold{' '}
-                {result.success_threshold}.
-              </>
-            ) : (
-              <> in this run.</>
-            )}
-          </p>
-        ) : (
-          <p>
-            Relationship intelligence did not add incremental value over{' '}
-            {primaryControl ?? 'the predeclared primary control'}.
-          </p>
-        )
-      ) : null}
-
-      {hasExternalFlows && matchedIncrement != null ? (
-        exactSign(matchedIncrement) > 0 ? (
-          <p>
-            The strategy beat matched-contribution static HODL; that is necessary
-            evidence for contribution-timing value, not automatic proof of alpha.
-          </p>
-        ) : (
-          <p>
-            Contribution timing did not beat matched-contribution static HODL.
-          </p>
-        )
-      ) : null}
     </section>
   )
 }
