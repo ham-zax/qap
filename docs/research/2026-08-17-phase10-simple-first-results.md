@@ -4,6 +4,8 @@
 
 **Scope:** Small development/protocol comparison on the existing two-asset BTC/USDT fixture. This is a falsification and integration result, not a fresh scientific final-OOS claim.
 
+**Empirical status:** this fixture note is retained as an integration comparison among momentum, rolling pair evidence, and the pair-blind control. The authoritative slow-momentum family evidence is now `docs/research/2026-08-17-phase10-momentum-family-results.md`, which evaluates a predeclared nine-attempt family on recorded 2023 daily Binance data and leaves the reserved 2024 final-OOS window unconsumed because no core member survives development.
+
 ## Frozen comparison
 
 All three strategy variants used the same `research_family_id` (`family-two-asset-v1`), admitted dataset, starting inventory, external-flow stream, next-open execution timing, fee/slippage model, quantization/minimum-notional rules, HODL role, matched-contribution role, periodic/band controls, and primary incremental benchmark (`periodic-2`).
