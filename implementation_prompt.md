@@ -445,10 +445,12 @@ through four distinct layers:
       -> Git/repository state
 
 Evidence at one layer does not silently prove the next. Hidden, skipped, redacted,
-or otherwise opaque presentation is UNOBSERVABLE, not success and not failure. If
-WSL observability becomes uncertain, perform at most one bounded repository health
-probe and continue from that evidence. Do not switch to ChatGPT container/Python,
-Files, or public web as a substitute copy of the WSL repository.
+or otherwise opaque presentation is UNOBSERVABLE, not success and not failure.
+Tool opacity alone never proves model/quota/reasoning degradation. If WSL
+observability is lost, follow the recovery protocol in Section 28: freeze mutation,
+perform at most one bounded non-mutating probe, checkpoint the last verified state,
+and mark later repository/process facts UNKNOWN. Do not switch to ChatGPT
+container/Python, Files, or public web as a substitute copy of the WSL repository.
 
 
 ======================================================================
@@ -1191,28 +1193,74 @@ Do not destructively discard user state without explicit authority.
 
 
 ======================================================================
-28. DURABLE MISSION CHECKPOINT
+28. RECOVERY, DEGRADATION, AND HANDOFF
 ======================================================================
 
-Maintain one concise ignored/local checkpoint for recovery from product/session
-cutoffs.
+Update context — 2026-08-18: user steering replaces checkpoint-only recovery with a
+continuous high-information Recovery Capsule and explicit degradation/handoff rules.
 
-Record only:
+Maintain one concise durable Recovery Capsule throughout the mission. It is a
+high-information delta over approved plans, not another end-to-end plan.
 
-- overall mission;
-- current phase;
-- current coherent slice;
-- completed verified phases;
-- material decisions;
-- current direct-implementation slice status;
-- integration status;
-- active persistent processes/waits;
-- known blockers;
-- next intended action.
+Record:
 
-No secrets.
+    REPOSITORY STATE
+    - last VERIFIED HEAD/branch/status; current phase/slice and completed phases;
+    - known dirty paths; verified processes/waits; last verified checks;
+    - exact next coherent action.
 
-On recovery, repository/Git/process reality outranks the checkpoint.
+    REASONING STATE
+    - settled decisions/rationale and rejected alternatives worth preserving;
+    - protected contracts, current hypothesis/falsifier, implementation traps;
+    - user steering, blockers, and unresolved judgments.
+
+Label factual state VERIFIED, INFERRED, or UNKNOWN. No secrets. Repository/Git/
+process reality always outranks the capsule after recovery.
+
+If repository/process observability is lost:
+
+- freeze mutations and perform at most one bounded non-mutating probe;
+- do not assume, kill, or steer unobservable processes;
+- do not patch from remembered source or claim unobserved commands/tests/commits;
+- checkpoint the last VERIFIED evidence, mark later repository/process state UNKNOWN,
+  keep the mission INCOMPLETE, and continue only state-independent reasoning.
+
+Tool opacity alone is NOT evidence of model/quota/reasoning degradation.
+
+If there is actual evidence that the stronger reasoning/execution context is ending
+or being replaced:
+
+- do not begin another implementation slice; finish only safe bounded reasoning in
+  flight;
+- spend remaining strong reasoning compressing settled rationale, rejected
+  alternatives, vulnerable invariants/traps, genuine unresolved questions, the next
+  2-5 coherent actions, and exact focused verification commands;
+- never upgrade unobserved repository/process facts to VERIFIED.
+
+A successor/recovered session reconciles before implementing:
+
+    Git HEAD/status/log -> persistent processes -> Recovery Capsule
+      -> authoritative current-HEAD plans/contracts
+      -> discard stale capsule claims -> smallest relevant verification
+      -> resume next coherent slice
+
+Do not replay completed work or reopen broad design review merely because the
+session/model changed.
+
+A durable wait/timer preserves scheduling only; it proves neither recovered tools,
+process completion, unchanged repository state, nor restored reasoning capacity. Do
+not create indefinite timer-polling loops.
+
+If a handoff artifact can be verified, emit the compact Recovery Capsule there;
+otherwise print it in conversation rather than claiming a file was written.
+
+Use the existing Phase-13 checkpoint/recovery substrate when applicable; do not turn
+recovery into another model orchestrator. During degradation, maximize the
+successor's starting information advantage.
+
+Tool loss, model degradation, quota exhaustion, session replacement, pending waits,
+and handoff are never mission completion. The normal QAP completion gate still
+applies.
 
 
 ======================================================================
