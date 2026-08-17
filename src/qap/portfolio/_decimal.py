@@ -1,9 +1,15 @@
 """Context-independent exact Decimal arithmetic for portfolio accounting."""
 
 from collections.abc import Iterable
-from decimal import Decimal
+from decimal import MAX_EMAX, MIN_EMIN, Context, Decimal, localcontext
 
+DECIMAL_DIVISION_PRECISION = 50
 _ZERO = Decimal("0")
+_CONTEXT = Context(
+    prec=DECIMAL_DIVISION_PRECISION,
+    Emin=MIN_EMIN,
+    Emax=MAX_EMAX,
+)
 
 
 def _finite_components(value: Decimal) -> tuple[int, int]:
@@ -63,3 +69,31 @@ def exact_add(left: Decimal, right: Decimal) -> Decimal:
     """Add two finite Decimals exactly without ambient precision/exponent limits."""
 
     return exact_sum((left, right))
+
+
+def exact_subtract(left: Decimal, right: Decimal) -> Decimal:
+    """Subtract finite Decimals exactly without ambient context dependence."""
+
+    return exact_sum((left, right.copy_negate()))
+
+
+def exact_multiply(left: Decimal, right: Decimal) -> Decimal:
+    """Multiply finite Decimals exactly without ambient context dependence."""
+
+    left_coefficient, left_exponent = _finite_components(left)
+    right_coefficient, right_exponent = _finite_components(right)
+    return _from_coefficient(
+        left_coefficient * right_coefficient,
+        left_exponent + right_exponent,
+    )
+
+
+def divide(left: Decimal, right: Decimal) -> Decimal:
+    """Divide finite Decimals under QAP's explicit deterministic context."""
+
+    _finite_components(left)
+    _finite_components(right)
+    if right == _ZERO:
+        raise ValueError("portfolio division denominator must be non-zero")
+    with localcontext(_CONTEXT):
+        return canonical_decimal(left / right)

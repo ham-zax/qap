@@ -2,21 +2,17 @@
 
 from decimal import Decimal
 
-from qap.evaluation._decimal import exact_multiply, exact_sum
 from qap.market import PriceSnapshot
-from qap.portfolio import PortfolioState
+from qap.portfolio import PortfolioState, value_holdings_at_prices
+from qap.portfolio.valuation import MissingHoldingPriceError
 
 
 def value_portfolio(state: PortfolioState, prices: PriceSnapshot) -> Decimal:
     """Value owned quantities at one explicit market snapshot."""
 
-    terms: list[Decimal] = []
-    for asset, quantity in state.holdings.items():
-        try:
-            price = prices.price(asset)
-        except KeyError as exc:
-            raise ValueError(
-                f"explicit price is required for held asset {asset.key}"
-            ) from exc
-        terms.append(exact_multiply(quantity, price))
-    return exact_sum(terms)
+    try:
+        return value_holdings_at_prices(state, prices.prices)
+    except MissingHoldingPriceError as exc:
+        raise ValueError(
+            f"explicit price is required for held asset {exc.asset.key}"
+        ) from exc
