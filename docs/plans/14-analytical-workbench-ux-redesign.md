@@ -4,7 +4,7 @@
 
 **Architecture:** Keep the existing read-only React/Vite/TanStack Router/Query architecture and OpenAPI-generated DTOs, but replace the ad-hoc presentation layer with one explicit QAP design system. Reorganize every route around verdict-first summaries, human-formatted metrics, primary visual evidence, interpretation, and progressive-disclosure audit/provenance. The browser remains a presentation layer: it may format, scale, sort, filter, and visualize backend-produced values, but it must not recalculate portfolio accounting, benchmark economics, fills, model evidence, or research truth.
 
-**Tech Stack:** React 19, TypeScript 5.9, Vite 8, TanStack Router/Query, generated OpenAPI types, **Tailwind CSS v4 + semantic CSS design tokens**, **native HTML first + Radix Primitives only for complex accessible interactions**, **Lucide React as the single icon family**, Lightweight Charts 5.2 for time series, semantic CSS/SVG for small categorical/composition visuals, CSS Modules only as a chart-specific escape hatch, Vitest/Testing Library for serious semantic regressions, Storybook for a small design-system catalog, and Agent Browser for rendered UX/accessibility verification.
+**Tech Stack:** React 19, TypeScript 5.9, Vite 8, TanStack Router/Query, generated OpenAPI types, **Tailwind CSS v4 + semantic CSS design tokens**, **native HTML first + Radix Primitives only when a concrete interaction requires them**, **Lucide React as the single icon family**, Lightweight Charts 5.2 for time series, semantic CSS/SVG for small categorical/composition visuals, CSS Modules only as a chart-specific escape hatch, Vitest/Testing Library for serious semantic regressions, and Agent Browser for rendered UX/accessibility verification.
 
 ## Global Constraints
 
@@ -33,7 +33,7 @@
 
 ## Decisive Frontend Architecture
 
-This overhaul must establish one coherent presentation architecture before route-level redesign begins. Do not let each feature page choose its own framework, component vocabulary, colors, controls, or formatting rules.
+This overhaul must make one coherent presentation-architecture decision up front, then implement it incrementally through real route slices. Do not create the whole component system before it has consumers, and do not let each feature page choose its own framework, colors, controls, or formatting rules.
 
 ### Styling stack
 
@@ -100,7 +100,7 @@ Do not install every Radix package pre-emptively. Add only the primitives used b
 | MUI / Chakra / Mantine | **Reject** | pre-styled/themed suites would couple QAP to a generic SaaS visual system and add more component surface than required |
 | Recharts / ECharts / Plotly / Highcharts | **Reject** | duplicates Lightweight Charts and is unnecessary for simple comparison/composition visuals |
 
-Package policy: follow the repository's existing exact-version convention. Target the current stable Tailwind v4.3 line identified by the research, but pin the exact resolved package versions in `web/package.json`/`pnpm-lock.yaml`; do the same for Radix, Lucide, and Storybook packages rather than leaving floating ranges.
+Package policy: follow the repository's existing exact-version convention. Target the current stable Tailwind v4.3 line identified by the research, but pin the exact resolved package versions in `web/package.json`/`pnpm-lock.yaml`; do the same for Lucide and any Radix package only when that package gains a real consumer.
 
 ### Icons
 
@@ -123,11 +123,9 @@ Use one visualization rule:
 
 Do not introduce another general chart renderer merely to draw bars, composition strips, or a flow diagram.
 
-### Storybook policy
+### Component-catalog policy
 
-Adopt Storybook as a **small design-system catalog**, not as a second application and not as a mandate to test every component state. Catalog only shared primitives and analytically important components whose consistency benefits from isolated visual review: `VerdictHero`, `KpiTile`, `ResultCard`, `MetricValue/ExactValue`, `DecisionNavigator`, `DataTableFrame`, `ErrorState`, and the primary status variants.
-
-Storybook's accessibility panel is a development aid. It does not replace Agent Browser/manual rendered QA, and it must not trigger a snapshot-test explosion.
+Do **not** add Storybook during the first redesign slices. First prove the shared components through real route consumers. A component catalog may be proposed later only after multiple routes share a stable primitive/analytics layer and isolated examples would materially improve consistency or maintenance. Agent Browser against the real application remains the primary visual-development and accessibility acceptance path.
 
 ## UX Laws and Design Rules Applied
 
@@ -346,9 +344,10 @@ Boundary:    DEVELOPMENT · FINAL OOS · FORWARD PAPER · RESEARCH ONLY
 - Use **tabs** only when switching between peer content panels where exactly one panel is visible.
 - Use a **segmented control/toggle group** for a small mutually exclusive chart representation such as Ratio / Log / Normalized / Anchor when keeping the chart in place is the intent.
 - Use a **native select** for a small finite list such as anchor choice unless the interaction proves native select insufficient.
-- Search/filter state on collection pages must be URL-backed when introduced, e.g. `/experiments?q=rotation&verdict=negative&model=relationship&page=2`.
-- Initial visible filter set is Search + Verdict + Model; additional filters belong behind `More filters` rather than ten simultaneous controls.
-- Do not add search/filter machinery until list size makes scanning materially difficult; once added, preserve filters through navigation/back and any later card/table view switch.
+- Do **not** add search, filtering, sorting controls, or pagination to Research runs merely because the DTO can support them.
+- Add collection controls only after rendered use demonstrates a concrete scanning problem: a material run count, repeated difficulty locating a known run, or a workflow that requires comparison by verdict/model.
+- When that threshold is reached, introduce the smallest useful visible set first and keep its state URL-backed. Search + Verdict + Model is the likely first candidate, not a Phase-14 requirement.
+- Do not build autocomplete, `More filters`, saved filters, or a card/table view switch until a concrete workflow demonstrates the need.
 
 ### Tooltips, popovers, dialogs, and disclosures
 
@@ -361,7 +360,7 @@ Boundary:    DEVELOPMENT · FINAL OOS · FORWARD PAPER · RESEARCH ONLY
 
 - Use semantic `<table>` for genuinely tabular evidence; do not upgrade static evidence tables to ARIA `grid`.
 - Wrap wide tables in a named keyboard-focusable scroll frame; the page itself must retain viewport width.
-- Use explicit pagination (25/50 rows) for long audit/history collections rather than infinite scroll.
+- Do not paginate by default. First reduce long evidence pages through progressive disclosure and one-selected-item navigation. Add explicit pagination only when a real table/history remains materially long after that redesign; never use infinite scroll for auditable evidence.
 - Where cross-row comparison is not important on mobile, show a compact summary card and keep the complete table in the audit disclosure.
 - Portfolio rebalance history uses a **DecisionNavigator**: one selected decision at a time, chronological navigation, selected decision in URL/query state, and full exact execution evidence behind its detail disclosure.
 
@@ -679,7 +678,9 @@ The product remains en-US for now, but implementation must avoid needless locali
 
 ## Shared Component/File Structure
 
-### Create
+This is the **target ownership map**, not a mandate to create every file in the first slice. A shared component is created only when the current route needs it or when a second real consumer proves extraction is useful. Prefer keeping a small route-local presentation helper over introducing a speculative global primitive.
+
+### Create when first consumed
 
 **Foundation and formatting**
 
@@ -688,26 +689,14 @@ The product remains en-US for now, but implementation must avoid needless locali
   - Accepts exact API strings; returns `{ display, exact, ariaLabel? }` without feeding parsed values back into domain logic.
   - Uses `Intl.NumberFormat` / `Intl.DateTimeFormat` where appropriate.
 
-- `web/src/components/ui/Button.tsx`
-  - QAP button variants (`primary`, `secondary`, `ghost`) and sizes; semantic `<button>`/link composition only.
-
 - `web/src/components/ui/Badge.tsx`
   - Controlled semantic tones (`positive`, `negative`, `neutral`, `warning`, `info`) and soft/outline variants.
-
-- `web/src/components/ui/Surface.tsx`
-  - Bounded surface vocabulary (`flat`, `panel`, `raised`) so routes cannot invent arbitrary card chrome.
 
 - `web/src/components/ui/Disclosure.tsx`
   - Consistent native `<details>/<summary>` shell for audit/provenance/advanced evidence.
 
 - `web/src/components/ui/DataTableFrame.tsx`
   - Named, keyboard-focusable contained horizontal scrolling for genuine tables; supersedes route-level table wrappers.
-
-- `web/src/components/ui/Tooltip.tsx`
-  - Radix Tooltip wrapper for short nonessential clarification only.
-
-- `web/src/components/ui/Popover.tsx`
-  - Radix Popover wrapper for exact-value/copy and compact contextual detail.
 
 - `web/src/components/ui/Select.tsx`
   - Native-select styling first; a Radix-backed replacement is allowed only if a later route demonstrates a richer selection requirement.
@@ -735,12 +724,6 @@ The product remains en-US for now, but implementation must avoid needless locali
 - `web/src/components/analytics/Breadcrumbs.tsx`
   - Predictable route context and back-navigation.
 
-- `web/src/components/analytics/FilterBar.tsx`
-  - Shared responsive collection-filter layout for search + 1–2 primary filters + active-filter chips/clear action; state remains route-owned.
-
-- `web/src/components/analytics/Pagination.tsx`
-  - Explicit URL-backed previous/next/page-size navigation for long evidence collections; no infinite scroll.
-
 - `web/src/components/analytics/ChartFrame.tsx`
   - Shared title/description/controls/text-summary/table-fallback frame around Lightweight Charts because the chart canvas itself is not an accessible conclusion.
 
@@ -765,16 +748,10 @@ The product remains en-US for now, but implementation must avoid needless locali
 - `web/src/features/paper/PaperExecutionFlow.tsx`
   - Read-only semantic/SVG stepper from persisted order/fill DTOs; no simulated routing or financial derivation.
 
-**Design-system catalog**
-
-- `web/.storybook/main.ts`
-- `web/.storybook/preview.ts`
-- Collocated stories only for high-value shared components: `VerdictHero`, `KpiTile`, `ResultCard`, `MetricValue/ExactValue`, `DecisionNavigator`, `DataTableFrame`, `ErrorState`, and badge/status variants.
-
 ### Modify
 
 - `web/package.json`
-  - Add Tailwind v4/Vite, only the Radix primitives actually used, Lucide React, and Storybook/a11y development tooling.
+  - Add Tailwind v4/Vite and Lucide React in the first route slice. Add a Radix package only when a concrete later interaction needs it.
   - Do not add a pre-styled component framework, general chart framework, runtime CSS-in-JS library, or global state library.
 
 - `web/pnpm-lock.yaml`
@@ -864,7 +841,7 @@ The product remains en-US for now, but implementation must avoid needless locali
 
 Their data/interaction contracts remain valid; this plan changes presentation hierarchy around them.
 
-## Task 1: Establish the design-system foundation and semantic presentation layer
+## Task 1: First vertical slice — Research runs + minimum design foundation
 
 **Files:**
 - Modify: `web/package.json`
@@ -873,67 +850,44 @@ Their data/interaction contracts remain valid; this plan changes presentation hi
 - Modify: `web/src/styles/tokens.css`
 - Modify: `web/src/styles/global.css`
 - Create: `web/src/lib/format.ts`
-- Create: `web/src/components/ui/Button.tsx`
 - Create: `web/src/components/ui/Badge.tsx`
-- Create: `web/src/components/ui/Surface.tsx`
-- Create: `web/src/components/ui/Disclosure.tsx`
-- Create: `web/src/components/ui/DataTableFrame.tsx`
-- Create: `web/src/components/ui/Tooltip.tsx`
-- Create: `web/src/components/ui/Popover.tsx`
-- Create: `web/src/components/ui/Select.tsx`
-- Create: `web/src/components/ui/SegmentedControl.tsx`
-- Create: `web/src/components/analytics/VerdictHero.tsx`
-- Create: `web/src/components/analytics/KpiTile.tsx`
-- Create: `web/src/components/analytics/MetricValue.tsx`
-- Create: `web/src/components/analytics/ExactValue.tsx`
-- Create: `web/src/components/analytics/ResultCard.tsx`
-- Create: `web/src/components/analytics/Breadcrumbs.tsx`
-- Create: `web/src/components/analytics/FilterBar.tsx`
-- Create: `web/src/components/analytics/Pagination.tsx`
-- Create: `web/src/components/analytics/ChartFrame.tsx`
-- Create: `web/src/components/analytics/ProvenancePanel.tsx`
-- Create: `web/src/components/analytics/EmptyState.tsx`
-- Create: `web/src/components/analytics/ErrorState.tsx`
-- Create: `web/.storybook/main.ts`
-- Create: `web/.storybook/preview.ts`
-- Remove after call-site migration: `web/src/components/MetricCard.tsx`
-- Remove after call-site migration: `web/src/components/ExactNumber.tsx`
-- Remove after call-site migration: `web/src/components/TableScroll.tsx`
+- Modify: `web/src/features/experiments/ExperimentList.tsx`
+- Modify: `web/src/features/experiments/ExperimentList.test.tsx` only if an existing serious semantic assertion must change.
 
 **Interfaces:**
-- Consumes: current exact-string DTO values, semantic status/data-role fields, existing React/TanStack page composition, and existing chart components.
-- Produces: one styling/token/control/formatting vocabulary consumed by every later route task.
+- Consumes: current `RunSummaryDto` values and existing `/experiments` route behavior.
+- Produces: the first real redesigned route plus only the formatting/token/status patterns proven necessary by that route.
 
 **Steps:**
 - [ ] Add Tailwind CSS v4 and `@tailwindcss/vite`; wire the Vite plugin without changing TanStack Router, test environment, or API proxy behavior.
-- [ ] Add `lucide-react` and only the Radix packages actually needed by the first implementation slice (`@radix-ui/react-tooltip` and `@radix-ui/react-popover` initially). Add another Radix package only in the later task that proves a native/QAP control is insufficient.
-- [ ] Add Storybook and its official accessibility addon as development tooling; do not add screenshot regression infrastructure.
-- [ ] Add explicit `storybook` and `build-storybook` package scripts; keep Storybook outside the production application bundle.
-- [ ] Convert `tokens.css` to the semantic dark-theme contract from this plan: surfaces, text, border, accent/status, chart roles, type, spacing, radii, motion, and layout values.
+- [ ] Do **not** add Radix, Lucide, Storybook, D3, or another shared-component dependency in this slice unless the Research runs route demonstrates a concrete need that native HTML/CSS cannot meet.
+- [ ] Convert only the token/base values needed by the first route to the semantic dark-theme contract; preserve chart variables and unrelated working styles until their owning routes migrate.
 - [ ] Remove `Inter` from the default font token unless a bundled font file is deliberately introduced; use the system stack.
-- [ ] Make `global.css` the Tailwind/base stylesheet rather than a route-component stylesheet. Preserve root overflow protection, skip link, focus-visible, selection, and semantic HTML defaults.
-- [ ] Implement `lib/format.ts` as the only human-formatting API. Include explicit functions for percent/relative delta, money/value, quantity, ratio, basis points, duration, timestamp, integer, and compact overview values.
+- [ ] Start moving `global.css` toward Tailwind/base ownership without rewriting unrelated routes. Preserve existing selectors needed by routes not yet migrated.
+- [ ] Implement only the formatter functions this route consumes: signed relative percentage and research timestamp/date formatting. The module becomes the single future formatting boundary, but unused formatter APIs are not created yet.
 - [ ] Define a formatting contract that always retains the exact source string and never returns a transformed value for domain calculations.
 - [ ] Handle tiny nonzero percentages without silently displaying misleading zero (`<0.01%` or basis points according to semantic context); normalize visual negative zero while retaining literal source in exact audit content when relevant.
-- [ ] Implement exact-value inspection/copy with readable default text, literal copy value, tooltip/popover semantics, and `role="status"` confirmation without moving focus.
-- [ ] Implement QAP `Button`, `Badge`, `Surface`, `Disclosure`, `DataTableFrame`, `Tooltip`, `Popover`, `Select`, and `SegmentedControl` primitives with semantic variants only; no arbitrary color/radius props.
-- [ ] Implement `VerdictHero`, `KpiTile`, `ResultCard`, `Breadcrumbs`, `FilterBar`, `Pagination`, `ChartFrame`, `ProvenancePanel`, `EmptyState`, and `ErrorState` as presentation-only components.
-- [ ] `ChartFrame` must provide title, description, textual summary, optional controls, and an optional tabular data fallback around the existing chart renderer.
-- [ ] Build only the Storybook stories named in the component inventory; include long-copy/mobile/negative/no-fill/error states that help visually calibrate the system.
-- [ ] Do not add `d3-*`, a second chart library, a global state library, a pre-styled component suite, or runtime CSS-in-JS during this task.
+- [ ] Add only the shared `Badge` primitive because the first route has repeated semantic status/data-role treatment. Keep the result-card composition inside `ExperimentList.tsx` until Paper operations proves a second real consumer.
+- [ ] Replace the dense definition-list cards with a deliberate hierarchy: experiment name, verdict/data role, primary comparison, basket, model/policy context, and one `View result` action.
+- [ ] Keep invalid artifacts visible as explicit invalid-result cards rather than suppressing them.
+- [ ] Move raw research-family/run IDs, dirty flag, and sibling/trial metadata into quiet secondary metadata; do not add an interactive disclosure until the detail route needs the same pattern.
+- [ ] Use a responsive card grid on wider screens and one column on mobile.
+- [ ] Do **not** add search, filters, sorting, pagination, a card/table toggle, or autocomplete in this slice.
 
 **Testing/verification:**
 - Keep or extend serious regressions for exact-value preservation, tiny-nonzero formatting, and sign preservation only.
-- Do not add tests for token values, Tailwind classes, card padding, story count, or every primitive variant.
+- Reuse the current Experiment list test that negative evidence remains visible; update only assertions broken by meaningful semantic copy changes.
+- Do not add tests for token values, Tailwind classes, card padding, card count, or responsive layout.
 - Run: `cd web && pnpm install --frozen-lockfile && pnpm test && pnpm typecheck && pnpm build` after the lockfile is established.
-- Run Storybook locally for visual inspection and use its a11y panel as a development aid; Agent Browser remains the acceptance authority.
+- Agent Browser: verify `/experiments` at 1440×1000 and 390×844, including scanability, negative/invalid evidence, keyboard focus, axe A/AA, and zero document-level horizontal overflow.
 
 **Acceptance criteria:**
-- Tailwind utilities, QAP semantic tokens, and QAP components form one styling path; no route-level alternate design system remains necessary.
-- A 70-digit decimal never appears as default visible copy, while the exact source remains inspectable/copyable.
+- Research runs is visibly redesigned and usable before a broad component framework exists.
+- A user can identify which runs won/lost and against which control without opening them.
+- Long exact decimals are not primary card copy; raw IDs/hashes are not the focal point.
 - Tiny meaningful values are not formatted to a misleading zero.
 - Status meaning does not rely on color.
-- Shared components contain no portfolio/model/accounting logic.
+- The new formatting/status code contains no portfolio/model/accounting logic.
 - No new dependency duplicates an existing responsibility.
 
 ## Task 2: Redesign global shell and navigation hierarchy
@@ -963,39 +917,7 @@ Their data/interaction contracts remain valid; this plan changes presentation hi
 - User is never trapped on a detail/error page without a route back to research runs or paper operations.
 - Global navigation fits at 390px without horizontal document overflow.
 
-## Task 3: Redesign research-run discovery
-
-**Files:**
-- Modify: `web/src/routes/experiments.index.tsx`
-- Modify: `web/src/features/experiments/ExperimentList.tsx`
-- Modify: `web/src/features/experiments/ExperimentList.test.tsx` only if an existing serious semantic assertion must change.
-
-**Interfaces:**
-- Consumes: `ExperimentListDto` / `RunSummaryDto` exactly as generated today.
-- Produces: scannable result cards linking to existing detail routes.
-
-**Steps:**
-- [ ] Replace the dense definition-list card with a deliberate summary hierarchy: name, status/data role, primary comparison, basket, model/policy, action.
-- [ ] Render `incremental_vs_primary_control` as a human relative percentage when present.
-- [ ] Keep invalid artifacts visible as explicit invalid-result cards rather than suppressing them.
-- [ ] Move research family ID, raw run ID, dirty flag, and sibling/trial metadata into a secondary metadata disclosure/row.
-- [ ] Add URL-backed collection state for `q`, `verdict`, `model`, and `page`; validate/default it in the TanStack route rather than hiding it in component-local state.
-- [ ] Render one visible search field plus Verdict and Model filters in `FilterBar`; active filters become removable chips with one `Clear filters` action. Do not expose every available metadata field as a filter.
-- [ ] Derive filtering/sorting only from fields already present in `RunSummaryDto` (`experiment_name`, `status`, `relationship_id`, `policy_id`, basket, data role, etc.); do not add an API just for client-side filtering.
-- [ ] Paginate the filtered client-side evidence list at 25 items per page with explicit navigation; no infinite scroll.
-- [ ] Use responsive result-card grid layout on wider screens and one-column cards on mobile; filters wrap/stack without body overflow.
-
-**Testing/verification:**
-- Reuse the current test that negative evidence remains visible; update only assertions broken by meaningful semantic copy changes.
-- Agent Browser: scanability at desktop and 390px mobile.
-
-**Acceptance criteria:**
-- A user can identify which runs won/lost and against which control without opening them.
-- Search/filter/page state survives reload/back navigation through the URL.
-- Raw IDs/hashes are not the visual focal point.
-- The collection remains scannable at 390px without a horizontally scrolling filter toolbar.
-
-## Task 4: Redesign experiment detail around a research verdict
+## Task 3: Redesign experiment detail around a research verdict
 
 **Files:**
 - Create: `web/src/components/visuals/ComparisonBars.tsx`
@@ -1024,7 +946,7 @@ Their data/interaction contracts remain valid; this plan changes presentation hi
 - First viewport communicates verdict, benchmark, research role, and next analytical action.
 - Fingerprints and SHAs are absent from the default expanded reading flow.
 
-## Task 5: Turn portfolio economics into the primary visual dashboard
+## Task 4: Turn portfolio economics into the primary visual dashboard
 
 **Files:**
 - Create: `web/src/components/visuals/CompositionBars.tsx`
@@ -1073,7 +995,7 @@ Their data/interaction contracts remain valid; this plan changes presentation hi
 - Starting/ending allocation is visually understandable without reading exact quantities.
 - Detailed rebalance evidence remains available but does not create a 20k+ pixel default mobile page.
 
-## Task 6: Make pair analysis chart-first and interpretation-first
+## Task 5: Make pair analysis chart-first and interpretation-first
 
 **Files:**
 - Modify: `web/src/features/pairs/PairWorkbench.tsx`
@@ -1106,7 +1028,7 @@ Their data/interaction contracts remain valid; this plan changes presentation hi
 - User can understand which pair/orientation is displayed and what the evidence means without reading fingerprints.
 - No regression in reciprocal orientation or anchor URL state.
 
-## Task 7: Redesign paper operations as operational outcomes
+## Task 6: Redesign paper operations as operational outcomes
 
 **Files:**
 - Create: `web/src/features/paper/PaperExecutionFlow.tsx`
@@ -1140,20 +1062,18 @@ Their data/interaction contracts remain valid; this plan changes presentation hi
 - No-fill evidence remains obvious, not hidden in a dense table.
 - Technical precision/fingerprint data is available but collapsed.
 
-## Task 8: Converge every route on the QAP design system and delete legacy presentation
+## Task 7: Converge every route on the QAP design system and delete legacy presentation
 
 **Files:**
 - Modify: `web/src/styles/tokens.css`
 - Modify: `web/src/styles/global.css`
-- Modify: `web/.storybook/main.ts`
-- Modify: `web/.storybook/preview.ts`
 - Delete when unused: `web/src/components/MetricCard.tsx`
 - Delete when unused: `web/src/components/ExactNumber.tsx`
 - Delete when unused: `web/src/components/TableScroll.tsx`
 - Delete: any feature-specific CSS/classes made obsolete by Tailwind/QAP primitives.
 
 **Interfaces:**
-- Consumes: all redesigned pages, shared primitives, analytics components, chart wrappers, and Storybook catalog.
+- Consumes: all redesigned pages, shared primitives, analytics components, and chart wrappers proven by real route consumers.
 - Produces: one coherent responsive visual system with no parallel legacy component/styling path.
 
 **Steps:**
@@ -1167,12 +1087,11 @@ Their data/interaction contracts remain valid; this plan changes presentation hi
 - [ ] Verify contained table scrolling and eliminate any root horizontal overflow caused by long IDs, exact values, legends, or toolbars.
 - [ ] Verify `prefers-reduced-motion` removes nonessential transition/animation behavior.
 - [ ] Run contrast measurements for final token combinations in rendered context; adjust tokens centrally rather than patching individual components.
-- [ ] Complete the small Storybook catalog and use it to review long text, negative/neutral/no-fill states, narrow widths, and exact-value affordances side by side.
+- [ ] Review whether the now-proven shared component set actually needs an isolated component catalog. If not, keep Storybook out of Phase 14. If yes, write a separate bounded tooling proposal rather than silently adding it here.
 - [ ] Delete superseded components/styles as soon as all call sites move; do not retain old and new implementations “just in case.”
 
 **Testing/verification:**
 - No CSS/screenshot snapshot tests.
-- Build Storybook successfully and inspect the catalog manually.
 - Agent Browser + axe on all primary routes at 1440×1000 and 390×844.
 - Use repository search to confirm no surviving feature code imports deleted `MetricCard`, `ExactNumber`, or `TableScroll` components.
 
@@ -1183,7 +1102,7 @@ Their data/interaction contracts remain valid; this plan changes presentation hi
 - Default mobile views remain within viewport width.
 - Outcome, primary visual, secondary explanation, and audit layers are visually distinct.
 
-## Task 9: Rendered end-to-end UX acceptance
+## Task 8: Rendered end-to-end UX acceptance
 
 **Files:**
 - No production files unless QA uncovers a concrete defect.
@@ -1202,7 +1121,7 @@ Their data/interaction contracts remain valid; this plan changes presentation hi
 - [ ] Agent Browser: Paper operation healthy/reconciled and explicit no-fill case.
 - [ ] Agent Browser: missing/invalid route retains full navigation shell and recovery action.
 - [ ] Run axe WCAG A/AA on each primary route, then manually inspect any `incomplete` findings and do not equate `0 violations` with complete accessibility.
-- [ ] Verify keyboard navigation for skip link, global nav, search/filters, pair controls, segmented controls, selects, popovers, disclosures, decision navigation, and scrollable tables.
+- [ ] Verify keyboard navigation for skip link, global nav, pair controls, segmented controls, selects, any popovers actually introduced, disclosures, decision navigation, and scrollable tables.
 - [ ] Verify visible focus survives every interactive state and focus returns correctly after dismissing popovers.
 - [ ] Verify 390px `document.documentElement.scrollWidth === window.innerWidth` on every primary route and repeat a 200% zoom/reflow sanity check.
 - [ ] Verify statuses/verdicts/no-fill/reconciliation remain understandable with color mentally removed; text/icon/sign must carry the meaning.
@@ -1211,7 +1130,7 @@ Their data/interaction contracts remain valid; this plan changes presentation hi
 - [ ] Verify long exact decimals, SHAs, fingerprints, route IDs, and venue precision fields remain contained and absent from the default expanded reading flow.
 - [ ] Verify no unexpected console/page errors and no chart host runaway sizing/remount regression.
 - [ ] Capture screenshots of each primary route/state for final human visual review; screenshots are evidence, not snapshot tests.
-- [ ] Run frontend gate: `pnpm install --frozen-lockfile`, `pnpm test`, `pnpm typecheck`, `pnpm build`, Storybook production build, and `git diff --check -- web`.
+- [ ] Run frontend gate: `pnpm install --frozen-lockfile`, `pnpm test`, `pnpm typecheck`, `pnpm build`, and `git diff --check -- web`.
 
 **Acceptance criteria:**
 - A reviewer can answer `did it work, compared with what, and why` from the first viewport of experiment/portfolio pages.
@@ -1251,7 +1170,7 @@ Do **not** add tests solely for:
 ## Explicit Non-Goals
 
 - No live trading controls.
-- No experiment mutation/run button in the browser.
+- No experiment mutation/run button in **Phase 14**. Phase 14 is the results/evidence UX overhaul, not the scanner/execution workbench.
 - No user accounts/auth redesign.
 - No drag-and-drop dashboard builder.
 - No broad universe heatmaps or topology graphs.
@@ -1263,19 +1182,37 @@ Do **not** add tests solely for:
 - No browser reconstruction of economics from raw fills.
 - No compatibility/migration UI for obsolete artifact schemas; current-schema artifacts are the only supported evidence inputs.
 
+## Follow-on Product Boundary: Research Scanner and Candidate Workbench
+
+Phase 14 does **not** satisfy the broader research-workbench requirement. A follow-on phase must own the active research workflow explicitly rather than hiding it inside Research-run filters.
+
+The required scanner pipeline is:
+
+```text
+portfolio / admitted-universe selection
+  → pair or candidate-set generation
+  → model selection
+  → parameter-family selection
+  → bounded scan execution
+  → candidate ranking with control-aware evidence
+  → portfolio/candidate combination analysis
+  → freeze candidate / manifest for the next research stage
+```
+
+That phase must preserve the existing research constitution: simple-first controls, family/search-denominator accounting, dataset-role/final-OOS discipline, no browser-owned financial truth, no live-capital authority, and explicit current-schema inputs. It requires its own API/mutation contracts and implementation plan; it must **not** be smuggled into Phase 14 as client-side filtering of completed runs.
+
 ## Recommended Implementation Order
 
-1. Design-system/tooling/formatting foundation.
-2. Global shell/navigation.
-3. Research-run list.
-4. Experiment verdict page.
-5. Portfolio economics dashboard.
-6. Pair workbench.
-7. Paper operations.
-8. Cross-page visual-system refinement.
-9. Agent Browser rendered acceptance and final verification.
+1. Research runs vertical slice: Tailwind/tokens + minimum formatting/status primitives + migrated route.
+2. Global shell/navigation, extracting only patterns already repeated by the first slice.
+3. Experiment verdict page; add exact-value/provenance components only when this route consumes them.
+4. Portfolio economics dashboard; add KPI/chart/table/decision-navigation primitives here when required.
+5. Pair workbench; add segmented/native selection controls here when required.
+6. Paper operations; extract shared result-card patterns only if the second real consumer proves they belong globally.
+7. Cross-page visual-system convergence and legacy deletion.
+8. Agent Browser rendered acceptance and final verification.
 
-This order delivers visible value early while ensuring shared formatting and hierarchy conventions exist before feature pages are rewritten.
+This order deliberately prefers **route-first extraction over framework-first construction**. Each slice leaves behind only abstractions proven by concrete consumers.
 
 ### Route replacement lifecycle
 
@@ -1302,7 +1239,6 @@ The implementation decisions above are grounded in the following authoritative/c
 - Lightweight Charts 5.2 and its accessibility guidance: https://tradingview.github.io/lightweight-charts/docs and https://tradingview.github.io/lightweight-charts/tutorials/a11y/intro
 - WAI-ARIA Authoring Practices for complex controls: https://www.w3.org/WAI/ARIA/apg/patterns/
 - WCAG 2.2 reflow, focus, contrast, target size, and status-message guidance: https://www.w3.org/WAI/WCAG22/Understanding/
-- Storybook accessibility tooling: https://storybook.js.org/docs/writing-tests/accessibility-testing
 - Lucide React/icon consistency: https://lucide.dev/guide/react/
 - TradingView screener/watchlist patterns: https://www.tradingview.com/support/solutions/43000724233-chart-view-mode/ and https://www.tradingview.com/support/solutions/43000745825-mastering-the-tradingview-watchlists/
 - Coinbase Advanced analytical-panel organization: https://help.coinbase.com/en/coinbase/trading-and-funding/advanced-trade/dashboard-overview
