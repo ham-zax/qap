@@ -121,7 +121,11 @@ export function PairWorkbench({
         </div>
       </section>
 
-      <section className="synchronized-chart-group" aria-label="Synchronized pair evidence charts">
+      <section
+        className="synchronized-chart-group"
+        aria-labelledby="pair-evidence-heading"
+      >
+        <h2 id="pair-evidence-heading">Pair evidence</h2>
         <p aria-live="polite">
           Shared cursor: {cursorTime ?? 'move across either chart to synchronize time'}
         </p>

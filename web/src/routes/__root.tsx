@@ -19,18 +19,22 @@ export const Route = createRootRouteWithContext<QapRouterContext>()({
     </StatusMessage>
   ),
   errorComponent: ({ error, reset }) => (
-    <StatusMessage
-      title="Evidence could not be loaded"
-      tone="error"
-      action={<button onClick={reset}>Retry</button>}
-    >
-      <ErrorDetails error={error} />
-    </StatusMessage>
+    <AppShell>
+      <StatusMessage
+        title="Evidence could not be loaded"
+        tone="error"
+        action={<button onClick={reset}>Retry</button>}
+      >
+        <ErrorDetails error={error} />
+      </StatusMessage>
+    </AppShell>
   ),
   notFoundComponent: () => (
-    <StatusMessage title="Page not found" tone="warning">
-      <p>The requested analytical view does not exist.</p>
-    </StatusMessage>
+    <AppShell>
+      <StatusMessage title="Page not found" tone="warning">
+        <p>The requested analytical view does not exist.</p>
+      </StatusMessage>
+    </AppShell>
   ),
 })
 

@@ -1,4 +1,5 @@
 import type { ExperimentDetailDto } from '../../api/types'
+import { ExactNumber } from '../../components/ExactNumber'
 import { MetricCard } from '../../components/MetricCard'
 
 type ExactSign = -1 | 0 | 1
@@ -37,14 +38,14 @@ export function BenchmarkLadder({ experiment }: BenchmarkLadderProps) {
       <div className="metric-grid">
         <MetricCard
           label="HODL-relative wealth"
-          value={result.strategy_vs_hodl}
+          value={<ExactNumber value={result.strategy_vs_hodl} />}
           status={metricStatus(result.strategy_vs_hodl)}
           detail="Strategy terminal wealth relative to strict inventory HODL."
         />
         {primaryIncrement != null ? (
           <MetricCard
             label="Primary control increment"
-            value={primaryIncrement}
+            value={<ExactNumber value={primaryIncrement} />}
             status={metricStatus(primaryIncrement)}
             detail={`Relative to ${primaryControl ?? 'the predeclared simple control'}.`}
           />
@@ -52,7 +53,7 @@ export function BenchmarkLadder({ experiment }: BenchmarkLadderProps) {
         {matchedIncrement != null ? (
           <MetricCard
             label="Matched-contribution increment"
-            value={matchedIncrement}
+            value={<ExactNumber value={matchedIncrement} />}
             status={metricStatus(matchedIncrement)}
             detail="Relative to matched-contribution static HODL."
           />

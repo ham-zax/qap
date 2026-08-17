@@ -1,4 +1,5 @@
 import type { ExperimentDetailDto } from '../../api/types'
+import { ExactNumber } from '../../components/ExactNumber'
 import { TableScroll } from '../../components/TableScroll'
 
 interface ExternalFlowContextProps {
@@ -39,7 +40,7 @@ export function ExternalFlowContext({ experiment }: ExternalFlowContextProps) {
                 <th scope="row">{flow.flow_id}</th>
                 <td>{flow.effective_time}</td>
                 <td>{flow.asset}</td>
-                <td>{flow.quantity_delta}</td>
+                <td><ExactNumber value={flow.quantity_delta} /></td>
               </tr>
             ))}
           </tbody>

@@ -1,4 +1,5 @@
 import type { RebalanceDecisionAuditDto } from '../../api/types'
+import { ExactNumber } from '../../components/ExactNumber'
 import { TableScroll } from '../../components/TableScroll'
 
 interface RebalanceDecisionAuditProps {
@@ -11,7 +12,7 @@ function WeightList({ weights }: { weights: Record<string, string> | null }) {
     <ul>
       {Object.entries(weights).map(([asset, weight]) => (
         <li key={asset}>
-          {asset}: {weight}
+          {asset}: <ExactNumber value={weight} />
         </li>
       ))}
     </ul>
@@ -32,7 +33,7 @@ export function RebalanceDecisionAudit({ decisions }: RebalanceDecisionAuditProp
     <section aria-labelledby="rebalance-audit-heading">
       <h2 id="rebalance-audit-heading">Rebalance decision audit</h2>
       {decisions.map((decision) => (
-        <details key={decision.decision_id} open={decision.selected}>
+        <details key={decision.decision_id}>
           <summary>
             {decision.decision_time} - {decision.selected ? 'selected' : 'not selected'}
           </summary>
@@ -65,7 +66,7 @@ export function RebalanceDecisionAudit({ decisions }: RebalanceDecisionAuditProp
                 {Object.entries(decision.requested_quantity_deltas).map(
                   ([asset, quantity]) => (
                     <li key={asset}>
-                      {asset}: {quantity}
+                      {asset}: <ExactNumber value={quantity} />
                     </li>
                   ),
                 )}
@@ -91,10 +92,10 @@ export function RebalanceDecisionAudit({ decisions }: RebalanceDecisionAuditProp
                     <td>
                       {fill.base}/{fill.quote}
                     </td>
-                    <td>{fill.base_quantity}</td>
-                    <td>{fill.execution_price}</td>
+                    <td><ExactNumber value={fill.base_quantity} /></td>
+                    <td><ExactNumber value={fill.execution_price} /></td>
                     <td>
-                      {fill.fee_amount} {fill.fee_asset}
+                      <ExactNumber value={fill.fee_amount} /> {fill.fee_asset}
                     </td>
                   </tr>
                 ))}
@@ -118,9 +119,9 @@ export function RebalanceDecisionAudit({ decisions }: RebalanceDecisionAuditProp
                 {decision.post_fill_holdings.map((holding) => (
                   <tr key={holding.asset}>
                     <th scope="row">{holding.asset}</th>
-                    <td>{holding.quantity}</td>
-                    <td>{holding.value}</td>
-                    <td>{holding.weight}</td>
+                    <td><ExactNumber value={holding.quantity} /></td>
+                    <td><ExactNumber value={holding.value} /></td>
+                    <td><ExactNumber value={holding.weight} /></td>
                   </tr>
                 ))}
               </tbody>

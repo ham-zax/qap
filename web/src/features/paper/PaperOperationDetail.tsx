@@ -1,4 +1,6 @@
 import type { PaperOperationDetailDto } from '../../api/types'
+import { ExactNumber } from '../../components/ExactNumber'
+import { TableScroll } from '../../components/TableScroll'
 
 interface PaperOperationDetailProps {
   data: PaperOperationDetailDto
@@ -10,7 +12,7 @@ function keyValueRows(values: Record<string, string>) {
     .map(([key, value]) => (
       <tr key={key}>
         <th scope="row">{key}</th>
-        <td>{value}</td>
+        <td><ExactNumber value={value} /></td>
       </tr>
     ))
 }
@@ -69,19 +71,19 @@ export function PaperOperationDetail({ data }: PaperOperationDetailProps) {
           </div>
           <div>
             <dt>Bridge target quantity</dt>
-            <dd>{data.bridge_target_quantity}</dd>
+            <dd><ExactNumber value={data.bridge_target_quantity} /></dd>
           </div>
           <div>
             <dt>Bridge residual</dt>
-            <dd>{data.bridge_residual}</dd>
+            <dd><ExactNumber value={data.bridge_residual} /></dd>
           </div>
           <div>
             <dt>Total fees</dt>
-            <dd>{data.total_fee_quote}</dd>
+            <dd><ExactNumber value={data.total_fee_quote} /></dd>
           </div>
           <div>
             <dt>Total slippage</dt>
-            <dd>{data.total_slippage_quote}</dd>
+            <dd><ExactNumber value={data.total_slippage_quote} /></dd>
           </div>
           <div>
             <dt>Input fingerprint</dt>
@@ -93,65 +95,73 @@ export function PaperOperationDetail({ data }: PaperOperationDetailProps) {
       <section aria-labelledby="holdings-heading">
         <h2 id="holdings-heading">Holdings and target</h2>
         <h3>Starting holdings</h3>
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Asset</th>
-              <th scope="col">Quantity</th>
-            </tr>
-          </thead>
-          <tbody>{keyValueRows(data.starting_holdings)}</tbody>
-        </table>
+        <TableScroll label="Starting holdings">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Asset</th>
+                <th scope="col">Quantity</th>
+              </tr>
+            </thead>
+            <tbody>{keyValueRows(data.starting_holdings)}</tbody>
+          </table>
+        </TableScroll>
         <h3>Target weights</h3>
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Asset</th>
-              <th scope="col">Weight</th>
-            </tr>
-          </thead>
-          <tbody>{keyValueRows(data.target_weights)}</tbody>
-        </table>
+        <TableScroll label="Target weights">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Asset</th>
+                <th scope="col">Weight</th>
+              </tr>
+            </thead>
+            <tbody>{keyValueRows(data.target_weights)}</tbody>
+          </table>
+        </TableScroll>
         <h3>Ending holdings</h3>
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Asset</th>
-              <th scope="col">Quantity</th>
-            </tr>
-          </thead>
-          <tbody>{keyValueRows(data.ending_holdings)}</tbody>
-        </table>
+        <TableScroll label="Ending holdings">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Asset</th>
+                <th scope="col">Quantity</th>
+              </tr>
+            </thead>
+            <tbody>{keyValueRows(data.ending_holdings)}</tbody>
+          </table>
+        </TableScroll>
       </section>
 
       <section aria-labelledby="orders-heading">
         <h2 id="orders-heading">Execution routes and orders</h2>
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Phase</th>
-              <th scope="col">Asset</th>
-              <th scope="col">Route</th>
-              <th scope="col">Requested source quantity</th>
-              <th scope="col">Result</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.orders.map((order) => (
-              <tr key={`${order.phase}:${order.asset}:${order.route_id}`}>
-                <td>{order.phase}</td>
-                <td>{order.asset}</td>
-                <td>{order.route_id}</td>
-                <td>{order.requested_source_quantity}</td>
-                <td>
-                  {order.leg_reason
-                    ? `No fill: ${order.leg_reason}`
-                    : `${order.fill_ids.length} fill${order.fill_ids.length === 1 ? '' : 's'}`}
-                </td>
+        <TableScroll label="Execution routes and orders">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Phase</th>
+                <th scope="col">Asset</th>
+                <th scope="col">Route</th>
+                <th scope="col">Requested source quantity</th>
+                <th scope="col">Result</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data.orders.map((order) => (
+                <tr key={`${order.phase}:${order.asset}:${order.route_id}`}>
+                  <td>{order.phase}</td>
+                  <td>{order.asset}</td>
+                  <td>{order.route_id}</td>
+                  <td><ExactNumber value={order.requested_source_quantity} /></td>
+                  <td>
+                    {order.leg_reason
+                      ? `No fill: ${order.leg_reason}`
+                      : `${order.fill_ids.length} fill${order.fill_ids.length === 1 ? '' : 's'}`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableScroll>
       </section>
 
       <section aria-labelledby="fills-heading">
@@ -159,61 +169,65 @@ export function PaperOperationDetail({ data }: PaperOperationDetailProps) {
         {data.fills.length === 0 ? (
           <p>No fills were realized.</p>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Fill</th>
-                <th scope="col">Market</th>
-                <th scope="col">Side</th>
-                <th scope="col">Quantity</th>
-                <th scope="col">Execution price</th>
-                <th scope="col">Fee</th>
-                <th scope="col">Slippage</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.fills.map((fill) => (
-                <tr key={fill.fill_id}>
-                  <td>{fill.fill_id}</td>
-                  <td>{fill.venue_symbol}</td>
-                  <td>{fill.side}</td>
-                  <td>{fill.base_quantity}</td>
-                  <td>{fill.execution_price}</td>
-                  <td>{fill.fee_quote}</td>
-                  <td>{fill.slippage_quote}</td>
+          <TableScroll label="Realized fills">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Fill</th>
+                  <th scope="col">Market</th>
+                  <th scope="col">Side</th>
+                  <th scope="col">Quantity</th>
+                  <th scope="col">Execution price</th>
+                  <th scope="col">Fee</th>
+                  <th scope="col">Slippage</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.fills.map((fill) => (
+                  <tr key={fill.fill_id}>
+                    <td>{fill.fill_id}</td>
+                    <td>{fill.venue_symbol}</td>
+                    <td>{fill.side}</td>
+                    <td><ExactNumber value={fill.base_quantity} /></td>
+                    <td><ExactNumber value={fill.execution_price} /></td>
+                    <td><ExactNumber value={fill.fee_quote} /></td>
+                    <td><ExactNumber value={fill.slippage_quote} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
         )}
       </section>
 
       <section aria-labelledby="metadata-heading">
         <h2 id="metadata-heading">Venue precision metadata</h2>
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Market</th>
-              <th scope="col">Tick</th>
-              <th scope="col">Quantity step</th>
-              <th scope="col">Minimum quantity</th>
-              <th scope="col">Minimum notional</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(data.market_metadata)
-              .sort(([left], [right]) => left.localeCompare(right))
-              .map(([symbol, metadata]) => (
-                <tr key={symbol}>
-                  <td>{symbol}</td>
-                  <td>{metadata.price_tick}</td>
-                  <td>{metadata.quantity_step}</td>
-                  <td>{metadata.minimum_quantity ?? 'Disabled'}</td>
-                  <td>{metadata.minimum_notional ?? 'Disabled'}</td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+        <TableScroll label="Venue precision metadata">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Market</th>
+                <th scope="col">Tick</th>
+                <th scope="col">Quantity step</th>
+                <th scope="col">Minimum quantity</th>
+                <th scope="col">Minimum notional</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(data.market_metadata)
+                .sort(([left], [right]) => left.localeCompare(right))
+                .map(([symbol, metadata]) => (
+                  <tr key={symbol}>
+                    <td>{symbol}</td>
+                    <td><ExactNumber value={metadata.price_tick} /></td>
+                    <td><ExactNumber value={metadata.quantity_step} /></td>
+                    <td>{metadata.minimum_quantity ? <ExactNumber value={metadata.minimum_quantity} /> : 'Disabled'}</td>
+                    <td>{metadata.minimum_notional ? <ExactNumber value={metadata.minimum_notional} /> : 'Disabled'}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </TableScroll>
       </section>
     </article>
   )

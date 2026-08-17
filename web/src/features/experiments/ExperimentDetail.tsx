@@ -1,4 +1,5 @@
 import type { ExperimentDetailDto } from '../../api/types'
+import { ExactNumber } from '../../components/ExactNumber'
 
 interface ExperimentDetailProps {
   data: ExperimentDetailDto
@@ -61,15 +62,23 @@ export function ExperimentDetail({ data }: ExperimentDetailProps) {
         </p>
         <p>
           Increment vs primary control:{' '}
-          {result.strategy_vs_primary_control ?? 'not applicable'}
+          {result.strategy_vs_primary_control ? (
+            <ExactNumber value={result.strategy_vs_primary_control} />
+          ) : (
+            'not applicable'
+          )}
         </p>
-        <p>Strategy vs HODL: {result.strategy_vs_hodl}</p>
+        <p>Strategy vs HODL: <ExactNumber value={result.strategy_vs_hodl} /></p>
         <p>
           Strategy vs matched contribution:{' '}
-          {result.strategy_vs_matched_contribution ?? 'not applicable'}
+          {result.strategy_vs_matched_contribution ? (
+            <ExactNumber value={result.strategy_vs_matched_contribution} />
+          ) : (
+            'not applicable'
+          )}
         </p>
         <p>Primary metric: {result.primary_metric}</p>
-        <p>Primary metric value: {result.primary_metric_value}</p>
+        <p>Primary metric value: <ExactNumber value={result.primary_metric_value} /></p>
       </section>
 
       <section aria-labelledby="holdout-heading">

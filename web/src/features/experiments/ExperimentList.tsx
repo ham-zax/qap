@@ -1,4 +1,5 @@
 import type { ExperimentListDto, RunSummaryDto } from '../../api/types'
+import { ExactNumber } from '../../components/ExactNumber'
 
 interface ExperimentListProps {
   data: ExperimentListDto
@@ -63,7 +64,11 @@ function ExperimentCard({ run }: { run: RunSummaryDto }) {
           <dt>Increment vs primary control</dt>
           <dd>
             Increment vs primary control:{' '}
-            {run.incremental_vs_primary_control ?? 'not applicable'}
+            {run.incremental_vs_primary_control ? (
+              <ExactNumber value={run.incremental_vs_primary_control} />
+            ) : (
+              'not applicable'
+            )}
           </dd>
         </div>
       </dl>

@@ -1,4 +1,5 @@
 import type { PaperOperationSummaryDto } from '../../api/types'
+import { ExactNumber } from '../../components/ExactNumber'
 
 interface PaperOperationListProps {
   items: PaperOperationSummaryDto[]
@@ -38,15 +39,15 @@ export function PaperOperationList({ items }: PaperOperationListProps) {
             </div>
             <div>
               <dt>Total fees</dt>
-              <dd>{item.total_fee_quote}</dd>
+              <dd><ExactNumber value={item.total_fee_quote} /></dd>
             </div>
             <div>
               <dt>Total slippage</dt>
-              <dd>{item.total_slippage_quote}</dd>
+              <dd><ExactNumber value={item.total_slippage_quote} /></dd>
             </div>
             <div>
               <dt>Bridge residual</dt>
-              <dd>{item.bridge_residual}</dd>
+              <dd><ExactNumber value={item.bridge_residual} /></dd>
             </div>
             <div>
               <dt>Routes</dt>

@@ -3,6 +3,7 @@ import type {
   PortfolioPerformanceDto,
   PortfolioSnapshotDto,
 } from '../../api/types'
+import { ExactNumber } from '../../components/ExactNumber'
 import { MetricCard } from '../../components/MetricCard'
 import { TableScroll } from '../../components/TableScroll'
 import { AllocationHistoryChart } from './AllocationHistoryChart'
@@ -55,9 +56,9 @@ function HoldingsTable({
           {snapshot.holdings.map((holding) => (
             <tr key={holding.asset}>
               <th scope="row">{holding.asset}</th>
-              <td>{holding.quantity}</td>
-              <td>{holding.value}</td>
-              <td>{holding.weight}</td>
+              <td><ExactNumber value={holding.quantity} /></td>
+              <td><ExactNumber value={holding.value} /></td>
+              <td><ExactNumber value={holding.weight} /></td>
             </tr>
           ))}
         </tbody>
@@ -100,7 +101,7 @@ export function PortfolioOverview({
         <div className="metric-grid">
           <MetricCard
             label="Maximum relative drawdown vs HODL"
-            value={performance.maximum_relative_drawdown_vs_hodl}
+            value={<ExactNumber value={performance.maximum_relative_drawdown_vs_hodl} />}
           />
           <MetricCard
             label="Time below HODL"
@@ -116,17 +117,17 @@ export function PortfolioOverview({
           ) : null}
           <MetricCard
             label="Terminal maximum weight"
-            value={snapshot.concentration.terminal_max_weight}
+            value={<ExactNumber value={snapshot.concentration.terminal_max_weight} />}
           />
           <MetricCard
             label="Terminal concentration (HHI)"
-            value={snapshot.concentration.terminal_herfindahl}
+            value={<ExactNumber value={snapshot.concentration.terminal_herfindahl} />}
           />
           <MetricCard label="Rebalance fills" value={snapshot.strategy_costs.fill_count} />
         </div>
-        <p>Fees: {snapshot.strategy_costs.fees_value}</p>
-        <p>Slippage: {snapshot.strategy_costs.slippage_value}</p>
-        <p>Turnover: {snapshot.strategy_costs.turnover_value}</p>
+        <p>Fees: <ExactNumber value={snapshot.strategy_costs.fees_value} /></p>
+        <p>Slippage: <ExactNumber value={snapshot.strategy_costs.slippage_value} /></p>
+        <p>Turnover: <ExactNumber value={snapshot.strategy_costs.turnover_value} /></p>
       </section>
 
       <section aria-labelledby="holdings-heading">

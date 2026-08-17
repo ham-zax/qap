@@ -22,6 +22,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
         <nav aria-label="Primary navigation">
           <Link to="/experiments">Experiments</Link>
+          <Link to="/paper-operations">Paper operations</Link>
         </nav>
       </header>
       <main id="main-content" tabIndex={-1}>

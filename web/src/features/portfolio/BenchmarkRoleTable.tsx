@@ -1,4 +1,5 @@
 import type { ExperimentDetailDto } from '../../api/types'
+import { ExactNumber } from '../../components/ExactNumber'
 import { TableScroll } from '../../components/TableScroll'
 
 interface BenchmarkRoleTableProps {
@@ -28,12 +29,12 @@ export function BenchmarkRoleTable({ roles }: BenchmarkRoleTableProps) {
               <tr key={role.role}>
                 <th scope="row">{role.role}</th>
                 <td>{role.policy_id}</td>
-                <td>{role.terminal_value}</td>
-                <td>{role.unitized_terminal_value}</td>
+                <td><ExactNumber value={role.terminal_value} /></td>
+                <td><ExactNumber value={role.unitized_terminal_value} /></td>
                 <td>{role.fill_count}</td>
-                <td>{role.fees_value}</td>
-                <td>{role.slippage_value}</td>
-                <td>{role.turnover_value}</td>
+                <td><ExactNumber value={role.fees_value} /></td>
+                <td><ExactNumber value={role.slippage_value} /></td>
+                <td><ExactNumber value={role.turnover_value} /></td>
               </tr>
             ))}
           </tbody>

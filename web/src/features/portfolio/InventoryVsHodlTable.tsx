@@ -1,4 +1,5 @@
 import type { PortfolioSnapshotDto } from '../../api/types'
+import { ExactNumber } from '../../components/ExactNumber'
 import { TableScroll } from '../../components/TableScroll'
 
 interface InventoryVsHodlTableProps {
@@ -22,8 +23,8 @@ export function InventoryVsHodlTable({ snapshot }: InventoryVsHodlTableProps) {
           {snapshot.strategy_vs_hodl_terminal_deltas.map((delta) => (
             <tr key={delta.asset}>
               <th scope="row">{delta.asset}</th>
-              <td>{delta.quantity_delta}</td>
-              <td>{delta.value_delta}</td>
+              <td><ExactNumber value={delta.quantity_delta} /></td>
+              <td><ExactNumber value={delta.value_delta} /></td>
             </tr>
           ))}
         </tbody>
@@ -47,8 +48,8 @@ export function InventoryVsHodlTable({ snapshot }: InventoryVsHodlTableProps) {
                 (delta) => (
                   <tr key={delta.asset}>
                     <th scope="row">{delta.asset}</th>
-                    <td>{delta.quantity_delta}</td>
-                    <td>{delta.value_delta}</td>
+                    <td><ExactNumber value={delta.quantity_delta} /></td>
+                    <td><ExactNumber value={delta.value_delta} /></td>
                   </tr>
                 ),
               )}

@@ -30,4 +30,15 @@ describe('PaperOperationList', () => {
     )
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
+
+  it('shows readable financial values while preserving their exact strings', () => {
+    const exact = '43877.03679286245537776080139063222484512761661829455060919175'
+    render(
+      <PaperOperationList items={[{ ...item, total_fee_quote: exact }]} />,
+    )
+
+    const displayed = screen.getByText('43,877.037')
+    expect(displayed).toHaveAttribute('data-exact', exact)
+    expect(displayed).toHaveAttribute('title', `Exact: ${exact}`)
+  })
 })
