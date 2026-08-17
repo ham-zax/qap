@@ -69,10 +69,9 @@ describe('PairWorkbench', () => {
     )
 
     expect(
-      screen.getByRole('heading', { name: 'Pair workbench' }),
+      screen.getByRole('heading', { name: 'ETH / BTC' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Canonical pair: BTC / ETH')).toBeInTheDocument()
-    expect(screen.getByText('Displayed orientation: ETH/BTC')).toBeInTheDocument()
+    expect(screen.getAllByText('Displayed orientation').length).toBeGreaterThan(0)
     expect(
       screen.getByText(
         'Descriptive evidence only; this chart does not establish tradable alpha.',
@@ -84,13 +83,13 @@ describe('PairWorkbench', () => {
     expect(
       screen.getByText('Requested quote units per one requested base unit.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('decision-1 - executed')).toBeInTheDocument()
-    expect(screen.getByText('Identity coordinates: USDT')).toBeInTheDocument()
+    expect(screen.getByText('Strategy actions on this pair')).toBeInTheDocument()
+    expect(screen.getByText('How this evidence is constructed')).toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: 'No persisted model evidence' }),
     ).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Show BTC/ETH' }))
+    await user.click(screen.getByRole('button', { name: 'Show BTC / ETH' }))
     expect(onSearchChange).toHaveBeenLastCalledWith({
       orientation: 'BTC/ETH',
       anchor: 'none',

@@ -1,6 +1,7 @@
 import type { PairEvidenceDto } from '../../api/types'
-import { StatusMessage } from '../../components/StatusMessage'
 import type { ChartVisibleRange } from '../../components/charts/chartData'
+import { formatDecimal } from '../../lib/format'
+import { humanizeIdentifier } from '../experiments/presentation'
 import { RelationshipEvidenceChart } from './RelationshipEvidenceChart'
 
 interface RelationshipEvidencePanelProps {
@@ -20,23 +21,61 @@ export function RelationshipEvidencePanel({
 }: RelationshipEvidencePanelProps) {
   if (data.series.length === 0) {
     return (
-      <StatusMessage title="No persisted model evidence" tone="warning">
-        <p>
-          This run has no relationship-model evidence artifact for the requested
-          pair.
+      <section
+        className="rounded-lg border border-warning/45 bg-panel p-5 md:p-6"
+        aria-labelledby="relationship-evidence-heading"
+      >
+        <h2 id="relationship-evidence-heading" className="mb-2 text-lg font-semibold text-foreground">
+          No persisted model evidence
+        </h2>
+        <p className="m-0 text-sm leading-6 text-secondary">
+          This run has no relationship-model evidence artifact for the requested pair.
         </p>
-      </StatusMessage>
+        <p className="mt-2 mb-0 text-xs text-muted">
+          The descriptive pair chart remains available above.
+        </p>
+      </section>
     )
   }
 
   return (
-    <section aria-labelledby="relationship-evidence-heading">
-      <h2 id="relationship-evidence-heading">Persisted model evidence</h2>
-      <p>
-        Backend-produced observations only; the browser does not refit or
-        recalculate the model.
+    <section
+      className="rounded-lg border border-border bg-panel p-5 md:p-6"
+      aria-labelledby="relationship-evidence-heading"
+    >
+      <h2 id="relationship-evidence-heading" className="mb-2 text-lg font-semibold text-foreground">
+        Persisted model evidence
+      </h2>
+      <p className="mt-0 mb-5 max-w-3xl text-sm leading-6 text-secondary">
+        Backend-produced observations only; the browser does not refit or recalculate the model.
       </p>
-      {data.series.map((item) => {
+
+      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {data.series.map((item) => {
+          const latest = item.points.at(-1)
+          const formatted = latest?.value == null ? null : formatDecimal(String(latest.value), 6)
+          return (
+            <div
+              key={`${item.persisted_orientation}:${item.model_id}:${item.model_version}:${item.evidence_field}:summary`}
+              className="rounded-md border border-border bg-canvas/45 p-4"
+            >
+              <p className="m-0 text-xs text-muted">
+                {humanizeIdentifier(item.evidence_field)} · {item.model_id} v{item.model_version}
+              </p>
+              <p className="mt-1 mb-0 text-xl font-semibold tabular-nums text-foreground">
+                {formatted?.display ?? 'Unavailable'}
+              </p>
+              <p className="mt-2 mb-0 text-xs text-secondary">
+                Latest status: {humanizeIdentifier(latest?.status ?? 'unknown')}
+                {latest ? ` · ${latest.coverage_observations}/${latest.required_observations} observations` : ''}
+              </p>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="space-y-5">
+        {data.series.map((item) => {
         const key = [
           item.persisted_orientation,
           item.model_id,
@@ -55,6 +94,7 @@ export function RelationshipEvidencePanel({
           />
         )
       })}
+      </div>
     </section>
   )
 }

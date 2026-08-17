@@ -140,40 +140,63 @@ export function AnchorLensPanel({ anchor, data }: AnchorLensPanelProps) {
   ]
 
   return (
-    <section aria-labelledby="anchor-lens-heading">
-      <h2 id="anchor-lens-heading">Anchor decomposition</h2>
-      <dl>
-        <div>
-          <dt>Requested orientation</dt>
-          <dd>{data.requested_orientation}</dd>
-        </div>
-        <div>
-          <dt>Anchor</dt>
-          <dd>{data.anchor}</dd>
-        </div>
-        <div>
-          <dt>Reduction</dt>
-          <dd>{data.reduction}</dd>
-        </div>
-        <div>
-          <dt>Identity coordinates</dt>
-          <dd>{data.identity_coordinate_assets.join(', ') || 'none'}</dd>
-        </div>
-        <div>
-          <dt>Maximum ratio identity error</dt>
-          <dd>{data.max_ratio_decomposition_error}</dd>
-        </div>
-        <div>
-          <dt>Maximum log identity error</dt>
-          <dd>{data.max_log_decomposition_error}</dd>
-        </div>
-      </dl>
-      <p>Anchor is context/decomposition, not portfolio target authority.</p>
-      {identityLabel ? (
-        <p>{identityLabel} is the identity path at 1 and is not plotted.</p>
-      ) : null}
-      <p>Descriptive decomposition only; no causal or tradable claim is implied.</p>
+    <section
+      className="min-w-0 rounded-lg border border-border bg-panel p-5 md:p-6"
+      aria-labelledby="anchor-lens-heading"
+    >
+      <h2 id="anchor-lens-heading" className="mb-2 text-lg font-semibold text-foreground">
+        Anchor decomposition
+      </h2>
+      <p className="mt-0 mb-1 max-w-3xl text-sm leading-6 text-secondary">
+        Compare the requested pair with its admitted {data.anchor} context.
+      </p>
+      <p className="mt-0 mb-2 max-w-3xl text-sm leading-6 text-secondary">
+        Anchor is context/decomposition, not portfolio target authority.
+      </p>
+      <p className="mt-0 mb-5 text-xs text-muted">
+        Descriptive decomposition only; no causal or tradable claim is implied.
+      </p>
+
       <SynchronizedChartGroup charts={charts} label="Synchronized anchor charts" />
+
+      <details className="mt-5 rounded-md border border-border bg-canvas/35 p-4">
+        <summary className="cursor-pointer font-semibold text-foreground">
+          Anchor decomposition audit
+        </summary>
+        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-xs text-muted">Requested orientation</dt>
+            <dd className="mt-1 mb-0 text-secondary">{data.requested_orientation}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">Anchor</dt>
+            <dd className="mt-1 mb-0 text-secondary">{data.anchor}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">Reduction</dt>
+            <dd className="mt-1 mb-0 text-secondary">{data.reduction}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">Identity coordinates</dt>
+            <dd className="mt-1 mb-0 text-secondary">
+              {data.identity_coordinate_assets.join(', ') || 'none'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">Maximum ratio identity error</dt>
+            <dd className="mt-1 mb-0 text-secondary">{data.max_ratio_decomposition_error}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">Maximum log identity error</dt>
+            <dd className="mt-1 mb-0 text-secondary">{data.max_log_decomposition_error}</dd>
+          </div>
+        </dl>
+        {identityLabel ? (
+          <p className="mt-4 mb-0 text-sm text-secondary">
+            {identityLabel} is the identity path at 1 and is not plotted.
+          </p>
+        ) : null}
+      </details>
     </section>
   )
 }
