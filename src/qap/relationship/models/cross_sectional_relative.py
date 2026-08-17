@@ -1,5 +1,6 @@
 """Pair-blind rolling relative-return control against the owned-basket common mode."""
 
+import math
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
@@ -12,7 +13,11 @@ import numpy as np
 
 from qap.market import AlignedBarSeries
 from qap.portfolio import AssetId
-from qap.relationship.observation import RelationshipDataError, validated_utc
+from qap.relationship.observation import (
+    RelationshipDataError,
+    validated_fingerprint,
+    validated_utc,
+)
 from qap.relationship.ratio import aligned_asset_values
 
 _MODEL_ID = "cross_sectional_relative_log_return"
@@ -43,7 +48,93 @@ class CrossSectionalRelativeObservation:
     input_fingerprint: str
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "scores", MappingProxyType(dict(self.scores)))
+        as_of = validated_utc(self.as_of, field="as_of")
+        if (
+            not isinstance(cast(object, self.model_id), str)
+            or not self.model_id.strip()
+        ):
+            raise TypeError("model_id must be a non-empty string")
+        if (
+            not isinstance(cast(object, self.model_version), str)
+            or not self.model_version.strip()
+        ):
+            raise TypeError("model_version must be a non-empty string")
+        assets = _validated_basket(self.assets)
+        window = _validated_window(self.window_returns)
+        coverage = self.coverage_returns
+        if isinstance(cast(object, coverage), bool) or not isinstance(
+            cast(object, coverage), int
+        ):
+            raise TypeError("coverage_returns must be an integer")
+        if not 0 <= coverage <= window:
+            raise RelationshipDataError(
+                "coverage_returns must be within the declared window"
+            )
+        if not isinstance(cast(object, self.status), CrossSectionalRelativeStatus):
+            raise TypeError("status must be a CrossSectionalRelativeStatus")
+        if not isinstance(cast(object, self.pair_independence_limited), bool):
+            raise TypeError("pair_independence_limited must be a boolean")
+        if self.pair_independence_limited != (len(assets) == 2):
+            raise RelationshipDataError(
+                "pair_independence_limited must reflect a two-asset basket"
+            )
+
+        try:
+            common_mode = tuple(self.common_mode_returns)
+        except TypeError as exc:
+            raise TypeError("common_mode_returns must be iterable") from exc
+        if any(not isinstance(value, float) for value in common_mode):
+            raise TypeError("common_mode_returns must contain floats")
+        if any(not math.isfinite(value) for value in common_mode):
+            raise RelationshipDataError("common_mode_returns must be finite")
+
+        if not isinstance(cast(object, self.scores), Mapping):
+            raise TypeError("scores must be a mapping")
+        scores: dict[AssetId, float] = {}
+        for asset, score in self.scores.items():
+            if not isinstance(cast(object, asset), AssetId):
+                raise TypeError("score keys must be AssetId values")
+            if not isinstance(score, float):
+                raise TypeError("scores must contain floats")
+            if not math.isfinite(score):
+                raise RelationshipDataError("scores must be finite")
+            scores[asset] = score
+
+        if self.status is CrossSectionalRelativeStatus.VALID:
+            if coverage != window:
+                raise RelationshipDataError(
+                    "valid cross-sectional observation coverage must equal "
+                    "window_returns"
+                )
+            if len(common_mode) != window or set(scores) != set(assets):
+                raise RelationshipDataError(
+                    "valid cross-sectional observation payload must cover "
+                    "the full basket"
+                )
+        else:
+            if coverage >= window:
+                raise RelationshipDataError(
+                    "insufficient_history coverage must be below window_returns"
+                )
+            if common_mode or scores:
+                raise RelationshipDataError(
+                    "insufficient_history observation payload must be empty"
+                )
+
+        object.__setattr__(self, "as_of", as_of)
+        object.__setattr__(self, "model_id", self.model_id.strip())
+        object.__setattr__(self, "model_version", self.model_version.strip())
+        object.__setattr__(self, "assets", assets)
+        object.__setattr__(self, "window_returns", window)
+        object.__setattr__(self, "common_mode_returns", common_mode)
+        object.__setattr__(
+            self, "scores", MappingProxyType(dict(sorted(scores.items())))
+        )
+        object.__setattr__(
+            self,
+            "input_fingerprint",
+            validated_fingerprint(self.input_fingerprint, field="input fingerprint"),
+        )
 
 
 def _validated_basket(basket: Iterable[AssetId]) -> tuple[AssetId, ...]:

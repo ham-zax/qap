@@ -159,6 +159,15 @@ class RelationshipObservation:
             raise TypeError("evidence_reciprocity must be an EvidenceReciprocity")
         if not isinstance(cast(object, self.status), RelationshipObservationStatus):
             raise TypeError("status must be a RelationshipObservationStatus")
+        for field, value in (
+            ("window_observations", self.window_observations),
+            ("required_observations", self.required_observations),
+            ("coverage_observations", self.coverage_observations),
+        ):
+            if isinstance(cast(object, value), bool) or not isinstance(
+                cast(object, value), int
+            ):
+                raise TypeError(f"{field} must be an integer")
         if self.window_observations <= 0:
             raise RelationshipDataError("window_observations must be positive")
         if not 0 < self.required_observations <= self.window_observations:
@@ -168,6 +177,28 @@ class RelationshipObservation:
         if not 0 <= self.coverage_observations <= self.window_observations:
             raise RelationshipDataError(
                 "coverage_observations must be within the declared window"
+            )
+        if (
+            self.status is RelationshipObservationStatus.VALID
+            and self.coverage_observations < self.required_observations
+        ):
+            raise RelationshipDataError(
+                "valid relationship observation coverage must meet "
+                "required_observations"
+            )
+        if (
+            self.status is RelationshipObservationStatus.INSUFFICIENT_HISTORY
+            and self.coverage_observations >= self.required_observations
+        ):
+            raise RelationshipDataError(
+                "insufficient_history coverage must be below required_observations"
+            )
+        if (
+            self.status is RelationshipObservationStatus.INSUFFICIENT_VARIANCE
+            and self.coverage_observations < self.required_observations
+        ):
+            raise RelationshipDataError(
+                "insufficient_variance coverage must meet required_observations"
             )
 
         normalized_values: dict[str, float] = {}
