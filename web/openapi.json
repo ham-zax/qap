@@ -1746,6 +1746,10 @@
             "title": "Bridge Target Quantity",
             "type": "string"
           },
+          "code_fingerprint": {
+            "title": "Code Fingerprint",
+            "type": "string"
+          },
           "data_role": {
             "const": "forward_paper",
             "title": "Data Role",
@@ -1768,6 +1772,10 @@
             "title": "Execution Timestamp",
             "type": "string"
           },
+          "fee_bps": {
+            "title": "Fee Bps",
+            "type": "string"
+          },
           "fills": {
             "items": {
               "$ref": "#/components/schemas/PaperOperationFillDto"
@@ -1784,6 +1792,13 @@
               "$ref": "#/components/schemas/PaperMarketMetadataDto"
             },
             "title": "Market Metadata",
+            "type": "object"
+          },
+          "market_notional_reference_prices": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Market Notional Reference Prices",
             "type": "object"
           },
           "operation_id": {
@@ -1823,6 +1838,10 @@
             "const": "qap.api.paper_operation.v1",
             "default": "qap.api.paper_operation.v1",
             "title": "Schema Version",
+            "type": "string"
+          },
+          "slippage_bps": {
+            "title": "Slippage Bps",
             "type": "string"
           },
           "source_note": {
@@ -1873,12 +1892,16 @@
           "prospective_candidate_evidence",
           "execution_timestamp",
           "input_fingerprint",
+          "code_fingerprint",
+          "fee_bps",
+          "slippage_bps",
           "source_note",
           "bridge",
           "starting_holdings",
           "target_weights",
           "valuation_prices",
           "reference_prices",
+          "market_notional_reference_prices",
           "market_metadata",
           "orders",
           "fills",
@@ -1893,6 +1916,33 @@
           "research_boundary"
         ],
         "title": "PaperOperationDetailDto",
+        "type": "object"
+      },
+      "PaperOperationErrorDto": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Context",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "context"
+        ],
+        "title": "PaperOperationErrorDto",
         "type": "object"
       },
       "PaperOperationFillDto": {
@@ -2025,48 +2075,122 @@
       "PaperOperationSummaryDto": {
         "additionalProperties": false,
         "properties": {
-          "bridge_residual": {
-            "title": "Bridge Residual",
+          "artifact_status": {
+            "enum": [
+              "valid",
+              "invalid"
+            ],
+            "title": "Artifact Status",
             "type": "string"
+          },
+          "bridge_residual": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bridge Residual"
           },
           "data_role": {
-            "const": "forward_paper",
-            "title": "Data Role",
-            "type": "string"
+            "anyOf": [
+              {
+                "const": "forward_paper",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Role"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaperOperationErrorDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "evidence_class": {
-            "const": "operational_dry_run",
-            "title": "Evidence Class",
-            "type": "string"
+            "anyOf": [
+              {
+                "const": "operational_dry_run",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Class"
           },
           "execution_timestamp": {
-            "format": "date-time",
-            "title": "Execution Timestamp",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Timestamp"
           },
           "fill_count": {
-            "title": "Fill Count",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fill Count"
           },
           "operation_id": {
             "title": "Operation Id",
             "type": "string"
           },
           "prospective_candidate_evidence": {
-            "const": false,
-            "title": "Prospective Candidate Evidence",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "const": false,
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prospective Candidate Evidence"
           },
           "reconciliation_matches": {
-            "title": "Reconciliation Matches",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reconciliation Matches"
           },
           "route_ids": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Route Ids",
-            "type": "array"
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Ids"
           },
           "schema_version": {
             "const": "qap.api.paper_operation_summary.v1",
@@ -2075,26 +2199,31 @@
             "type": "string"
           },
           "total_fee_quote": {
-            "title": "Total Fee Quote",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Fee Quote"
           },
           "total_slippage_quote": {
-            "title": "Total Slippage Quote",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Slippage Quote"
           }
         },
         "required": [
-          "operation_id",
-          "data_role",
-          "evidence_class",
-          "prospective_candidate_evidence",
-          "execution_timestamp",
-          "reconciliation_matches",
-          "fill_count",
-          "total_fee_quote",
-          "total_slippage_quote",
-          "bridge_residual",
-          "route_ids"
+          "artifact_status",
+          "operation_id"
         ],
         "title": "PaperOperationSummaryDto",
         "type": "object"

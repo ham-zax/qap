@@ -93,21 +93,29 @@ class PaperResearchBoundaryDto(_Dto):
     rule: str
 
 
+class PaperOperationErrorDto(_Dto):
+    code: str
+    message: str
+    context: dict[str, str]
+
+
 class PaperOperationSummaryDto(_Dto):
     schema_version: Literal["qap.api.paper_operation_summary.v1"] = (
         "qap.api.paper_operation_summary.v1"
     )
+    artifact_status: Literal["valid", "invalid"]
     operation_id: str
-    data_role: Literal["forward_paper"]
-    evidence_class: Literal["operational_dry_run"]
-    prospective_candidate_evidence: Literal[False]
-    execution_timestamp: datetime
-    reconciliation_matches: bool
-    fill_count: int
-    total_fee_quote: str
-    total_slippage_quote: str
-    bridge_residual: str
-    route_ids: tuple[str, ...]
+    data_role: Literal["forward_paper"] | None = None
+    evidence_class: Literal["operational_dry_run"] | None = None
+    prospective_candidate_evidence: Literal[False] | None = None
+    execution_timestamp: datetime | None = None
+    reconciliation_matches: bool | None = None
+    fill_count: int | None = None
+    total_fee_quote: str | None = None
+    total_slippage_quote: str | None = None
+    bridge_residual: str | None = None
+    route_ids: tuple[str, ...] | None = None
+    error: PaperOperationErrorDto | None = None
 
 
 class PaperOperationDetailDto(_Dto):
@@ -118,12 +126,16 @@ class PaperOperationDetailDto(_Dto):
     prospective_candidate_evidence: Literal[False]
     execution_timestamp: datetime
     input_fingerprint: str
+    code_fingerprint: str
+    fee_bps: str
+    slippage_bps: str
     source_note: str
     bridge: str
     starting_holdings: dict[str, str]
     target_weights: dict[str, str]
     valuation_prices: dict[str, str]
     reference_prices: dict[str, str]
+    market_notional_reference_prices: dict[str, str]
     market_metadata: dict[str, PaperMarketMetadataDto]
     orders: tuple[PaperOperationOrderDto, ...]
     fills: tuple[PaperOperationFillDto, ...]
@@ -140,6 +152,7 @@ class PaperOperationDetailDto(_Dto):
 
 __all__ = [
     "PaperMarketMetadataDto",
+    "PaperOperationErrorDto",
     "PaperOperationDetailDto",
     "PaperOperationFillDto",
     "PaperOperationOrderDto",

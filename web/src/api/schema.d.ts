@@ -811,6 +811,8 @@ export interface components {
             bridge_residual: string;
             /** Bridge Target Quantity */
             bridge_target_quantity: string;
+            /** Code Fingerprint */
+            code_fingerprint: string;
             /**
              * Data Role
              * @constant
@@ -830,6 +832,8 @@ export interface components {
              * Format: date-time
              */
             execution_timestamp: string;
+            /** Fee Bps */
+            fee_bps: string;
             /** Fills */
             fills: components["schemas"]["PaperOperationFillDto"][];
             /** Input Fingerprint */
@@ -837,6 +841,10 @@ export interface components {
             /** Market Metadata */
             market_metadata: {
                 [key: string]: components["schemas"]["PaperMarketMetadataDto"];
+            };
+            /** Market Notional Reference Prices */
+            market_notional_reference_prices: {
+                [key: string]: string;
             };
             /** Operation Id */
             operation_id: string;
@@ -861,6 +869,8 @@ export interface components {
              * @constant
              */
             schema_version: "qap.api.paper_operation.v1";
+            /** Slippage Bps */
+            slippage_bps: string;
             /** Source Note */
             source_note: string;
             /** Starting Holdings */
@@ -881,6 +891,17 @@ export interface components {
             valuation_prices: {
                 [key: string]: string;
             };
+        };
+        /** PaperOperationErrorDto */
+        PaperOperationErrorDto: {
+            /** Code */
+            code: string;
+            /** Context */
+            context: {
+                [key: string]: string;
+            };
+            /** Message */
+            message: string;
         };
         /** PaperOperationFillDto */
         PaperOperationFillDto: {
@@ -933,36 +954,30 @@ export interface components {
         };
         /** PaperOperationSummaryDto */
         PaperOperationSummaryDto: {
+            /**
+             * Artifact Status
+             * @enum {string}
+             */
+            artifact_status: "valid" | "invalid";
             /** Bridge Residual */
-            bridge_residual: string;
-            /**
-             * Data Role
-             * @constant
-             */
-            data_role: "forward_paper";
-            /**
-             * Evidence Class
-             * @constant
-             */
-            evidence_class: "operational_dry_run";
-            /**
-             * Execution Timestamp
-             * Format: date-time
-             */
-            execution_timestamp: string;
+            bridge_residual?: string | null;
+            /** Data Role */
+            data_role?: "forward_paper" | null;
+            error?: components["schemas"]["PaperOperationErrorDto"] | null;
+            /** Evidence Class */
+            evidence_class?: "operational_dry_run" | null;
+            /** Execution Timestamp */
+            execution_timestamp?: string | null;
             /** Fill Count */
-            fill_count: number;
+            fill_count?: number | null;
             /** Operation Id */
             operation_id: string;
-            /**
-             * Prospective Candidate Evidence
-             * @constant
-             */
-            prospective_candidate_evidence: false;
+            /** Prospective Candidate Evidence */
+            prospective_candidate_evidence?: false | null;
             /** Reconciliation Matches */
-            reconciliation_matches: boolean;
+            reconciliation_matches?: boolean | null;
             /** Route Ids */
-            route_ids: string[];
+            route_ids?: string[] | null;
             /**
              * Schema Version
              * @default qap.api.paper_operation_summary.v1
@@ -970,9 +985,9 @@ export interface components {
              */
             schema_version: "qap.api.paper_operation_summary.v1";
             /** Total Fee Quote */
-            total_fee_quote: string;
+            total_fee_quote?: string | null;
             /** Total Slippage Quote */
-            total_slippage_quote: string;
+            total_slippage_quote?: string | null;
         };
         /** PaperReconciliationDto */
         PaperReconciliationDto: {

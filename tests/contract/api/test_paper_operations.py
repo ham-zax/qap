@@ -3,6 +3,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from qap.api.errors import ApiBoundaryError
+from qap.api.paper_operation_views import PaperOperationReader
 from qap.experiment.paper_operation import run_paper_operation_to_artifact
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -36,6 +38,7 @@ def test_paper_operation_list_surfaces_forward_paper_and_cost_context(
     payload = response.json()
     assert len(payload) == 1
     summary = payload[0]
+    assert summary["artifact_status"] == "valid"
     assert summary["operation_id"] == operation_id
     assert summary["data_role"] == "forward_paper"
     assert summary["reconciliation_matches"] is True
@@ -65,6 +68,14 @@ def test_paper_operation_detail_preserves_routes_precision_and_research_boundary
     assert payload["evidence_class"] == "operational_dry_run"
     assert payload["prospective_candidate_evidence"] is False
     assert payload["bridge"] == "USDT"
+    assert payload["fee_bps"] == "10"
+    assert payload["slippage_bps"] == "10"
+    assert len(payload["code_fingerprint"]) == 64
+    assert payload["market_notional_reference_prices"] == {
+        "BTCUSDT": "63643.03000000",
+        "ETHUSDT": "1906.42000000",
+        "SOLUSDT": "75.80000000",
+    }
     assert payload["reconciliation_matches"] is True
     assert [item["phase"] for item in payload["orders"]] == [
         "sell_to_bridge",
@@ -96,6 +107,47 @@ def test_paper_operation_detail_preserves_routes_precision_and_research_boundary
     )
     assert payload["research_boundary"]["eligible_for_parameter_selection"] is False
     assert payload["research_boundary"]["eligible_for_deployment_evidence"] is False
+
+
+def test_paper_operation_reader_rejects_parent_path_escape(tmp_path: Path) -> None:
+    root = tmp_path / "paper-operations"
+    generated = run_paper_operation_to_artifact(
+        SPEC,
+        repository_root=ROOT,
+        output_root=root,
+    )
+    (tmp_path / "paper_operation.json").write_bytes(
+        generated.operation_file.read_bytes()
+    )
+
+    reader = PaperOperationReader(root)
+    with pytest.raises(ApiBoundaryError) as error:
+        reader.detail("..")
+
+    assert error.value.status_code == 404
+    assert error.value.code == "paper_operation_not_found"
+
+
+def test_paper_operation_list_surfaces_corrupt_entry_without_hiding_valid(
+    paper_operation_run_root: tuple[Path, str],
+) -> None:
+    from qap.api import ApiSettings, create_app
+
+    run_root, operation_id = paper_operation_run_root
+    corrupt = run_root / "paper-operations" / "broken-operation"
+    corrupt.mkdir()
+    (corrupt / "paper_operation.json").write_text("{broken", encoding="utf-8")
+    client = TestClient(
+        create_app(ApiSettings(run_root=run_root, market_data_root=ROOT))
+    )
+
+    response = client.get("/api/paper-operations")
+
+    assert response.status_code == 200
+    items = {item["operation_id"]: item for item in response.json()}
+    assert items[operation_id]["artifact_status"] == "valid"
+    assert items["broken-operation"]["artifact_status"] == "invalid"
+    assert items["broken-operation"]["error"]["code"] == "corrupt_paper_operation"
 
 
 def test_missing_paper_operation_has_stable_error_envelope(tmp_path: Path) -> None:

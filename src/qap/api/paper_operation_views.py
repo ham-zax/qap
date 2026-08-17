@@ -9,6 +9,7 @@ from qap.api.errors import ApiBoundaryError
 from qap.api.paper_operation_schemas import (
     PaperMarketMetadataDto,
     PaperOperationDetailDto,
+    PaperOperationErrorDto,
     PaperOperationFillDto,
     PaperOperationOrderDto,
     PaperOperationSummaryDto,
@@ -17,19 +18,26 @@ from qap.api.paper_operation_schemas import (
     PaperResearchBoundaryDto,
     PaperTrackingErrorDto,
 )
-from qap.experiment.paper_operation import read_paper_operation_artifact
+from qap.experiment.paper_operation import (
+    read_paper_operation_artifact,
+    valid_paper_operation_id,
+)
 
 
 class PaperOperationReader:
     """Read immutable paper-operation files from one configured root."""
 
     def __init__(self, root: Path) -> None:
-        self.root = root
+        self.root = root.resolve()
 
     def _operation_file(self, operation_id: str) -> Path:
-        if not operation_id or "/" in operation_id or "\\" in operation_id:
+        if not valid_paper_operation_id(operation_id):
             raise _not_found(operation_id)
-        path = self.root / operation_id / "paper_operation.json"
+        path = (self.root / operation_id / "paper_operation.json").resolve()
+        try:
+            path.relative_to(self.root)
+        except ValueError as exc:
+            raise _not_found(operation_id) from exc
         if not path.is_file():
             raise _not_found(operation_id)
         return path
@@ -96,12 +104,18 @@ class PaperOperationReader:
                     _text(raw, "execution_timestamp")
                 ),
                 input_fingerprint=_text(raw, "input_fingerprint"),
+                code_fingerprint=_text(raw, "code_fingerprint"),
+                fee_bps=_text(raw, "fee_bps"),
+                slippage_bps=_text(raw, "slippage_bps"),
                 source_note=_text(raw, "source_note"),
                 bridge=_text(raw, "bridge"),
                 starting_holdings=_string_mapping(raw, "starting_holdings"),
                 target_weights=_string_mapping(raw, "target_weights"),
                 valuation_prices=_string_mapping(raw, "valuation_prices"),
                 reference_prices=_string_mapping(raw, "reference_prices"),
+                market_notional_reference_prices=_string_mapping(
+                    raw, "market_notional_reference_prices"
+                ),
                 market_metadata=metadata,
                 orders=orders,
                 fills=fills,
@@ -135,9 +149,26 @@ class PaperOperationReader:
             operation_file = directory / "paper_operation.json"
             if not operation_file.is_file():
                 continue
-            detail = self.detail(directory.name)
+            try:
+                detail = self.detail(directory.name)
+            except ApiBoundaryError as error:
+                if error.code != "corrupt_paper_operation":
+                    raise
+                summaries.append(
+                    PaperOperationSummaryDto(
+                        artifact_status="invalid",
+                        operation_id=directory.name,
+                        error=PaperOperationErrorDto(
+                            code=error.code,
+                            message=error.message,
+                            context=error.context,
+                        ),
+                    )
+                )
+                continue
             summaries.append(
                 PaperOperationSummaryDto(
+                    artifact_status="valid",
                     operation_id=detail.operation_id,
                     data_role="forward_paper",
                     evidence_class=detail.evidence_class,

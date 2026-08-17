@@ -11,6 +11,9 @@ from pathlib import Path
 from typing import Any, cast
 
 from qap.execution import CostModel, execute_multi_asset_rebalance
+from qap.experiment.integrity import build_integrity_record, read_and_validate_integrity
+from qap.experiment.paper_artifact_semantics import validate_paper_operation_semantics
+from qap.experiment.provenance import code_fingerprint
 from qap.experiment.reconciliation import ReconciliationReport, reconcile_fill_sequence
 from qap.market import PriceSnapshot, VenueInstrument
 from qap.market.adapters.binance_public import BinancePublicAdapter
@@ -27,6 +30,10 @@ _FORWARD_PAPER_RULE = (
 )
 
 
+def valid_paper_operation_id(value: object) -> bool:
+    return isinstance(value, str) and _OPERATION_ID.fullmatch(value) is not None
+
+
 @dataclass(frozen=True, slots=True)
 class PaperOperationArtifactPaths:
     """Immutable paths for one forward-paper operation artifact."""
@@ -34,6 +41,7 @@ class PaperOperationArtifactPaths:
     operation_id: str
     operation_directory: Path
     operation_file: Path
+    integrity_file: Path
 
 
 def _object(value: object, *, field: str) -> dict[str, object]:
@@ -274,11 +282,13 @@ def _reconciliation_record(report: ReconciliationReport) -> dict[str, object]:
 def _build_record(
     spec: dict[str, object],
     exchange_info: dict[str, object],
+    *,
+    code_fingerprint_value: str,
 ) -> dict[str, object]:
     if spec.get("schema_version") != _SPEC_SCHEMA_VERSION:
         raise ValueError(f"schema_version must be {_SPEC_SCHEMA_VERSION}")
     operation_id = _text(spec.get("operation_id"), field="operation_id")
-    if _OPERATION_ID.fullmatch(operation_id) is None:
+    if not valid_paper_operation_id(operation_id):
         raise ValueError("operation_id contains unsupported characters")
     if spec.get("data_role") != "forward_paper":
         raise ValueError("data_role must be forward_paper")
@@ -394,6 +404,9 @@ def _build_record(
         "prospective_candidate_evidence": False,
         "execution_timestamp": execution_timestamp.isoformat(),
         "input_fingerprint": _input_fingerprint(spec, exchange_info),
+        "code_fingerprint": code_fingerprint_value,
+        "fee_bps": _text(spec.get("fee_bps"), field="fee_bps"),
+        "slippage_bps": _text(spec.get("slippage_bps"), field="slippage_bps"),
         "source_note": _text(spec.get("source_note"), field="source_note"),
         "bridge": bridge.key,
         "starting_holdings": _holdings(starting_state),
@@ -473,10 +486,15 @@ def run_paper_operation_to_artifact(
     spec = _load_json_object(spec_path, field="paper operation spec")
     exchange_path = _repository_file(repository_root, spec.get("exchange_info_fixture"))
     exchange_info = _load_json_object(exchange_path, field="exchange_info_fixture")
-    record = _build_record(spec, exchange_info)
+    record = _build_record(
+        spec,
+        exchange_info,
+        code_fingerprint_value=code_fingerprint(repository_root),
+    )
     operation_id = cast(str, record["operation_id"])
     operation_directory = output_root / operation_id
     operation_file = operation_directory / "paper_operation.json"
+    integrity_file = operation_directory / "integrity.json"
     try:
         operation_directory.mkdir(parents=True, exist_ok=False)
     except FileExistsError as exc:
@@ -484,20 +502,36 @@ def run_paper_operation_to_artifact(
     temporary = operation_directory / ".paper_operation.json.tmp"
     temporary.write_bytes(_canonical_json(record))
     temporary.replace(operation_file)
+    integrity = build_integrity_record(
+        operation_directory,
+        artifact_id=operation_id,
+        file_names=(operation_file.name,),
+    )
+    integrity_file.write_bytes(_canonical_json(integrity.model_dump(mode="json")))
     return PaperOperationArtifactPaths(
         operation_id=operation_id,
         operation_directory=operation_directory,
         operation_file=operation_file,
+        integrity_file=integrity_file,
     )
 
 
 def read_paper_operation_artifact(path: Path) -> dict[str, Any]:
-    """Read and minimally validate one immutable paper-operation JSON artifact."""
+    """Read one immutable paper-operation artifact and revalidate its economics."""
 
+    read_and_validate_integrity(
+        path.parent,
+        artifact_id=path.parent.name,
+        required_files=frozenset({path.name}),
+        allowed_files=frozenset({path.name}),
+    )
     raw: object = json.loads(path.read_text(encoding="utf-8"))
     record = _object(raw, field="paper operation artifact")
     if record.get("schema_version") != _SCHEMA_VERSION:
         raise ValueError(f"paper operation schema must be {_SCHEMA_VERSION}")
+    if record.get("operation_id") != path.parent.name:
+        raise ValueError("paper operation identity does not match its directory")
+    validate_paper_operation_semantics(record)
     return cast(dict[str, Any], record)
 
 
@@ -505,4 +539,5 @@ __all__ = [
     "PaperOperationArtifactPaths",
     "read_paper_operation_artifact",
     "run_paper_operation_to_artifact",
+    "valid_paper_operation_id",
 ]

@@ -6,6 +6,7 @@ import { PaperOperationList } from './PaperOperationList'
 
 const item = {
   schema_version: 'qap.api.paper_operation_summary.v1',
+  artifact_status: 'valid',
   operation_id: 'forward-paper-1',
   data_role: 'forward_paper',
   evidence_class: 'operational_dry_run',
@@ -33,6 +34,25 @@ describe('PaperOperationList', () => {
       '/paper-operations/forward-paper-1',
     )
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('keeps a corrupt paper artifact visible without offering a detail link', () => {
+    const invalid = {
+      schema_version: 'qap.api.paper_operation_summary.v1',
+      artifact_status: 'invalid',
+      operation_id: 'broken-operation',
+      error: {
+        code: 'corrupt_paper_operation',
+        message: 'Paper operation artifact is corrupt.',
+        context: { operation_id: 'broken-operation' },
+      },
+    } satisfies PaperOperationSummaryDto
+
+    render(<PaperOperationList items={[item, invalid]} />)
+
+    expect(screen.getByText('Invalid artifact')).toBeVisible()
+    expect(screen.getByText('Paper operation artifact is corrupt.')).toBeVisible()
+    expect(screen.getAllByRole('link', { name: 'Inspect operation' })).toHaveLength(1)
   })
 
   it('shows readable financial values while preserving their exact strings', () => {

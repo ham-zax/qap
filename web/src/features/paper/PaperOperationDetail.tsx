@@ -401,6 +401,16 @@ export function PaperOperationDetail({ data }: PaperOperationDetailProps) {
                   {data.input_fingerprint}
                 </code>
               </div>
+              <div className="min-w-0">
+                <p className="m-0 text-xs text-muted">Code fingerprint</p>
+                <code className="mt-1 block overflow-x-auto rounded-md bg-canvas px-2 py-1 font-mono text-xs text-secondary" tabIndex={0}>
+                  {data.code_fingerprint}
+                </code>
+              </div>
+              <div className="min-w-0 text-sm text-secondary">
+                <p className="m-0">Fee model · {data.fee_bps} bps</p>
+                <p className="mt-1 mb-0">Slippage model · {data.slippage_bps} bps</p>
+              </div>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-3">
@@ -457,7 +467,7 @@ export function PaperOperationDetail({ data }: PaperOperationDetailProps) {
               <summary className="cursor-pointer text-sm font-semibold text-foreground">
                 Valuation and reference prices
               </summary>
-              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <div className="mt-4 grid gap-4 lg:grid-cols-3">
                 <TableScroll label="Valuation prices">
                   <table aria-label="Valuation prices">
                     <thead><tr><th scope="col">Asset</th><th scope="col">Price</th></tr></thead>
@@ -468,6 +478,12 @@ export function PaperOperationDetail({ data }: PaperOperationDetailProps) {
                   <table aria-label="Reference prices">
                     <thead><tr><th scope="col">Market</th><th scope="col">Price</th></tr></thead>
                     <tbody>{keyValueRows(data.reference_prices)}</tbody>
+                  </table>
+                </TableScroll>
+                <TableScroll label="MARKET notional-filter reference prices">
+                  <table aria-label="MARKET notional-filter reference prices">
+                    <thead><tr><th scope="col">Market</th><th scope="col">Price</th></tr></thead>
+                    <tbody>{keyValueRows(data.market_notional_reference_prices)}</tbody>
                   </table>
                 </TableScroll>
               </div>

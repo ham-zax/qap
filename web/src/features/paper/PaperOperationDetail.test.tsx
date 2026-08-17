@@ -12,12 +12,16 @@ const detail = {
   prospective_candidate_evidence: false,
   execution_timestamp: '2026-08-17T11:11:00Z',
   input_fingerprint: 'a'.repeat(64),
+  code_fingerprint: 'b'.repeat(64),
+  fee_bps: '10',
+  slippage_bps: '5',
   source_note: 'Recorded public Binance Spot inputs.',
   bridge: 'USDT',
   starting_holdings: { SOL: '1.3', USDT: '100' },
   target_weights: { SOL: '0.248', USDT: '0.752' },
   valuation_prices: { SOL: '75.8', USDT: '1' },
   reference_prices: { SOLUSDT: '75.8' },
+  market_notional_reference_prices: { SOLUSDT: '75.75' },
   market_metadata: {
     SOLUSDT: {
       venue: 'binance',
@@ -108,6 +112,9 @@ describe('PaperOperationDetail', () => {
     expect(screen.getByText('No fills were realized.')).toBeVisible()
 
     expect(screen.getByText('Technical execution details')).toBeVisible()
+    expect(screen.getByText('Fee model · 10 bps')).toBeInTheDocument()
+    expect(screen.getByText('Slippage model · 5 bps')).toBeInTheDocument()
+    expect(screen.getByText('75.75')).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 })

@@ -38,7 +38,35 @@ export function PaperOperationList({ items }: PaperOperationListProps) {
 
       <div className="grid gap-5 lg:grid-cols-2">
         {items.map((item) => {
-          const reconciled = item.reconciliation_matches
+          if (item.artifact_status === 'invalid') {
+            return (
+              <article
+                key={item.operation_id}
+                aria-label={item.operation_id}
+                className="flex min-w-0 flex-col rounded-lg border border-negative/45 bg-panel p-4 md:p-5"
+              >
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <Badge tone="negative">Invalid artifact</Badge>
+                </div>
+                <h2 className="mb-2 text-base font-semibold text-foreground">
+                  Paper operation unavailable
+                </h2>
+                <p className="m-0 text-sm leading-6 text-secondary">
+                  {item.error?.message ?? 'The persisted operation could not be validated.'}
+                </p>
+                <p className="mt-4 mb-0 break-all text-xs text-muted" title={item.operation_id}>
+                  Operation {shortId(item.operation_id)}
+                </p>
+              </article>
+            )
+          }
+
+          const reconciled = item.reconciliation_matches === true
+          const executionTimestamp = item.execution_timestamp!
+          const fillCount = item.fill_count!
+          const totalFeeQuote = item.total_fee_quote!
+          const totalSlippageQuote = item.total_slippage_quote!
+          const bridgeResidual = item.bridge_residual!
           return (
             <article
               key={item.operation_id}
@@ -54,32 +82,32 @@ export function PaperOperationList({ items }: PaperOperationListProps) {
 
               <h2 className="mb-2 text-base font-semibold text-foreground">Paper rebalance</h2>
               <p className="mt-0 mb-5 text-sm text-secondary">
-                {formatResearchTimestamp(item.execution_timestamp)}
+                {formatResearchTimestamp(executionTimestamp)}
               </p>
 
               <div className="grid grid-cols-2 gap-3 border-y border-border py-4">
                 <div>
                   <p className="m-0 text-xs text-muted">Fills</p>
                   <p className="mt-1 mb-0 text-lg font-semibold tabular-nums text-foreground">
-                    {item.fill_count}
+                    {fillCount}
                   </p>
                 </div>
                 <div>
                   <p className="m-0 text-xs text-muted">Fees</p>
                   <p className="mt-1 mb-0 text-lg font-semibold tabular-nums text-foreground">
-                    <ExactNumber value={item.total_fee_quote} />
+                    <ExactNumber value={totalFeeQuote} />
                   </p>
                 </div>
                 <div>
                   <p className="m-0 text-xs text-muted">Slippage</p>
                   <p className="mt-1 mb-0 font-semibold tabular-nums text-foreground">
-                    <ExactNumber value={item.total_slippage_quote} />
+                    <ExactNumber value={totalSlippageQuote} />
                   </p>
                 </div>
                 <div>
                   <p className="m-0 text-xs text-muted">Bridge residual</p>
                   <p className="mt-1 mb-0 font-semibold tabular-nums text-foreground">
-                    <ExactNumber value={item.bridge_residual} />
+                    <ExactNumber value={bridgeResidual} />
                   </p>
                 </div>
               </div>
