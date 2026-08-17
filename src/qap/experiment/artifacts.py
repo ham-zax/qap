@@ -14,8 +14,13 @@ from typing import Any, Literal, Self
 import pyarrow.parquet as pq
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
+from qap.experiment.artifact_semantics import validate_run_artifact_semantics
 from qap.experiment.events import read_event_records, write_event_records
 from qap.experiment.final_oos import issue_final_oos_execution_permit
+from qap.experiment.integrity import (
+    build_integrity_record,
+    read_and_validate_integrity,
+)
 from qap.experiment.manifest import DataRole, ExperimentManifest
 from qap.experiment.provenance import (
     DatasetFingerprint,
@@ -115,6 +120,7 @@ class RunArtifactPaths:
     inventory: Path
     evidence: Path
     events: Path
+    integrity: Path
     commitment: Path
     failure: Path
 
@@ -143,6 +149,7 @@ def _paths(run_root: Path, run_id: str) -> RunArtifactPaths:
         inventory=directory / "inventory.parquet",
         evidence=directory / "evidence.parquet",
         events=directory / "events.jsonl",
+        integrity=directory / "integrity.json",
         commitment=directory / "commitment.json",
         failure=directory / "failure.json",
     )
@@ -354,6 +361,31 @@ def _write_completed_artifacts(paths: RunArtifactPaths, run: ExperimentRun) -> N
     write_event_records(paths.events, run)
 
 
+def _completed_integrity_file_names(paths: RunArtifactPaths) -> tuple[str, ...]:
+    names = [
+        paths.manifest.name,
+        paths.provenance.name,
+        paths.result.name,
+        paths.performance.name,
+        paths.inventory.name,
+        paths.events.name,
+    ]
+    if paths.evidence.is_file():
+        names.append(paths.evidence.name)
+    if paths.commitment.is_file():
+        names.append(paths.commitment.name)
+    return tuple(names)
+
+
+def _write_completed_integrity(paths: RunArtifactPaths) -> None:
+    integrity = build_integrity_record(
+        paths.run_directory,
+        artifact_id=paths.run_id,
+        file_names=_completed_integrity_file_names(paths),
+    )
+    _atomic_write_model(paths.integrity, integrity)
+
+
 def write_run_artifacts(
     run: ExperimentRun,
     *,
@@ -374,6 +406,7 @@ def write_run_artifacts(
     _atomic_write_model(paths.provenance, run.provenance)
     try:
         _write_completed_artifacts(paths, run)
+        _write_completed_integrity(paths)
     except BaseException as exc:
         _write_failure(paths, exc)
         raise
@@ -436,6 +469,7 @@ def run_experiment_to_artifacts(
         _atomic_write_model(paths.commitment, consumed)
         if registry_path is not None:
             _atomic_write_model(registry_path, consumed)
+    _write_completed_integrity(paths)
     return paths
 
 
@@ -503,6 +537,35 @@ def _validate_event_contract(
 def read_run_artifacts(run_directory: str | Path) -> LoadedRunArtifacts:
     directory = Path(run_directory).resolve()
     paths = _paths(directory.parent, directory.name)
+    try:
+        read_and_validate_integrity(
+            directory,
+            artifact_id=directory.name,
+            required_files=frozenset(
+                {
+                    paths.manifest.name,
+                    paths.provenance.name,
+                    paths.result.name,
+                    paths.performance.name,
+                    paths.inventory.name,
+                    paths.events.name,
+                }
+            ),
+            allowed_files=frozenset(
+                {
+                    paths.manifest.name,
+                    paths.provenance.name,
+                    paths.result.name,
+                    paths.performance.name,
+                    paths.inventory.name,
+                    paths.evidence.name,
+                    paths.events.name,
+                    paths.commitment.name,
+                }
+            ),
+        )
+    except (OSError, TypeError, ValueError) as exc:
+        raise ArtifactError(f"artifact integrity validation failed: {exc}") from exc
     manifest = ExperimentManifest.model_validate_json(
         paths.manifest.read_text(encoding="utf-8")
     )
@@ -550,6 +613,14 @@ def read_run_artifacts(run_directory: str | Path) -> LoadedRunArtifacts:
             expected_schema="qap.experiment.evidence.v1",
             run_id=directory.name,
         )
+    try:
+        validate_run_artifact_semantics(
+            result=result,
+            performance=performance,
+            inventory=inventory,
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ArtifactError(f"artifact semantic validation failed: {exc}") from exc
     events = read_event_records(paths.events, run_id=directory.name)
     _validate_event_contract(result=result, events=events)
     commitment = (

@@ -17,11 +17,13 @@ from qap.experiment.artifacts import (
     ArtifactError,
     HoldoutAlreadyCommittedError,
     RunAlreadyExistsError,
+    RunArtifactPaths,
     discover_family_runs,
     read_run_artifacts,
     run_experiment_to_artifacts,
     write_run_artifacts,
 )
+from qap.experiment.integrity import ArtifactIntegrity, build_integrity_record
 from qap.experiment.manifest import ExperimentManifest
 from qap.experiment.runner import (
     ExperimentRun,
@@ -46,6 +48,21 @@ def _manifest_data() -> dict[str, object]:
     if not isinstance(value, dict):
         raise TypeError("manifest fixture must be an object")
     return cast(dict[str, object], value)
+
+
+def _refresh_integrity(paths: RunArtifactPaths) -> None:
+    current = ArtifactIntegrity.model_validate_json(
+        paths.integrity.read_text(encoding="utf-8")
+    )
+    refreshed = build_integrity_record(
+        paths.run_directory,
+        artifact_id=current.artifact_id,
+        file_names=tuple(current.files),
+    )
+    paths.integrity.write_text(
+        refreshed.model_dump_json(indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _rolling_model_manifest() -> ExperimentManifest:
@@ -144,6 +161,7 @@ def test_completed_run_rejects_missing_initial_state_event(tmp_path: Path) -> No
         "".join(f"{json.dumps(record, separators=(',', ':'))}\n" for record in records),
         encoding="utf-8",
     )
+    _refresh_integrity(paths)
 
     with pytest.raises(ArtifactError, match="initial_state"):
         read_run_artifacts(paths.run_directory)
@@ -512,6 +530,7 @@ def test_reader_rejects_tampered_parquet_schema_metadata(tmp_path: Path) -> None
     metadata = dict(table.schema.metadata or {})
     metadata[b"qap_schema"] = b"qap.experiment.performance.tampered"
     pq.write_table(table.replace_schema_metadata(metadata), paths.performance)
+    _refresh_integrity(paths)
 
     with pytest.raises(ValueError, match="unexpected artifact table schema"):
         read_run_artifacts(paths.run_directory)
