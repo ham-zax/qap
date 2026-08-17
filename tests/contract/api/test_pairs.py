@@ -108,17 +108,13 @@ def test_pair_series_supports_the_run_common_quote_as_an_identity_leg(
     assert direct_payload["identity_coordinate_assets"] == ["USDT"]
     assert direct_payload["quote_source_fingerprint"] == identity_fingerprint
     assert reverse_payload["base_source_fingerprint"] == identity_fingerprint
-    assert all(
-        point["value"] == 1.0 for point in direct_payload["normalized_quote"]
-    )
+    assert all(point["value"] == 1.0 for point in direct_payload["normalized_quote"])
     assert (
-        direct_payload["ratio"][0]["value"]
-        * reverse_payload["ratio"][0]["value"]
+        direct_payload["ratio"][0]["value"] * reverse_payload["ratio"][0]["value"]
     ) == pytest.approx(1.0)
 
     anchor = client.get(
-        f"/api/pairs/BTC/USDT/anchor?run_id={run_id}"
-        "&anchor=USDT&orientation=BTC/USDT"
+        f"/api/pairs/BTC/USDT/anchor?run_id={run_id}&anchor=USDT&orientation=BTC/USDT"
     )
     assert anchor.status_code == 200
     anchor_payload = anchor.json()

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
+from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -13,9 +14,9 @@ from qap.market import AlignedBarSeries, BarInterval
 from qap.portfolio import AssetId
 from qap.relationship.observation import (
     RelationshipDataError,
-    validated_as_of,
     validated_fingerprint,
     validated_timestamps,
+    validated_utc,
 )
 from qap.relationship.ratio import (
     aligned_asset_values,
@@ -41,15 +42,16 @@ class NormalizedPath:
     asset: AssetId
     interval: BarInterval
     timestamps: tuple[datetime, ...]
+    window_start: datetime
+    window_end_exclusive: datetime
     as_of: datetime
     source_fingerprint: str
     scale: NormalizationScale
-    values: NDArray[np.float64]
+    values: tuple[float, ...]
 
     def __post_init__(self) -> None:
-        if not isinstance(self.scale, NormalizationScale):
+        if not isinstance(cast(object, self.scale), NormalizationScale):
             raise TypeError("scale must be NormalizationScale")
-        object.__setattr__(self, "values", frozen_array(self.values))
 
     @property
     def descriptive_only(self) -> bool:
@@ -100,16 +102,21 @@ def build_normalized_path(
             "deterministic unit coordinate"
         )
     timestamps = validated_timestamps(aligned.timestamps, interval=aligned.interval)
-    validated_time = validated_as_of(as_of, timestamps=timestamps)
-    if not isinstance(scale, NormalizationScale):
+    validated_time = validated_utc(as_of, field="as_of")
+    window_end_exclusive = timestamps[-1] + aligned.interval.duration
+    if validated_time < window_end_exclusive:
+        raise RelationshipDataError("as_of must include the entire completed window")
+    if not isinstance(cast(object, scale), NormalizationScale):
         raise TypeError("scale must be NormalizationScale")
     normalized = _normalize(values, scale=scale.starting_value)
     return NormalizedPath(
         asset=asset,
         interval=aligned.interval,
         timestamps=timestamps,
+        window_start=timestamps[0],
+        window_end_exclusive=window_end_exclusive,
         as_of=validated_time,
         source_fingerprint=fingerprint,
         scale=scale,
-        values=normalized,
+        values=tuple(float(value) for value in normalized),
     )

@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from datetime import datetime
 from hashlib import sha256
+from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -98,7 +99,7 @@ def aligned_leg(
 def identity_source_fingerprint(asset: AssetId) -> str:
     """Fingerprint a deterministic unit coordinate, not a market dataset."""
 
-    if not isinstance(asset, AssetId):
+    if not isinstance(cast(object, asset), AssetId):
         raise TypeError("asset must be an AssetId")
     payload = f"qap.relationship.identity-coordinate.v1\0{asset.key}".encode()
     return sha256(payload).hexdigest()

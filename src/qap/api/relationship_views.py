@@ -1,8 +1,9 @@
 """Descriptive pair HTTP projections over fingerprint-admitted run data."""
 
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import cast
+from typing import SupportsFloat, cast
 
 from qap.api.errors import (
     anchor_unavailable,
@@ -25,6 +26,7 @@ from qap.relationship import (
     build_log_ratio_series,
     build_normalized_path,
     build_ratio_series,
+    identity_source_fingerprint,
 )
 
 
@@ -45,6 +47,7 @@ def pair_series(
         loaded,
         market_data_root=market_data_root,
     )
+    identity_coordinates = _identity_coordinate_assets(aligned)
     try:
         ratio = build_ratio_series(
             aligned,
@@ -62,14 +65,22 @@ def pair_series(
             aligned,
             asset=requested.base,
             scale=NormalizationScale.ONE,
-            source_fingerprint=source_fingerprints[requested.base],
+            source_fingerprint=_source_fingerprint(
+                source_fingerprints,
+                asset=requested.base,
+                identity_coordinates=identity_coordinates,
+            ),
             as_of=loaded.manifest.data_window.end,
         )
         normalized_quote = build_normalized_path(
             aligned,
             asset=requested.quote,
             scale=NormalizationScale.ONE,
-            source_fingerprint=source_fingerprints[requested.quote],
+            source_fingerprint=_source_fingerprint(
+                source_fingerprints,
+                asset=requested.quote,
+                identity_coordinates=identity_coordinates,
+            ),
             as_of=loaded.manifest.data_window.end,
         )
     except (KeyError, RelationshipDataError) as exc:
@@ -86,6 +97,7 @@ def pair_series(
             orientation=requested,
             source_fingerprints=source_fingerprints,
         ),
+        identity_coordinate_assets=tuple(asset.key for asset in identity_coordinates),
         interval=aligned.interval.label,
         base_source_fingerprint=ratio.base_source_fingerprint,
         quote_source_fingerprint=ratio.quote_source_fingerprint,
@@ -124,7 +136,7 @@ def _available_anchors(
                 source_fingerprints=source_fingerprints,
                 as_of=loaded.manifest.data_window.end,
             )
-        except (KeyError, RelationshipDataError):
+        except KeyError, RelationshipDataError:
             continue
         available.append(anchor.key)
     return tuple(available)
@@ -148,6 +160,7 @@ def anchor_lens(
         loaded,
         market_data_root=market_data_root,
     )
+    identity_coordinates = _identity_coordinate_assets(aligned)
     try:
         anchor_asset = loaded.manifest.asset(anchor)
     except (KeyError, TypeError, ValueError) as exc:
@@ -175,6 +188,7 @@ def anchor_lens(
         canonical_pair=(pair_id.first.key, pair_id.second.key),
         requested_orientation=f"{requested.base.key}/{requested.quote.key}",
         anchor=anchor_asset.key,
+        identity_coordinate_assets=tuple(asset.key for asset in identity_coordinates),
         interval=aligned.interval.label,
         base_source_fingerprint=lens.base_source_fingerprint,
         quote_source_fingerprint=lens.quote_source_fingerprint,
@@ -282,6 +296,28 @@ def _relationship_inputs(
     return admitted.aligned, source_fingerprints
 
 
+def _identity_coordinate_assets(aligned: AlignedBarSeries) -> tuple[AssetId, ...]:
+    references = {item.instrument.quote for item in aligned.series}
+    if len(references) != 1:
+        return ()
+    reference = next(iter(references))
+    bases = {item.instrument.base for item in aligned.series}
+    if reference in bases:
+        return ()
+    return (reference,)
+
+
+def _source_fingerprint(
+    source_fingerprints: dict[AssetId, str],
+    *,
+    asset: AssetId,
+    identity_coordinates: tuple[AssetId, ...],
+) -> str:
+    if asset in identity_coordinates:
+        return identity_source_fingerprint(asset)
+    return source_fingerprints[asset]
+
+
 def _pair_orientation(
     *,
     asset_x: str,
@@ -326,13 +362,14 @@ def _pair_orientation(
 
 def _float_points(
     timestamps: tuple[datetime, ...],
-    values: tuple[float, ...],
+    values: Iterable[SupportsFloat],
 ) -> tuple[FloatPointDto, ...]:
-    if len(timestamps) != len(values):
+    copied_values = tuple(float(value) for value in values)
+    if len(timestamps) != len(copied_values):
         raise ValueError("relationship timestamps and values must align")
     return tuple(
         FloatPointDto(timestamp=timestamp, value=value)
-        for timestamp, value in zip(timestamps, values, strict=True)
+        for timestamp, value in zip(timestamps, copied_values, strict=True)
     )
 
 

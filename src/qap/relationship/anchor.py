@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from types import MappingProxyType
+from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -17,10 +18,9 @@ from qap.relationship.observation import (
     EvidenceReciprocity,
     FitReciprocity,
     RelationshipDataError,
-    frozen_mapping,
-    validated_as_of,
     validated_source_fingerprints,
     validated_timestamps,
+    validated_utc,
 )
 from qap.relationship.ratio import (
     aligned_asset_values,
@@ -64,7 +64,7 @@ class AnchorLens:
     def __post_init__(self) -> None:
         if self.orientation.pair_id != self.pair_id:
             raise ValueError("orientation must match pair_id")
-        if not isinstance(self.reduction, AnchorReduction):
+        if not isinstance(cast(object, self.reduction), AnchorReduction):
             raise TypeError("reduction must be AnchorReduction")
         if self.max_ratio_decomposition_error < 0 or not np.isfinite(
             self.max_ratio_decomposition_error
@@ -74,7 +74,11 @@ class AnchorLens:
             self.max_log_decomposition_error
         ):
             raise ValueError("max_log_decomposition_error must be finite and >= 0")
-        object.__setattr__(self, "identity_values", frozen_mapping(self.identity_values))
+        object.__setattr__(
+            self,
+            "identity_values",
+            MappingProxyType(dict(self.identity_values)),
+        )
         for field_name in (
             "pair_ratio",
             "pair_log_ratio",
@@ -83,7 +87,11 @@ class AnchorLens:
             "base_to_anchor_log",
             "quote_to_anchor_log",
         ):
-            object.__setattr__(self, field_name, frozen_array(getattr(self, field_name)))
+            object.__setattr__(
+                self,
+                field_name,
+                frozen_array(getattr(self, field_name)),
+            )
 
     @property
     def descriptive_only(self) -> bool:
@@ -199,7 +207,10 @@ def build_anchor_lens(
     """Build pair and anchor paths from one admitted aligned close-price window."""
 
     timestamps = validated_timestamps(aligned.timestamps, interval=aligned.interval)
-    validated_time = validated_as_of(as_of, timestamps=timestamps)
+    validated_time = validated_utc(as_of, field="as_of")
+    window_end_exclusive = timestamps[-1] + aligned.interval.duration
+    if validated_time < window_end_exclusive:
+        raise RelationshipDataError("as_of must include the entire completed window")
     (
         base_values,
         quote_values,
