@@ -207,7 +207,7 @@ load approved plan/progress
 - no new speculative abstraction/dependency;
 - no changed hand-written source/test file exceeds 700 lines; any file at 500–700 lines is explicitly reviewed for decomposition before further growth;
 - no God-object/module with multiple unrelated reasons to change, even if under the numeric cap;
-- no change to economic objective, matched-HODL semantics, action-space, state ownership, timing, historical-reference boundary, or live authority;
+- no change to economic objective, matched-HODL/primary-control semantics, action-space, state ownership, timing/cost/fill semantics, data-role/holdout status, universe-eligibility semantics, historical-reference boundary, or live authority;
 - no unrelated user change modified;
 - verification evidence fresh.
 
@@ -237,6 +237,10 @@ Stop the autonomous loop immediately when work would require:
 - enabling leverage, borrowing, derivatives, interest-bearing mechanics, or unapproved assets;
 - creating a second wallet/accounting owner;
 - changing point-in-time/default fill semantics;
+- changing benchmark definitions or the predeclared primary incremental control;
+- changing fee/slippage/quantization/reference-price semantics that can alter economic results;
+- changing dataset role, final-OOS commitment/consumption status, or relabeling viewed evidence as fresh holdout data;
+- changing fixed-basket versus point-in-time universe eligibility/claim semantics;
 - importing/coupling QAP v1/v2 at runtime;
 - adding live order placement or private credentials;
 - violating a plan Stop Condition;

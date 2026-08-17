@@ -10,11 +10,11 @@
 
 | Wave | Purpose | Phases | Exit condition |
 |---|---|---|---|
-| 1 | Prove financial truth | 00–03 | Inventory, market data, valuation, HODL comparison are deterministic and reconciled |
-| 2 | Prove accumulation mechanism | 04–07 | Relationship evidence can drive target allocation through paper replay and reproducible experiments |
+| 1 | Prove financial truth | 00–03 | Inventory, public-data admission, point-in-time semantics, valuation, HODL comparison, and relative-wealth path are deterministic and reconciled |
+| 2 | Prove accumulation mechanism | 04–07 | Relationship evidence can drive target allocation through paper replay with predeclared simple controls, family lineage, and final-holdout discipline |
 | 3 | Make QAP inspectable | 08–09 | Typed API and web workbench expose the same authoritative results without duplicating financial logic |
-| 4 | Test real relationship models | 10 | At least one transparent control and one historical model can be compared economically OOS |
-| 5 | Harden paper operation | 11 | Larger datasets, explicit routing, reconciliation, and operator workflows are reliable |
+| 4 | Test real relationship models | 10 | Pair, cross-sectional/common-mode, and any admitted historical model can be compared under one frozen benchmark/research-family contract |
+| 5 | Harden paper operation | 11 | The Phase-02 public-data path scales to larger datasets; venue precision, explicit routing, reconciliation, and operator workflows are reliable |
 | 6 | Decide live readiness | 12 | Separate go/no-go review; no live trading authority is implied by earlier phases |
 | 7 | Automate development safely | 13 | Approved-plan execution can continue autonomously without becoming part of financial runtime |
 
@@ -44,8 +44,10 @@ A later phase may begin only when the prior phase's exit criteria are green or w
 - product economic objective;
 - Shariah/action-space boundary;
 - state ownership;
-- benchmark semantics;
-- point-in-time timing semantics;
+- benchmark semantics, including the primary incremental simple control;
+- point-in-time timing and cost/fill/reference-price semantics;
+- dataset role/final-OOS commitment or consumption status;
+- fixed-basket versus point-in-time universe eligibility/claim semantics;
 - v1/v2 historical-reference boundary;
 - live-capital authority.
 

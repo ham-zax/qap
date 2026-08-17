@@ -2,9 +2,9 @@
 
 **Goal:** Convert relationship evidence and current inventory into explicit long-only target allocations and economically meaningful quantity deltas without allowing policy logic to mutate holdings.
 
-**Architecture:** `qap.policy` is pure decision logic. `qap.portfolio.rebalance` translates a validated target allocation into desired quantities using an explicit valuation snapshot. Execution routing remains out of scope until Phase 06.
+**Architecture:** `qap.policy` is pure decision/planning logic. `qap.policy.rebalance` translates a validated target allocation into desired quantities using Phase-02 `qap.market.PriceSnapshot`; `qap.portfolio` remains the inner owner of holdings/allocation value objects and does not depend on evaluation or policy. Execution routing remains out of scope until Phase 06.
 
-**Tech Stack:** Python 3.14, `Decimal`, existing portfolio/evaluation/relationship types, pytest.
+**Tech Stack:** Python 3.14, `Decimal`, existing market/portfolio/relationship types, pytest.
 
 ## Global Constraints
 
@@ -21,10 +21,10 @@
 - `src/qap/policy/__init__.py`
 - `src/qap/policy/decision.py` — `PolicyDecision`, reason/evidence references.
 - `src/qap/policy/deterministic.py` — timestamp/evidence-keyed deterministic target policy for tests/replay.
-- `src/qap/portfolio/rebalance.py` — target quantities, asset deltas, minimum-notional filter.
+- `src/qap/policy/rebalance.py` — target quantities, asset deltas, minimum-notional filter.
 - `tests/unit/policy/test_decision.py`
 - `tests/unit/policy/test_deterministic.py`
-- `tests/unit/portfolio/test_rebalance.py`
+- `tests/unit/policy/test_rebalance.py`
 - `tests/scenarios/test_partial_rebalance_plan.py`
 
 ## Section 05.1 — Policy Decision Contract
@@ -68,7 +68,7 @@ uv run pytest -q tests/unit/policy
 ## Section 05.3 — Target Quantity Calculation
 
 **Interfaces:**
-- Consumes: current `PortfolioState`, validated `AllocationTarget`, current decision-time `ValuationSnapshot` built from completed bar closes.
+- Consumes: current `PortfolioState`, validated `AllocationTarget`, current decision-time market `PriceSnapshot` built from completed bar closes.
 - Produces: target quantities and per-asset quantity deltas fixed at the decision time for later execution.
 
 **Behavior:**
@@ -87,13 +87,13 @@ uv run pytest -q tests/unit/policy
 **Verification:**
 
 ```bash
-uv run pytest -q tests/unit/portfolio/test_rebalance.py
+uv run pytest -q tests/unit/policy/test_rebalance.py
 ```
 
 ## Section 05.4 — Minimum-Notional No-Action Filter
 
 **Interfaces:**
-- Consumes: `RebalancePlan`, valuation snapshot, explicit `min_rebalance_notional`.
+- Consumes: `RebalancePlan`, market `PriceSnapshot`, explicit `min_rebalance_notional`.
 - Produces: filtered plan or explicit no-action result.
 
 **Behavior:**
@@ -127,7 +127,7 @@ uv run pytest -q tests/scenarios/test_partial_rebalance_plan.py
 ## Phase Verification
 
 ```bash
-uv run pytest -q tests/unit/policy tests/unit/portfolio/test_rebalance.py tests/scenarios/test_partial_rebalance_plan.py
+uv run pytest -q tests/unit/policy tests/scenarios/test_partial_rebalance_plan.py
 uv run ruff check .
 uv run ruff format --check .
 uv run pyright src tests
@@ -141,6 +141,7 @@ uv run pyright src tests
 - [ ] Partial rebalance and full rotation share one allocation mechanism.
 - [ ] Minimum-notional filtering prevents meaningless dust plans.
 - [ ] No execution-market routing or statistical authority has entered the policy layer.
+- [ ] `qap.portfolio` does not import `qap.policy` or `qap.evaluation`; rebalance planning remains downstream of portfolio state and market prices.
 
 ## Stop Conditions
 

@@ -14,6 +14,7 @@
 - No auth system, database, background job queue, websocket, or live exchange credential.
 - Business policy is not read from environment variables.
 - API errors are typed and explicit; no silent fallbacks.
+- API exposes persisted experiment/run artifacts, not an arbitrary raw-market explorer; this prevents the web layer from bypassing final-holdout discipline.
 
 ## File Map
 
@@ -94,11 +95,14 @@
 - `PairSeriesDto`
 - `AnchorLensDto`
 - `ExperimentDetailDto`
+- `RebalanceDecisionAuditDto`
 - shared timestamp/value point DTOs.
 
 **Behavior:**
 - Decimal values serialize as strings when exact financial precision matters; chart-only float series serialize as JSON numbers.
 - UTC timestamps serialize in RFC3339 `Z` form.
+- Run/experiment DTOs include research family/parent, universe mode, data role, final-OOS consumption state, primary incremental benchmark, and sibling-trial count where available.
+- Pair/model DTO metadata exposes `orientation_behavior` when fitted evidence exists.
 - DTO conversion functions live beside schemas/readers, not in domain objects.
 - No API schema is imported into core financial packages.
 
@@ -114,8 +118,8 @@ GET /api/experiments/{run_id}
 
 **Behavior:**
 - List scans/reads Phase-07 run artifacts under configured root; no database index.
-- Summary returns run ID, experiment name, data-role label, status, primary metric, created timestamp, dirty-code flag.
-- Detail returns manifest summary, provenance, economic result, and available series metadata.
+- Summary returns run ID, experiment name, research family/parent, universe mode, data-role/final-OOS-consumed state, status, primary metric, incremental-vs-primary-control metric, created timestamp, dirty-code flag.
+- Detail returns manifest summary, sibling-trial count, declared benchmark ladder/primary control, final-OOS commitment/consumption state, provenance, economic result, and available series metadata.
 - Corrupt artifacts are surfaced, not silently skipped: the list includes an explicit item with `artifact_status=invalid` and error context, so one corrupt old run does not hide all valid runs.
 
 **Steps:**
@@ -133,7 +137,8 @@ GET /api/portfolios/{run_id}/performance
 
 **Behavior:**
 - Portfolio endpoint returns starting and terminal holdings, benchmark holdings, allocation snapshots available in run trace, and cost/concentration summaries.
-- Performance returns time-aligned QAP vs HODL vs simple control values when present, plus relative-wealth series.
+- Performance returns time-aligned QAP vs HODL vs all declared simple-control values, QAP/HODL relative-wealth path, QAP/primary-control incremental path/metric, and relative drawdown where present.
+- The run trace can produce `RebalanceDecisionAuditDto` records containing current weights, baseline target, strategy target, evidence IDs, modeled costs, fills, and post-fill holdings.
 - Backend computes/loads authoritative series; frontend does not recalculate benchmark wealth.
 
 **Steps:**
@@ -150,7 +155,7 @@ GET /api/pairs/{asset_x}/{asset_y}/anchor?run_id=...&anchor=BTC
 ```
 
 **Behavior:**
-- Pair series response includes canonical pair, requested orientation, ratio/log ratio, normalized path values or references, source fingerprints, and rebalance markers from the run trace.
+- Pair series response includes canonical pair, requested orientation, ratio/log ratio, normalized path values or references, source fingerprints, and rebalance markers from the run trace. Model-evidence responses, when present, also state the model's reciprocal `orientation_behavior`.
 - Anchor endpoint returns synchronized X/Y, X/A, Y/A series when source data exists.
 - Inverse orientation is explicit in response metadata.
 - Missing required source series returns explicit error; API never substitutes another quote/anchor.
@@ -195,6 +200,8 @@ uv run python scripts/export_openapi.py /tmp/qap-openapi.json
 ## Phase Exit Criteria
 
 - [ ] API is thin and read-oriented.
+- [ ] API DTOs preserve research family/universe/data-role/final-OOS/benchmark context needed by the web product.
+- [ ] No endpoint exposes arbitrary uncommitted/raw holdout browsing outside persisted run-artifact semantics.
 - [ ] Business calculations remain owned by existing QAP packages.
 - [ ] Error semantics are typed.
 - [ ] OpenAPI exports deterministically for TypeScript generation.

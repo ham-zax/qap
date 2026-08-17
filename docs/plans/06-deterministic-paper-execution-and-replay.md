@@ -1,15 +1,15 @@
 # Phase 06 — Deterministic Paper Execution and Replay Implementation Plan
 
-**Goal:** Execute approved direct-spot rebalance intents deterministically on historical bars, apply fees/slippage exactly once, reconcile holdings, and replay the full point-in-time loop without lookahead.
+**Goal:** Execute approved direct-spot rebalance intents deterministically from historical reference prices, apply explicit slippage/fees/quantization exactly once, reconcile holdings, and replay the full point-in-time loop without lookahead or pretending bar prices are guaranteed fills.
 
 **Architecture:** `qap.execution` owns execution semantics and fill records. `PortfolioLedger` in `qap.portfolio` is the single mutable owner that applies fill deltas idempotently to immutable `PortfolioState` snapshots. `qap.execution.replay` orchestrates time; it does not duplicate policy/accounting logic.
 
-**Tech Stack:** Python 3.14, `Decimal`, existing market/policy/portfolio/evaluation types, pytest.
+**Tech Stack:** Python 3.14, `Decimal`, existing market/policy/portfolio types, pytest.
 
 ## Global Constraints
 
 - Phase 06 supports direct spot market legs only.
-- Default decision timing is completed bar `t` -> next bar open fill.
+- Default decision timing is completed bar `t` -> next bar open **execution reference** -> modeled fill after explicit slippage/fee/quantization.
 - No fill is created when no next execution bar exists.
 - Fees are modeled explicitly in the direct market's quote asset.
 - Slippage is an explicit adverse price adjustment, not a second hidden fee.
@@ -42,8 +42,9 @@
 **Behavior:**
 - Basis points are non-negative Decimal values.
 - `fee_rate = fee_bps / 10000`.
-- Buy execution price = reference open × `(1 + slippage_rate)`.
-- Sell execution price = reference open × `(1 - slippage_rate)`.
+- Buy modeled execution price = next-bar reference open × `(1 + slippage_rate)`.
+- Sell modeled execution price = next-bar reference open × `(1 - slippage_rate)`.
+- The reference open is a causal observable, not a claim that the entire requested quantity was executable exactly at that market print.
 - Fee is charged in quote asset on executed quote notional.
 - Cost model contains no venue inference or account-tier logic.
 
@@ -112,7 +113,7 @@ uv run pytest -q tests/unit/portfolio/test_ledger.py
 ## Section 06.4 — Direct Rebalance Execution
 
 **Interfaces:**
-- Consumes: Phase-05 desired delta for a two-asset direct pair, explicit `MarketInstrument`, next-bar open, cost model, current ledger state.
+- Consumes: Phase-05 desired delta for a two-asset direct pair, explicit `MarketInstrument`, next-bar reference open, cost/quantization model, current ledger state.
 - Produces: zero or one direct fill for the initial slice.
 
 **Behavior:**
@@ -138,20 +139,21 @@ uv run pytest -q tests/unit/portfolio/test_ledger.py
 ```text
 for each completed decision bar t except final bar:
   decision_time = bar_t.open_time + interval
-  expose only bars with close_time <= decision_time
+  expose only bars with bar_end_exclusive <= decision_time
   build relationship evidence
   ask policy for decision
   if target:
     build rebalance plan using completed bar-t prices
     if actionable:
-      execute at bar t+1 open (the contiguous next execution point)
+      use bar t+1 open as the contiguous execution reference
+      derive modeled fill from declared slippage/fee/quantization
       apply fill once
   record trace
 ```
 
 **Behavior:**
 - Relationship builder never sees `t+1` when deciding at `t`.
-- Fill price comes only from `t+1` open.
+- Reference price comes only from `t+1` open; modeled execution price is derived deterministically from that reference plus the declared cost/slippage contract.
 - Final-bar decision cannot fill.
 - Iteration order and IDs are deterministic.
 
@@ -181,6 +183,7 @@ uv run pyright src tests
 
 - [ ] Direct spot fill arithmetic is hand-verified.
 - [ ] Fees/slippage are explicit and applied once.
+- [ ] Test/output language distinguishes `reference_price` from `execution_price`; no result claims a guaranteed fill at the OHLC bar open.
 - [ ] Ledger idempotency prevents duplicate fills.
 - [ ] Replay is deterministic.
 - [ ] No lookahead is possible through the replay's public history boundary.

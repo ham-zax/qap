@@ -1,20 +1,21 @@
 # Phase 10 — First Real Relationship-Model Experiments Implementation Plan
 
-**Goal:** Introduce real statistical relationship evidence only after the inventory/accounting/replay/web chain is trustworthy, beginning with a transparent rolling log-ratio control and then deciding through an explicit admission gate whether the historically important Student-t Copula hypothesis still deserves implementation.
+**Goal:** Introduce real statistical relationship evidence only after the inventory/accounting/replay/web chain is trustworthy, beginning with transparent pair and asset-level controls, then deciding through an explicit admission gate whether the historically important Student-t Copula hypothesis still deserves implementation.
 
-**Architecture:** Statistical models live under `qap.relationship.models` and emit relationship observations only. Research policy converts declared model evidence into target-allocation tilts through the normal Phase-05 boundary. Both models are evaluated through identical replay/cost/HODL/control machinery.
+**Architecture:** Statistical models live under `qap.relationship.models` and emit relationship observations only. Research policy converts declared model evidence into target-allocation tilts through the normal Phase-05 boundary. Pairwise models, a simple cross-sectional/common-mode control, and any admitted Copula are evaluated through identical replay/cost/benchmark machinery.
 
 **Tech Stack:** Python 3.14, NumPy, SciPy, Pandas where rolling operations require it, pytest; historical v1/v2 inspected read-only under the admission protocol.
 
 ## Global Constraints
 
 - Neither model is constitutional or automatically production-authoritative.
-- The transparent control is implemented before any Copula logic.
+- Transparent pairwise and asset-level/common-mode controls are implemented before any Copula logic.
 - Historical importance alone never requires reimplementation; the Copula branch may end as `REJECT` after Section 10.1 if there is no present falsifiable question that justifies code.
 - Historical implementation details are re-admitted one claim at a time; no runtime import from v1/v2.
 - Statistical fit is not economic validation.
 - Thresholds/tilt sizes are manifest-declared experiment parameters, not global defaults.
-- OOS windows and selection pressure are explicit.
+- Research-family lineage, data roles, final-OOS consumption, and selection pressure are explicit.
+- Every fitted model declares `OrientationBehavior`; canonical pair identity never implies reciprocal model equivalence automatically.
 - No topology/network model, auto-hyperparameter optimizer, model registry, or promotion workflow.
 
 ## File Map
@@ -25,13 +26,15 @@
 **Create:**
 - `src/qap/relationship/models/__init__.py`
 - `src/qap/relationship/models/rolling_log_ratio.py`
-- `src/qap/relationship/models/student_t_copula.py`
+- `src/qap/relationship/models/cross_sectional_relative.py` — simple asset-level residual/deviation control against the declared basket common mode.
+- `src/qap/relationship/models/student_t_copula.py` — **conditional:** create only if Section 10.1 admits a specific Student-t experiment.
 - `src/qap/policy/evidence_tilt.py` — one bounded research policy for signed evidence scores.
 - `src/qap/api/schemas.py` — extend pair evidence DTOs for model-series inspection.
 - `src/qap/api/routes/pairs.py` — expose persisted relationship-model evidence for one run/pair.
 - `web/src/features/pair-workbench/RelationshipEvidenceChart.tsx` — render model evidence with the existing Lightweight Charts primitive.
 - `tests/unit/relationship/models/test_rolling_log_ratio.py`
-- `tests/unit/relationship/models/test_student_t_copula.py`
+- `tests/unit/relationship/models/test_cross_sectional_relative.py`
+- `tests/unit/relationship/models/test_student_t_copula.py` — **conditional:** create only with the admitted Student-t implementation.
 - `tests/unit/policy/test_evidence_tilt.py`
 - `tests/scenarios/test_model_experiment_same_execution_contract.py`
 - `tests/scenarios/test_model_oos_evaluation.py`
@@ -65,7 +68,7 @@
 
 **Interfaces:**
 - Consumes: Phase-04 log-ratio series through `as_of` only, declared rolling window length.
-- Produces: `RelationshipObservation` with signed standardized deviation score and coverage metadata.
+- Produces: `RelationshipObservation` with signed standardized deviation score, coverage metadata, and `orientation_behavior=exact_transform`.
 
 **Formula:**
 
@@ -106,9 +109,29 @@ uv run pytest -q tests/unit/relationship/models/test_rolling_log_ratio.py
 - [ ] Implement only one score-to-tilt policy used by the transparent control and any Copula output that can lawfully be expressed as the same signed score.
 - [ ] If historical Copula evidence is not semantically a signed score, do not force it into this policy; implement one explicit Copula research policy in the same file/package with its own tested semantics instead.
 
-## Section 10.4 — Student-t Copula Relationship Evidence (only if Section 10.1 returns `REIMPLEMENT`/`TRANSPLANT`)
+## Section 10.4 — Simple Cross-Sectional/Common-Mode Control
 
-If Section 10.1 returns `REJECT`, skip Sections 10.4–10.5's Copula-specific work, do not add SciPy for Copula, and preserve the rejection note as the result of that branch.
+**Purpose:** Test whether explicit pair mining adds information beyond a simpler asset-level relative state built from the same owned basket.
+
+**Interfaces:**
+- Consumes: point-in-time returns for all assets in the declared basket and a frozen rolling window.
+- Produces: per-asset relative-deviation scores and a normal long-only target-allocation tilt through the existing policy boundary.
+
+**Behavior:**
+- Define the simple common mode as the equal-weight mean return of the declared basket at each timestamp; no market-cap feed, PCA, optimizer, or external factor database is introduced.
+- For each asset, compute its rolling relative return/deviation versus that common mode using only completed observations.
+- Convert the resulting asset-level ranking/deviation into a bounded long-only target using one predeclared rule.
+- This is a falsification control: if it matches/beats pairwise models, QAP must not attribute that gain to special pair intelligence.
+- It does not claim to reproduce the Liu-Tsyvinski-Wu market/size/momentum factor model. If a pair model later survives the simple controls, a separate attribution experiment may add those richer factors when valid data is available.
+
+**Steps:**
+- [ ] Write no-lookahead and hand-calculated three-asset tests.
+- [ ] Implement one transparent formula and one bounded allocation mapping; do not tune a family of cross-sectional variants.
+- [ ] Record this control under the same research family and benchmark ladder as pairwise candidates.
+
+## Section 10.5 — Student-t Copula Relationship Evidence (only if Section 10.1 returns `REIMPLEMENT`/`TRANSPLANT`)
+
+If Section 10.1 returns `REJECT`, skip Section 10.5 entirely, omit the Copula member from Section 10.6's comparison, do not add SciPy for Copula, and preserve the rejection note as the result of that branch.
 
 **Interfaces:**
 - Consumes: synchronized admitted return/PIT inputs according to the admission note, through `as_of` only.
@@ -116,6 +139,7 @@ If Section 10.1 returns `REJECT`, skip Sections 10.4–10.5's Copula-specific wo
 
 **Behavior:**
 - Model parameters are explicit in manifest and output provenance.
+- The implementation declares whether its chosen evidence quantity uses `directional_transform` or `refit_required`; it may use `exact_transform` only if that property is mathematically established for the actual fitted output, not merely because raw price ratios invert.
 - Degrees of freedom are fit or declared according to the admitted experiment contract; `nu=4` is not hard-coded as constitutional truth.
 - No Gaussian-vs-t ban is embedded in core architecture.
 - Numerical failure/insufficient sample produces explicit invalid evidence rather than fallback model selection.
@@ -127,20 +151,22 @@ If Section 10.1 returns `REJECT`, skip Sections 10.4–10.5's Copula-specific wo
 - [ ] Implement using SciPy/NumPy with no import from historical repository.
 - [ ] Record model/version/parameters and input fingerprint in each observation.
 
-## Section 10.5 — Same-Contract Economic Comparison
+## Section 10.6 — Same-Contract Economic Comparison
 
 **Interfaces:**
 - Consumes: frozen experiment manifests differing only in relationship model/model policy parameters.
 - Produces: paired economic results under identical data, starting inventory, execution costs, timing, HODL, and simple control.
 
 **Experiments:**
-1. Simple periodic rebalance control from Phase 07.
-2. Rolling-log-ratio evidence tilt.
-3. Student-t Copula evidence policy only when the admission gate allowed implementation.
+1. Predeclared periodic/fixed-weight and band/partial controls from Phase 07.
+2. Rolling-log-ratio pair evidence tilt.
+3. Simple cross-sectional/common-mode control.
+4. Student-t Copula evidence policy only when the admission gate allowed implementation.
 
 **Behavior:**
-- Use identical OOS window for final comparison.
-- Report HODL-relative portfolio wealth growth, cost/turnover, per-asset contribution, concentration, and number of actionable decisions.
+- Freeze the whole comparison family (models, parameters, pair/basket, controls, cost scenarios, and primary incremental benchmark) before one `final_oos` evaluation.
+- All members of that frozen family may be evaluated on the same final holdout in one committed comparison; after inspection, that holdout is consumed for the next research generation.
+- Report HODL-relative portfolio wealth growth, relationship-policy increment over the primary simple control, cost/turnover, drawdown, per-asset contribution, concentration, and number of actionable decisions.
 - Report model statistical diagnostics separately from economic results.
 - Do not rank/promote a model automatically.
 
@@ -148,19 +174,21 @@ If Section 10.1 returns `REJECT`, skip Sections 10.4–10.5's Copula-specific wo
 - [ ] Add scenario ensuring all models route through the same executor and evaluation functions.
 - [ ] Create one OOS fixture/run demonstrating result generation even when a model loses.
 
-## Section 10.6 — Selection-Pressure Record
+## Section 10.7 — Selection-Pressure and Factor-Attribution Record
 
 **Behavior:**
-- Every model/parameter combination intentionally evaluated on the same research question is listed in the result note/manifest family.
-- If parameters are tuned in-sample, the chosen rule is frozen before OOS evaluation.
-- OOS result is not re-labeled as validation after inspection.
-- No automatic multiple-testing correction framework is required yet; the minimum requirement is honest enumeration and frozen OOS evaluation.
+- Every pair/model/horizon/parameter combination intentionally evaluated on the same research question shares a `research_family_id` and remains listed/discoverable, including failed siblings.
+- If parameters are tuned on exploratory/development data, the chosen family is frozen before final-OOS evaluation.
+- A consumed final-OOS result is never re-labeled as fresh validation after inspection.
+- If a broad family search is used to support a formal superiority claim, perform an appropriate family-level multiplicity analysis (for example SPA/Reality-Check style) before making that claim; no universal multiplicity framework is built into the kernel.
+- If a pair-driven candidate survives HODL, the predeclared simple rebalance control, and the simple cross-sectional/common-mode control, perform a separate common-factor attribution check before calling the remaining return pair-specific alpha. Full market/size/momentum factor attribution is conditional on valid point-in-time factor data and may limit the claim rather than block the whole phase.
 
 **Steps:**
-- [ ] Add experiment metadata field/list for related model/parameter trials if Phase-07 manifest cannot already express it.
-- [ ] Test that OOS role remains immutable in persisted result.
+- [ ] Use the Phase-07 family/parent/data-role fields; do not create a second lineage registry.
+- [ ] Test that final-OOS consumption remains immutable in persisted result.
+- [ ] For any broad search actually used to support a superiority claim, record the selected family-level multiplicity method/result in the concise research note.
 
-## Section 10.7 — Persist and Visualize Model Evidence
+## Section 10.8 — Persist and Visualize Model Evidence
 
 **Interfaces:**
 - Consumes: relationship-model observations produced during a Phase-10 run.
@@ -196,14 +224,15 @@ For any actual experiment run, also verify its manifest/data/code fingerprints a
 
 ## Phase Exit Criteria
 
-- [ ] Transparent rolling relationship model works without lookahead.
+- [ ] Transparent rolling pair model and simple cross-sectional/common-mode control work without lookahead.
 - [ ] Historical Student-t hypothesis has a documented admission decision and is either rejected without code or reimplemented through the clean contract only when a current falsifiable experiment justified it.
 - [ ] Model outputs never bypass policy/allocation/execution boundaries.
-- [ ] Models are compared economically under identical costs/timing/baselines.
-- [ ] OOS and selection-pressure metadata are explicit.
+- [ ] Models/controls are compared economically under identical costs/timing/benchmark-ladder semantics.
+- [ ] Research family, final-OOS consumption, selection pressure, and model orientation behavior are explicit.
+- [ ] Pair-specific alpha is not claimed when the result is explained by the simple cross-sectional/common-mode control or remains unattributed to broader common factors.
 - [ ] Model evidence is inspectable in the existing Pair Workbench without frontend financial recomputation.
 - [ ] No model receives automatic runtime authority.
 
 ## Stop Conditions
 
-Return to research/design review if Copula implementation requires restoring v1's fixed constitutional thresholds, global model registry, BTC-only objective, giant gate stack, or hidden model state. A statistically elegant model that cannot demonstrate incremental economic value over HODL/simple control remains research-only.
+Return to research/design review if Copula implementation requires restoring v1's fixed constitutional thresholds, global model registry, BTC-only objective, giant gate stack, or hidden model state. A statistically elegant model that cannot demonstrate incremental economic value over the predeclared simple rebalancing control remains research-only. Do not expand Phase 10 into a full asset-pricing/factor-data platform merely to satisfy attribution; report the limitation and admit richer factor data only when a surviving candidate makes that question material.

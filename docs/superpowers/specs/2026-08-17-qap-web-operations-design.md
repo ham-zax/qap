@@ -33,13 +33,15 @@ No Redux/Zustand is introduced initially. TanStack Query owns server state, Rout
 
 Shows:
 
-- QAP vs matched HODL vs simple baseline;
-- relative-wealth curve;
+- the benchmark ladder: matched HODL, predeclared periodic/fixed-weight control, predeclared cost-aware band/partial control, and relationship policy when present;
+- relationship-policy incremental wealth versus the primary simple control;
+- relative-wealth paths, not only terminal metrics;
 - current holdings;
 - allocation history;
 - per-asset inventory vs HODL;
 - costs and turnover;
-- concentration.
+- drawdown and concentration;
+- a rebalance-decision audit showing current weights, target weights, baseline target, evidence reference, estimated costs, actual fills, and post-trade holdings.
 
 #### Pair Workbench
 
@@ -68,9 +70,11 @@ This is decomposition/context, not a separate model authority.
 Shows:
 
 - hypothesis;
+- research family/parent lineage and sibling-trial count;
 - basket/window/model/policy;
-- benchmark/control;
-- IS/OOS status;
+- universe mode (`declared_fixed_basket` or `point_in_time_investable`);
+- benchmark/control and the declared primary incremental benchmark;
+- data role and final-OOS consumption status;
 - result and provenance;
 - rejected/neutral status as prominently as positive results.
 
@@ -107,7 +111,7 @@ GET /api/experiments
 GET /api/experiments/{experiment_id}
 ```
 
-The first API is intentionally read-oriented. Experiment execution remains the deterministic command/runner boundary until a later operator workflow demonstrates that an HTTP mutation endpoint is necessary.
+The first API is intentionally read-oriented. Experiment execution remains the deterministic command/runner boundary until a later operator workflow demonstrates that an HTTP mutation endpoint is necessary. The API does not expose arbitrary raw market windows for exploratory browsing; it exposes persisted run/artifact views. A `final_oos` result becomes viewable only after the committed run consumes that holdout, and the DTO makes that consumed status explicit.
 
 OpenAPI is the frontend contract source. TypeScript DTOs/client types are generated rather than hand-maintained in parallel.
 
@@ -126,12 +130,16 @@ tests/fixtures/     tiny deterministic datasets committed for tests
 Each run records:
 
 - run ID;
+- research family ID and optional parent run ID;
+- universe mode;
+- data role and final-OOS consumption status when applicable;
 - git commit and dirty flag as supplemental provenance;
 - deterministic code fingerprint over authoritative local source/config bytes;
 - configuration fingerprint;
 - data fingerprint(s) plus explicit data locators relative to the configured data root;
-- relationship model/version;
+- relationship model/version and orientation behavior;
 - policy/version;
+- primary incremental benchmark/control;
 - cost/execution contract;
 - timestamps;
 - deterministic seed if randomness exists;
@@ -222,7 +230,9 @@ It must stop/escalate when a task would change:
 - economic objective;
 - action-space/Shariah boundary;
 - architecture ownership;
-- authoritative execution/accounting semantics;
+- benchmark definitions or primary incremental control;
+- authoritative execution/accounting or cost/fill semantics;
+- dataset role, final-holdout status, or universe-eligibility rules;
 - scope beyond the approved plan;
 - live-capital authority.
 
@@ -258,49 +268,50 @@ This is recommended because it directly models the economic object, makes partia
 
 1. Matched-HODL-relative portfolio wealth is the primary objective; a reporting numeraire is only a valuation coordinate.
 2. Inventory is the owned economic state; per-asset coin accumulation is secondary attribution, not a substitute for wealth creation.
-3. Passive ownership is the primary control.
+3. Passive ownership is the first control; relationship-alpha claims must also beat one predeclared cost-aware simple-rebalancing control under identical conditions.
 4. Costs are explicit and applied exactly once.
-5. Assets are admitted inventory, not anonymous tickers.
+5. Assets are admitted inventory with stable economic identity, not anonymous venue ticker strings.
 6. A claimed active edge must survive comparison to simpler admissible behavior.
 
 ### Mechanism
 
-6. Relative relationships are the information source.
-7. Rebalancing/rotation is the monetization mechanism.
-8. Partial rebalancing is first-class.
-9. Residual inventory is first-class state.
-10. No-action is first-class.
+7. Relative relationships are the information source.
+8. Rebalancing/rotation is the monetization mechanism.
+9. Partial rebalancing is first-class.
+10. Residual inventory is first-class state.
+11. No-action is first-class.
 
 ### Architecture
 
-11. Portfolio inventory is the economic owner; pair relationships are evidence atoms.
-12. Models are instruments, not authorities.
-13. Signal evidence cannot silently become economic authority.
-14. One mutable state has one owner.
-15. Frontend never owns financial truth.
-16. QAP v1/v2 are references, not runtime/architecture dependencies.
+12. Portfolio inventory is the economic owner; pair relationships are evidence atoms.
+13. Models are instruments, not authorities.
+14. Signal evidence cannot silently become economic authority.
+15. One mutable state has one owner.
+16. Frontend never owns financial truth.
+17. QAP v1/v2 are references, not runtime/architecture dependencies.
 
 ### Evidence
 
-17. Point-in-time correctness is mandatory.
-18. OOS evidence dominates in-sample persuasion.
-19. Concentrated edge is not generalized edge.
-20. Reproducibility should be cheap and deterministic, not bureaucratic.
-21. Research cannot silently mutate default policy.
+18. Point-in-time correctness is mandatory; fixed-current-basket retrospectives cannot masquerade as point-in-time discovery evidence.
+19. Final OOS is an information-state: once inspected and used for adaptation, it is consumed and cannot remain the final holdout for that research generation.
+20. Research-family/trial lineage remains discoverable when multiple pairs/models/horizons/parameters are tried.
+21. Concentrated edge is not generalized edge.
+22. Reproducibility should be cheap and deterministic, not bureaucratic.
+23. Research cannot silently mutate default policy.
 
 ### Scope and maintainability
 
-22. No abstraction without a present boundary or at least two real consumers.
-23. No feature without a present falsifiable reason.
-24. No hidden environment-variable business state.
-25. No live execution until historical/paper semantics reconcile and a separate live-readiness gate is approved.
-26. Hand-written source and test files have a **500-line review threshold** and a **700-line hard cap**. A file approaching 500 lines triggers decomposition review; a hand-written file may exceed 700 lines only after an explicit design exception is recorded before implementation. Generated files, lockfiles, third-party/vendor material, and data fixtures are exempt from the numeric cap but must never be edited as if they were normal source.
-27. A file must have one coherent reason to change. Line count is a guardrail, not permission to build a 650-line God object; mixed responsibilities, excessive fan-in/fan-out, or unrelated state ownership require decomposition earlier.
-28. Avoid generic dumping grounds such as `utils.py`, `helpers.py`, `common.py`, or catch-all `services.py`. Shared code is extracted under a domain name only after real consumers establish the concept.
-29. Public functions/classes expose narrow contracts; implementation details remain local. Prefer composition, pure functions, immutable value objects, explicit dependency flow, and small modules over inheritance/factory/registry stacks.
-30. Functions and methods should stay small enough to understand without scrolling through multiple responsibilities. A function growing beyond roughly 60–80 logical lines or requiring multiple unrelated phases is a decomposition signal, not a target allowance.
-31. Tests follow production boundaries and assert behavior/invariants rather than private implementation. Test files are subject to the same 500/700 line guard unless generated.
-32. Dependency direction must remain inward toward domain/economic truth; web/API/adapters may depend on core contracts, never the reverse.
+24. No abstraction without a present boundary or at least two real consumers.
+25. No feature without a present falsifiable reason.
+26. No hidden environment-variable business state.
+27. No live execution until historical/paper semantics reconcile and a separate live-readiness gate is approved.
+28. Hand-written source and test files have a **500-line review threshold** and a **700-line hard cap**. A file approaching 500 lines triggers decomposition review; a hand-written file may exceed 700 lines only after an explicit design exception is recorded before implementation. Generated files, lockfiles, third-party/vendor material, and data fixtures are exempt from the numeric cap but must never be edited as if they were normal source.
+29. A file must have one coherent reason to change. Line count is a guardrail, not permission to build a 650-line God object; mixed responsibilities, excessive fan-in/fan-out, or unrelated state ownership require decomposition earlier.
+30. Avoid generic dumping grounds such as `utils.py`, `helpers.py`, `common.py`, or catch-all `services.py`. Shared code is extracted under a domain name only after real consumers establish the concept.
+31. Public functions/classes expose narrow contracts; implementation details remain local. Prefer composition, pure functions, immutable value objects, explicit dependency flow, and small modules over inheritance/factory/registry stacks.
+32. Functions and methods should stay small enough to understand without scrolling through multiple responsibilities. A function growing beyond roughly 60–80 logical lines or requiring multiple unrelated phases is a decomposition signal, not a target allowance.
+33. Tests follow production boundaries and assert behavior/invariants rather than private implementation. Test files are subject to the same 500/700 line guard unless generated.
+34. Dependency direction must remain inward toward domain/economic truth; web/API/adapters may depend on core contracts, never the reverse.
 
 ## 24. Anti-bloat admission test
 
@@ -334,16 +345,16 @@ Implementation is decomposed into bounded plans under `docs/plans/`:
 
 0. Constitution and repository foundation.
 1. Domain kernel and deterministic inventory semantics.
-2. Market-data admission and reproducible datasets.
+2. Market-data admission, one bounded public read-only spot adapter, and reproducible datasets.
 3. Evaluation, HODL, and accounting truth.
 4. Relationship evidence and pair/anchor math.
 5. Policy, target allocation, and rebalancing.
 6. Deterministic paper execution and replay.
-7. Research/experiment protocol and simple controls.
+7. Research-validation toolkit, experiment lineage, and simple controls.
 8. FastAPI contract and typed web boundary.
 9. React analytical workbench and core charts.
 10. First real relationship-model experiments.
-11. Paper-operation hardening and reconciliation.
+11. Multi-asset paper-operation hardening, routing/precision, and reconciliation.
 12. Live-readiness gate (no live implementation authority by default).
 13. Autonomous development harness, external to financial runtime.
 

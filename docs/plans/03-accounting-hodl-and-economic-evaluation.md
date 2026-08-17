@@ -1,8 +1,8 @@
 # Phase 03 — Accounting, HODL, and Economic Evaluation Implementation Plan
 
-**Goal:** Establish authoritative economic evaluation before any relationship model or strategy logic exists, including matched HODL, HODL-relative portfolio wealth growth, attribution, turnover/cost reporting, and concentration diagnostics.
+**Goal:** Establish authoritative economic evaluation before any relationship model or strategy logic exists, including matched HODL, HODL-relative portfolio wealth growth and path, attribution, turnover/cost reporting, drawdown, and concentration diagnostics.
 
-**Architecture:** `qap.evaluation` derives read-only economic results from portfolio states plus one explicit valuation snapshot. It never mutates holdings. HODL is constructed from the same frozen starting ownership vector as the strategy.
+**Architecture:** `qap.evaluation` derives read-only economic results from portfolio states plus one explicit market-owned `PriceSnapshot`. It never mutates holdings or own observed prices. HODL is constructed from the same frozen starting ownership vector as the strategy.
 
 **Tech Stack:** Python 3.14, `Decimal`, pytest.
 
@@ -18,9 +18,9 @@
 
 **Create:**
 - `src/qap/evaluation/__init__.py`
-- `src/qap/evaluation/valuation.py` — explicit valuation snapshot and portfolio valuation.
+- `src/qap/evaluation/valuation.py` — pure portfolio valuation using Phase-02 `qap.market.PriceSnapshot`; no duplicate price container.
 - `src/qap/evaluation/hodl.py` — matched passive benchmark creation.
-- `src/qap/evaluation/metrics.py` — HODL-relative portfolio wealth growth and relative-wealth helpers.
+- `src/qap/evaluation/metrics.py` — HODL-relative portfolio wealth growth/path and drawdown helpers.
 - `src/qap/evaluation/attribution.py` — per-asset quantity/value contribution and concentration.
 - `src/qap/evaluation/result.py` — compact immutable economic result record.
 - `tests/unit/evaluation/test_valuation.py`
@@ -29,22 +29,20 @@
 - `tests/unit/evaluation/test_attribution.py`
 - `tests/scenarios/test_hand_calculated_economics.py`
 
-## Section 03.1 — Valuation Snapshot
+## Section 03.1 — Portfolio Valuation
 
 **Interfaces:**
-- Consumes: `AssetId`, one declared numeraire asset, terminal timestamp, explicit asset->numeraire prices.
-- Produces: deterministic portfolio value in the declared numeraire.
+- Consumes: `PortfolioState` and Phase-02 `PriceSnapshot`.
+- Produces: deterministic portfolio value in the snapshot's declared numeraire.
 
 **Behavior:**
-- Numeraire asset has price exactly `1` in its own units.
-- Every positive holding requires an explicit price.
-- Prices are positive `Decimal` values.
+- Every positive holding requires an explicit price in the supplied snapshot.
 - Missing prices fail closed; there is no hidden path search or fallback quote asset.
-- Snapshot timestamp is timezone-aware UTC.
+- `qap.evaluation` performs value arithmetic only; observed price identity/timestamp validation remains owned by `qap.market.PriceSnapshot`.
 
 **Steps:**
-- [ ] Write tests for complete valuation, missing price, non-positive price, and numeraire self-price.
-- [ ] Implement immutable `ValuationSnapshot` and `value_portfolio(state)`.
+- [ ] Write tests for complete valuation and missing-held-asset price using explicit `PriceSnapshot` fixtures.
+- [ ] Implement pure `value_portfolio(state, prices)` with no second price/valuation container.
 
 **Verification:**
 
@@ -77,8 +75,8 @@ uv run pytest -q tests/unit/evaluation/test_hodl.py
 ## Section 03.3 — Primary Metric
 
 **Interfaces:**
-- Consumes: terminal strategy state, matched HODL state, one terminal `ValuationSnapshot`.
-- Produces: `hodl_relative_basket_growth`.
+- Consumes: terminal strategy state, matched HODL state, one terminal `PriceSnapshot`; optionally aligned strategy/HODL valuation sequences for path diagnostics.
+- Produces: terminal `hodl_relative_basket_growth`, relative-wealth path, and relative drawdown diagnostics.
 
 **Formula:**
 
@@ -93,10 +91,13 @@ relative_growth = strategy_value / hodl_value - 1
 - Decimal division is performed under one explicit local decimal context/precision chosen for financial evaluation.
 - Result can be negative, zero, or positive.
 - Both states are valued with the same terminal snapshot.
+- For a path, strategy and HODL values share the exact same evaluation timestamps and mark-price snapshots.
+- `relative_wealth_t = strategy_value_t / hodl_value_t`; maximum relative drawdown is a diagnostic from that path, not a second optimization objective.
 
 **Steps:**
 - [ ] Add hand-calculated examples: exact tie, +10%, and -10% relative outcomes.
-- [ ] Implement metric with no annualization or Sharpe-like statistics in this phase.
+- [ ] Add a short literal relative-wealth path with a known peak-to-trough drawdown.
+- [ ] Implement terminal/path metrics with no annualization or Sharpe-like optimization in this phase.
 
 **Verification:**
 
@@ -107,7 +108,7 @@ uv run pytest -q tests/unit/evaluation/test_metrics.py
 ## Section 03.4 — Per-Asset Inventory and Value Attribution
 
 **Interfaces:**
-- Consumes: strategy terminal state, HODL terminal state, valuation snapshot.
+- Consumes: strategy terminal state, HODL terminal state, market `PriceSnapshot`.
 - Produces: per-asset quantity ratio/delta and terminal relative-value contribution.
 
 **Behavior:**
@@ -129,7 +130,7 @@ uv run pytest -q tests/unit/evaluation/test_attribution.py
 ## Section 03.5 — Concentration Diagnostics
 
 **Interfaces:**
-- Consumes: terminal strategy state plus valuation snapshot; attribution contributions.
+- Consumes: terminal strategy state plus market `PriceSnapshot`; attribution contributions.
 - Produces: terminal value-weight concentration and positive-contributor share concentration.
 
 **Behavior:**
@@ -190,7 +191,8 @@ uv run pyright src tests
 ## Phase Exit Criteria
 
 - [ ] Same-start HODL benchmark is enforced.
-- [ ] Primary HODL-relative portfolio wealth growth is hand-calculation verified.
+- [ ] Primary HODL-relative portfolio wealth growth and relative-wealth path are hand-calculation verified.
+- [ ] Relative drawdown is available as a diagnostic so terminal outperformance cannot hide a materially different path.
 - [ ] Per-asset attribution reconciles to total relative value.
 - [ ] Concentration diagnostics exist without premature thresholds.
 - [ ] Cost/turnover fields exist without coupling evaluation to execution internals.

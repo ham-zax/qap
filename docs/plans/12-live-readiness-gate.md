@@ -33,11 +33,11 @@
 ## Section 12.1 — Economic Evidence Gate
 
 **Required evidence:**
-- At least one frozen OOS experiment and one later non-overlapping OOS or forward-paper evaluation for the candidate policy/model family being considered for live design.
-- Both use the same authoritative cost/timing/accounting contract as paper operation.
-- Candidate is compared against matched HODL and the simple admissible rebalance control.
+- At least one committed/consumed `final_oos` experiment and one later non-overlapping final-OOS or forward-paper evaluation for the candidate policy/model family being considered for live design.
+- Both use the same authoritative cost/timing/accounting contract as paper operation and preserve research-family lineage.
+- Candidate is compared against matched HODL and the predeclared primary cost-aware simple-rebalance control.
 - HODL-relative portfolio wealth growth is positive in the declared readiness evidence, or any exception is explicitly justified and cannot be a relabeling of the objective.
-- Cost, turnover, per-asset contribution, and concentration are reported.
+- Cost, turnover, relative-wealth path/drawdown, per-asset contribution, and concentration are reported.
 - A result dominated by one pair/asset/window is labeled concentrated and is not presented as broad evidence.
 
 **Steps:**
@@ -49,8 +49,8 @@
 **Automatic NO-GO conditions:**
 - unresolved accounting mismatch;
 - negative/unstable primary result presented only through favorable secondary metrics;
-- evidence depends on lookahead or changed OOS labels;
-- candidate cannot beat matched HODL/simple control after declared realistic costs on the readiness windows.
+- evidence depends on lookahead, relabeled/consumed holdouts presented as fresh final OOS, or changed universe eligibility after inspection;
+- candidate cannot beat matched HODL and the predeclared primary simple control after declared realistic costs on the readiness windows.
 
 ## Section 12.2 — Determinism and Reconciliation Gate
 

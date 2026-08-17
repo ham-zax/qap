@@ -18,7 +18,7 @@
 
 **Create:**
 - `src/qap/relationship/__init__.py`
-- `src/qap/relationship/observation.py` — generic immutable relationship-series metadata/result container.
+- `src/qap/relationship/observation.py` — generic immutable relationship-series metadata/result container plus model-facing orientation-behavior enum.
 - `src/qap/relationship/ratio.py` — raw ratio, reciprocal orientation, log ratio.
 - `src/qap/relationship/normalized.py` — normalized-to-one/hundred visual series data.
 - `src/qap/relationship/anchor.py` — `X/A`, `Y/A`, and decomposition checks.
@@ -38,10 +38,11 @@
 - Record interval/window start/end/as-of timestamps.
 - Record source fingerprints for both legs.
 - Record evidence kind such as `ratio` or `log_ratio`; do not add a plugin registry.
+- Define model-facing `OrientationBehavior = exact_transform | directional_transform | refit_required`. Raw/log-ratio evidence is `exact_transform`; later models must declare their own behavior rather than inheriting this property accidentally.
 - Invalid/insufficient data is represented by an explicit exception/result status, never NaN-filled output.
 
 **Steps:**
-- [ ] Write construction/metadata tests.
+- [ ] Write construction/metadata tests, including the three allowed orientation-behavior values.
 - [ ] Implement focused dataclass/container suitable for later API serialization.
 
 ## Section 04.2 — Raw and Log Ratio
@@ -142,6 +143,7 @@ uv run pyright src tests
 ## Phase Exit Criteria
 
 - [ ] Raw/log ratios are deterministic and orientation-correct.
+- [ ] Canonical relationship identity is separate from model orientation behavior; later directional/asymmetric models are not forced into reciprocal sign/inversion semantics.
 - [ ] Normalized paths are available as descriptive evidence.
 - [ ] Anchor decomposition identities are executable and verified.
 - [ ] Provenance/data fingerprints flow into relationship output.

@@ -75,6 +75,13 @@ A QAP portfolio declares a curated basket of assets the operator is willing to o
 
 The first implementation will use a manually declared basket. Automatic universe discovery is out of scope until the inventory engine is correct.
 
+Research must distinguish two different universe claims:
+
+- **declared-fixed-basket retrospective** — "given these assets that I explicitly selected, how would this policy have behaved historically?" This is the initial supported mode and must not be described as historical discovery performance;
+- **point-in-time investable universe** — "could QAP have selected these assets using only what was actually listed/eligible/liquid at that historical time?" Any later discovery/generalization claim requires point-in-time listing/eligibility semantics and fails closed when those records are unavailable.
+
+An asset's economic identity is not identical to a venue ticker string. Clean QAP uses a stable project-level `AssetId`; venue symbols/instruments are time-bounded market mappings owned by `qap.market`.
+
 ### 4.2 Anchor
 
 A portfolio may declare an **analysis/discovery anchor**, commonly BTC, but the anchor is not automatically the final accumulation target and is not model authority.
@@ -143,7 +150,7 @@ QAP's initial executable action space is intentionally narrow:
 
 Asset-level Shariah suitability remains an explicit operator admission decision; QAP enforces the mechanical action-space boundary and does not claim to replace scholarly review.
 
-A stablecoin or quote asset may later be allowed as a **transient execution bridge** for explicit two-leg spot conversion when the operator explicitly admits transient ownership of that asset. That must be modeled as two real fills with two costs and must never become hidden synthetic execution. Any residual bridge quantity remains real portfolio inventory and is included in valuation/accounting even when it is not part of the target basket. The first deterministic vertical slice uses direct spot conversion only.
+A stablecoin or quote asset may later be allowed as a **transient execution bridge** for explicit two-leg spot conversion when the operator explicitly admits transient ownership of that asset. That must be modeled as two real fills with two costs and must never become hidden synthetic execution. Any residual bridge quantity remains real portfolio inventory and is included in valuation/accounting even when it is not part of the target basket. A third-party fee token is treated the same way: if a venue charges a fee in an asset, that asset must be explicitly admitted/accounted and its balance change cannot be hidden. The first deterministic vertical slice uses direct spot conversion only.
 
 ## 6. System architecture
 
@@ -178,13 +185,13 @@ There is no service mesh, plugin framework, message bus, database platform, or s
 
 ```text
 src/qap/
-  market/         immutable market observations, alignment, source adapters
+  market/         immutable observations, price snapshots, alignment, source adapters
   portfolio/      assets, quantities, inventory state, target allocations
   relationship/   pair identity, ratio evidence, model evidence
-  policy/         evidence -> target allocation; pure economic policy
+  policy/         evidence -> target allocation/rebalance plan; pure planning logic
   execution/      deterministic spot fill/routing/cost semantics
   evaluation/     valuation, HODL, attribution, baseline comparison
-  experiment/     frozen manifests, deterministic runs, provenance/results
+  experiment/     manifests, run orchestration, provenance/results/reconciliation
   api/            thin FastAPI presentation boundary
 ```
 
@@ -235,9 +242,9 @@ This prevents statistical convenience from becoming accounting truth.
 ### 8.2 Time
 
 - Canonical timezone: UTC.
-- Historical bars use candle-open timestamps and have `close_time = open_time + interval`.
-- Only bars with `close_time <= decision_time` are admissible to a decision.
-- For contiguous bars, a decision computed immediately after bar `t` completes has `decision_time = bar_t.open_time + interval`, which equals the next bar's open; execution may use that next-bar open but never any later value from that bar.
+- Internally, historical bars use candle-open timestamps plus an exclusive interval boundary `bar_end_exclusive = open_time + interval`; raw venue close timestamps are preserved separately when supplied by the source.
+- Only bars with `bar_end_exclusive <= decision_time` are admissible to a decision.
+- For contiguous bars, a decision computed immediately after bar `t` completes has `decision_time = bar_t.open_time + interval`, which equals the next bar's open boundary; execution may use that next-bar open **as a causal reference price** but never any later value from that bar.
 
 ### 8.3 Default historical timing
 
@@ -247,7 +254,7 @@ For bar-based deterministic replay:
 2. Compute relationship evidence.
 3. Compute target allocation.
 4. Convert it to a rebalance intent.
-5. Fill at the **next bar open** using declared cost/slippage semantics.
+5. Use the **next bar open as the deterministic execution reference**, then derive the modeled fill from explicit direction-aware slippage/fee/quantization semantics. QAP does not claim that the observed bar open was a guaranteed executable market price.
 6. If there is no next bar, record the intent as unfilled; do not backfill at the last close.
 
 Any model requiring a different timing contract must declare it explicitly in its experiment manifest.
@@ -259,10 +266,13 @@ An admitted observation carries at least:
 ```text
 venue
 instrument
+venue_symbol
 base_asset
 quote_asset
+instrument_valid_from / instrument_valid_to (when known)
 interval
 candle_open_time_utc
+source_close_time_utc (when supplied)
 open
 high
 low
@@ -274,12 +284,15 @@ source/provenance
 Rules:
 
 - instrument orientation is explicit;
+- `AssetId` is stable economic identity; venue symbols/instrument mappings are source-specific and may have validity windows;
 - inverse markets are not silently substituted;
 - synthetic cross-rates are labeled as analytical constructs, not executable markets;
 - gaps and duplicates are detected;
 - requested windows use explicit inclusive/exclusive endpoints;
 - raw source data and derived relationship series have independent fingerprints;
-- point-in-time data used by historical decisions must be reproducible.
+- point-in-time data used by historical decisions must be reproducible;
+- a fixed-current-basket retrospective cannot be relabeled as evidence that the same basket was historically discoverable/investable;
+- source-native timestamps are preserved while internal completion semantics remain venue-independent.
 
 Initial persistence should be local and file-oriented (Parquet plus small JSON manifests). A database is not justified until an actual concurrency/querying requirement appears.
 
@@ -317,6 +330,16 @@ A relationship model consumes admitted point-in-time observations and emits a ty
 - model-specific evidence values;
 - validity/coverage status;
 - provenance/fingerprint.
+
+Every model also declares its reciprocal-orientation behavior:
+
+```text
+exact_transform       # one fit can be transformed exactly for inverse orientation
+directional_transform # an explicit model-specific transform exists
+refit_required        # the inverse orientation requires an independent fit
+```
+
+The raw price relationship still has one canonical identity, but Clean QAP does not assume that every fitted statistical model is reciprocal by simple sign/inversion.
 
 No model output directly mutates inventory.
 
@@ -405,7 +428,16 @@ Every executable experiment starts from one frozen ownership vector and produces
 - concentration diagnostics;
 - run/data/config/code fingerprints.
 
-The first simple baseline is a deterministic periodic or threshold rebalance rule that is admissible under the same spot-only/cost contract. Model-driven logic must demonstrate incremental value over this simpler mechanism before being called useful.
+The benchmark ladder is an economic contract:
+
+```text
+matched HODL
+  -> one predeclared periodic/fixed-weight rebalance control
+  -> one predeclared cost-aware band/partial-rebalance control
+  -> relationship-conditioned policy
+```
+
+The controls use the same starting inventory, prices, timing, costs, and execution model as QAP. A research family must predeclare which simple control is the **primary incremental benchmark** before final OOS evaluation; researchers may not search many simple controls and report whichever is easiest to beat. Relationship intelligence may be described as adding economic value only when it improves on that predeclared simple control after costs.
 
 ## 14. Research protocol
 
@@ -415,14 +447,18 @@ A research experiment declares:
 
 ```text
 hypothesis
+research_family_id
+parent_run_id (optional)
 frozen basket
+universe_mode: declared_fixed_basket | point_in_time_investable
 anchor (if any)
 data window and source
 relationship model
 policy
 execution/cost contract
 baseline(s)
-train/validation/OOS split when model fitting occurs
+data role: exploratory | development | final_oos | forward_paper
+train/validation split when model fitting occurs
 metrics
 predeclared success/rejection conditions
 ```
@@ -430,9 +466,12 @@ predeclared success/rejection conditions
 Rules:
 
 - failed and neutral experiments remain recorded;
-- in-sample and OOS labels cannot be mixed;
+- attempted variants in the same research family remain discoverable, including failures;
+- `final_oos` is an information-state claim, not merely a date label: once its result or chart is inspected and used to adapt code, parameters, pair selection, or the hypothesis, that window is consumed and becomes development evidence for subsequent work;
+- a final-OOS run must be committed/frozen before its holdout is evaluated;
 - model quality and economic quality are separate claims;
 - multiple searches/features/models require selection-pressure awareness;
+- formal family-level multiplicity methods (for example SPA/Reality Check style tests) are introduced only when the breadth of a serious claim warrants them; exploratory work is not forced through heavy governance;
 - concentrated edge is reported as concentrated, not generalized;
 - no research result silently changes default production policy;
 - one research result is not promoted to constitutional invariant.

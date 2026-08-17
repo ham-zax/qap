@@ -35,14 +35,15 @@
 
 **Behavior:**
 - Trim surrounding whitespace.
-- Normalize symbol to uppercase.
-- Reject empty symbols and symbols containing `/` because slash belongs to market orientation, not asset identity.
-- Preserve no venue-specific metadata in `AssetId`.
+- Normalize the stable logical asset key to uppercase.
+- Reject empty keys and keys containing `/` because slash belongs to market orientation, not asset identity.
+- `AssetId` is an economic/project identity, not a venue ticker. For the initial curated basket the key may equal a familiar ticker, but callers may not infer that venue symbols are globally or historically identical to it.
+- Preserve no venue-specific metadata in `AssetId`; Phase 02 owns venue-symbol/instrument mappings and their observed validity.
 
 **Steps:**
 - [ ] Write focused tests for normalization and invalid symbols.
 - [ ] Verify tests fail before implementation.
-- [ ] Implement frozen/orderable `AssetId` with a single `symbol: str` field and constructor validation.
+- [ ] Implement frozen/orderable `AssetId` with a single stable `key: str` field and constructor validation.
 - [ ] Re-run focused tests.
 
 **Verification:**
@@ -52,8 +53,9 @@ uv run pytest -q tests/unit/portfolio/test_assets.py
 ```
 
 **Acceptance criteria:**
-- `AssetId(" btc ") == AssetId("BTC")`.
-- Empty or slash-containing asset symbols fail explicitly.
+- `AssetId(" btc ") == AssetId("BTC")` for the initial ticker-like keys.
+- Empty or slash-containing asset keys fail explicitly.
+- No venue ticker or listing-lifecycle assumption is encoded in `AssetId`.
 
 ## Section 01.2 — Canonical Pair and Orientation
 

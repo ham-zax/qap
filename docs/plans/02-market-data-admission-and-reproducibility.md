@@ -2,9 +2,9 @@
 
 **Goal:** Admit historical spot-market observations through an explicit, reproducible, point-in-time-safe data contract before any strategy logic consumes them.
 
-**Architecture:** `qap.market` owns immutable bar semantics, validation, alignment, local dataset loading, and fingerprints. The first implementation consumes committed CSV fixtures and local Parquet datasets; no exchange SDK or network dependency is introduced yet.
+**Architecture:** `qap.market` owns immutable bar semantics, venue-instrument mappings, validation, alignment, one bounded unauthenticated public spot-data adapter, local dataset storage, and fingerprints. Network acquisition is an adapter at the edge; admitted datasets become immutable local artifacts before any strategy/research code consumes them. No exchange SDK, authentication, or trading capability is introduced.
 
-**Tech Stack:** Python 3.14, NumPy, Pandas, PyArrow/Parquet, `hashlib`, pytest.
+**Tech Stack:** Python 3.14, NumPy, Pandas, PyArrow/Parquet, HTTPX, `hashlib`, pytest.
 
 ## Global Constraints
 
@@ -15,23 +15,31 @@
 - Inverse and synthetic markets are never silently substituted.
 - Runtime market data is not committed to Git; tiny deterministic fixtures are.
 - Fingerprints cover the semantic data used by a run, not merely a filename.
+- Any real dataset inspected before the experiment protocol exists is development/exploratory evidence and cannot later be relabeled as untouched final OOS.
+- The initial research universe mode is `declared_fixed_basket`; historical discovery/investable-universe claims are blocked until point-in-time listing/eligibility sources exist.
 
 ## File Map
 
 **Modify:**
-- `pyproject.toml` — add NumPy, Pandas, PyArrow runtime dependencies.
+- `pyproject.toml` — add NumPy, Pandas, PyArrow, and HTTPX runtime dependencies.
 
 **Create:**
 - `src/qap/market/__init__.py`
-- `src/qap/market/bars.py` — bar and instrument observation types.
+- `src/qap/market/bars.py` — bar observation types and source/native timestamp fields.
+- `src/qap/market/instruments.py` — `VenueInstrument` mapping from stable `AssetId` values to one venue symbol/orientation plus observed validity metadata.
+- `src/qap/market/prices.py` — immutable `PriceSnapshot` (timestamp, numeraire, explicit Decimal asset prices) shared by valuation and rebalance planning.
 - `src/qap/market/validation.py` — duplicate/gap/order/price validation.
 - `src/qap/market/alignment.py` — exact timestamp intersection/alignment.
 - `src/qap/market/storage.py` — CSV fixture and Parquet local loading/writing.
+- `src/qap/market/adapters/binance_public.py` — one unauthenticated Binance Spot public REST adapter for klines/current instrument metadata; no SDK/auth/trade endpoints.
 - `src/qap/market/fingerprint.py` — canonical semantic fingerprint.
 - `tests/unit/market/test_bars.py`
 - `tests/unit/market/test_validation.py`
 - `tests/unit/market/test_alignment.py`
 - `tests/unit/market/test_fingerprint.py`
+- `tests/unit/market/test_instruments.py`
+- `tests/unit/market/test_prices.py`
+- `tests/integration/market/test_binance_public_adapter.py` — recorded-response contract test by default; explicitly marked live-network smoke is optional/manual.
 - `tests/scenarios/test_market_dataset_roundtrip.py`
 - `tests/fixtures/market/BTCUSDT_1h.csv`
 - `tests/fixtures/market/ETHUSDT_1h.csv`
@@ -43,13 +51,14 @@
 - Produces: `MarketInstrument`, `MarketBar`, ordered bar series.
 
 **Behavior:**
-- `MarketInstrument` declares venue plus explicit base/quote assets.
-- `MarketBar` stores interval, UTC candle-open timestamp, OHLC prices as finite positive floats, and non-negative volume when present.
+- `VenueInstrument` declares venue, source `venue_symbol`, explicit stable base/quote `AssetId` values, and optional observed `valid_from`/`valid_to` metadata.
+- Unknown historical listing validity is represented as unknown, not guessed from today's exchange metadata. Such data remains usable for a declared-fixed-basket retrospective but not for a point-in-time discovery claim.
+- `MarketBar` stores interval, UTC candle-open timestamp, optional raw/source close timestamp, OHLC prices as finite positive floats, and non-negative volume when present.
 - Reject naive datetimes; timestamps must be timezone-aware UTC.
 - Reject bars whose high/low relationships contradict OHLC values.
 
 **Steps:**
-- [ ] Write tests for valid bars and malformed timestamps/OHLC values.
+- [ ] Write tests for valid bars, source timestamp preservation, malformed timestamps/OHLC values, and venue-symbol mapping without mutating `AssetId` identity.
 - [ ] Implement focused immutable types.
 - [ ] Keep exchange-specific symbol strings outside the asset/pair identity layer.
 
@@ -59,7 +68,23 @@
 uv run pytest -q tests/unit/market/test_bars.py
 ```
 
-## Section 02.2 — Series Validation
+## Section 02.2 — Explicit Price Snapshot
+
+**Interfaces:**
+- Consumes: stable `AssetId` values, one declared numeraire, UTC timestamp, explicit asset->numeraire prices.
+- Produces: immutable `PriceSnapshot` used later by evaluation and rebalance planning.
+
+**Behavior:**
+- Prices are positive `Decimal` values; the numeraire asset has price exactly `1` in its own units.
+- Missing asset prices are not synthesized and no executable route is inferred.
+- Converting a bar float into a snapshot uses an explicit stable decimal serialization at the boundary; the snapshot never stores binary-float accounting truth.
+- `qap.market` owns observed prices; valuation mathematics remains in `qap.evaluation`.
+
+**Steps:**
+- [ ] Write tests for complete snapshot, missing/non-positive price, numeraire self-price, and timezone-aware timestamp.
+- [ ] Implement the small immutable price container without valuation/P&L methods.
+
+## Section 02.3 — Series Validation
 
 **Interfaces:**
 - Consumes: ordered bars for one instrument/interval.
@@ -83,7 +108,7 @@ uv run pytest -q tests/unit/market/test_bars.py
 uv run pytest -q tests/unit/market/test_validation.py
 ```
 
-## Section 02.3 — Exact Alignment
+## Section 02.4 — Exact Alignment
 
 **Interfaces:**
 - Consumes: two or more validated series.
@@ -105,7 +130,33 @@ uv run pytest -q tests/unit/market/test_validation.py
 uv run pytest -q tests/unit/market/test_alignment.py
 ```
 
-## Section 02.4 — Local Storage Contract
+## Section 02.5 — One Bounded Public Spot Adapter
+
+**Interfaces:**
+- Consumes: explicit venue symbol, interval, start/end window.
+- Produces: raw public response mapped to `VenueInstrument` + `MarketBar` records, then passed through normal validation/storage.
+
+**Behavior:**
+- Use only Binance Spot endpoints documented with public/`NONE` security at implementation time; prefer the market-data-only host where the official docs support it.
+- Fetch klines and only the minimum current instrument metadata needed for orientation/identity. Never create API keys, sign requests, query balances, or call order/margin/futures/options endpoints.
+- Preserve source open/close timestamps exactly and derive `bar_end_exclusive` internally from interval rather than pretending source close timestamps use that same convention.
+- Network acquisition never feeds strategy code directly: validated results are written to the normal immutable local dataset contract and fingerprinted before use.
+- HTTP/rate-limit/source failures are explicit. No alternate venue or synthetic symbol fallback occurs.
+- Any downloaded history inspected in this phase is `development` evidence by default.
+
+**Steps:**
+- [ ] At implementation time, verify the current official Binance Spot public market-data contract and record the endpoint/field assumptions in adapter tests/comments.
+- [ ] Implement the adapter with HTTPX; do not add CCXT or an exchange SDK.
+- [ ] Build deterministic recorded-response fixtures for kline/instrument parsing.
+- [ ] Add an opt-in network smoke marker that is skipped by default and never required for ordinary unit verification.
+
+**Verification:**
+
+```bash
+uv run pytest -q tests/integration/market/test_binance_public_adapter.py
+```
+
+## Section 02.6 — Local Storage Contract
 
 **Interfaces:**
 - Consumes: committed CSV fixtures or validated in-memory series.
@@ -128,7 +179,7 @@ uv run pytest -q tests/unit/market/test_alignment.py
 uv run pytest -q tests/scenarios/test_market_dataset_roundtrip.py
 ```
 
-## Section 02.5 — Semantic Data Fingerprint
+## Section 02.7 — Semantic Data Fingerprint
 
 **Interfaces:**
 - Consumes: validated dataset metadata and ordered values.
@@ -150,15 +201,15 @@ uv run pytest -q tests/scenarios/test_market_dataset_roundtrip.py
 uv run pytest -q tests/unit/market/test_fingerprint.py
 ```
 
-## Section 02.6 — Point-in-Time Window API
+## Section 02.8 — Point-in-Time Window API
 
 **Interfaces:**
 - Consumes: validated series and an `as_of` completed-bar timestamp.
 - Produces: an immutable slice containing no later bar.
 
 **Behavior:**
-- Each bar has `close_time = candle_open_time + interval`.
-- `history_through(decision_time)` includes exactly bars whose `close_time <= decision_time`.
+- Each bar has internal `bar_end_exclusive = candle_open_time + interval`; raw venue close time, when supplied, is preserved separately.
+- `history_through(decision_time)` includes exactly bars whose `bar_end_exclusive <= decision_time`.
 - For contiguous hourly bars, a decision at 11:00 may use the bar opened at 10:00 and may not use any OHLC value from the bar opened at 11:00.
 - The caller cannot treat a bar-open timestamp as evidence that the same bar has already completed.
 - A later decision/replay layer receives a slice/facade that cannot expose future rows accidentally.
@@ -171,7 +222,7 @@ uv run pytest -q tests/unit/market/test_fingerprint.py
 
 ```bash
 uv sync
-uv run pytest -q tests/unit/market tests/scenarios/test_market_dataset_roundtrip.py
+uv run pytest -q tests/unit/market tests/integration/market/test_binance_public_adapter.py tests/scenarios/test_market_dataset_roundtrip.py
 uv run ruff check .
 uv run ruff format --check .
 uv run pyright src tests
@@ -179,14 +230,17 @@ uv run pyright src tests
 
 ## Phase Exit Criteria
 
-- [ ] Historical bars have explicit UTC/orientation/interval semantics.
+- [ ] Historical bars have explicit UTC/orientation/interval semantics and preserve source-native close timestamps separately from internal completion boundaries.
+- [ ] Stable asset identity is separated from venue symbol/instrument mapping.
+- [ ] A small shared `PriceSnapshot` provides explicit Decimal mark prices without making portfolio depend on evaluation.
+- [ ] One public unauthenticated Spot adapter can acquire and admit data without creating any trading/auth surface.
 - [ ] Duplicate, gap, order, and malformed-price failures are visible.
 - [ ] Exact alignment does not impute missing prices.
 - [ ] Local Parquet roundtrip is reproducible.
 - [ ] Semantic fingerprint is path-independent and data-sensitive.
 - [ ] Point-in-time slices cannot expose future bars through their public API.
-- [ ] No exchange SDK/network client exists yet.
+- [ ] No exchange SDK, authentication, private-account endpoint, or trading endpoint exists.
 
 ## Stop Conditions
 
-Do not add CCXT, exchange authentication, websocket streaming, database storage, auto-gap repair, or implicit symbol inversion in this phase. Any of those requires a later demonstrated use case and its own plan.
+Do not add CCXT/exchange SDKs, exchange authentication, private account access, trading/order endpoints, websocket streaming, database storage, auto-gap repair, dynamic-universe discovery, or implicit symbol inversion in this phase. A current venue listing record may not be used to fabricate historical point-in-time eligibility.

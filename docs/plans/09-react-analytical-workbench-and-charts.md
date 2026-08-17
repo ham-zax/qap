@@ -12,6 +12,8 @@
 - Pair orientation and anchor are visible URL/view state, not hidden component state.
 - Financial charts must show units and orientation explicitly.
 - Visual transforms such as log display or normalize-to-100 are labeled and cannot feed backend decisions.
+- The SPA reads persisted run artifacts through the API; it does not provide arbitrary raw-market browsing that could leak a still-sealed final holdout.
+- A completed `final_oos` run is labeled **consumed**. If its result influences subsequent research, the next generation must use a different final holdout.
 - No Redux, Zustand, Next.js server, Angular layer, component megaframework, ECharts, or Playwright in the first web slice.
 - Avoid color-only semantic meaning; positive/negative/rejected states include text/icon/pattern cues.
 
@@ -42,8 +44,10 @@
 - `web/src/components/charts/SynchronizedChartGroup.tsx`
 - `web/src/features/portfolio/PortfolioOverview.tsx`
 - `web/src/features/portfolio/RelativeWealthChart.tsx`
+- `web/src/features/portfolio/BenchmarkLadder.tsx`
 - `web/src/features/portfolio/AllocationHistoryChart.tsx`
 - `web/src/features/portfolio/InventoryVsHodlTable.tsx`
+- `web/src/features/portfolio/RebalanceDecisionAudit.tsx`
 - `web/src/features/pair-workbench/PairWorkbench.tsx`
 - `web/src/features/pair-workbench/PairRatioChart.tsx`
 - `web/src/features/pair-workbench/NormalizedPathsChart.tsx`
@@ -151,21 +155,24 @@ view=ratio|log|normalized|anchor
 
 **UI:**
 - primary HODL-relative portfolio wealth growth prominently displayed;
-- run status and data role (`OOS`, etc.);
-- QAP vs HODL vs simple-control wealth curves;
-- QAP/HODL relative-wealth chart;
+- run status, research family, universe mode, data role, and final-OOS consumption status;
+- benchmark ladder: QAP vs HODL vs periodic/fixed-weight control vs band/partial control when present;
+- explicit QAP/primary-simple-control incremental metric and relative-wealth curve;
+- QAP/HODL relative-wealth curve plus drawdown diagnostic;
 - current/start holdings;
 - per-asset quantity/value delta table;
 - allocation history as one weight line per asset in first version;
-- fees, slippage, turnover, rebalance count, concentration metrics.
+- fees, slippage, turnover, rebalance count, concentration metrics;
+- rebalance-decision audit for a selected marker: current weights, baseline target, QAP target, evidence reference, estimated cost, actual fill legs, and post-fill holdings.
 
 **Behavior:**
 - Negative/neutral results receive equal visual legitimacy; no celebratory styling that hides benchmark failure.
 - Exact Decimal quantities from API remain strings for display formatting; never coerce them to JS `number` for accounting calculations.
 
 **Steps:**
-- [ ] Build overview and charts from API DTOs.
+- [ ] Build overview, benchmark ladder, decision audit, and charts from API DTOs.
 - [ ] Add a component test asserting negative HODL-relative result and per-asset deltas are rendered correctly.
+- [ ] Add a component test where QAP beats HODL but loses to the primary simple control; the UI must state that relationship intelligence did not add incremental value.
 
 ## Section 09.6 — Pair Workbench
 
@@ -221,18 +228,22 @@ Y / A
 
 **Experiment list columns/cards:**
 - name/run ID;
-- data role;
+- research family + optional parent;
+- data role and final-OOS consumed status;
 - status positive/neutral/negative/invalid;
-- primary metric;
-- basket/anchor;
+- primary metric and incremental-vs-primary-control metric;
+- basket/universe mode/anchor;
 - model/policy IDs;
 - code dirty flag.
 
 **Detail:**
 - hypothesis/description from manifest;
-- data fingerprints/window;
-- model/policy/cost settings;
+- research family, parent, sibling-trial count;
+- universe mode and data fingerprints/window;
+- model orientation behavior, policy/cost settings;
+- declared benchmark ladder and primary incremental benchmark;
 - primary/secondary metrics;
+- final-OOS commitment/consumption state when applicable;
 - provenance;
 - links to Portfolio and Pair Workbench for the same run.
 
@@ -271,6 +282,9 @@ uv run pytest -q tests/contract/api
 ## Phase Exit Criteria
 
 - [ ] Portfolio, Pair Workbench, Anchor Lens, and Experiments are usable locally.
+- [ ] Portfolio makes the benchmark ladder and relationship-policy increment over the primary simple control visible before model diagnostics.
+- [ ] Rebalance markers can be audited without reconstructing financial truth in the browser.
+- [ ] Final-OOS consumption/family context is visible and no arbitrary raw-data browser bypasses the experiment boundary.
 - [ ] Pair orientation/anchor are URL-addressable and explicit.
 - [ ] Synchronized ratio/anchor charts make relative behavior inspectable.
 - [ ] Browser does not recalculate authoritative financial state/economics.

@@ -16,10 +16,13 @@
 - Models are replaceable evidence instruments and cannot mutate holdings directly.
 - Policy emits target allocation; execution produces fills; portfolio owns balances; accounting derives results.
 - Partial rebalancing and residual inventory are first-class.
-- Matched HODL from the same frozen starting basket is the primary control.
+- Matched HODL from the same frozen starting basket is the first control; relationship-alpha claims additionally use one predeclared simple-rebalancing policy as the primary incremental benchmark.
 - Costs are explicit and applied exactly once.
-- Historical decisions use only completed point-in-time data and default to next-bar-open execution.
+- Historical decisions use only completed point-in-time data; the next bar open is the default causal **execution reference**, while modeled fills apply explicit slippage/fee/quantization and never claim guaranteed execution at the OHLC open.
 - Frontend never owns wallet, fill, or accounting truth.
+- Research distinguishes declared-fixed-basket retrospectives from point-in-time investable-universe claims; the former may not masquerade as historical discovery evidence.
+- Final OOS is an information-state: viewed/used holdouts are consumed for the next research generation.
+- Serious search variants share research-family lineage; failures remain discoverable.
 - No database, microservice, plugin framework, scheduler, multi-exchange abstraction, or live broker layer until a present requirement proves it necessary.
 - Hand-written source/test files have a 500-line decomposition-review threshold and 700-line hard cap; generated files, lockfiles, vendor material, and data fixtures are narrowly exempt. A >700-line hand-written exception requires explicit design approval before implementation.
 - Mixed-responsibility God objects are rejected even below the numeric cap; one coherent reason to change per module is the stronger rule.
@@ -92,7 +95,7 @@ Create the smallest executable Python repository, encode concise agent/project i
 
 **Plan:** `docs/plans/01-domain-kernel-and-inventory-semantics.md`
 
-Implement explicit assets, canonical pairs, quantities, portfolio state, allocation targets, and immutable state transitions. Establish `Decimal` accounting and the single-owner wallet invariant.
+Implement stable project-level asset identities, canonical pairs, quantities, portfolio state, allocation targets, and immutable state transitions. Establish `Decimal` accounting, separation of `AssetId` from venue symbols, and the single-owner wallet invariant.
 
 **Exit:** deterministic scenario tests prove balance conservation, no negative holdings, pair orientation identity, and valid allocation semantics.
 
@@ -100,15 +103,15 @@ Implement explicit assets, canonical pairs, quantities, portfolio state, allocat
 
 **Plan:** `docs/plans/02-market-data-admission-and-reproducibility.md`
 
-Implement completed-bar semantics, local fixture/Parquet loading, validation, alignment, and fingerprints. Do not add an exchange SDK yet.
+Implement completed-bar/source-timestamp semantics, stable asset-to-venue instrument mapping, local fixture/Parquet loading, validation/alignment/fingerprints, and one bounded unauthenticated Binance Spot public-data adapter. Data is admitted to immutable local artifacts before research uses it; no exchange SDK, private account access, or trading endpoint is added.
 
-**Exit:** a frozen dataset can be reloaded byte-for-semantics identically; gaps/duplicates/orientation errors fail visibly; no future bar can enter an earlier decision window.
+**Exit:** a public or fixture dataset can be admitted/reloaded semantically identically; source timestamps, venue-symbol mapping, gaps/duplicates/orientation errors are explicit; no future bar can enter an earlier decision window; fixed-basket history is not mislabeled as point-in-time discovery evidence.
 
 ### Phase 03: Accounting, HODL, and Economic Evaluation
 
 **Plan:** `docs/plans/03-accounting-hodl-and-economic-evaluation.md`
 
-Implement common-numeraire valuation, matched HODL, HODL-relative portfolio wealth growth, per-asset attribution, cost/turnover accounting, and concentration diagnostics before any strategy model exists.
+Implement common-numeraire valuation, matched HODL, HODL-relative portfolio wealth growth/path, drawdown, per-asset attribution, cost/turnover accounting, and concentration diagnostics before any strategy model exists.
 
 **Exit:** deterministic fixtures prove the strategy/HODL ratio, per-asset deltas, and accounting reconciliation under known hand-calculated cases.
 
@@ -118,7 +121,7 @@ Implement common-numeraire valuation, matched HODL, HODL-relative portfolio weal
 
 **Plan:** `docs/plans/04-relationship-evidence-pairs-and-anchor-lens.md`
 
-Implement raw/log ratio evidence, canonical orientation, normalized path data, and anchor decomposition. No predictive model is introduced.
+Implement raw/log ratio evidence, canonical orientation, normalized path data, anchor decomposition, and explicit model-orientation behavior (`exact_transform`, `directional_transform`, `refit_required`). No predictive model is introduced.
 
 **Exit:** pair inversion and `log(X/Y)=log(X/A)-log(Y/A)` properties hold on synchronized fixtures, with explicit invalid-data handling.
 
@@ -134,7 +137,7 @@ Implement a pure deterministic policy and rebalance planner that converts curren
 
 **Plan:** `docs/plans/06-deterministic-paper-execution-and-replay.md`
 
-Implement direct-market paper fills at next-bar-open, explicit fee/slippage, idempotent fill application, and replay orchestration.
+Implement direct-market paper fills from the next-bar-open execution reference, explicit fee/slippage/quantization, idempotent fill application, and replay orchestration.
 
 **Exit:** the same manifest/data produces the same fills and final holdings; costs are applied once; no negative balance or last-bar lookahead is possible.
 
@@ -142,9 +145,9 @@ Implement direct-market paper fills at next-bar-open, explicit fee/slippage, ide
 
 **Plan:** `docs/plans/07-experiments-controls-and-research-protocol.md`
 
-Implement small frozen manifests, fingerprints, result artifacts, matched HODL, a simple deterministic rebalance control, and explicit IS/OOS labeling.
+Implement small frozen manifests, code/data fingerprints, research-family/parent lineage, matched HODL, predeclared periodic and band/partial rebalancing controls, one primary incremental benchmark, and explicit exploratory/development/final-OOS/forward-paper roles with final-holdout commitment/consumption.
 
-**Exit:** one command/function reproduces a run from manifest and records positive, neutral, or negative outcomes without promotion bureaucracy.
+**Exit:** one command/function reproduces a run from manifest, preserves failed sibling trials, records benchmark-ladder increments, and enforces final-OOS commitment/consumption without promotion bureaucracy.
 
 ## Wave 3 — Make QAP Inspectable
 
@@ -160,7 +163,7 @@ Expose read-oriented portfolio, pair, series, and experiment resources through t
 
 **Plan:** `docs/plans/09-react-analytical-workbench-and-charts.md`
 
-Build the local SPA with Portfolio, Pair Workbench, Anchor Lens, and Experiments surfaces. Use Lightweight Charts for synchronized financial series.
+Build the local SPA with Portfolio, Pair Workbench, Anchor Lens, and Experiments surfaces. Put the benchmark ladder, relationship-policy increment over the primary simple control, relative drawdown, and rebalance-decision audit ahead of model glamour; expose family/universe/holdout context without arbitrary raw-data browsing. Use Lightweight Charts for synchronized financial series.
 
 **Exit:** a user can visually inspect the same authoritative run that Python produced, switch pair orientation/anchor views, and see allocation/rebalance events without browser-side accounting.
 
@@ -170,9 +173,9 @@ Build the local SPA with Portfolio, Pair Workbench, Anchor Lens, and Experiments
 
 **Plan:** `docs/plans/10-first-real-relationship-model-experiments.md`
 
-Implement a transparent rolling-log-ratio control model first, then perform an explicit admission review for the historically important Student-t Copula hypothesis. Reimplement Student-t only if the review identifies a specific present falsifiable question that survives the v1/v2 evidence boundary; historical importance alone is not enough.
+Implement a transparent rolling-log-ratio pair model plus one simple cross-sectional/common-mode asset-level control first, then perform an explicit admission review for the historically important Student-t Copula hypothesis. Reimplement Student-t only if a specific present falsifiable question survives the v1/v2 evidence boundary; any fitted model declares reciprocal-orientation behavior. Richer common-factor attribution is required before calling a surviving result pair-specific alpha, but it is admitted only when a surviving candidate makes that question material.
 
-**Exit:** the transparent model is economically evaluable under the common contract, and Student-t is either explicitly rejected without code or, if admitted, evaluated under identical policy/execution/baseline contracts on frozen OOS windows. No model is promoted merely for statistical fit.
+**Exit:** pairwise and cross-sectional controls are economically comparable under one frozen research family; Student-t is either rejected without code or, if admitted, evaluated under identical policy/execution/benchmark-ladder contracts on a committed final holdout. Broad-search superiority claims use an appropriate family-level multiplicity check when warranted; no model is promoted merely for statistical fit.
 
 ## Wave 5 — Harden Paper Operation
 
@@ -180,7 +183,7 @@ Implement a transparent rolling-log-ratio control model first, then perform an e
 
 **Plan:** `docs/plans/11-paper-operation-hardening.md`
 
-Add larger real datasets, one explicit public market-data venue adapter, operational reconciliation, explicit two-leg spot bridge routing if required, run inspection, and targeted browser end-to-end coverage.
+Reuse and harden the single Phase-02 public-data path on larger datasets, add venue precision/minimum constraints, operational reconciliation, explicit two-leg spot bridge routing if required, run inspection, and targeted browser end-to-end coverage.
 
 **Exit:** paper runs remain deterministic/reconcilable under realistic data volume and cost/routing semantics, with operator-visible failures rather than fallback guesses.
 
@@ -216,6 +219,7 @@ uv run ruff check .
 uv run ruff format --check .
 uv run pyright src tests
 uv run python scripts/check_source_size.py
+uv run python scripts/check_architecture.py
 ```
 
 The source-size check warns/fails only on hand-written source/test files according to the 500/700-line rule and narrowly excludes generated/lock/vendor/data artifacts.
@@ -271,7 +275,9 @@ Implementation stops and returns to design review when any task would:
 - create a second mutable wallet/accounting owner;
 - introduce lookahead timing;
 - silently synthesize executable markets;
-- replace matched HODL with a materially different benchmark definition;
+- replace matched HODL or the predeclared primary incremental benchmark with materially different semantics;
+- change fee/slippage/quantization/reference-price semantics without design review;
+- relabel dataset roles/final-OOS consumption or point-in-time universe eligibility in a way that can change an empirical claim;
 - import the historical repository at runtime;
 - require a database/service/plugin framework without a demonstrated present consumer;
 - expose live-capital order placement;

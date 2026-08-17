@@ -12,6 +12,8 @@
 - QAP v1/v2 remain read-only and are referenced only through `docs/REFERENCE_BOUNDARY.md`.
 - Generated market data, run artifacts, secrets, virtual environments, and web build output must be excluded from Git.
 - No worktree is needed for this clean empty repository unless later local state creates a real isolation reason.
+- Before Phase 07 exists, any empirical inspection of real market history is **development/exploratory evidence only**; no viewed window may later be relabeled as an untouched final OOS holdout.
+- A fixed declared basket may be tested retrospectively, but that result must never be described as point-in-time universe discovery performance.
 
 ## File Map
 
@@ -24,6 +26,7 @@
 - `src/qap/__init__.py` — package marker/version surface only.
 - `tests/test_smoke.py` — proves the package imports under the managed environment.
 - `scripts/check_source_size.py` — repository maintainability guard for hand-written Python/TypeScript/TSX source and tests.
+- `scripts/check_architecture.py` — small standard-library import-boundary guard that prevents outer layers from leaking into the financial core as packages appear.
 
 **Existing design inputs:**
 
@@ -87,7 +90,8 @@ rm data/_probe runs/_probe
 - Produces: minimal root instructions for future coding agents.
 
 **Steps:**
-- [ ] Create `AGENTS.md` with only: product one-liner, core economic object, spot-only action boundary, one-state-one-owner rule, matched-HODL control, v1/v2 read-only reference rule, no-live-execution gate, source-size/God-object rule, commands, and instruction to follow `docs/plans/` for approved work.
+- [ ] Create `AGENTS.md` with only: product one-liner, core economic object, spot-only action boundary, one-state-one-owner rule, benchmark ladder (HODL -> predeclared simple rebalancing control -> relationship policy), fixed-basket-vs-point-in-time-universe claim boundary, final-OOS consumption rule, v1/v2 read-only reference rule, no-live-execution gate, source-size/God-object rule, commands, and instruction to follow `docs/plans/` for approved work.
+- [ ] State that an autonomous agent must escalate before changing benchmark definitions, cost/fill semantics, dataset role/holdout status, universe eligibility, or the Shariah/action-space boundary.
 - [ ] Explicitly forbid copying the old repository architecture by default.
 - [ ] Keep `AGENTS.md` short enough to be read in one screenful; link to design docs instead of repeating them.
 
@@ -132,7 +136,34 @@ uv run python scripts/check_source_size.py
 - A normal small file passes.
 - Generated/lock/vendor/data paths are excluded only by explicit narrow rules.
 
-## Section 00.5 — Importable Package and Smoke Test
+## Section 00.5 — Architecture Dependency Guard
+
+**Interfaces:**
+- Consumes: Python imports under `src/qap` as packages are introduced by later phases.
+- Produces: a deterministic failure when dependency direction reverses into an outer layer.
+
+**Behavior:**
+- Use Python AST/import inspection; do not add an architecture-testing dependency.
+- Encode the initial package direction narrowly: `portfolio` is inner; `market` may depend on portfolio identities; `relationship` may depend on market/portfolio; `policy` may depend on relationship/market/portfolio; `execution` may depend on market/policy/portfolio; `evaluation` may depend on market/portfolio only; `experiment` may orchestrate execution + evaluation + the other core packages; `api` is outermost. Reverse imports are forbidden (for example portfolio -> policy/evaluation, execution -> evaluation, evaluation -> execution, core -> api).
+- Core packages must never import `qap.api`; no financial-core package may import web code.
+- The checker ignores packages that do not exist yet and is updated only through an explicit architecture change, not ad hoc per-file exceptions.
+
+**Steps:**
+- [ ] Implement `scripts/check_architecture.py` with the standard library only.
+- [ ] Verify one temporary forbidden-import probe fails and a permitted import direction passes.
+- [ ] Add the command to `AGENTS.md` and phase verification.
+
+**Verification:**
+
+```bash
+uv run python scripts/check_architecture.py
+```
+
+**Acceptance criteria:**
+- Outer-layer imports cannot leak into core packages silently.
+- The rule remains package-level and understandable; it does not become a dependency-graph framework.
+
+## Section 00.6 — Importable Package and Smoke Test
 
 **Interfaces:**
 - Consumes: managed Python environment.
@@ -151,6 +182,7 @@ uv run ruff check .
 uv run ruff format --check .
 uv run pyright src tests scripts
 uv run python scripts/check_source_size.py
+uv run python scripts/check_architecture.py
 ```
 
 **Acceptance criteria:**
@@ -164,6 +196,8 @@ uv run python scripts/check_source_size.py
 - [ ] Git excludes generated/private runtime artifacts.
 - [ ] `AGENTS.md` is concise and points to the canonical design/reference docs.
 - [ ] Source-size verification enforces the 500-line review threshold / 700-line hard cap for hand-written code.
+- [ ] Package dependency direction has an executable guard before the codebase becomes large.
+- [ ] Research-integrity rules are present in concise agent context without creating experiment infrastructure early.
 - [ ] No product capability has been implemented yet.
 
 ## Stop Conditions

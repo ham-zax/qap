@@ -6,7 +6,7 @@ The primary product objective is **portfolio wealth growth relative to matched p
 
 ## Current repository state
 
-This repository is intentionally documentation-only while the design is under review. No trading engine, API, web application, or execution integration is implemented yet.
+This repository is intentionally documentation-only while the final pre-build review/research handoff completes. The independent oracle review has been integrated into the plans. No trading engine, API, web application, or execution integration is implemented yet.
 
 Start here:
 
@@ -17,4 +17,4 @@ Start here:
 - `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md` — master implementation plan.
 - `docs/reviews/2026-08-17-design-plan-review.md` — engineering/reflection review and remaining intentional uncertainties.
 
-No implementation work should begin until the design and plans have been reviewed.
+The next implementation step is Phase 00 after the user's current review/research handoff. One targeted statistical research pass may refine later Phase 07/10 rules, but it does not block Phase 00 unless it reveals a critical contradiction in the agreed economic/accounting/research constitution.

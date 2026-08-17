@@ -1,6 +1,6 @@
 # Phase 11 — Paper-Operation Hardening Implementation Plan
 
-**Goal:** Harden the proven deterministic engine for realistic multi-asset paper operation using larger public spot datasets, one explicit venue data adapter, market precision metadata, explicit direct/two-leg routing, independent reconciliation, and a small operator workflow.
+**Goal:** Harden the proven deterministic engine for realistic multi-asset paper operation using the Phase-02 public Spot adapter, larger admitted datasets, venue precision metadata, explicit direct/two-leg routing, independent reconciliation, and a small operator workflow.
 
 **Architecture:** Keep venue/network behavior in `qap.market.adapters` and execution routing in `qap.execution`. Core portfolio/policy/evaluation contracts remain unchanged. Add operational realism only where it can be reconciled back to the deterministic model.
 
@@ -9,8 +9,9 @@
 ## Global Constraints
 
 - Still paper-only; no authenticated order placement.
-- One public market-data venue adapter only. The initial adapter is Binance Spot public REST because the historical product needs broad crypto spot coverage; implementation must verify the then-current official Binance Spot API contract before coding against it.
-- Venue adapter is replaceable and cannot leak exchange-specific types into domain packages.
+- Reuse the single Binance Spot public REST adapter admitted in Phase 02; do not create a second downloader/adapter path.
+- Re-verify the then-current official Binance Spot metadata/filter contract before adding precision/minimum-notional behavior.
+- Venue adapter remains replaceable and cannot leak exchange-specific types into domain packages.
 - Multi-leg execution uses explicit real spot legs and pays cost on every leg.
 - Bridge/settlement asset must be explicitly admitted for transient execution ownership; no hidden USDT/BTC fallback. Any bridge residue/dust remains in actual portfolio inventory and is included in evaluation even when the bridge is not a target-basket asset.
 - Reconciliation must independently detect balance or result drift.
@@ -19,20 +20,17 @@
 ## File Map
 
 **Modify:**
-- `pyproject.toml` — ensure HTTPX is a runtime dependency (not merely a test/dev dependency) before the public network adapter imports it.
+- `src/qap/market/adapters/binance_public.py` — extend the already-tested Phase-02 public adapter only for the current metadata/filter fields required by paper precision; do not fork a second acquisition path.
 - existing market/execution models only where precision/routing contracts require backward-compatible fields.
 
 **Create:**
-- `src/qap/market/adapters/__init__.py`
-- `src/qap/market/adapters/binance_public.py` — unauthenticated historical spot klines/exchange metadata adapter.
-- `src/qap/market/metadata.py` — explicit tick/step/min-notional metadata normalized from venue response.
+- `src/qap/market/metadata.py` — explicit tick/step/min-notional metadata normalized from the Phase-02 venue response.
 - `src/qap/execution/precision.py` — deterministic quantity/price rounding against declared market metadata.
 - `src/qap/execution/routing.py` — direct or one declared bridge asset; no graph search.
 - `src/qap/execution/multi_asset.py` — deterministic sell-overweights-then-buy-underweights rebalance execution.
-- `src/qap/evaluation/reconciliation.py` — independent fill->holdings/result recomputation.
-- `tests/integration/market/test_binance_public_adapter.py` — network test marked/skipped by default and driven from recorded contract fixture where possible.
-- `tests/fixtures/binance/exchange_info_subset.json`
-- `tests/fixtures/binance/klines_subset.json`
+- `src/qap/experiment/reconciliation.py` — independent fill->holdings/result recomputation at the orchestration layer; may consume execution fills and evaluation functions without creating a core import cycle.
+- extend `tests/integration/market/test_binance_public_adapter.py` only for metadata/filter behavior newly required here; reuse the Phase-02 recorded market-data fixtures.
+- `tests/fixtures/binance/exchange_info_subset.json` — add only if Phase-02 fixtures do not already contain the exact precision/filter fields required.
 - `tests/unit/execution/test_precision.py`
 - `tests/unit/execution/test_routing.py`
 - `tests/scenarios/test_two_leg_bridge_execution.py`
@@ -42,38 +40,36 @@
 - `web/e2e/pair-anchor-lens.spec.ts`
 - Playwright config/package dependency only after the two E2E flows are defined.
 
-## Section 11.1 — Verify and Record the Public Venue Contract
+## Section 11.1 — Re-verify Venue Precision/Filter Contract
 
 **Interfaces:**
-- Consumes: then-current official Binance Spot REST documentation.
-- Produces: a small adapter contract note/test fixtures, not a broad exchange abstraction.
+- Consumes: then-current official Binance Spot documentation plus the existing Phase-02 adapter contract.
+- Produces: a focused extension of normalized venue metadata, not a second market-data architecture.
 
 **Steps:**
-- [ ] Verify current official endpoints/fields for spot klines and exchange symbol filters at Phase-11 execution time.
-- [ ] Record the exact fields QAP consumes: symbol/base/quote/status, interval/timestamps, OHLCV, price tick, quantity step, minimum notional or current equivalent constraints.
-- [ ] Capture tiny sanitized response fixtures for deterministic tests.
-- [ ] Do not consume account/private endpoints.
+- [ ] Re-verify only the current public fields needed for paper execution precision: symbol/base/quote/status, price tick, quantity step, minimum/notional constraints, and any field semantics already consumed by the Phase-02 adapter.
+- [ ] Extend recorded fixtures only where these fields are absent.
+- [ ] Confirm the Phase-02 kline acquisition/storage path is still the only public data path.
+- [ ] Do not consume account/private/trading endpoints.
 
 **Acceptance criteria:**
-- Public data contract is based on current official source, not old-QAP code or memory.
+- Precision/filter semantics are based on current official source and the Phase-02 public-data boundary remains single-owner.
 
-## Section 11.2 — Binance Public Historical Adapter
+## Section 11.2 — Larger Admitted Data Windows
 
 **Interfaces:**
-- Consumes: explicit symbol, interval, UTC `[start,end)` window.
-- Produces: validated Phase-02 `MarketBar` series plus venue metadata.
+- Consumes: the Phase-02 adapter/storage/fingerprint path.
+- Produces: larger immutable admitted datasets for realistic paper runs.
 
 **Behavior:**
-- Adapter paginates deterministically according to current API contract.
-- It rejects unavailable/non-spot/inactive symbols rather than guessing alternatives.
-- Raw network payload is transformed immediately into clean QAP types.
-- Retry policy is bounded for transient HTTP failures; semantic 4xx/data errors fail visibly.
-- Downloaded validated data is persisted through the existing Parquet/fingerprint path.
+- Use the existing explicit download/admit path; no background downloader or second parser is created.
+- Larger windows retain the same source timestamp, gap, orientation, fingerprint, and universe-mode semantics established in Phase 02.
+- These runs remain development/forward-paper evidence according to their manifest role; data acquisition does not change holdout status implicitly.
 
 **Steps:**
-- [ ] Implement response parsing against recorded fixtures first.
-- [ ] Add network integration test marked `network` so normal local verification does not depend on internet.
-- [ ] Add one manual/explicit command for downloading a declared window; do not create a background downloader.
+- [ ] Acquire at least one representative multi-asset window through the existing Phase-02 adapter.
+- [ ] Re-run admission/fingerprint checks and record data role before inspection.
+- [ ] Do not add caching/streaming infrastructure beyond the local Parquet contract.
 
 ## Section 11.3 — Market Precision and Minimum Constraints
 
@@ -111,7 +107,7 @@ No graph search, automatic stablecoin selection, or synthetic fill exists.
 ## Section 11.5 — Two-Leg Bridge Paper Execution
 
 **Interfaces:**
-- Consumes: route, next-bar open for every leg, current ledger, cost/precision metadata.
+- Consumes: route, next-bar execution-reference open for every leg, current ledger, cost/precision metadata.
 - Produces: two fills at one execution timestamp/event sequence.
 
 **Behavior:**
@@ -135,10 +131,10 @@ No graph search, automatic stablecoin selection, or synthetic fill exists.
 **Algorithm:**
 1. For a multi-asset basket, require one explicitly declared settlement/bridge asset `B` for the rebalance event. `B` is an execution hub, not automatically the analysis anchor or economic target.
 2. Compute target deltas for all basket assets, including the desired final quantity/value of `B` when `B` is itself in the basket.
-3. Preflight every required non-`B`/`B` market, next-bar price, precision constraint, and expected two-leg notional before mutating balances.
-4. Execute overweight non-`B` assets -> `B` first in deterministic order: descending absolute target-value reduction, then asset symbol tie-break.
+3. Preflight every required non-`B`/`B` market, next-bar execution-reference price, precision constraint, and expected two-leg notional before mutating balances.
+4. Execute overweight non-`B` assets -> `B` first in deterministic order: descending absolute target-value reduction, then stable `AssetId.key` tie-break.
 5. Recompute actual available `B` after costs/rounding while reserving any `B` quantity/value required by the target allocation.
-6. Execute `B` -> underweight non-`B` assets in deterministic order: descending absolute target-value increase, then asset symbol tie-break.
+6. Execute `B` -> underweight non-`B` assets in deterministic order: descending absolute target-value increase, then stable `AssetId.key` tie-break.
 7. Never spend more than actual available `B` after prior fills/costs; scale/stop remaining buys deterministically when costs/rounding exhaust available settlement balance.
 8. Record unfilled remainder and final target-weight tracking error explicitly. Preserve any execution-only bridge dust in the real terminal `PortfolioState`; Phase-03 valuation/evaluation must include its value rather than dropping it because it is outside the target allocation.
 
@@ -152,13 +148,13 @@ The initial multi-asset algorithm does not solve a general asset-to-asset matchi
 ## Section 11.7 — Independent Reconciliation
 
 **Interfaces:**
-- Consumes: starting state + append-only fills + valuation snapshots/results.
+- Consumes: starting state + append-only fills + market `PriceSnapshot` values/results.
 - Produces: independently recomputed ending state and reconciliation report.
 
 **Behavior:**
 - Recompute holdings from raw fill deltas without using the replay ledger's stored terminal state.
 - Compare every asset quantity exactly after declared quantization.
-- Recompute fee totals, turnover, terminal values, HODL-relative result.
+- Recompute fee totals and turnover from raw fills; call the normal evaluation functions on the independently reconstructed state for terminal values/HODL-relative result rather than duplicating valuation formulas.
 - Any mismatch fails the paper run's `reconciled` status.
 
 **Steps:**
@@ -189,11 +185,12 @@ The initial multi-asset algorithm does not solve a general asset-to-asset matchi
 **Workflow:**
 
 ```text
-download/validate declared data
- -> run frozen experiment manifest
+acquire/validate declared data through the Phase-02 public adapter
+ -> freeze experiment family/data role/manifest
+ -> run experiment
  -> inspect reconciliation status
  -> inspect Portfolio and Pair Workbench
- -> record conclusion
+ -> record conclusion and holdout-consumption status
 ```
 
 **Steps:**
@@ -214,15 +211,11 @@ pnpm build
 pnpm exec playwright test e2e/portfolio-workbench.spec.ts e2e/pair-anchor-lens.spec.ts
 ```
 
-Run marked network tests separately and explicitly:
-
-```bash
-uv run pytest -q -m network tests/integration/market/test_binance_public_adapter.py
-```
+If the optional Phase-02 live-network smoke remains present, run it separately and explicitly; ordinary Phase-11 verification relies on recorded deterministic fixtures rather than the public network.
 
 ## Phase Exit Criteria
 
-- [ ] Real public spot data can be admitted reproducibly through one bounded adapter.
+- [ ] The single Phase-02 public Spot adapter remains the only acquisition path and supports larger admitted paper datasets.
 - [ ] Venue precision/minimum constraints affect paper fills explicitly.
 - [ ] Direct and one-declared-bridge routes are deterministic and costed per real leg.
 - [ ] Multi-asset rebalance remains long-only and reconciled.
@@ -232,4 +225,4 @@ uv run pytest -q -m network tests/integration/market/test_binance_public_adapter
 
 ## Stop Conditions
 
-Stop and redesign before adding authenticated order endpoints, multiple venue adapters, route graph optimization, asynchronous worker queues, databases, schedulers, websocket market streams, or automatic failover. Those are live/operational architecture decisions, not paper-hardening conveniences.
+Stop and redesign before adding authenticated order endpoints, a second/parallel venue data path, multiple venue adapters, route graph optimization, asynchronous worker queues, databases, schedulers, websocket market streams, or automatic failover. Those are live/operational architecture decisions, not paper-hardening conveniences.
