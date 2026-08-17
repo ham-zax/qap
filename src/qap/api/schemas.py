@@ -82,6 +82,7 @@ class ExperimentDetailDto(ApiDto):
     provenance: RunProvenance
     result: ExperimentResult
     final_oos_commitment: FinalOosCommitment | None
+    available_pairs: tuple[tuple[str, str], ...]
     available_series: tuple[ArtifactSeriesMetadataDto, ...]
 
 

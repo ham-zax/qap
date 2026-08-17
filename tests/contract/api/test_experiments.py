@@ -160,6 +160,7 @@ def test_experiment_detail_exposes_manifest_provenance_result_and_family_attempt
     assert payload["schema_version"] == "qap.api.experiment_detail.v1"
     assert payload["run_id"] == run_id
     assert payload["family_attempt_count"] == 1
+    assert payload["available_pairs"] == [["BTC", "USDT"]]
     assert payload["manifest"]["experiment_name"] == "two-asset dummy"
     assert payload["manifest"]["universe_mode"] == "declared_fixed_basket"
     assert (

@@ -12,6 +12,7 @@ const experiment = {
   schema_version: 'qap.api.experiment_detail.v1',
   run_id: 'run-portfolio-boundary',
   family_attempt_count: 4,
+  available_pairs: [['BTC', 'USDT']],
   manifest: {
     experiment_name: 'relationship candidate',
     description: 'A candidate that beats HODL but loses to stronger controls.',

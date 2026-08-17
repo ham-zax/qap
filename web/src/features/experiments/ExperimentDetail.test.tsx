@@ -8,6 +8,7 @@ const data = {
   schema_version: 'qap.api.experiment_detail.v1',
   run_id: 'run-0123456789abcdef01234567',
   family_attempt_count: 3,
+  available_pairs: [['BTC', 'USDT']],
   manifest: {
     schema_version: 'qap.experiment.manifest.v1',
     experiment_name: 'sealed candidate',
@@ -137,7 +138,7 @@ describe('ExperimentDetail', () => {
     )
     expect(screen.getByRole('link', { name: 'Pair evidence' })).toHaveAttribute(
       'href',
-      '/pair/run-0123456789abcdef01234567/ETH/BTC?orientation=ETH%2FBTC&anchor=USDT&view=ratio',
+      '/pair/run-0123456789abcdef01234567/BTC/USDT?orientation=BTC%2FUSDT&anchor=USDT&view=ratio',
     )
   })
 

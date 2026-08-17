@@ -25,6 +25,7 @@ import { BenchmarkLadder } from './BenchmarkLadder'
 import { BenchmarkRoleTable } from './BenchmarkRoleTable'
 import { ExternalFlowContext } from './ExternalFlowContext'
 import { InventoryVsHodlTable } from './InventoryVsHodlTable'
+import { pairWorkbenchHref } from '../pairs/pairNavigation'
 import { LogRelativeWealthChart } from './LogRelativeWealthChart'
 import { RebalanceDecisionAudit } from './RebalanceDecisionAudit'
 import { RelativeWealthChart } from './RelativeWealthChart'
@@ -35,17 +36,6 @@ interface PortfolioOverviewProps {
   performance: PortfolioPerformanceDto
   selectedDecisionId?: string | null
   onDecisionChange?: (decisionId: string) => void
-}
-
-function pairWorkbenchHref(experiment: ExperimentDetailDto): string | null {
-  const [assetX, assetY] = experiment.manifest.basket
-  if (!assetX || !assetY) return null
-  const search = new URLSearchParams({
-    orientation: `${assetX}/${assetY}`,
-    anchor: experiment.manifest.analysis_anchor ?? 'none',
-    view: 'ratio',
-  })
-  return `/pair/${encodeURIComponent(experiment.run_id)}/${encodeURIComponent(assetX)}/${encodeURIComponent(assetY)}?${search}`
 }
 
 function DashboardMetric({
@@ -137,7 +127,10 @@ export function PortfolioOverview({
     result.primary_incremental_benchmark,
     result.strategy_vs_primary_control,
   )
-  const pairHref = pairWorkbenchHref(experiment)
+  const pairLinks = experiment.available_pairs.map((pair) => ({
+    pair,
+    href: pairWorkbenchHref(experiment, pair),
+  }))
 
   return (
     <article className="min-w-0" aria-labelledby="portfolio-heading">
@@ -202,14 +195,17 @@ export function PortfolioOverview({
           />
         </div>
 
-        {pairHref ? (
+        {pairLinks.length > 0 ? (
           <nav className="mt-5 flex flex-wrap gap-2" aria-label="Portfolio evidence links">
-            <a
-              className="inline-flex min-h-11 items-center rounded-md border border-border-strong bg-subtle px-4 py-2 text-sm font-semibold text-foreground no-underline hover:border-accent"
-              href={pairHref}
-            >
-              Pair workbench
-            </a>
+            {pairLinks.map(({ pair, href }) => (
+              <a
+                key={pair.join('/')}
+                className="inline-flex min-h-11 items-center rounded-md border border-border-strong bg-subtle px-4 py-2 text-sm font-semibold text-foreground no-underline hover:border-accent"
+                href={href}
+              >
+                {pairLinks.length === 1 ? 'Pair workbench' : `Pair workbench · ${pair.join('/')}`}
+              </a>
+            ))}
           </nav>
         ) : null}
       </header>

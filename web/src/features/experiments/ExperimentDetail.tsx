@@ -5,6 +5,7 @@ import {
   type ComparisonBarItem,
 } from '../../components/visuals/ComparisonBars'
 import { formatPercent, formatRelativePercent, formatResearchDate } from '../../lib/format'
+import { pairWorkbenchHref } from '../pairs/pairNavigation'
 import {
   experimentDataRoleLabel,
   humanizeIdentifier,
@@ -15,17 +16,6 @@ import {
 
 interface ExperimentDetailProps {
   data: ExperimentDetailDto
-}
-
-function pairWorkbenchHref(data: ExperimentDetailDto): string | null {
-  const [assetX, assetY] = data.manifest.basket
-  if (!assetX || !assetY) return null
-  const search = new URLSearchParams({
-    orientation: `${assetX}/${assetY}`,
-    anchor: data.manifest.analysis_anchor ?? 'none',
-    view: 'ratio',
-  })
-  return `/pair/${encodeURIComponent(data.run_id)}/${encodeURIComponent(assetX)}/${encodeURIComponent(assetY)}?${search}`
 }
 
 function heroBorder(tone: ReturnType<typeof researchStatusPresentation>['tone']): string {
@@ -56,7 +46,10 @@ function ProvenanceValue({ label, value }: { label: string; value: string }) {
 
 export function ExperimentDetail({ data }: ExperimentDetailProps) {
   const { manifest, provenance, result, final_oos_commitment: commitment } = data
-  const pairHref = pairWorkbenchHref(data)
+  const pairLinks = data.available_pairs.map((pair) => ({
+    pair,
+    href: pairWorkbenchHref(data, pair),
+  }))
   const status = researchStatusPresentation(result.status)
   const primaryComparison = result.strategy_vs_primary_control
     ? formatRelativePercent(result.strategy_vs_primary_control)
@@ -166,14 +159,15 @@ export function ExperimentDetail({ data }: ExperimentDetailProps) {
           >
             Portfolio economics
           </a>
-          {pairHref ? (
+          {pairLinks.map(({ pair, href }) => (
             <a
+              key={pair.join('/')}
               className="inline-flex min-h-11 items-center rounded-md border border-border-strong bg-subtle px-4 py-2 text-sm font-semibold text-foreground no-underline hover:border-accent"
-              href={pairHref}
+              href={href}
             >
-              Pair evidence
+              {pairLinks.length === 1 ? 'Pair evidence' : `Pair evidence · ${pair.join('/')}`}
             </a>
-          ) : null}
+          ))}
         </nav>
       </header>
 

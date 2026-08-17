@@ -408,6 +408,11 @@ export interface components {
         };
         /** ExperimentDetailDto */
         ExperimentDetailDto: {
+            /** Available Pairs */
+            available_pairs: [
+                string,
+                string
+            ][];
             /** Available Series */
             available_series: components["schemas"]["ArtifactSeriesMetadataDto"][];
             /** Family Attempt Count */
@@ -580,7 +585,10 @@ export interface components {
             /** Slippage Value */
             slippage_value: string;
         };
-        /** FinalOosCommitment */
+        /**
+         * FinalOosCommitment
+         * @description Durable information-state record for one final-OOS attempt.
+         */
         FinalOosCommitment: {
             /** Code Fingerprint */
             code_fingerprint: string;
@@ -609,7 +617,7 @@ export interface components {
              * Execution Status
              * @enum {string}
              */
-            execution_status: "committed" | "completed" | "failed";
+            execution_status: "committed" | "reservation_failed" | "completed" | "failed";
             /** Holdout Id */
             holdout_id: string;
             /** Manifest Sha256 */

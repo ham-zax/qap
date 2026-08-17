@@ -235,6 +235,22 @@ class RunArtifactReader:
         )
         return ExperimentListDto(items=tuple(items))
 
+    @staticmethod
+    def _available_pairs(loaded: LoadedRunArtifacts) -> tuple[tuple[str, str], ...]:
+        if loaded.evidence is not None and loaded.evidence.num_rows > 0:
+            first = loaded.evidence.column("canonical_first").to_pylist()
+            second = loaded.evidence.column("canonical_second").to_pylist()
+            pairs = {
+                (left, right)
+                for left, right in zip(first, second, strict=True)
+                if isinstance(left, str) and isinstance(right, str)
+            }
+            return tuple(sorted(pairs))
+        if len(loaded.manifest.basket) == 2:
+            first, second = sorted(loaded.manifest.basket)
+            return ((first, second),)
+        return ()
+
     def experiment_detail(self, run_id: str) -> ExperimentDetailDto:
         loaded = self.read(run_id)
         manifests = self._attempt_manifests()
@@ -259,6 +275,7 @@ class RunArtifactReader:
             provenance=loaded.provenance,
             result=loaded.result,
             final_oos_commitment=loaded.commitment,
+            available_pairs=self._available_pairs(loaded),
             available_series=(
                 _artifact_series_metadata("performance", loaded.performance),
                 _artifact_series_metadata("inventory", loaded.inventory),

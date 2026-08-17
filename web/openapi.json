@@ -625,6 +625,23 @@
       "ExperimentDetailDto": {
         "additionalProperties": false,
         "properties": {
+          "available_pairs": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Available Pairs",
+            "type": "array"
+          },
           "available_series": {
             "items": {
               "$ref": "#/components/schemas/ArtifactSeriesMetadataDto"
@@ -673,6 +690,7 @@
           "provenance",
           "result",
           "final_oos_commitment",
+          "available_pairs",
           "available_series"
         ],
         "title": "ExperimentDetailDto",
@@ -1115,6 +1133,7 @@
       },
       "FinalOosCommitment": {
         "additionalProperties": false,
+        "description": "Durable information-state record for one final-OOS attempt.",
         "properties": {
           "code_fingerprint": {
             "title": "Code Fingerprint",
@@ -1161,6 +1180,7 @@
           "execution_status": {
             "enum": [
               "committed",
+              "reservation_failed",
               "completed",
               "failed"
             ],
