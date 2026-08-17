@@ -1,0 +1,36 @@
+{
+  "schema_version": "qap.phase11.window_exercise_result.v1",
+  "code_commit": "d05c4360a522c8a5b2dc335857a05cdf4f2b466d",
+  "exercise": {
+    "schema_version": "qap.phase11.window_exercise.v1",
+    "experiments": {
+      "generation_seconds": 1.8677885409997543,
+      "list_seconds": 0.11853980498563033,
+      "run_count": 25
+    },
+    "maximum_rss_kib": 198088,
+    "paper": {
+      "artifact_bytes": 2044653,
+      "average_artifact_bytes": 5601.789041095891,
+      "days": 365,
+      "ending_holdings": {
+        "BTC": "0.02744",
+        "ETH": "0.2524",
+        "SOL": "2.831",
+        "USDT": "867.2225681303"
+      },
+      "execution_seconds": 1.0189322330115829,
+      "fill_count": 391,
+      "largest_artifact_bytes": 6644,
+      "list_seconds": 0.05282372600049712,
+      "market_rows": 1095,
+      "market_series": 3,
+      "no_fill_order_count": 704,
+      "semantic_fingerprints": {
+        "BTCUSDT": "0cff5a7068c2d3e7957b481f826ce8ca80956191873671035a08353cfdb4d5fc",
+        "ETHUSDT": "bfe77b4d12ba680c2a90d9c4b39bb2efab16427f4f25579775d56202df88b237",
+        "SOLUSDT": "0b6ed55cc33f1149d98ea0f4b2b29ddecdf455257157be751c42647884a63be1"
+      }
+    }
+  }
+}
