@@ -17,7 +17,7 @@ from qap.api.schemas import (
     RebalanceMarkerDto,
 )
 from qap.experiment import LoadedRunArtifacts, load_experiment_data
-from qap.market import AlignedBarSeries
+from qap.market import AlignedBarSeries, BarInterval
 from qap.portfolio import AssetId, PairOrientation
 from qap.relationship import (
     NormalizationScale,
@@ -103,15 +103,25 @@ def pair_series(
         quote_source_fingerprint=ratio.quote_source_fingerprint,
         fit_reciprocity=ratio.fit_reciprocity.value,
         evidence_reciprocity=ratio.evidence_reciprocity.value,
-        ratio=_float_points(ratio.timestamps, ratio.values),
-        log_ratio=_float_points(log_ratio.timestamps, log_ratio.values),
-        normalized_base=_float_points(
+        ratio=_availability_points(
+            ratio.timestamps,
+            ratio.values,
+            interval=aligned.interval,
+        ),
+        log_ratio=_availability_points(
+            log_ratio.timestamps,
+            log_ratio.values,
+            interval=aligned.interval,
+        ),
+        normalized_base=_availability_points(
             normalized_base.timestamps,
             normalized_base.values,
+            interval=aligned.interval,
         ),
-        normalized_quote=_float_points(
+        normalized_quote=_availability_points(
             normalized_quote.timestamps,
             normalized_quote.values,
+            interval=aligned.interval,
         ),
         rebalance_markers=_rebalance_markers(loaded),
         descriptive_only=True,
@@ -196,12 +206,36 @@ def anchor_lens(
         fit_reciprocity=lens.fit_reciprocity.value,
         evidence_reciprocity=lens.evidence_reciprocity.value,
         reduction=lens.reduction.value,
-        pair_ratio=_float_points(lens.timestamps, lens.pair_ratio),
-        pair_log_ratio=_float_points(lens.timestamps, lens.pair_log_ratio),
-        base_to_anchor=_float_points(lens.timestamps, lens.base_to_anchor),
-        quote_to_anchor=_float_points(lens.timestamps, lens.quote_to_anchor),
-        base_to_anchor_log=_float_points(lens.timestamps, lens.base_to_anchor_log),
-        quote_to_anchor_log=_float_points(lens.timestamps, lens.quote_to_anchor_log),
+        pair_ratio=_availability_points(
+            lens.timestamps,
+            lens.pair_ratio,
+            interval=lens.interval,
+        ),
+        pair_log_ratio=_availability_points(
+            lens.timestamps,
+            lens.pair_log_ratio,
+            interval=lens.interval,
+        ),
+        base_to_anchor=_availability_points(
+            lens.timestamps,
+            lens.base_to_anchor,
+            interval=lens.interval,
+        ),
+        quote_to_anchor=_availability_points(
+            lens.timestamps,
+            lens.quote_to_anchor,
+            interval=lens.interval,
+        ),
+        base_to_anchor_log=_availability_points(
+            lens.timestamps,
+            lens.base_to_anchor_log,
+            interval=lens.interval,
+        ),
+        quote_to_anchor_log=_availability_points(
+            lens.timestamps,
+            lens.quote_to_anchor_log,
+            interval=lens.interval,
+        ),
         max_ratio_decomposition_error=lens.max_ratio_decomposition_error,
         max_log_decomposition_error=lens.max_log_decomposition_error,
         descriptive_only=lens.descriptive_only,
@@ -358,6 +392,16 @@ def requested_pair_orientation(
             orientation=raw,
         )
     return requested
+
+
+def _availability_points(
+    timestamps: tuple[datetime, ...],
+    values: Iterable[SupportsFloat],
+    *,
+    interval: BarInterval,
+) -> tuple[FloatPointDto, ...]:
+    available_at = tuple(timestamp + interval.duration for timestamp in timestamps)
+    return _float_points(available_at, values)
 
 
 def _float_points(

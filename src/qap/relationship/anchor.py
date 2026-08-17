@@ -37,7 +37,7 @@ class AnchorReduction(StrEnum):
     ANCHOR_IS_QUOTE = "anchor_is_quote"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class AnchorLens:
     pair_id: PairId
     orientation: PairOrientation
@@ -60,6 +60,10 @@ class AnchorLens:
     quote_to_anchor_log: NDArray[np.float64]
     max_ratio_decomposition_error: float
     max_log_decomposition_error: float
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        del args, kwargs
+        raise TypeError("use build_anchor_lens()")
 
     def __post_init__(self) -> None:
         if self.orientation.pair_id != self.pair_id:
@@ -169,7 +173,15 @@ def _fingerprints(
     if anchor == orientation.quote:
         return base_fingerprint, quote_fingerprint, quote_fingerprint
     if anchor == common_quote and anchor_identity:
-        return base_fingerprint, quote_fingerprint, None
+        return (
+            base_fingerprint,
+            quote_fingerprint,
+            source_fingerprint_for_asset(
+                fingerprints,
+                asset=anchor,
+                identity_coordinate=True,
+            ),
+        )
     anchor_fingerprint = source_fingerprint_for_asset(
         fingerprints,
         asset=anchor,
@@ -244,28 +256,38 @@ def build_anchor_lens(
     reconstructed_log = base_anchor_log - quote_anchor_log
     ratio_error = float(np.max(np.abs(pair - reconstructed_ratio)))
     log_error = float(np.max(np.abs(pair_log - reconstructed_log)))
+    ratio_ok = np.allclose(pair, reconstructed_ratio, rtol=1e-12, atol=1e-12)
+    log_ok = np.allclose(pair_log, reconstructed_log, rtol=1e-12, atol=1e-12)
+    if not ratio_ok or not log_ok:
+        raise RelationshipDataError(
+            "anchor decomposition tolerance exceeded; evidence is not aligned"
+        )
     reduction, identity_values = _reduction(orientation=orientation, anchor=anchor)
 
-    return AnchorLens(
-        pair_id=orientation.pair_id,
-        orientation=orientation,
-        anchor=anchor,
-        interval=aligned.interval,
-        timestamps=timestamps,
-        as_of=validated_time,
-        base_source_fingerprint=base_fingerprint,
-        quote_source_fingerprint=quote_fingerprint,
-        anchor_source_fingerprint=anchor_fingerprint,
-        fit_reciprocity=FitReciprocity.EXACT_TRANSFORM,
-        evidence_reciprocity=EvidenceReciprocity.EXACT_TRANSFORM,
-        reduction=reduction,
-        identity_values=identity_values,
-        pair_ratio=pair,
-        pair_log_ratio=pair_log,
-        base_to_anchor=base_anchor,
-        quote_to_anchor=quote_anchor,
-        base_to_anchor_log=base_anchor_log,
-        quote_to_anchor_log=quote_anchor_log,
-        max_ratio_decomposition_error=ratio_error,
-        max_log_decomposition_error=log_error,
-    )
+    lens = object.__new__(AnchorLens)
+    for field_name, value in {
+        "pair_id": orientation.pair_id,
+        "orientation": orientation,
+        "anchor": anchor,
+        "interval": aligned.interval,
+        "timestamps": timestamps,
+        "as_of": validated_time,
+        "base_source_fingerprint": base_fingerprint,
+        "quote_source_fingerprint": quote_fingerprint,
+        "anchor_source_fingerprint": anchor_fingerprint,
+        "fit_reciprocity": FitReciprocity.EXACT_TRANSFORM,
+        "evidence_reciprocity": EvidenceReciprocity.EXACT_TRANSFORM,
+        "reduction": reduction,
+        "identity_values": identity_values,
+        "pair_ratio": pair,
+        "pair_log_ratio": pair_log,
+        "base_to_anchor": base_anchor,
+        "quote_to_anchor": quote_anchor,
+        "base_to_anchor_log": base_anchor_log,
+        "quote_to_anchor_log": quote_anchor_log,
+        "max_ratio_decomposition_error": ratio_error,
+        "max_log_decomposition_error": log_error,
+    }.items():
+        object.__setattr__(lens, field_name, value)
+    lens.__post_init__()
+    return lens

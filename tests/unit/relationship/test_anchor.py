@@ -14,6 +14,7 @@ from qap.market import (
 )
 from qap.portfolio import AssetId, PairOrientation
 from qap.relationship import (
+    AnchorLens,
     AnchorReduction,
     EvidenceReciprocity,
     FitReciprocity,
@@ -119,6 +120,52 @@ def test_anchor_lens_reconciles_ratio_and_log_decompositions() -> None:
     assert lens.descriptive_only is True
 
 
+def test_anchor_lens_cannot_be_constructed_outside_validated_builder() -> None:
+    orientation = PairOrientation(base=ETH, quote=BTC)
+
+    with pytest.raises(TypeError, match="build_anchor_lens"):
+        AnchorLens(
+            pair_id=orientation.pair_id,
+            orientation=orientation,
+            anchor=SOL,
+            interval=INTERVAL,
+            timestamps=(),
+            as_of=datetime(2024, 1, 1, 13),
+            base_source_fingerprint="not-a-fingerprint",
+            quote_source_fingerprint="also-not-a-fingerprint",
+            anchor_source_fingerprint=None,
+            fit_reciprocity=FitReciprocity.EXACT_TRANSFORM,
+            evidence_reciprocity=EvidenceReciprocity.EXACT_TRANSFORM,
+            reduction=AnchorReduction.NONE,
+            identity_values={},
+            pair_ratio=np.array([1.0]),
+            pair_log_ratio=np.array([999.0]),
+            base_to_anchor=np.array([1.0]),
+            quote_to_anchor=np.array([1.0]),
+            base_to_anchor_log=np.array([1.0]),
+            quote_to_anchor_log=np.array([1.0]),
+            max_ratio_decomposition_error=0.0,
+            max_log_decomposition_error=0.0,
+        )
+
+
+def test_anchor_lens_fails_closed_when_decomposition_exceeds_tolerance() -> None:
+    aligned = _aligned_three(
+        base=(1.508514504144653e212,),
+        quote=(1.0248743314741788e-88,),
+        anchor=(5.5079990357443475e230,),
+    )
+
+    with pytest.raises(RelationshipDataError, match="decomposition tolerance"):
+        build_anchor_lens(
+            aligned,
+            orientation=PairOrientation(base=ETH, quote=BTC),
+            anchor=SOL,
+            source_fingerprints=FINGERPRINTS,
+            as_of=datetime(2024, 1, 1, 11, tzinfo=UTC),
+        )
+
+
 @pytest.mark.parametrize(
     ("anchor", "reduction", "base_anchor", "quote_anchor"),
     [
@@ -170,7 +217,7 @@ def test_common_reference_asset_is_an_explicit_unit_anchor() -> None:
     )
 
     assert lens.reduction is AnchorReduction.NONE
-    assert lens.anchor_source_fingerprint is None
+    assert lens.anchor_source_fingerprint == identity_source_fingerprint(USDT)
     np.testing.assert_allclose(lens.base_to_anchor, [20.0, 40.0, 30.0])
     np.testing.assert_allclose(lens.quote_to_anchor, [5.0, 10.0, 6.0])
 

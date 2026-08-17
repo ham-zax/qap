@@ -37,7 +37,7 @@ class NormalizationScale(StrEnum):
         return 100.0
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class NormalizedPath:
     asset: AssetId
     interval: BarInterval
@@ -48,6 +48,10 @@ class NormalizedPath:
     source_fingerprint: str
     scale: NormalizationScale
     values: tuple[float, ...]
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        del args, kwargs
+        raise TypeError("use build_normalized_path()")
 
     def __post_init__(self) -> None:
         if not isinstance(cast(object, self.scale), NormalizationScale):
@@ -109,14 +113,18 @@ def build_normalized_path(
     if not isinstance(cast(object, scale), NormalizationScale):
         raise TypeError("scale must be NormalizationScale")
     normalized = _normalize(values, scale=scale.starting_value)
-    return NormalizedPath(
-        asset=asset,
-        interval=aligned.interval,
-        timestamps=timestamps,
-        window_start=timestamps[0],
-        window_end_exclusive=window_end_exclusive,
-        as_of=validated_time,
-        source_fingerprint=fingerprint,
-        scale=scale,
-        values=tuple(float(value) for value in normalized),
-    )
+    path = object.__new__(NormalizedPath)
+    for field_name, value in {
+        "asset": asset,
+        "interval": aligned.interval,
+        "timestamps": timestamps,
+        "window_start": timestamps[0],
+        "window_end_exclusive": window_end_exclusive,
+        "as_of": validated_time,
+        "source_fingerprint": fingerprint,
+        "scale": scale,
+        "values": tuple(float(value) for value in normalized),
+    }.items():
+        object.__setattr__(path, field_name, value)
+    path.__post_init__()
+    return path

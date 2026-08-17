@@ -14,6 +14,9 @@ from qap.api.schemas import (
     RelationshipEvidenceSeriesDto,
 )
 from qap.experiment import LoadedRunArtifacts
+from qap.portfolio import AssetId, PairOrientation
+from qap.relationship import EvidenceReciprocity
+from qap.relationship.models import reorient_model_evidence_value
 
 
 def _text(row: dict[str, Any], field: str) -> str:
@@ -67,13 +70,20 @@ def pair_evidence(
             continue
         base = _text(row, "orientation_base")
         quote = _text(row, "orientation_quote")
+        persisted_orientation = PairOrientation(
+            base=AssetId(base),
+            quote=AssetId(quote),
+        )
+        model_id = _text(row, "model_id")
+        evidence_field = _text(row, "evidence_field")
+        evidence_reciprocity = EvidenceReciprocity(_text(row, "evidence_reciprocity"))
         group_key = (
             f"{base}/{quote}",
-            _text(row, "model_id"),
+            model_id,
             _text(row, "model_version"),
-            _text(row, "evidence_field"),
+            evidence_field,
             _text(row, "fit_reciprocity"),
-            _text(row, "evidence_reciprocity"),
+            evidence_reciprocity.value,
             _text(row, "base_source_fingerprint"),
             _text(row, "quote_source_fingerprint"),
         )
@@ -83,10 +93,18 @@ def pair_evidence(
         raw_value = row.get("value")
         if raw_value is not None and not isinstance(raw_value, float):
             raise ValueError("evidence value must be a float or null")
+        oriented_value = reorient_model_evidence_value(
+            model_id=model_id,
+            evidence_field=evidence_field,
+            evidence_reciprocity=evidence_reciprocity,
+            persisted_orientation=persisted_orientation,
+            requested_orientation=requested,
+            value=raw_value,
+        )
         groups[group_key].append(
             RelationshipEvidencePointDto(
                 timestamp=timestamp,
-                value=raw_value,
+                value=oriented_value,
                 status=_text(row, "status"),
                 window_observations=_integer(row, "window_observations"),
                 required_observations=_integer(row, "required_observations"),

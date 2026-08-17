@@ -13,6 +13,7 @@ from qap.market import (
 from qap.portfolio import AssetId
 from qap.relationship import (
     NormalizationScale,
+    NormalizedPath,
     RelationshipDataError,
     build_normalized_path,
     identity_source_fingerprint,
@@ -133,6 +134,21 @@ def test_normalized_path_uses_the_aligned_common_timestamp_index() -> None:
     assert path.source_fingerprint == "f" * 64
     assert path.values == (1.0, 0.25)
     assert path.descriptive_only is True
+
+
+def test_normalized_path_cannot_be_constructed_outside_validated_builder() -> None:
+    with pytest.raises(TypeError, match="build_normalized_path"):
+        NormalizedPath(
+            asset=BTC,
+            interval=INTERVAL,
+            timestamps=(datetime(2024, 1, 1, 10, tzinfo=UTC),),
+            window_start=datetime(2024, 1, 1, 12, tzinfo=UTC),
+            window_end_exclusive=datetime(2024, 1, 1, 11, tzinfo=UTC),
+            as_of=datetime(2024, 1, 1, 10),
+            source_fingerprint="bad",
+            scale=NormalizationScale.ONE,
+            values=(float("nan"),),
+        )
 
 
 def test_normalized_common_quote_is_an_identity_path() -> None:
