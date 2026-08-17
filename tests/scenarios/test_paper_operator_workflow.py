@@ -133,6 +133,22 @@ def test_operator_refuses_to_overwrite_existing_operation(tmp_path: Path) -> Non
         )
 
 
+def test_paper_spec_cannot_self_declare_prospective_candidate_evidence(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(SPEC.read_text(encoding="utf-8"))
+    payload["prospective_candidate_evidence"] = True
+    spec = tmp_path / "false-prospective-claim.json"
+    spec.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="prospective candidate evidence cannot be"):
+        run_paper_operation_to_artifact(
+            spec,
+            repository_root=ROOT,
+            output_root=tmp_path / "paper-operations",
+        )
+
+
 def test_forward_paper_spec_rejects_non_forward_role(tmp_path: Path) -> None:
     payload = json.loads(SPEC.read_text(encoding="utf-8"))
     payload["data_role"] = "development"

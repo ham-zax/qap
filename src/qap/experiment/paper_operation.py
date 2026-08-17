@@ -281,6 +281,18 @@ def _build_record(
         raise ValueError("operation_id contains unsupported characters")
     if spec.get("data_role") != "forward_paper":
         raise ValueError("data_role must be forward_paper")
+    derived_evidence_fields = {
+        "candidate_freeze",
+        "evidence_class",
+        "prospective_candidate_evidence",
+    }
+    declared_evidence_fields = sorted(derived_evidence_fields.intersection(spec))
+    if declared_evidence_fields:
+        raise ValueError(
+            "prospective candidate evidence cannot be self-declared by a "
+            "paper-operation spec; evidence classification is derived by the verified "
+            "lineage workflow"
+        )
     execution_timestamp = _timestamp(spec.get("execution_timestamp"))
     bridge = AssetId(_text(spec.get("bridge"), field="bridge"))
     starting_holdings = _decimal_mapping(
