@@ -4,7 +4,7 @@
 
 **Architecture:** Repair contracts at their authority boundary: Phase-11 E2E navigation in the frontend, target semantics in policy-owned `RebalancePlan`, family-attempt semantics in the API, and success-threshold semantics in presentation. Reconcile the mission map so Phase 14 and a separate Research Scanner/Candidate Workbench phase are completion scope, while preserving Phase-12 `NO-GO` and the no-live-capital boundary.
 
-**Tech Stack:** Python 3.13, pytest, Pydantic/FastAPI/OpenAPI, React/Vite/TanStack Router, Vitest, Playwright, Tailwind CSS.
+**Tech Stack:** Python 3.14, pytest, Pydantic/FastAPI/OpenAPI, React/Vite/TanStack Router, Vitest, Playwright, Tailwind CSS.
 
 ## Global Constraints
 

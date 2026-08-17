@@ -1,26 +1,125 @@
 # QAP
 
-QAP is a spot-only crypto wealth-compounding system built around explicit inventory ownership and relative rebalancing. It manages a curated set of assets the operator is willing to own, measures their relative relationships, and uses economically justified reallocations to improve the portfolio.
+QAP is a deterministic, spot-only crypto inventory-rebalancing research system built around explicit owned inventory, causal evidence, realistic costs, and matched passive counterfactuals.
 
-The primary product objective is **portfolio wealth growth relative to matched passive HODL after realistic costs**. Coin-unit accumulation remains a secondary outcome and attribution lens. A fiat/crypto numeraire is used to value heterogeneous holdings consistently; it is a measurement coordinate, not a directional market-prediction objective.
+The primary product objective is **portfolio wealth growth relative to the correct matched passive HODL/control after costs**. Coin-unit accumulation is a secondary attribution lens, not permission to destroy wealth. A numeraire is used to value heterogeneous holdings consistently; it is a measurement coordinate, not a directional market-prediction objective.
 
 ## Current repository state
 
-This repository is intentionally documentation-only while the final pre-build review/research handoff completes. The independent oracle review has been integrated into the plans. No trading engine, API, web application, or execution integration is implemented yet.
+QAP is an implemented local research product, not a documentation-only scaffold. The repository currently contains:
 
-Start here:
+- a Python 3.14 experiment/replay engine with exact Decimal portfolio accounting, policy/control execution, HODL and matched-contribution comparisons, immutable run artifacts, integrity seals, and final-OOS commitment discipline;
+- relationship evidence and simple-first predictive research components with explicit causal/provenance contracts;
+- deterministic forward-paper execution over recorded public venue inputs, including precision/notional rules, routed fills, independent reconciliation, and self-auditing paper-operation artifacts;
+- a read-only FastAPI evidence API;
+- a React/Vite analytical workbench for research runs, experiment verdicts, portfolio economics, pair evidence, and paper operations;
+- a sequential local development harness under `tools/agent/` with recoverable state and bounded verification.
 
-- `docs/superpowers/specs/2026-08-17-qap-system-design.md` — economic/domain/system design.
-- `docs/superpowers/specs/2026-08-17-qap-web-operations-design.md` — web, API, verification, maintainability, operational boundaries, and phase map.
-- `docs/REFERENCE_BOUNDARY.md` — rules for using QAP v1/v2 as historical evidence.
-- `docs/plans/README.md` — plan map and phase order.
-- `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md` — master implementation plan.
-- `docs/reviews/2026-08-17-design-plan-review.md` — engineering/reflection review and remaining intentional uncertainties.
+**Phase 12 remains `NO-GO` for live operation.** QAP has no private exchange credentials, authenticated trading API, browser order controls, live scheduler, or live-capital authority. The recorded decision is in [`docs/reviews/2026-08-17-live-readiness.md`](docs/reviews/2026-08-17-live-readiness.md).
 
-The next implementation step is Phase 00 after the user's current review/research handoff. One targeted statistical research pass may refine later Phase 07/10 rules, but it does not block Phase 00 unless it reveals a critical contradiction in the agreed economic/accounting/research constitution.
+Phase 14's analytical-workbench implementation is present and is closed only when its rendered browser acceptance contract is green. Phase 15's scanner design is frozen for review, but **scanner implementation is not yet authorized**. A separate implementation plan/approval is required, and the historical/paper execution-contract and complete attempt-ledger prerequisites must be resolved before scanner execution work begins.
 
-## Review and OSS Baselines
+## Requirements and setup
 
-The design has passed the final targeted pre-build quantitative admission review with **Phase-00 GO / no critical pre-build blockers**. Phase-specific statistical claim gates remain in Phases 07/10 rather than blocking the economic kernel.
+- Python `>=3.14,<3.15`
+- [`uv`](https://docs.astral.sh/uv/)
+- Node.js plus `pnpm 11.21.0`
 
-Open-source reuse is governed by [`docs/OSS_REUSE_BOUNDARY.md`](docs/OSS_REUSE_BOUNDARY.md): reuse mature commodity tooling where it saves code, but never delegate QAP's inventory/accounting/replay/research semantics to a generic trading framework.
+Install the locked dependencies:
+
+```bash
+uv sync --frozen
+cd web
+pnpm install --frozen-lockfile
+cd ..
+```
+
+## Run a deterministic local experiment
+
+Use an empty run root because run directories are immutable and deterministic run IDs are never overwritten:
+
+```bash
+export QAP_RUN_ROOT=/tmp/qap-demo-runs
+mkdir -p "$QAP_RUN_ROOT"
+
+uv run python -m qap.experiment.cli \
+  tests/fixtures/experiments/two_asset_dummy.json \
+  --data-root "$PWD" \
+  --repository-root "$PWD" \
+  --run-root "$QAP_RUN_ROOT" \
+  --run-timestamp 2026-08-17T10:00:00Z
+```
+
+To create the recorded forward-paper demo in the same evidence root:
+
+```bash
+uv run python scripts/run_paper_operation.py \
+  tests/fixtures/paper/four_asset_forward_paper.json \
+  --repository-root "$PWD" \
+  --output-root "$QAP_RUN_ROOT/paper-operations"
+```
+
+## Start the local evidence workbench
+
+Start the read-only API from the repository root:
+
+```bash
+QAP_API_RUN_ROOT="$QAP_RUN_ROOT" \
+QAP_API_MARKET_DATA_ROOT="$PWD" \
+uv run uvicorn qap.api.app:create_default_app \
+  --factory --host 127.0.0.1 --port 8000
+```
+
+Then start the frontend in another terminal:
+
+```bash
+cd web
+pnpm dev --host 127.0.0.1 --port 5173
+```
+
+The Vite development server proxies `/api` to `http://127.0.0.1:8000`.
+
+## Verification
+
+Backend and repository checks:
+
+```bash
+uv run pytest -q
+uv run ruff check .
+uv run ruff format --check .
+uv run pyright src tests scripts tools
+uv run lint-imports
+uv run python scripts/check_source_size.py
+uv lock --check
+```
+
+Frontend and browser checks:
+
+```bash
+cd web
+pnpm typecheck
+pnpm typecheck:e2e
+pnpm test
+pnpm build
+cd ..
+uv run python scripts/run_playwright_e2e.py
+```
+
+To verify that the checked-in API contract is current:
+
+```bash
+uv run python scripts/export_openapi.py /tmp/qap-openapi.json
+diff -u web/openapi.json /tmp/qap-openapi.json
+```
+
+## Project map
+
+- [`implementation_prompt.md`](implementation_prompt.md) — governing mission/economic/action-space constraints.
+- [`docs/plans/README.md`](docs/plans/README.md) — phase map and current sequencing.
+- [`docs/superpowers/specs/2026-08-17-qap-system-design.md`](docs/superpowers/specs/2026-08-17-qap-system-design.md) — economic/domain/system design.
+- [`docs/superpowers/specs/2026-08-17-qap-web-operations-design.md`](docs/superpowers/specs/2026-08-17-qap-web-operations-design.md) — API/web/operations boundaries.
+- [`docs/reviews/2026-08-17-live-readiness.md`](docs/reviews/2026-08-17-live-readiness.md) — current Phase-12 `NO-GO` decision.
+- [`docs/plans/14-analytical-workbench-ux-redesign.md`](docs/plans/14-analytical-workbench-ux-redesign.md) — analytical-workbench acceptance contract.
+- [`docs/plans/15-research-scanner-and-candidate-workbench.md`](docs/plans/15-research-scanner-and-candidate-workbench.md) — scanner umbrella plan; not implementation authorization.
+- [`tools/agent/README.md`](tools/agent/README.md) — sequential local development harness.
+- [`docs/OSS_REUSE_BOUNDARY.md`](docs/OSS_REUSE_BOUNDARY.md) — open-source reuse boundary.
