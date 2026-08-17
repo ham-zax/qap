@@ -131,7 +131,7 @@ No graph search, automatic stablecoin selection, or synthetic fill exists.
 **Algorithm:**
 1. For a multi-asset basket, require one explicitly declared settlement/bridge asset `B` for the rebalance event. `B` is an execution hub, not automatically the analysis anchor or economic target.
 2. Compute target deltas for all basket assets, including the desired final quantity/value of `B` when `B` is itself in the basket.
-3. Preflight every required non-`B`/`B` market, next-bar execution-reference price, precision constraint, and expected two-leg notional before mutating balances.
+3. Preflight every required non-`B`/`B` market, next-bar execution-reference price, precision constraint, and expected two-leg notional on immutable shadow state before accepting any fills. Known precision/minimum no-fills remain explicit order outcomes and may coexist with other executable orders in the same rebalance event; missing required market/reference data still fails the event before accepted execution.
 4. Execute overweight non-`B` assets -> `B` first in deterministic order: descending absolute target-value reduction, then stable `AssetId.key` tie-break.
 5. Recompute actual available `B` after costs/rounding while reserving any `B` quantity/value required by the target allocation.
 6. Execute `B` -> underweight non-`B` assets in deterministic order: descending absolute target-value increase, then stable `AssetId.key` tie-break.

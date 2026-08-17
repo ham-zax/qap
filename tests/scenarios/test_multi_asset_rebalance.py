@@ -150,6 +150,43 @@ def test_multi_asset_precision_no_fill_is_explicit_and_leaves_dust_owned() -> No
     assert result.ending_state.quantity(USDT) >= result.bridge_target_quantity
 
 
+def test_multi_asset_dry_preflights_all_precision_outcomes_before_execution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import qap.execution.multi_asset as multi_asset
+
+    metadata = dict(METADATA)
+    metadata[SOLUSDT] = _metadata(SOLUSDT, minimum_notional="25")
+    real_execute = multi_asset.execute_routed_conversion
+    route_calls: list[str] = []
+
+    def recording_execute(**kwargs: object) -> object:
+        route = kwargs["route"]
+        assert hasattr(route, "route_id")
+        route_calls.append(route.route_id)  # type: ignore[attr-defined]
+        return real_execute(**kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(multi_asset, "execute_routed_conversion", recording_execute)
+
+    result = multi_asset.execute_multi_asset_rebalance(
+        decision_id="multi-preflight-precision",
+        execution_timestamp=AT,
+        current_state=STARTING,
+        target=TARGET,
+        valuation_prices=PRICES,
+        bridge=USDT,
+        instruments=INSTRUMENTS,
+        reference_prices=REFERENCE_PRICES,
+        market_metadata=metadata,
+        cost_model=CostModel.zero(),
+    )
+
+    assert len(route_calls) == 6
+    assert route_calls[:3] == route_calls[3:]
+    sol = next(order for order in result.orders if order.asset == SOL)
+    assert sol.leg_reason is DirectExecutionReason.BELOW_MINIMUM_NOTIONAL
+
+
 def test_multi_asset_preflights_all_order_data_before_any_execution() -> None:
     from qap.execution.multi_asset import (
         MultiAssetPreflightError,

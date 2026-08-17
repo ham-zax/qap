@@ -1,3 +1,4 @@
+import json
 import shutil
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -193,6 +194,46 @@ def test_actionable_unsupported_direct_route_invalidates_experiment() -> None:
             data_root=REPOSITORY_ROOT,
             repository_root=REPOSITORY_ROOT,
             run_timestamp=RUN_AT,
+        )
+
+
+def test_fake_final_oos_commitment_cannot_mint_execution_permit(
+    tmp_path: Path,
+) -> None:
+    from qap.experiment.final_oos import issue_final_oos_execution_permit
+
+    manifest = load_manifest(MANIFEST_PATH).model_copy(
+        update={"data_role": DataRole.FINAL_OOS}
+    )
+    prepared = prepare_experiment(
+        manifest,
+        data_root=REPOSITORY_ROOT,
+        repository_root=REPOSITORY_ROOT,
+        run_timestamp=RUN_AT,
+    )
+    run_directory = tmp_path / prepared.provenance.run_id
+    run_directory.mkdir()
+    commitment_path = run_directory / "commitment.json"
+    commitment_path.write_text(
+        json.dumps(
+            {
+                "run_id": prepared.provenance.run_id,
+                "research_family_id": manifest.research_family_id,
+                "holdout_id": "holdout-fake",
+                "manifest_sha256": prepared.provenance.manifest_sha256,
+                "code_fingerprint": prepared.provenance.code_fingerprint,
+                "consumed": False,
+                "execution_status": "committed",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ExperimentSetupError, match="authoritative holdout registry"):
+        issue_final_oos_execution_permit(
+            manifest=manifest,
+            provenance=prepared.provenance,
+            commitment_path=commitment_path,
         )
 
 

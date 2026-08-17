@@ -100,6 +100,14 @@ class _PlannedOrder:
     absolute_target_value_change: Decimal
 
 
+@dataclass(frozen=True, slots=True)
+class _ExecutionPass:
+    ending_state: PortfolioState
+    orders: tuple[MultiAssetOrderOutcome, ...]
+    fills: tuple[Fill, ...]
+    states_after_fills: tuple[PortfolioState, ...]
+
+
 def _target_quantity(
     *,
     portfolio_value: Decimal,
@@ -249,55 +257,20 @@ def _bridge_budget_for_buy(
     return divide(desired_value, bridge_price)
 
 
-def execute_multi_asset_rebalance(
+def _execute_planned_orders(
     *,
+    planned: tuple[_PlannedOrder, ...],
     decision_id: str,
     execution_timestamp: datetime,
-    current_state: PortfolioState,
-    target: AllocationTarget,
-    valuation_prices: PriceSnapshot,
+    starting_state: PortfolioState,
     bridge: AssetId,
-    instruments: Iterable[VenueInstrument],
+    bridge_target: Decimal,
+    valuation_prices: PriceSnapshot,
     reference_prices: Mapping[VenueInstrument, Decimal],
     market_metadata: Mapping[VenueInstrument, MarketMetadata],
     cost_model: CostModel,
-) -> MultiAssetRebalanceResult:
-    """Sell overweights into bridge first, then fund underweights deterministically."""
-
-    if not isinstance(cast(object, current_state), PortfolioState):
-        raise TypeError("current_state must be PortfolioState")
-    if not isinstance(cast(object, target), AllocationTarget):
-        raise TypeError("target must be AllocationTarget")
-    if not isinstance(cast(object, valuation_prices), PriceSnapshot):
-        raise TypeError("valuation_prices must be PriceSnapshot")
-    if not isinstance(cast(object, bridge), AssetId):
-        raise TypeError("bridge must be AssetId")
-    available = _validated_instruments(instruments)
-    declared_assets = frozenset((*target.weights, bridge))
-    total_value, deltas = _quantity_deltas(
-        current_state,
-        target=target,
-        prices=valuation_prices,
-    )
-    planned = _plan_orders(
-        deltas=deltas,
-        bridge=bridge,
-        instruments=available,
-        declared_assets=declared_assets,
-        valuation_prices=valuation_prices,
-    )
-    _preflight_order_data(
-        planned,
-        reference_prices=reference_prices,
-        market_metadata=market_metadata,
-    )
-
-    bridge_target = _target_quantity(
-        portfolio_value=total_value,
-        target_weight=target.weights.get(bridge, _ZERO),
-        price=valuation_prices.price(bridge),
-    )
-    state = current_state
+) -> _ExecutionPass:
+    state = starting_state
     outcomes: list[MultiAssetOrderOutcome] = []
     fills: list[Fill] = []
     states_after_fills: list[PortfolioState] = []
@@ -354,21 +327,107 @@ def execute_multi_asset_rebalance(
                 leg_reason=routed.leg_reason,
             )
         )
+    return _ExecutionPass(
+        ending_state=state,
+        orders=tuple(outcomes),
+        fills=tuple(fills),
+        states_after_fills=tuple(states_after_fills),
+    )
 
-    residual = exact_subtract(state.quantity(bridge), bridge_target)
+
+def execute_multi_asset_rebalance(
+    *,
+    decision_id: str,
+    execution_timestamp: datetime,
+    current_state: PortfolioState,
+    target: AllocationTarget,
+    valuation_prices: PriceSnapshot,
+    bridge: AssetId,
+    instruments: Iterable[VenueInstrument],
+    reference_prices: Mapping[VenueInstrument, Decimal],
+    market_metadata: Mapping[VenueInstrument, MarketMetadata],
+    cost_model: CostModel,
+) -> MultiAssetRebalanceResult:
+    """Sell overweights into bridge first, then fund underweights deterministically."""
+
+    if not isinstance(cast(object, current_state), PortfolioState):
+        raise TypeError("current_state must be PortfolioState")
+    if not isinstance(cast(object, target), AllocationTarget):
+        raise TypeError("target must be AllocationTarget")
+    if not isinstance(cast(object, valuation_prices), PriceSnapshot):
+        raise TypeError("valuation_prices must be PriceSnapshot")
+    if not isinstance(cast(object, bridge), AssetId):
+        raise TypeError("bridge must be AssetId")
+    available = _validated_instruments(instruments)
+    declared_assets = frozenset((*target.weights, bridge))
+    total_value, deltas = _quantity_deltas(
+        current_state,
+        target=target,
+        prices=valuation_prices,
+    )
+    planned = _plan_orders(
+        deltas=deltas,
+        bridge=bridge,
+        instruments=available,
+        declared_assets=declared_assets,
+        valuation_prices=valuation_prices,
+    )
+    _preflight_order_data(
+        planned,
+        reference_prices=reference_prices,
+        market_metadata=market_metadata,
+    )
+
+    bridge_target = _target_quantity(
+        portfolio_value=total_value,
+        target_weight=target.weights.get(bridge, _ZERO),
+        price=valuation_prices.price(bridge),
+    )
+    # First pass is a complete immutable shadow execution: all route, precision,
+    # cost, and settlement-balance outcomes are known before accepted fills exist.
+    preview = _execute_planned_orders(
+        planned=planned,
+        decision_id=decision_id,
+        execution_timestamp=execution_timestamp,
+        starting_state=current_state,
+        bridge=bridge,
+        bridge_target=bridge_target,
+        valuation_prices=valuation_prices,
+        reference_prices=reference_prices,
+        market_metadata=market_metadata,
+        cost_model=cost_model,
+    )
+    executed = _execute_planned_orders(
+        planned=planned,
+        decision_id=decision_id,
+        execution_timestamp=execution_timestamp,
+        starting_state=current_state,
+        bridge=bridge,
+        bridge_target=bridge_target,
+        valuation_prices=valuation_prices,
+        reference_prices=reference_prices,
+        market_metadata=market_metadata,
+        cost_model=cost_model,
+    )
+    if executed != preview:
+        raise RuntimeError(
+            "multi-asset execution diverged from deterministic preflight"
+        )
+
+    residual = exact_subtract(executed.ending_state.quantity(bridge), bridge_target)
     return MultiAssetRebalanceResult(
         starting_state=current_state,
-        ending_state=state,
+        ending_state=executed.ending_state,
         target=target,
         bridge=bridge,
         bridge_target_quantity=bridge_target,
         bridge_residual=residual,
-        orders=tuple(outcomes),
-        fills=tuple(fills),
-        states_after_fills=tuple(states_after_fills),
+        orders=executed.orders,
+        fills=executed.fills,
+        states_after_fills=executed.states_after_fills,
         tracking_errors=_tracking_errors(
             portfolio_value=total_value,
-            ending_state=state,
+            ending_state=executed.ending_state,
             target=target,
             bridge=bridge,
             prices=valuation_prices,
