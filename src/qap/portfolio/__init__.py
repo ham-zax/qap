@@ -2,6 +2,8 @@
 
 from qap.portfolio.allocation import AllocationTarget
 from qap.portfolio.assets import AssetId
+from qap.portfolio.flows import ExternalInventoryFlow
+from qap.portfolio.ledger import DuplicateLedgerEventError, PortfolioLedger
 from qap.portfolio.pairs import PairId, PairOrientation
 from qap.portfolio.state import PortfolioState
 from qap.portfolio.valuation import (
@@ -12,8 +14,11 @@ from qap.portfolio.valuation import (
 __all__ = [
     "AllocationTarget",
     "AssetId",
+    "DuplicateLedgerEventError",
+    "ExternalInventoryFlow",
     "PairId",
     "PairOrientation",
+    "PortfolioLedger",
     "PortfolioState",
     "holding_values_at_prices",
     "value_holdings_at_prices",

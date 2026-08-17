@@ -219,7 +219,7 @@ uv run ruff check .
 uv run ruff format --check .
 uv run pyright src tests
 uv run python scripts/check_source_size.py
-uv run python scripts/check_architecture.py
+uv run lint-imports
 ```
 
 The source-size check warns/fails only on hand-written source/test files according to the 500/700-line rule and narrowly excludes generated/lock/vendor/data artifacts.
