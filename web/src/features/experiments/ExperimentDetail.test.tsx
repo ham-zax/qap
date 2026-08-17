@@ -114,28 +114,28 @@ const data = {
 } as unknown as ExperimentDetailDto
 
 describe('ExperimentDetail', () => {
-  it('makes consumed final-OOS, benchmark, lineage, and provenance explicit', () => {
+  it('keeps a consumed final-OOS result negative when it beats HODL but loses to the primary control', () => {
     render(<ExperimentDetail data={data} />)
 
     expect(screen.getByRole('heading', { name: 'sealed candidate' })).toBeInTheDocument()
-    expect(screen.getByText('Negative')).toBeInTheDocument()
-    expect(screen.getByText('Final OOS · consumed')).toBeInTheDocument()
-    expect(screen.getByText('Research family: family-alpha')).toBeInTheDocument()
-    expect(screen.getByText('Sibling trials: 3')).toBeInTheDocument()
-    expect(screen.getByText('Primary control: band-5pct-half')).toBeInTheDocument()
-    expect(screen.getByText('Increment vs primary control: -0.0042')).toBeInTheDocument()
-    expect(screen.getByText('Strategy vs HODL: 0.012')).toBeInTheDocument()
-    expect(screen.getByText('Holdout: holdout-0123456789abcdef01234567')).toBeInTheDocument()
-    expect(screen.getByText('Holdout execution: completed')).toBeInTheDocument()
-    expect(screen.getByText('Dataset: eth-usdt-final')).toBeInTheDocument()
-    expect(screen.getByText(`Fingerprint: ${'a'.repeat(64)}`)).toBeInTheDocument()
-    expect(screen.getByText('Git commit: deadbeef')).toBeInTheDocument()
-    expect(screen.getByText('Code snapshot: clean')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Open portfolio economics' })).toHaveAttribute(
+    expect(screen.getByText('Negative evidence')).toBeInTheDocument()
+    expect(screen.getAllByText('Final OOS · consumed').length).toBeGreaterThan(0)
+    expect(screen.getByText('Underperformed Band-5pct-half by 0.42%')).toBeInTheDocument()
+    expect(screen.queryByText(/Outperformed Band-5pct-half/)).not.toBeInTheDocument()
+
+    expect(screen.getByText('What was tested?')).toBeInTheDocument()
+    expect(screen.getByText('Research boundary')).toBeInTheDocument()
+    expect(screen.getByText(/This final-OOS window has been consumed/)).toBeInTheDocument()
+    expect(screen.getByText('Technical provenance')).toBeInTheDocument()
+
+    expect(screen.getAllByText('−0.42%').some((node) => node.getAttribute('data-exact') === '-0.0042')).toBe(true)
+    expect(screen.getAllByText('+1.20%').some((node) => node.getAttribute('data-exact') === '0.012')).toBe(true)
+
+    expect(screen.getByRole('link', { name: 'Portfolio economics' })).toHaveAttribute(
       'href',
       '/portfolio/run-0123456789abcdef01234567',
     )
-    expect(screen.getByRole('link', { name: 'Open pair workbench' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Pair evidence' })).toHaveAttribute(
       'href',
       '/pair/run-0123456789abcdef01234567/ETH/BTC?orientation=ETH%2FBTC&anchor=USDT&view=ratio',
     )

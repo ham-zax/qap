@@ -1,45 +1,14 @@
 import type { ExperimentListDto, RunSummaryDto } from '../../api/types'
-import { Badge, type BadgeTone } from '../../components/ui/Badge'
+import { Badge } from '../../components/ui/Badge'
 import { formatRelativePercent, formatResearchTimestamp } from '../../lib/format'
+import {
+  experimentDataRoleLabel,
+  humanizeIdentifier,
+  researchStatusPresentation,
+} from './presentation'
 
 interface ExperimentListProps {
   data: ExperimentListDto
-}
-
-function label(value: string | null | undefined): string {
-  if (!value) return 'Unknown'
-  return value
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
-}
-
-function statusPresentation(status: string | null | undefined): {
-  label: string
-  tone: BadgeTone
-} {
-  switch (status) {
-    case 'positive':
-      return { label: 'Positive evidence', tone: 'positive' }
-    case 'negative':
-      return { label: 'Negative evidence', tone: 'negative' }
-    case 'neutral':
-      return { label: 'Neutral evidence', tone: 'neutral' }
-    case 'rejected':
-      return { label: 'Rejected', tone: 'warning' }
-    default:
-      return { label: label(status), tone: 'neutral' }
-  }
-}
-
-function dataRoleLabel(
-  role: string | null | undefined,
-  consumed: boolean | null | undefined,
-): string {
-  if (role === 'final_oos') {
-    return `Final OOS · ${consumed ? 'consumed' : 'unconsumed'}`
-  }
-  return label(role)
 }
 
 function shortId(value: string): string {
@@ -73,7 +42,7 @@ function ExperimentCard({ run }: { run: RunSummaryDto }) {
     )
   }
 
-  const status = statusPresentation(run.status)
+  const status = researchStatusPresentation(run.status)
   const comparison = run.incremental_vs_primary_control
     ? formatRelativePercent(run.incremental_vs_primary_control)
     : null
@@ -86,7 +55,7 @@ function ExperimentCard({ run }: { run: RunSummaryDto }) {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Badge tone={status.tone}>{status.label}</Badge>
         <Badge tone="info">
-          {dataRoleLabel(run.data_role, run.final_oos_consumed)}
+          {experimentDataRoleLabel(run.data_role, run.final_oos_consumed)}
         </Badge>
       </div>
 
@@ -107,7 +76,7 @@ function ExperimentCard({ run }: { run: RunSummaryDto }) {
             >
               {comparison.display}
             </span>
-            <span>vs {label(run.primary_incremental_benchmark ?? 'primary control')}</span>
+            <span>vs {humanizeIdentifier(run.primary_incremental_benchmark ?? 'primary control')}</span>
           </p>
         ) : (
           <p className="mt-1 mb-0 text-sm text-secondary">No primary comparison recorded.</p>
@@ -124,13 +93,13 @@ function ExperimentCard({ run }: { run: RunSummaryDto }) {
         <div className="min-w-0">
           <p className="m-0 text-xs text-muted">Model</p>
           <p className="mt-1 mb-0 font-medium text-foreground">
-            {label(run.relationship_id ?? 'Unavailable')}
+            {humanizeIdentifier(run.relationship_id ?? 'Unavailable')}
           </p>
         </div>
         <div className="min-w-0">
           <p className="m-0 text-xs text-muted">Policy</p>
           <p className="mt-1 mb-0 font-medium text-foreground">
-            {label(run.policy_id ?? 'Unavailable')}
+            {humanizeIdentifier(run.policy_id ?? 'Unavailable')}
           </p>
         </div>
         <div className="min-w-0">

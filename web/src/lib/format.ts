@@ -33,6 +33,18 @@ export function formatRelativePercent(value: string): FormattedValue {
   }
 }
 
+export function formatResearchDate(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date)
+}
+
 export function formatResearchTimestamp(value: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
