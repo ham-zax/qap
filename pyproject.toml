@@ -7,7 +7,12 @@ name = "qap"
 version = "0.1.0.dev0"
 description = "Deterministic, spot-only crypto inventory rebalancing research."
 requires-python = ">=3.14,<3.15"
-dependencies = []
+dependencies = [
+    "httpx>=0.28.1",
+    "numpy>=2.5.2",
+    "pandas>=3.0.5",
+    "pyarrow>=25.0.1",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/qap"]
@@ -23,6 +28,9 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "live_network: opt-in smoke tests against public unauthenticated endpoints",
+]
 
 [tool.ruff]
 target-version = "py314"
