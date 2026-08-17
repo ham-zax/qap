@@ -27,6 +27,17 @@ export function researchStatusPresentation(status: string | null | undefined): {
   }
 }
 
+export function researchComparisonTone(
+  status: string | null | undefined,
+  delta: string | null | undefined,
+): BadgeTone {
+  const numeric = delta == null ? Number.NaN : Number(delta)
+  if (status === 'negative' && Number.isFinite(numeric) && numeric > 0) {
+    return 'warning'
+  }
+  return researchStatusPresentation(status).tone
+}
+
 export function experimentDataRoleLabel(
   role: string | null | undefined,
   consumed: boolean | null | undefined,

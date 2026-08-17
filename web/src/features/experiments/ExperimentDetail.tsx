@@ -4,10 +4,11 @@ import {
   ComparisonBars,
   type ComparisonBarItem,
 } from '../../components/visuals/ComparisonBars'
-import { formatRelativePercent, formatResearchDate } from '../../lib/format'
+import { formatPercent, formatRelativePercent, formatResearchDate } from '../../lib/format'
 import {
   experimentDataRoleLabel,
   humanizeIdentifier,
+  researchComparisonTone,
   researchStatusPresentation,
   researchVerdictHeadline,
 } from './presentation'
@@ -61,6 +62,7 @@ export function ExperimentDetail({ data }: ExperimentDetailProps) {
     ? formatRelativePercent(result.strategy_vs_primary_control)
     : null
   const hodlComparison = formatRelativePercent(result.strategy_vs_hodl)
+  const successThreshold = formatPercent(result.success_threshold)
   const verdict = researchVerdictHeadline(
     result.status,
     result.primary_incremental_benchmark,
@@ -72,6 +74,7 @@ export function ExperimentDetail({ data }: ExperimentDetailProps) {
           {
             label: `Primary control · ${humanizeIdentifier(result.primary_incremental_benchmark)}`,
             value: result.strategy_vs_primary_control,
+            tone: researchComparisonTone(result.status, result.strategy_vs_primary_control),
           },
         ]
       : []),
@@ -124,7 +127,7 @@ export function ExperimentDetail({ data }: ExperimentDetailProps) {
           {manifest.description}
         </p>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <div className="rounded-md border border-border bg-canvas/55 p-4">
             <p className="m-0 text-xs font-medium text-muted">
               vs {humanizeIdentifier(result.primary_incremental_benchmark ?? 'primary control')}
@@ -143,6 +146,15 @@ export function ExperimentDetail({ data }: ExperimentDetailProps) {
               data-exact={hodlComparison.exact}
             >
               {hodlComparison.display}
+            </p>
+          </div>
+          <div className="rounded-md border border-border bg-canvas/55 p-4">
+            <p className="m-0 text-xs font-medium text-muted">Predeclared success threshold</p>
+            <p
+              className="mt-1 mb-0 text-2xl font-semibold tabular-nums text-foreground"
+              data-exact={successThreshold.exact}
+            >
+              {successThreshold.display}
             </p>
           </div>
         </div>

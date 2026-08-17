@@ -140,4 +140,31 @@ describe('ExperimentDetail', () => {
       '/pair/run-0123456789abcdef01234567/ETH/BTC?orientation=ETH%2FBTC&anchor=USDT&view=ratio',
     )
   })
+
+  it('shows a positive arithmetic increment below the declared threshold as a threshold miss', () => {
+    const thresholdMiss = {
+      ...data,
+      manifest: { ...data.manifest, success_threshold: '0.02' },
+      result: {
+        ...data.result,
+        primary_metric_value: '0.01',
+        success_threshold: '0.02',
+        status: 'negative',
+        strategy_vs_primary_control: '0.01',
+      },
+    } as ExperimentDetailDto
+
+    render(<ExperimentDetail data={thresholdMiss} />)
+
+    expect(screen.getByText('Predeclared success threshold')).toBeVisible()
+    expect(screen.getByText('2.00%')).toHaveAttribute('data-exact', '0.02')
+    expect(
+      screen.getByText('Did not clear the research threshold against Band-5pct-half'),
+    ).toBeVisible()
+
+    const primaryBar = screen
+      .getByText('Primary control · Band-5pct-half')
+      .closest('[data-comparison-tone]')
+    expect(primaryBar).toHaveAttribute('data-comparison-tone', 'warning')
+  })
 })

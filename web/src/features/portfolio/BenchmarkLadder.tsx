@@ -1,7 +1,7 @@
 import type { ExperimentDetailDto } from '../../api/types'
 import { ComparisonBars } from '../../components/visuals/ComparisonBars'
 import { formatPercent, formatRelativePercent } from '../../lib/format'
-import { humanizeIdentifier } from '../experiments/presentation'
+import { humanizeIdentifier, researchComparisonTone } from '../experiments/presentation'
 
 type ExactSign = -1 | 0 | 1
 
@@ -36,7 +36,13 @@ export function BenchmarkLadder({ experiment }: BenchmarkLadderProps) {
   const primaryLabel = humanizeIdentifier(primaryControl ?? 'primary control')
   const comparisons = [
     ...(primaryIncrement != null
-      ? [{ label: `Primary control · ${primaryLabel}`, value: primaryIncrement }]
+      ? [
+          {
+            label: `Primary control · ${primaryLabel}`,
+            value: primaryIncrement,
+            tone: researchComparisonTone(result.status, primaryIncrement),
+          },
+        ]
       : []),
     { label: 'Strict inventory HODL', value: result.strategy_vs_hodl },
     ...(matchedIncrement != null
