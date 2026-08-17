@@ -89,8 +89,11 @@ The deterministic E2E runner starts an isolated fixture API and Vite instance, r
 
 ```bash
 cd web
+pnpm e2e:install
 pnpm e2e
 ```
+
+`pnpm e2e` also runs the pinned Chromium provisioning step itself, so a fresh dependency install does not rely on a browser binary left over from another Playwright version or developer session.
 
 The flows verify:
 

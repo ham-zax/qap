@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import resource
+import subprocess
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -22,6 +23,7 @@ from qap.experiment.paper_operation import (
     read_paper_operation_artifact,
     run_paper_operation_to_artifact,
 )
+from qap.experiment.provenance import code_fingerprint
 from qap.market import fingerprint_bar_series, read_parquet_bar_series
 
 _ROOT = Path(__file__).resolve().parents[1]
@@ -50,6 +52,26 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--paper-days", type=int, default=365)
     parser.add_argument("--experiment-runs", type=int, default=25)
     return parser
+
+
+def _repository_provenance() -> dict[str, object]:
+    def git_output(*arguments: str) -> str:
+        completed = subprocess.run(
+            ["git", "-C", str(_ROOT), *arguments],
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        return completed.stdout.strip()
+
+    return {
+        "git_commit": git_output("rev-parse", "HEAD"),
+        "git_dirty": bool(
+            git_output("status", "--porcelain", "--untracked-files=normal")
+        ),
+        "code_fingerprint": code_fingerprint(_ROOT),
+    }
 
 
 def _validated_count(value: int, *, field: str, maximum: int) -> int:
@@ -220,6 +242,7 @@ def main() -> int:
         json.dumps(
             {
                 "schema_version": "qap.phase11.window_exercise.v1",
+                "provenance": _repository_provenance(),
                 "paper": paper,
                 "experiments": experiments,
                 "maximum_rss_kib": maximum_rss_kib,
