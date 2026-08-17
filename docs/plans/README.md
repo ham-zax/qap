@@ -4,7 +4,7 @@
 
 ## Current wave
 
-**Phase 00 — Constitution and repository foundation** is the current implementation wave. The design/research gate is closed; later phases begin only after the prior phase's exit criteria are green or the user explicitly approves a documented exception.
+Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is the implemented analytical-workbench UX overhaul and is being closed against its integrated acceptance contract. **Phase 15 — Research Scanner and Candidate Workbench** is the next product wave after Phase 14 is green. Later phases still begin only after the prior phase's exit criteria are green or the user explicitly approves a documented exception.
 
 ## Implementation waves
 
@@ -17,6 +17,8 @@
 | 5 | Harden paper operation | 11 | The Phase-02 public-data path scales to larger datasets; venue precision, explicit routing, reconciliation, and operator workflows are reliable |
 | 6 | Decide live readiness | 12 | Separate go/no-go review; no live trading authority is implied by earlier phases |
 | 7 | Automate development safely | 13 | Approved-plan execution can continue autonomously without becoming part of financial runtime |
+| 8 | Make evidence understandable | 14 | Workbench is verdict/visual-first, preserves exact audit truth, and passes integrated desktop/mobile/browser acceptance |
+| 9 | Make research generation explicit | 15 | A bounded scanner/candidate workflow can enumerate, evaluate, rank, combine, and freeze research candidates without bypassing QAP economics or holdout discipline |
 
 ## Phase plans
 
@@ -34,6 +36,8 @@
 12. `11-paper-operation-hardening.md`
 13. `12-live-readiness-gate.md`
 14. `13-autonomous-development-harness.md`
+15. `14-analytical-workbench-ux-redesign.md` (overview; detailed route/design plans are under `docs/plans/14/`)
+16. `15-research-scanner-and-candidate-workbench.md`
 
 The cross-phase master implementation plan is at `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md`.
 

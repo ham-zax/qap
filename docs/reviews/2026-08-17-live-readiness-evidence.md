@@ -139,7 +139,8 @@ pnpm build
 -> production build passed
 ```
 
-Browser acceptance is **not fully green** on committed `9936387`:
+Browser acceptance was **not fully green** on committed `9936387` when this
+Phase-12 evidence review was first produced:
 
 ```text
 pnpm e2e
@@ -149,6 +150,27 @@ pnpm e2e
 ```
 
 Source inspection also confirms the current committed Portfolio page does not expose the Phase-11.9-required Portfolio -> Pair Workbench navigation; the older E2E test jumps back to Experiment Detail before entering Pair Workbench. This UI integration is owned by the concurrently active Phase-14 workstream and is recorded here as an unresolved operational acceptance blocker rather than modified by this review stream.
+
+Sequencing correction / remediation evidence from 2026-08-18:
+
+```text
+commit 7ea1a66
+uv run python scripts/run_playwright_e2e.py
+-> 2 passed
+```
+
+The portfolio test now follows the required UI path directly:
+
+```text
+Experiment Detail
+ -> Portfolio economics
+ -> Pair workbench
+```
+
+It no longer uses `page.goto(Experiment)` as an integration shortcut. The pair
+flow also uses the current accessible orientation/anchor controls and remains
+URL-owned. Therefore the browser item below is a historical blocker at review
+creation time, not a current Phase-11 blocker.
 
 ## 4. Repository secret/access boundary
 
@@ -256,6 +278,8 @@ Additional live-design blockers:
 5. no live commission/fee-asset and account-filter reconciliation contract;
 6. user capital/risk limits are unset;
 7. actual legal/tax/account jurisdiction and venue eligibility are not confirmed;
-8. Phase-11.9 Portfolio -> Pair Workbench browser acceptance remains incomplete in the current committed UI stream.
+8. Phase-11.9 browser acceptance was incomplete when this report was first written;
+   it is resolved by `7ea1a66` with both critical Playwright flows passing.
 
-These blockers are sufficient for `NO-GO`. No private API key or live-order implementation is warranted by the current evidence.
+The unresolved economic/live-design blockers above remain sufficient for `NO-GO`.
+No private API key or live-order implementation is warranted by the current evidence.

@@ -8,7 +8,7 @@ Repository:
 
 Your mission is to take QAP from its current repository state to the complete,
 verified local end product defined by the approved implementation program across
-Phases 00 through 13.
+Phases 00 through 15.
 
 This is ONE continuous mission.
 
@@ -1067,7 +1067,7 @@ Examples:
 - user-specific financial risk limits that would need invention;
 - destructive ambiguity involving user work/data/Git history;
 - architecturally significant new external infrastructure/service;
-- material product scope outside Phases 00-13;
+- material product scope outside Phases 00-15;
 - a critical empirical/mathematical contradiction invalidating a protected
   assumption;
 - a plan's explicit Stop Condition genuinely requires design review.
@@ -1147,7 +1147,7 @@ DO NOT end the mission because:
 
 The mission is complete only when ALL of the following are true:
 
-1. Phases 00 through 13 have reached their stated exit criteria, including
+1. Phases 00 through 15 have reached their stated exit criteria, including
    legitimate documented negative/NO-GO outcomes where the phase allows them.
 
 2. Required cross-phase contracts are coherent.
@@ -1161,7 +1161,8 @@ The mission is complete only when ALL of the following are true:
 
 6. Required frontend tests/typechecks/builds are freshly green.
 
-7. Planned backend/frontend integration works locally.
+7. Planned backend/frontend integration works locally, including the Phase-14
+   critical workbench flows and the Phase-15 bounded scanner/candidate workflow.
 
 8. Agent-browser product inspection has been performed when applicable and material
    UI/integration defects found there have been addressed or documented.

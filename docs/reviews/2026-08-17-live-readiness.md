@@ -4,6 +4,15 @@
 
 **Decision: `NO-GO`**
 
+**Sequencing correction (2026-08-18):** this review was originally produced while
+Phase 11.9 browser acceptance was still incomplete, so at that time it was an early
+readiness assessment rather than a sequentially valid Phase-12 completion. Commit
+`7ea1a66` repaired the required Experiment -> Portfolio -> Pair Workbench flow and
+the reciprocal/anchor Playwright flow; `scripts/run_playwright_e2e.py` then passed
+`2/2`. Phase 11 may be treated as browser-complete only from that repair onward.
+The Phase-12 economic `NO-GO` conclusion below is unchanged because it was already
+forced by zero development survivors before any browser/live-capital question.
+
 QAP has **not** earned the right to begin a live-execution design. The paper/research system is materially stronger and its current accounting/execution boundaries are verified, but the Phase-12 economic evidence gate fails before any live-capital question is reached: the predeclared real-data Phase-10 family produced zero development survivors, therefore no candidate consumed the reserved final-OOS window, and no genuinely prospective post-freeze candidate evaluation exists.
 
 `NO-GO` means continue paper/research work with the blockers below. It does **not** authorize a live-execution design, private API credentials, authenticated exchange code, order placement/cancel code, a live scheduler, or automated capital deployment.
@@ -77,9 +86,13 @@ The review-hardening batch also closes the material execution/research integrity
 
 A clean clone of committed `9936387541412c1a0d05027ce6b253824ee31bed` passed the backend/static completion gate with `399 passed, 1 skipped`, Ruff/format clean, strict Pyright clean, five import contracts kept, and no source-size hard-cap failure. OpenAPI regeneration was byte-identical, generated TypeScript did not drift, frontend typechecks passed, `42/42` Vitest tests passed, and the production build passed.
 
-The browser acceptance gate is not fully green on that committed UI state: the pair/anchor flow passes, but the portfolio flow is stale against the evolving Phase-14 UI and the current Portfolio page still does not provide the Phase-11.9 Portfolio -> Pair Workbench navigation. That UI integration is a separate unresolved operational blocker; it does not alter the already-failed economic gate.
+That original review state still had an incomplete browser gate. The remediation in
+`7ea1a66` updated stale Phase-14 selectors and, more importantly, added the missing
+Portfolio -> Pair Workbench navigation so the portfolio E2E no longer jumps back
+to Experiment Detail. Fresh deterministic fixture verification after that change
+passed both critical Phase-11.9 Playwright flows.
 
-**Determinism/accounting gate: paper core PASS; browser operational acceptance INCOMPLETE.**
+**Determinism/accounting gate: PASS; browser operational acceptance PASS as of the Phase-11.9 remediation.**
 
 ## Current venue semantic mapping
 
@@ -211,7 +224,7 @@ Even if these were answered today, the economic final-OOS/prospective-evidence b
 | User capital/risk limits | unset | yes for live implementation |
 | Spot-only mechanical boundary | pass in current production code | no |
 | Current legal/account/venue eligibility | unresolved | yes |
-| Critical browser operational flow | incomplete in evolving UI | yes for Phase-11 operational acceptance |
+| Critical browser operational flow | pass after `7ea1a66`; direct Portfolio -> Pair navigation verified | no |
 
 ## Recommendation
 

@@ -207,6 +207,26 @@ Build an external repository-development loop that reads approved plans, execute
 
 **Exit:** autonomous sessions can continue approved engineering work without the harness becoming a dependency of QAP financial runtime or broadening scope on its own.
 
+## Wave 8 — Make Evidence Understandable
+
+### Phase 14: Analytical Workbench UX Redesign
+
+**Plan:** `docs/plans/14-analytical-workbench-ux-redesign.md` with focused companion plans under `docs/plans/14/`.
+
+Reorganize the existing read-only analytical frontend around verdict first, primary visual evidence, readable economic/operational summaries, and progressive-disclosure audit/provenance. Preserve current OpenAPI/QAP financial authority and the existing chart stack. Phase 14 also carries the Phase-11 critical Portfolio -> Pair Workbench integration contract forward into the redesigned UI.
+
+**Exit:** Research Runs, Experiment Detail, Portfolio, Pair Workbench, Paper Operations, and error states pass the documented frontend/Playwright/Agent Browser desktop/mobile/accessibility/reflow gates without hiding negative evidence or moving accounting/research truth into React.
+
+## Wave 9 — Make Research Generation Explicit
+
+### Phase 15: Research Scanner and Candidate Workbench
+
+**Plan:** `docs/plans/15-research-scanner-and-candidate-workbench.md`
+
+Build an explicit bounded active-research workflow over existing QAP experiment/replay authority: admitted universe/portfolio selection, candidate-set generation, model/parameter-family declaration, finite scan execution, control-aware ranking/falsification, candidate-combination replay, and immutable candidate freeze. Completed-run browsing remains a separate Phase-14 evidence archive.
+
+**Exit:** scans are finite/deterministic/reproducible, exact family-attempt accounting is visible, mandatory HODL/primary-control/threshold gates cannot be bypassed, reserved final OOS is excluded from ordinary search, and one eligible candidate can be frozen for a next research stage without granting live authority.
+
 ## Cross-Phase Verification Strategy
 
 Every phase uses the narrowest verification that proves its risk boundary.
@@ -230,7 +250,10 @@ Web commands after Phase 09:
 cd web
 pnpm test
 pnpm typecheck
+pnpm typecheck:e2e
 pnpm build
+cd ..
+uv run python scripts/run_playwright_e2e.py
 ```
 
 Broader suites run only when affected behavior warrants them. Documentation-only changes use link/path/diff checks rather than manufacturing runtime tests.
@@ -285,7 +308,7 @@ Implementation stops and returns to design review when any task would:
 
 ## Completion Definition
 
-The master plan is complete only when Phase 11 has produced a trustworthy paper product and Phase 12 has recorded a deliberate live-readiness decision. Phase 13 is a development-productivity capability and does not affect whether QAP's financial core is economically valid.
+The master implementation mission is complete only when **Phases 00–15** have reached their stated exit criteria. Phase 12 may legitimately remain `NO-GO` for live operation; that negative readiness decision does not excuse later paper/research-product phases from their own acceptance gates. Phase 13 is a development-productivity capability and does not determine economic validity, while Phases 14–15 are product scope: the evidence workbench must be integrated/usable and the active bounded scanner/candidate workflow must exist separately from completed-run browsing. None of these phases grants live-capital authority.
 
 ## Final Pre-Build Quant Review and OSS Reuse Gate
 
