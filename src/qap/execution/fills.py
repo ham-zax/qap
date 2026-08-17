@@ -9,7 +9,8 @@ from types import MappingProxyType
 from typing import cast
 
 from qap.execution.costs import CostModel
-from qap.market import VenueInstrument
+from qap.execution.precision import MarketPrecision
+from qap.market import MarketMetadata, VenueInstrument
 from qap.portfolio import AssetId
 from qap.portfolio._decimal import (
     DECIMAL_DIVISION_PRECISION,
@@ -71,6 +72,26 @@ def _validated_cost_model(value: object) -> CostModel:
     if not isinstance(value, CostModel):
         raise TypeError("cost_model must be a CostModel")
     return value
+
+
+def _market_precision(
+    metadata: MarketMetadata | None,
+    *,
+    instrument: VenueInstrument,
+    quantization: "ExecutionQuantization",
+) -> MarketPrecision | None:
+    if metadata is None:
+        return None
+    if not isinstance(cast(object, metadata), MarketMetadata):
+        raise TypeError("market_metadata must be MarketMetadata or None")
+    if metadata.instrument != instrument:
+        raise ValueError("market_metadata instrument must match fill instrument")
+    if (
+        quantization.base_step is not None
+        and quantization.base_step != metadata.quantity_step
+    ):
+        raise ValueError("market metadata and explicit base_step must agree")
+    return MarketPrecision(metadata)
 
 
 def _positive_divide_down(left: Decimal, right: Decimal) -> Decimal:
@@ -217,6 +238,7 @@ def build_buy_fill(
     reference_price: Decimal,
     cost_model: CostModel,
     quantization: ExecutionQuantization = ExecutionQuantization(),
+    market_metadata: MarketMetadata | None = None,
 ) -> Fill:
     """Buy base while reserving the quote-denominated fee inside the budget."""
 
@@ -229,15 +251,28 @@ def build_buy_fill(
     costs = _validated_cost_model(cost_model)
     if not isinstance(cast(object, quantization), ExecutionQuantization):
         raise TypeError("quantization must be an ExecutionQuantization")
+    precision = _market_precision(
+        market_metadata,
+        instrument=validated_instrument,
+        quantization=quantization,
+    )
 
     execution_price = costs.buy_execution_price(reference)
+    if precision is not None:
+        execution_price = precision.execution_price(execution_price, side="buy")
     quote_cost_per_base = exact_multiply(
         execution_price,
         exact_add(_ONE, costs.fee_rate),
     )
     unquantized_base = _positive_divide_down(budget, quote_cost_per_base)
     base_quantity = quantization.base_quantity_down(unquantized_base)
-    if base_quantity <= _ZERO:
+    if precision is not None:
+        base_quantity = precision.quantity_down(base_quantity)
+        precision.validate_fill(
+            base_quantity=base_quantity,
+            execution_price=execution_price,
+        )
+    elif base_quantity <= _ZERO:
         raise ValueError("quote_budget is too small for a positive base fill")
 
     gross_quote_notional = exact_multiply(base_quantity, execution_price)
@@ -278,6 +313,7 @@ def build_sell_fill(
     reference_price: Decimal,
     cost_model: CostModel,
     quantization: ExecutionQuantization = ExecutionQuantization(),
+    market_metadata: MarketMetadata | None = None,
 ) -> Fill:
     """Sell base and deduct the quote-denominated fee from gross proceeds."""
 
@@ -293,11 +329,24 @@ def build_sell_fill(
     costs = _validated_cost_model(cost_model)
     if not isinstance(cast(object, quantization), ExecutionQuantization):
         raise TypeError("quantization must be an ExecutionQuantization")
+    precision = _market_precision(
+        market_metadata,
+        instrument=validated_instrument,
+        quantization=quantization,
+    )
 
     filled_base = quantization.base_quantity_down(requested_base)
-    if filled_base <= _ZERO:
+    if precision is not None:
+        filled_base = precision.quantity_down(filled_base)
+    elif filled_base <= _ZERO:
         raise ValueError("base_quantity is too small for a positive fill")
     execution_price = costs.sell_execution_price(reference)
+    if precision is not None:
+        execution_price = precision.execution_price(execution_price, side="sell")
+        precision.validate_fill(
+            base_quantity=filled_base,
+            execution_price=execution_price,
+        )
     gross_quote_notional = exact_multiply(filled_base, execution_price)
     fee_amount = exact_multiply(gross_quote_notional, costs.fee_rate)
     net_quote_proceeds = exact_subtract(gross_quote_notional, fee_amount)

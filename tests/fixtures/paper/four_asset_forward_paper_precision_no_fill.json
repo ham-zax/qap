@@ -1,0 +1,49 @@
+{
+  "bridge": "USDT",
+  "data_role": "forward_paper",
+  "exchange_info_fixture": "tests/fixtures/binance/exchange_info_three_asset_snapshot_2026-08-17.json",
+  "execution_timestamp": "2026-08-17T11:11:00Z",
+  "fee_bps": "10",
+  "instruments": [
+    {
+      "base": "BTC",
+      "quote": "USDT",
+      "reference_price": "63643.03000000",
+      "venue_symbol": "BTCUSDT"
+    },
+    {
+      "base": "ETH",
+      "quote": "USDT",
+      "reference_price": "1906.42000000",
+      "venue_symbol": "ETHUSDT"
+    },
+    {
+      "base": "SOL",
+      "quote": "USDT",
+      "reference_price": "75.80000000",
+      "venue_symbol": "SOLUSDT"
+    }
+  ],
+  "operation_id": "forward-paper-precision-no-fill-20260817",
+  "schema_version": "qap.paper_operation_spec.v1",
+  "slippage_bps": "10",
+  "source_note": "Recorded public Binance Spot inputs with an intentionally sub-minimum SOL rebalance leg to verify explicit paper no-fill handling.",
+  "starting_holdings": {
+    "BTC": "0.001571263970304367",
+    "ETH": "0.052454338498337197",
+    "SOL": "1.319261213720316622",
+    "USDT": "100"
+  },
+  "target_weights": {
+    "BTC": "0.4020",
+    "ETH": "0.1",
+    "SOL": "0.2480",
+    "USDT": "0.25"
+  },
+  "valuation_prices": {
+    "BTC": "63643.03000000",
+    "ETH": "1906.42000000",
+    "SOL": "75.80000000",
+    "USDT": "1"
+  }
+}

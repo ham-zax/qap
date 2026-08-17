@@ -1,6 +1,10 @@
+import json
 import os
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
+from pathlib import Path
+from typing import cast
 
 import httpx
 import pytest
@@ -11,6 +15,31 @@ from qap.market.adapters.binance_public import (
     BinancePublicDataError,
 )
 from qap.portfolio import AssetId
+
+FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "binance"
+D = Decimal
+
+
+def _object_dict(value: object, *, field: str) -> dict[str, object]:
+    if not isinstance(value, dict):
+        raise TypeError(f"{field} must be an object")
+    return cast(dict[str, object], value)
+
+
+def _recorded_exchange_info() -> dict[str, object]:
+    value: object = json.loads(
+        (FIXTURES / "exchange_info_subset.json").read_text(encoding="utf-8")
+    )
+    return _object_dict(value, field="recorded exchangeInfo fixture")
+
+
+def _recorded_three_asset_exchange_info() -> dict[str, object]:
+    value: object = json.loads(
+        (FIXTURES / "exchange_info_three_asset_snapshot_2026-08-17.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    return _object_dict(value, field="three-asset exchangeInfo fixture")
 
 
 def _exchange_info(
@@ -116,6 +145,127 @@ def test_exchange_info_maps_only_the_explicit_public_spot_orientation() -> None:
     assert request.url.params["symbol"] == "BTCUSDT"
     assert "X-MBX-APIKEY" not in request.headers
     assert "signature" not in request.url.params
+
+
+def test_exchange_info_maps_current_precision_and_notional_filters_exactly() -> None:
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=_recorded_exchange_info())
+
+    with BinancePublicAdapter(transport=_transport(handler)) as adapter:
+        metadata = adapter.fetch_market_metadata(
+            venue_symbol="BTCUSDT",
+            base=AssetId("BTC"),
+            quote=AssetId("USDT"),
+        )
+
+    assert metadata.instrument.venue_symbol == "BTCUSDT"
+    assert metadata.status == "TRADING"
+    assert metadata.price_tick == D("0.01")
+    assert metadata.minimum_price == D("0.01")
+    assert metadata.maximum_price == D("1000000")
+    assert metadata.quantity_step == D("0.00001")
+    assert metadata.minimum_quantity == D("0.00001")
+    assert metadata.maximum_quantity == D("9000")
+    assert metadata.minimum_notional == D("5")
+    assert metadata.maximum_notional == D("9000000")
+    assert metadata.minimum_notional_applies_to_market is True
+    assert metadata.maximum_notional_applies_to_market is False
+    assert metadata.notional_average_price_minutes == 5
+    assert len(requests) == 1
+    assert requests[0].url.path == "/api/v3/exchangeInfo"
+    assert "X-MBX-APIKEY" not in requests[0].headers
+
+
+def test_exchange_info_supports_legacy_min_notional_without_maximum() -> None:
+    payload = _recorded_exchange_info()
+    raw_symbols = payload["symbols"]
+    assert isinstance(raw_symbols, list)
+    symbols = cast(list[object], raw_symbols)
+    symbol = _object_dict(symbols[0], field="recorded symbol")
+    raw_filters = symbol["filters"]
+    assert isinstance(raw_filters, list)
+    filters = [
+        _object_dict(item, field="recorded filter")
+        for item in cast(list[object], raw_filters)
+    ]
+    symbol["filters"] = [
+        item for item in filters if item.get("filterType") != "NOTIONAL"
+    ] + [
+        {
+            "filterType": "MIN_NOTIONAL",
+            "minNotional": "10.00000000",
+            "applyToMarket": False,
+            "avgPriceMins": 0,
+        }
+    ]
+
+    metadata = BinancePublicAdapter.market_metadata_from_payload(
+        payload,
+        venue_symbol="BTCUSDT",
+        base=AssetId("BTC"),
+        quote=AssetId("USDT"),
+    )
+
+    assert metadata.minimum_notional == D("10")
+    assert metadata.maximum_notional is None
+    assert metadata.minimum_notional_applies_to_market is False
+    assert metadata.maximum_notional_applies_to_market is False
+    assert metadata.notional_average_price_minutes == 0
+
+
+@pytest.mark.parametrize(
+    ("symbol", "base"),
+    [("BTCUSDT", "BTC"), ("ETHUSDT", "ETH"), ("SOLUSDT", "SOL")],
+)
+def test_recorded_three_asset_snapshot_maps_each_spot_symbol(
+    symbol: str,
+    base: str,
+) -> None:
+    payload = _recorded_three_asset_exchange_info()
+
+    metadata = BinancePublicAdapter.market_metadata_from_payload(
+        payload,
+        venue_symbol=symbol,
+        base=AssetId(base),
+        quote=AssetId("USDT"),
+    )
+
+    assert metadata.instrument.venue_symbol == symbol
+    assert metadata.status == "TRADING"
+    assert metadata.price_tick > 0
+    assert metadata.quantity_step > 0
+    assert metadata.minimum_quantity is None or metadata.minimum_quantity > 0
+    assert metadata.minimum_notional is None or metadata.minimum_notional > 0
+
+
+def test_exchange_info_rejects_duplicate_required_precision_filters() -> None:
+    payload = _recorded_exchange_info()
+    raw_symbols = payload["symbols"]
+    assert isinstance(raw_symbols, list)
+    symbols = cast(list[object], raw_symbols)
+    symbol = _object_dict(symbols[0], field="recorded symbol")
+    raw_filters = symbol["filters"]
+    assert isinstance(raw_filters, list)
+    filters = [
+        _object_dict(item, field="recorded filter")
+        for item in cast(list[object], raw_filters)
+    ]
+    symbol["filters"] = filters
+    price_filter = next(
+        item for item in filters if item.get("filterType") == "PRICE_FILTER"
+    )
+    filters.append(dict(price_filter))
+
+    with pytest.raises(BinancePublicDataError, match="exactly one PRICE_FILTER"):
+        BinancePublicAdapter.market_metadata_from_payload(
+            payload,
+            venue_symbol="BTCUSDT",
+            base=AssetId("BTC"),
+            quote=AssetId("USDT"),
+        )
 
 
 def test_exchange_info_rejects_orientation_mismatch_and_non_spot_symbol() -> None:

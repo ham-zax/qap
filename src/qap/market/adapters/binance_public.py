@@ -9,12 +9,14 @@ exclusive completion boundary from the declared interval.
 import math
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal, InvalidOperation
 from typing import Self, cast
 
 import httpx
 
 from qap.market.bars import BarInterval, MarketBar
 from qap.market.instruments import VenueInstrument
+from qap.market.metadata import MarketMetadata
 from qap.market.validation import ValidatedBarSeries, validate_bar_series
 from qap.portfolio import AssetId
 
@@ -55,6 +57,56 @@ def _as_milliseconds(value: object, *, field: str) -> int:
     if not isinstance(value, int) or isinstance(value, bool) or value < 0:
         raise BinancePublicDataError(f"{field} must be a non-negative integer")
     return value
+
+
+def _as_non_negative_int(value: object, *, field: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise BinancePublicDataError(f"{field} must be a non-negative integer")
+    return value
+
+
+def _as_decimal(value: object, *, field: str) -> Decimal:
+    if not isinstance(value, str):
+        raise BinancePublicDataError(f"{field} must be an exact decimal string")
+    try:
+        parsed = Decimal(value)
+    except InvalidOperation as exc:
+        raise BinancePublicDataError(
+            f"{field} must be an exact decimal string"
+        ) from exc
+    if not parsed.is_finite() or parsed < 0:
+        raise BinancePublicDataError(f"{field} must be finite and non-negative")
+    return parsed
+
+
+def _positive_decimal(value: object, *, field: str) -> Decimal:
+    parsed = _as_decimal(value, field=field)
+    if parsed <= 0:
+        raise BinancePublicDataError(f"{field} must be positive")
+    return parsed
+
+
+def _enabled_decimal(value: object, *, field: str) -> Decimal | None:
+    parsed = _as_decimal(value, field=field)
+    return parsed if parsed > 0 else None
+
+
+def _filter(
+    filters: list[object],
+    *,
+    filter_type: str,
+    required: bool,
+) -> Mapping[str, object] | None:
+    matches: list[Mapping[str, object]] = []
+    for raw_filter in filters:
+        item = _as_mapping(raw_filter, field="symbol filter")
+        if item.get("filterType") == filter_type:
+            matches.append(item)
+    if len(matches) > 1 or (required and len(matches) != 1):
+        raise BinancePublicDataError(
+            f"exchangeInfo must contain exactly one {filter_type} filter"
+        )
+    return matches[0] if matches else None
 
 
 def _as_float(value: object, *, field: str) -> float:
@@ -200,6 +252,27 @@ class BinancePublicAdapter:
             quote=quote,
         )
 
+    def fetch_market_metadata(
+        self,
+        *,
+        venue_symbol: str,
+        base: AssetId,
+        quote: AssetId,
+    ) -> MarketMetadata:
+        """Fetch normalized public Spot precision/filter metadata for one symbol."""
+
+        symbol = _normalized_symbol(venue_symbol)
+        payload = self._get_json(
+            "/api/v3/exchangeInfo",
+            params={"symbol": symbol},
+        )
+        return self.market_metadata_from_payload(
+            payload,
+            venue_symbol=symbol,
+            base=base,
+            quote=quote,
+        )
+
     @staticmethod
     def instrument_from_payload(
         payload: object,
@@ -248,6 +321,126 @@ class BinancePublicAdapter:
             valid_from=None,
             valid_to=None,
         )
+
+    @staticmethod
+    def market_metadata_from_payload(
+        payload: object,
+        *,
+        venue_symbol: str,
+        base: AssetId,
+        quote: AssetId,
+    ) -> MarketMetadata:
+        """Normalize the precision/notional filters required by paper execution."""
+
+        instrument = BinancePublicAdapter.instrument_from_payload(
+            payload,
+            venue_symbol=venue_symbol,
+            base=base,
+            quote=quote,
+        )
+        document = _as_mapping(payload, field="exchangeInfo response")
+        symbols = _as_list(document.get("symbols"), field="exchangeInfo symbols")
+        symbol = _normalized_symbol(venue_symbol)
+        matches: list[Mapping[str, object]] = []
+        for raw_item in symbols:
+            symbol_item = _as_mapping(raw_item, field="exchangeInfo symbol")
+            if symbol_item.get("symbol") == symbol:
+                matches.append(symbol_item)
+        if len(matches) != 1:
+            raise BinancePublicDataError(
+                f"exchangeInfo must contain exactly one {symbol} symbol"
+            )
+        item = matches[0]
+        filters = _as_list(item.get("filters"), field="symbol filters")
+        price_filter = _filter(filters, filter_type="PRICE_FILTER", required=True)
+        lot_filter = _filter(filters, filter_type="LOT_SIZE", required=True)
+        assert price_filter is not None
+        assert lot_filter is not None
+
+        notional_filter = _filter(filters, filter_type="NOTIONAL", required=False)
+        legacy_notional = _filter(
+            filters,
+            filter_type="MIN_NOTIONAL",
+            required=False,
+        )
+        minimum_notional: Decimal | None = None
+        maximum_notional: Decimal | None = None
+        minimum_applies_to_market = False
+        maximum_applies_to_market = False
+        average_price_minutes = 0
+        if notional_filter is not None:
+            minimum_notional = _enabled_decimal(
+                notional_filter.get("minNotional"),
+                field="NOTIONAL minNotional",
+            )
+            maximum_notional = _enabled_decimal(
+                notional_filter.get("maxNotional"),
+                field="NOTIONAL maxNotional",
+            )
+            minimum_applies_to_market = _as_bool(
+                notional_filter.get("applyMinToMarket"),
+                field="NOTIONAL applyMinToMarket",
+            )
+            maximum_applies_to_market = _as_bool(
+                notional_filter.get("applyMaxToMarket"),
+                field="NOTIONAL applyMaxToMarket",
+            )
+            average_price_minutes = _as_non_negative_int(
+                notional_filter.get("avgPriceMins"),
+                field="NOTIONAL avgPriceMins",
+            )
+        elif legacy_notional is not None:
+            minimum_notional = _enabled_decimal(
+                legacy_notional.get("minNotional"),
+                field="MIN_NOTIONAL minNotional",
+            )
+            minimum_applies_to_market = _as_bool(
+                legacy_notional.get("applyToMarket"),
+                field="MIN_NOTIONAL applyToMarket",
+            )
+            average_price_minutes = _as_non_negative_int(
+                legacy_notional.get("avgPriceMins"),
+                field="MIN_NOTIONAL avgPriceMins",
+            )
+
+        try:
+            return MarketMetadata(
+                instrument=instrument,
+                status=_as_string(item.get("status"), field="symbol status"),
+                price_tick=_positive_decimal(
+                    price_filter.get("tickSize"),
+                    field="PRICE_FILTER tickSize",
+                ),
+                minimum_price=_enabled_decimal(
+                    price_filter.get("minPrice"),
+                    field="PRICE_FILTER minPrice",
+                ),
+                maximum_price=_enabled_decimal(
+                    price_filter.get("maxPrice"),
+                    field="PRICE_FILTER maxPrice",
+                ),
+                quantity_step=_positive_decimal(
+                    lot_filter.get("stepSize"),
+                    field="LOT_SIZE stepSize",
+                ),
+                minimum_quantity=_enabled_decimal(
+                    lot_filter.get("minQty"),
+                    field="LOT_SIZE minQty",
+                ),
+                maximum_quantity=_enabled_decimal(
+                    lot_filter.get("maxQty"),
+                    field="LOT_SIZE maxQty",
+                ),
+                minimum_notional=minimum_notional,
+                maximum_notional=maximum_notional,
+                minimum_notional_applies_to_market=minimum_applies_to_market,
+                maximum_notional_applies_to_market=maximum_applies_to_market,
+                notional_average_price_minutes=average_price_minutes,
+            )
+        except (TypeError, ValueError) as exc:
+            raise BinancePublicDataError(
+                f"exchangeInfo precision metadata is invalid: {exc}"
+            ) from exc
 
     def fetch_klines(
         self,

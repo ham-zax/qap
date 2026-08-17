@@ -14,7 +14,8 @@ from qap.execution.fills import (
     build_buy_fill,
     build_sell_fill,
 )
-from qap.market import VenueInstrument
+from qap.execution.precision import MarketPrecisionError
+from qap.market import MarketMetadata, VenueInstrument
 from qap.portfolio import AssetId, PortfolioState
 from qap.portfolio._decimal import canonical_decimal
 
@@ -27,6 +28,13 @@ class DirectExecutionReason(StrEnum):
     NO_ACTION = "no_action"
     INSUFFICIENT_BALANCE = "insufficient_balance"
     UNSUPPORTED_DIRECT_ROUTE = "unsupported_direct_route"
+    MARKET_NOT_TRADING = "market_not_trading"
+    PRICE_BELOW_MINIMUM = "price_below_minimum"
+    PRICE_ABOVE_MAXIMUM = "price_above_maximum"
+    BELOW_MINIMUM_QUANTITY = "below_minimum_quantity"
+    ABOVE_MAXIMUM_QUANTITY = "above_maximum_quantity"
+    BELOW_MINIMUM_NOTIONAL = "below_minimum_notional"
+    ABOVE_MAXIMUM_NOTIONAL = "above_maximum_notional"
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,6 +88,7 @@ def execute_direct_rebalance_leg(
     reference_price: Decimal,
     cost_model: CostModel,
     quantization: ExecutionQuantization = ExecutionQuantization(),
+    market_metadata: MarketMetadata | None = None,
 ) -> DirectExecutionResult:
     """Model one conversion only when it matches the declared direct market."""
 
@@ -91,6 +100,10 @@ def execute_direct_rebalance_leg(
         raise TypeError("cost_model must be a CostModel")
     if not isinstance(cast(object, quantization), ExecutionQuantization):
         raise TypeError("quantization must be an ExecutionQuantization")
+    if market_metadata is not None and not isinstance(
+        cast(object, market_metadata), MarketMetadata
+    ):
+        raise TypeError("market_metadata must be MarketMetadata or None")
 
     deltas = _validated_deltas(quantity_deltas)
     if not deltas:
@@ -107,16 +120,20 @@ def execute_direct_rebalance_leg(
         if available_base <= _ZERO:
             return _no_fill(DirectExecutionReason.INSUFFICIENT_BALANCE)
         requested_base = base_delta.copy_abs()
-        fill = build_sell_fill(
-            fill_id=fill_id,
-            decision_id=decision_id,
-            execution_timestamp=execution_timestamp,
-            instrument=instrument,
-            base_quantity=min(requested_base, available_base),
-            reference_price=reference_price,
-            cost_model=cost_model,
-            quantization=quantization,
-        )
+        try:
+            fill = build_sell_fill(
+                fill_id=fill_id,
+                decision_id=decision_id,
+                execution_timestamp=execution_timestamp,
+                instrument=instrument,
+                base_quantity=min(requested_base, available_base),
+                reference_price=reference_price,
+                cost_model=cost_model,
+                quantization=quantization,
+                market_metadata=market_metadata,
+            )
+        except MarketPrecisionError as exc:
+            return _no_fill(DirectExecutionReason(exc.reason.value))
         return DirectExecutionResult(fill=fill, reason=None)
 
     if base_delta > _ZERO and quote_delta < _ZERO:
@@ -124,16 +141,20 @@ def execute_direct_rebalance_leg(
         if available_quote <= _ZERO:
             return _no_fill(DirectExecutionReason.INSUFFICIENT_BALANCE)
         requested_quote = quote_delta.copy_abs()
-        fill = build_buy_fill(
-            fill_id=fill_id,
-            decision_id=decision_id,
-            execution_timestamp=execution_timestamp,
-            instrument=instrument,
-            quote_budget=min(requested_quote, available_quote),
-            reference_price=reference_price,
-            cost_model=cost_model,
-            quantization=quantization,
-        )
+        try:
+            fill = build_buy_fill(
+                fill_id=fill_id,
+                decision_id=decision_id,
+                execution_timestamp=execution_timestamp,
+                instrument=instrument,
+                quote_budget=min(requested_quote, available_quote),
+                reference_price=reference_price,
+                cost_model=cost_model,
+                quantization=quantization,
+                market_metadata=market_metadata,
+            )
+        except MarketPrecisionError as exc:
+            return _no_fill(DirectExecutionReason(exc.reason.value))
         return DirectExecutionResult(fill=fill, reason=None)
 
     return _no_fill(DirectExecutionReason.UNSUPPORTED_DIRECT_ROUTE)
