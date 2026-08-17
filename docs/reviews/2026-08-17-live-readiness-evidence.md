@@ -31,7 +31,7 @@ Durable local run IDs in the frozen family:
 8. `run-20574b31b3d0c65dfc4acfb4`
 9. `run-f047103cecf378d53190c7b6`
 
-The nine run artifacts report clean execution provenance from commit `7cef139a0feaaeefcc3eed50aba32b3fe087576c` with `git_dirty=false`, as recorded in the Phase-10 result note.
+The nine historical run directories report clean execution provenance from commit `7cef139a0feaaeefcc3eed50aba32b3fe087576c` with `git_dirty=false`, as recorded in the Phase-10 result note. They predate the mandatory `integrity.json` contract and are therefore **archived historical evidence only**, not current-readable QAP run artifacts. Current readers intentionally reject them. QAP will not retrofit seals onto those old bytes or create a compatibility path; any future rerun must create a new current-schema research family/artifact set.
 
 ### Reserved final-OOS data
 
@@ -186,8 +186,9 @@ Focused hardening verification:
 
 The 99-test set covers reserved-holdout admission, experiment integrity/tamper
 rejection, paper-operation self-audit/path containment, relationship observation
-invariants, final-OOS reservation recovery, experiment API/family-attempt/pair
-projection, and the Phase-13 harness.
+invariants, pre-registry final-OOS reservation recovery, experiment API/family-attempt/pair
+projection, and the Phase-13 harness. Post-registry `committed` crash state remains
+an identifiable fail-closed safe-stop rather than an automatic resume/abandon flow.
 
 Fresh frontend/browser verification after the rendered fixes:
 
@@ -224,7 +225,7 @@ current execution/capacity qualification.
 Final integrated repository verification after this reconciliation:
 
 ```text
-pytest                 -> 455 passed, 1 skipped
+pytest                 -> 460 passed, 1 skipped
 Ruff / format          -> clean
 Pyright                -> 0 errors, 0 warnings
 import contracts       -> 5 kept, 0 broken

@@ -8,6 +8,8 @@
 
 **Execution provenance:** all nine runs were executed from clean commit `7cef139a0feaaeefcc3eed50aba32b3fe087576c` with `git_dirty=false` and the same run timestamp, `2026-08-17T13:27:03+00:00`.
 
+**Current artifact status (2026-08-18):** these nine directories predate the mandatory `integrity.json` contract. They are retained as archived evidence supporting this historical report, but the current artifact reader intentionally rejects them. QAP does not backfill integrity metadata or maintain a compatibility reader for obsolete artifacts. If this family is ever rerun, it must be a new current-schema research family with newly sealed artifacts rather than a migration of the old directories.
+
 ## Data boundary
 
 Development used the recorded public Binance BTCUSDT daily 2023 artifact:

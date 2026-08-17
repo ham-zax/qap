@@ -20,8 +20,11 @@ Phase-14 acceptance work is now recorded in
 rendered-green at desktop/mobile/reflow, including negative, invalid, consumed
 final-OOS, reconciled paper, no-fill paper, Pair reciprocal/anchor, and shell-error
 states. Experiment and paper artifacts now have stricter content-integrity and
-read-time semantic checks, final-OOS reservation recovery is durable, and Pair
-Workbench identity is backend-owned. These repairs strengthen evidence integrity;
+read-time semantic checks, pre-registry final-OOS reservation failures are durably
+identifiable/retryable, and Pair Workbench identity is backend-owned. A crash after
+an authoritative registry reservation is already `committed` remains a fail-closed
+safe-stop requiring operator investigation; QAP does not currently auto-resume or
+abandon that reservation. These repairs strengthen evidence integrity;
 they do not change the economic `NO-GO`.
 
 QAP has **not** earned the right to begin a live-execution design. The paper/research system is materially stronger and its current accounting/execution boundaries are verified, but the Phase-12 economic evidence gate fails before any live-capital question is reached: the predeclared real-data Phase-10 family produced zero development survivors, therefore no candidate consumed the reserved final-OOS window, and no genuinely prospective post-freeze candidate evaluation exists.

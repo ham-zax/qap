@@ -116,22 +116,23 @@
 - The audit's forged observations are rejected at construction.
 - Existing model-generated observations remain unchanged in meaning.
 
-### Task 5: Make final-OOS reservation crash state recoverable
+### Task 5: Make final-OOS reservation crash state identifiable and fail-closed
 
 **Files:**
 - Modify: `src/qap/experiment/artifacts.py`
 - Test: `tests/unit/experiment/test_artifacts.py`
-- Document operator recovery only if a concrete recovery command/API is added.
+- Do not claim full resumability unless a concrete resume/abandon command/API is added.
 
 **Interfaces:**
 - Consumes: deterministic run ID, run directory prelude, holdout registry commitment.
-- Produces: no registry reservation can exist without a matching durable run prelude/commitment that identifies recovery state.
+- Produces: no registry reservation can exist without a matching durable run prelude/commitment that identifies the safe-stop state.
 
 **Steps:**
 - [ ] Add a RED fault-injection test at the registry/run-publication boundary.
 - [ ] Reorder publication so the deterministic run directory/prelude/initial commitment exists before the atomic family/holdout registry reservation.
 - [ ] If registry reservation fails, record the non-consumed attempt failure without marking the holdout consumed.
 - [ ] Ensure a crash after registry reservation leaves enough deterministic state for an operator to identify the exact committed run rather than an orphan registry-only record.
+- [ ] Treat that post-registry state as a blocking safe-stop unless/until an explicit resume/abandon workflow is separately designed; do not auto-reuse the holdout.
 - [ ] Preserve fail-closed holdout semantics and concurrency tests.
 
 **Acceptance criteria:**

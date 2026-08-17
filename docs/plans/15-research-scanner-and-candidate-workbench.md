@@ -154,9 +154,9 @@ No scanner table becomes an alternative owner of run economics.
 
 ### Historical execution claim boundary
 
-Slice 1 is pair-native and may use the existing deterministic historical direct replay to compare QAP, matched HODL, and the strongest declared simple control under identical costs/timing. It must not synthesize historical venue metadata or Binance/Gate MARKET notional-reference truth from current exchange state or OHLCV. Missing contemporaneous execution/capacity observations remain unknown.
+Slice 1 is pair-native and may use the existing deterministic historical direct replay to compare QAP, matched HODL, and the strongest declared simple control under identical costs/timing **only when a real direct venue instrument and admitted historical bars exist for that candidate pair**. Discovered indirect crosses may remain scout/research evidence but are ineligible for authoritative deep replay; Slice 1 must not synthesize a cross, route through a bridge, or pretend the single-instrument replay engine executed Phase-11 bridge semantics. It must not synthesize historical venue metadata or Binance/Gate MARKET notional-reference truth from current exchange state or OHLCV. Missing contemporaneous execution/capacity observations remain unknown.
 
-Slice 2 is the first scanner slice allowed to turn captured current public order constraints/spread/depth/reference evidence into `research_only`, `small_capacity`, or `tradable_now` statements. A future approved Slice 3 must use the existing Phase-11 multi-asset/bridge executor for basket execution rather than creating scanner-owned routing.
+Slice 2 is the first scanner slice allowed to turn captured current public order constraints/spread/depth/reference evidence into `research_only`, `small_capacity`, or `tradable_now` statements. Its capacity math is conservative: required order fraction comes from the frozen policy's 40/60↔60/40 transition envelope plus any larger current drift correction, and the liquidity friction ceiling derives only from the frozen adverse QAP `CostModel`. Required book snapshots that cannot fill a tested size make that size infeasible rather than disappearing from the percentile denominator. A future approved Slice 3 must use the existing Phase-11 multi-asset/bridge executor for basket execution rather than creating scanner-owned routing.
 
 ### Forward evidence
 

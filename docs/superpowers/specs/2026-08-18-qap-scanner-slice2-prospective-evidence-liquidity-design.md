@@ -128,7 +128,7 @@ template_id
 model_parameters
 source/selection-slice fingerprints at freeze
 universe_snapshot_id
-cost_policy_version
+cost_policy_reference
 candidate_deep_replay_run_id
 candidate_deep_replay_gate_status
 ```
@@ -404,10 +404,29 @@ C95(q) = max(
 )
 ```
 
-Let `B_h` be QAP's already declared adverse **one-way** friction budget for the horizon:
+A snapshot that belongs to the qualified window but cannot fill `q` from the captured book is **not omitted** from this calculation. That `q` is infeasible for the window and its capacity result is `capacity_unknown_at_that_size` / fail for qualification. The implementation may represent the missing side as `+infinity` internally, but publication must not compute a lower percentile from only the fillable snapshots.
+
+`B_h` is not a new scanner-tuned parameter. The frozen candidate/scan `cost_policy_reference` must resolve to QAP's predeclared adverse `CostModel` for horizon `h`. Define:
 
 ```text
-q_star = max q such that C95(q) <= B_h
+fee_h               = adverse_cost_model.fee_bps / 10_000
+slippage_budget_h   = adverse_cost_model.slippage_bps / 10_000
+B_h                 = fee_h + slippage_budget_h
+```
+
+The book-sweep cost uses that same fee exactly once:
+
+```text
+c_t(q) = book_price_impact_t(q) + fee_h
+```
+
+so the capacity condition is equivalent to `book_price_impact <= slippage_budget_h`. If the frozen cost policy has no adverse cost model, Slice 2 cannot infer a friction budget and the candidate remains `research_only`; it must not invent a horizon budget.
+
+Then:
+
+```text
+q_star = max q such that every required snapshot is fillable at q
+                     AND C95(q) <= B_h
 q_safe = 0.5 * q_star
 ```
 
@@ -417,17 +436,35 @@ Compute `q_star` deterministically with Decimal arithmetic/bisection over the ex
 
 ## 14. Candidate capital ceiling
 
-Slice-1 pair policy moves at most `10` percentage points of candidate portfolio weight in one direction.
+Capacity is based on the largest **one-way rebalance notional the frozen policy can actually require**, not the maximum deviation from neutral. The 40/60 and 60/40 target states alone permit a 20-percentage-point one-way transition, and `NO_ACTION` drift can make the next corrective rebalance larger.
 
-For one instrument:
+For the direct candidate market, compute conservative direction-specific required trade fractions using exact Decimal weights. Let `w` be the current weight of the direct market's base asset and let `T={0.40,0.50,0.60}` be the frozen base-asset target states:
 
 ```text
-asset_capital_ceiling = q_safe / 0.10
+r_structural_buy  = 0.20
+r_structural_sell = 0.20
+
+r_current_buy  = max(max(t - w, 0) for t in T)
+r_current_sell = max(max(w - t, 0) for t in T)
+
+r_required_buy  = max(r_structural_buy,  r_current_buy)
+r_required_sell = max(r_structural_sell, r_current_sell)
 ```
 
-A pair that may tilt either direction requires defensible buy/sell capacity on both venue instruments. Use the minimum relevant ceiling across required legs.
+The current weight `w` must come from the authoritative current prospective candidate state/valuation at the qualification timestamp; drift is not clipped at `0.20`. Let `q_safe_buy` and `q_safe_sell` be the independently qualified quote-notional capacities from the captured direct-market book. The candidate ceiling is the minimum defensible result:
 
-Do not persist a universal “tradable capital” for an asset. Capacity is time-, venue-, direction-, and policy-dependent.
+```text
+candidate_capital_ceiling = min(
+  q_safe_buy  / r_required_buy,
+  q_safe_sell / r_required_sell,
+)
+```
+
+If the required fraction cannot be established from the frozen policy/current state, capacity is unknown. A `NO_ACTION` observation does not imply infinite capacity because the direction-specific `r_structural_*` terms still protect the next allowed extreme target transition.
+
+Slice-1 authoritative survivors are restricted to real direct venue markets, so Slice 2 qualifies both buy and sell capacity on that direct instrument. Multi-leg bridge capacity belongs to a separately approved Slice 3 using the Phase-11 executor.
+
+Do not persist a universal “tradable capital” for an asset. Capacity is time-, venue-, direction-, state-, and policy-dependent.
 
 ## 15. Three liquidity tiers
 
@@ -583,9 +620,11 @@ A delisting/suspension during the prospective period is real prospective evidenc
 
 - L1/depth timestamps and venue instruments are exact;
 - coverage uses expected cadence without fill/interpolation;
-- insufficient depth yields `capacity_unknown_at_that_size`;
+- insufficient depth yields `capacity_unknown_at_that_size` and the unfillable snapshot never disappears from the `C95(q)` denominator;
 - buy/sell VWAP walk is deterministic;
+- `B_h` resolves only from the frozen QAP adverse `CostModel`, with fee counted once and book impact consuming the adverse slippage allowance;
 - `C95`, `q_star`, `q_safe` follow frozen policy;
+- capital ceiling uses the conservative actual/structural rebalance fraction rather than a fixed `0.10` divisor;
 - 14d/95%/90%-daily rules fail closed;
 - tier classification requires explicit hypothetical capital;
 - historical OHLCV alone cannot produce `small_capacity`/`tradable_now`;

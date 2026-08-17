@@ -489,7 +489,11 @@ The adapter supplies the existing experiment engine with:
 
 The authoritative replay uses the same horizon evaluation start/end and information cutoff as the candidate. It may use earlier admitted rows only as causal warm-up and may not extend into reserved final OOS.
 
-Slice 1 establishes **historical research economics**, not retroactive venue-capacity truth. If contemporaneous venue precision metadata or Binance/Gate MARKET notional-reference evidence was not captured for the historical timestamp, the replay must not invent it, backfill it from today's exchange state, or describe the result as historically executable at venue limits. OHLCV plus the frozen QAP cost model is sufficient for the Slice-1 research comparison because strategy, HODL, and the predeclared simple control share the same deterministic execution model. Slice 2 owns prospective/current microstructure capture and the `research_only` / `small_capacity` / `tradable_now` qualification. Multi-asset bridge execution is outside pair-native Slice 1 and becomes a Slice-3 concern only if that separate design is approved.
+Slice 1 establishes **historical research economics**, not retroactive venue-capacity truth. If contemporaneous venue precision metadata or Binance/Gate MARKET notional-reference evidence was not captured for the historical timestamp, the replay must not invent it, backfill it from today's exchange state, or describe the result as historically executable at venue limits. OHLCV plus the frozen QAP cost model is sufficient for the Slice-1 research comparison because strategy, HODL, and the predeclared simple control share the same deterministic execution model.
+
+Authoritative deep replay is deliberately narrower than relationship discovery. A promoted pair may enter `qap.experiment` only when the same venue has a **real direct spot instrument whose base/quote assets are exactly the candidate pair (either orientation)** and QAP has an admitted historical bar source for that direct instrument over the replay window. The adapter records that `direct_execution_instrument_id` in the replay lineage. If the discovered relationship is an indirect cross such as `ETH/SOL` represented only by `ETHUSDT` and `SOLUSDT`, Slice 1 may retain its scout/research evidence but must mark authoritative replay as ineligible/`unsupported_direct_market`; it must not synthesize an `ETHSOL` market, route through USDT, or silently feed bridge legs into the single-instrument historical replay engine.
+
+Slice 2 owns prospective/current microstructure capture and the `research_only` / `small_capacity` / `tradable_now` qualification. Multi-asset bridge execution remains outside pair-native Slice 1 and becomes a Slice-3 concern only if that separate design is approved; an approved Slice 3 must reuse the Phase-11 multi-asset executor rather than creating scanner-owned routing.
 
 A candidate becomes a historical `deep_replay_survivor` only when, after declared costs:
 ```text
@@ -519,6 +523,9 @@ source_artifact_fingerprints
 selection_slice_fingerprints
 manual pins / forensic mode
 ```
+
+`cost_policy_reference` resolves to an immutable QAP execution-cost policy, not a scanner-local profitability knob. For every enabled horizon it must bind the exact ordinary and adverse `CostModel` inputs used by authoritative replay (`fee_bps` and `slippage_bps`, including the adverse pair). Slice 1 stores/replays that reference but does not invent horizon-specific friction budgets. Slice 2 derives any liquidity friction budget only from the referenced adverse `CostModel`; if an adverse model is absent, capacity qualification fails closed rather than substituting a number.
+
 `eligible_assets.parquet` records at least:
 ```text
 scan_id venue horizon asset_id venue_symbol
@@ -544,6 +551,7 @@ automatic_neighbor_selected manual_pinned
 `promotions.parquet` records:
 ```text
 candidate_id promotion_rank promotion_status budget_reason
+direct_execution_instrument_id
 deep_replay_run_id deep_replay_status economic_gate_status
 ```
 
@@ -588,6 +596,7 @@ Benchmark realistic 500- and 1,000-asset datasets during implementation and opti
 - one asset fails coverage;
 - one pair lacks common observations;
 - one trial fit/signal is invalid;
+- one candidate lacks a real direct venue instrument/historical source for authoritative replay and is recorded as `unsupported_direct_market` rather than synthesized through a bridge;
 - one promoted candidate fails experiment setup/data admission after its replay attempt has been durably enumerated;
 - one promoted candidate fails authoritative replay for candidate-specific reasons.
 ### Abort the generation
@@ -660,6 +669,7 @@ A negative scenario proves that an attractive scout can fail authoritative repla
 - final-OOS rows cannot enter scanner replay/warm-up;
 - manual pins cannot masquerade as automatic discovery;
 - historical OHLCV without contemporaneous venue execution evidence cannot produce a historical capacity/venue-feasibility claim;
+- a discovered pair without a real direct venue market/historical direct-market dataset cannot enter authoritative deep replay and cannot be silently bridged;
 - `qap.scanner` cannot import policy/execution/evaluation/experiment layers;
 - interrupted `.partial` scans resume only against the exact frozen definition/slices.
 

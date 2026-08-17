@@ -120,6 +120,6 @@ diff -u web/openapi.json /tmp/qap-openapi.json
 - [`docs/superpowers/specs/2026-08-17-qap-web-operations-design.md`](docs/superpowers/specs/2026-08-17-qap-web-operations-design.md) — API/web/operations boundaries.
 - [`docs/reviews/2026-08-17-live-readiness.md`](docs/reviews/2026-08-17-live-readiness.md) — current Phase-12 `NO-GO` decision.
 - [`docs/plans/14-analytical-workbench-ux-redesign.md`](docs/plans/14-analytical-workbench-ux-redesign.md) — analytical-workbench acceptance contract.
-- [`docs/plans/15-research-scanner-and-candidate-workbench.md`](docs/plans/15-research-scanner-and-candidate-workbench.md) — scanner umbrella plan; not implementation authorization.
+- [`docs/plans/15-research-scanner-and-candidate-workbench.md`](docs/plans/15-research-scanner-and-candidate-workbench.md) — scanner umbrella plan; Slices 1 and 2 are implementation-authorized by the current mission, while Slice 3 remains a separate design gate.
 - [`tools/agent/README.md`](tools/agent/README.md) — sequential local development harness.
 - [`docs/OSS_REUSE_BOUNDARY.md`](docs/OSS_REUSE_BOUNDARY.md) — open-source reuse boundary.
