@@ -156,15 +156,13 @@ view=ratio|log|normalized|anchor
 **UI:**
 - primary HODL-relative portfolio wealth growth prominently displayed;
 - run status, research family, universe mode, data role, and final-OOS consumption status;
-- benchmark ladder: QAP vs strict inventory HODL, matched-contribution static HODL when external flows exist, periodic/fixed-weight control, band/partial control, and contribution-aware control when present;
+- benchmark ladder: QAP vs HODL vs periodic/fixed-weight control vs band/partial control when present;
 - explicit QAP/primary-simple-control incremental metric and relative-wealth curve;
 - QAP/HODL relative-wealth curve plus drawdown diagnostic;
 - current/start holdings;
 - per-asset quantity/value delta table;
-- external-flow context when present plus same-mark accumulated-quantity/value deltas versus the matched passive inventory;
 - allocation history as one weight line per asset in first version;
 - fees, slippage, turnover, rebalance count, concentration metrics;
-- time below HODL/primary control and flow-adjusted/unitized performance when external flows exist;
 - rebalance-decision audit for a selected marker: current weights, baseline target, QAP target, evidence reference, estimated cost, actual fill legs, and post-fill holdings.
 
 **Behavior:**
@@ -175,7 +173,6 @@ view=ratio|log|normalized|anchor
 - [ ] Build overview, benchmark ladder, decision audit, and charts from API DTOs.
 - [ ] Add a component test asserting negative HODL-relative result and per-asset deltas are rendered correctly.
 - [ ] Add a component test where QAP beats HODL but loses to the primary simple control; the UI must state that relationship intelligence did not add incremental value.
-- [ ] Add a component test where a contribution-aware strategy beats strict HODL but loses to matched-contribution static HODL; the UI must not label this smart accumulation alpha.
 
 ## Section 09.6 — Pair Workbench
 
@@ -234,7 +231,7 @@ Y / A
 - research family + optional parent;
 - data role and final-OOS consumed status;
 - status positive/neutral/negative/invalid;
-- primary metric, incremental-vs-primary-control metric, and matched-contribution increment when applicable;
+- primary metric and incremental-vs-primary-control metric;
 - basket/universe mode/anchor;
 - model/policy IDs;
 - code dirty flag.

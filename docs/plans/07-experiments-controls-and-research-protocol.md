@@ -1,6 +1,6 @@
 # Phase 07 — Experiments, Controls, and Research Protocol Implementation Plan
 
-**Goal:** Make QAP runs reproducible and falsifiable with small frozen manifests, research-family lineage, matched passive controls, predeclared simple rebalancing controls, optional explicit exogenous-flow schedules, explicit data-role/final-holdout semantics, and concise durable result artifacts.
+**Goal:** Make QAP runs reproducible and falsifiable with small frozen manifests, research-family lineage, matched HODL, predeclared simple rebalancing controls, explicit data-role/final-holdout semantics, and concise durable result artifacts.
 
 **Architecture:** `qap.experiment` orchestrates already-owned domain components. It freezes inputs and records provenance/results but does not become a candidate-promotion bureaucracy or a second runtime architecture.
 
@@ -15,7 +15,6 @@
 - `final_oos` is an information-state: after a result/plot is inspected and used to adapt the research, that holdout is consumed and cannot remain final OOS for the next generation.
 - Every serious search family has a stable family ID; attempted variants/failures remain discoverable.
 - No experiment result silently changes default policy/model settings.
-- External contributions/withdrawals are optional explicit experiment inputs; when present, every compared role receives the same exogenous flow stream and the runner must not manufacture strategy advantage by changing contribution timing/assets between roles.
 - No global registry, promotion state machine, candidate dossier hierarchy, or documentation generator is created.
 
 ## File Map
@@ -56,7 +55,6 @@
 - relationship evidence/model ID + config;
 - policy ID + config;
 - execution cost config plus optional predeclared adverse-cost scenario;
-- optional ordered external-inventory-flow schedule (stable flow ID, effective UTC time, asset, signed exact quantity delta);
 - benchmark/control config including exactly one `primary_incremental_benchmark` for relationship-alpha claims;
 - data-role label (`exploratory`, `development`, `final_oos`, `forward_paper`);
 - predeclared primary metric and success threshold;
@@ -94,44 +92,38 @@
 - [ ] Capture `git rev-parse HEAD` and `git status --porcelain` through a focused helper with explicit failure behavior when Git metadata is unavailable.
 - [ ] Test manifest-hash sensitivity to authoritative values, insensitivity to JSON key ordering, and code-fingerprint sensitivity to a changed source byte.
 
-## Section 07.3 — Predeclared Passive and Simple Rebalancing Controls
+## Section 07.3 — Predeclared Simple Rebalancing Controls
 
 **Interfaces:**
 - Consumes: starting basket weights, current valuation snapshot, and one frozen control configuration.
 - Produces: target allocation decisions through the same Phase-05/06 execution path.
 
 **Controls:**
-1. **Strict inventory HODL** — same starting inventory and same declared external asset flows/timestamps; never tactically trades.
-2. **Matched-contribution static HODL** — mandatory when external contributions exist; receives the same contribution stream, mechanically deploys each contribution according to one frozen static allocation through normal execution, then holds the purchased assets.
-3. **Periodic/fixed-weight** — at a predeclared cadence, request restoration to the frozen starting value weights; otherwise no action.
-4. **Band/partial** — compare current value weights with the same frozen target and request only the predeclared partial correction when drift exceeds a fixed band; otherwise no action.
-5. **Contribution-aware band** — when external contributions exist, direct newly contributed inventory toward underweights first; sell pre-existing holdings only when the remaining drift still exceeds the frozen band/partial rule.
+1. **Periodic/fixed-weight** — at a predeclared cadence, request restoration to the frozen starting value weights; otherwise no action.
+2. **Band/partial** — compare current value weights with the same frozen target and request only the predeclared partial correction when drift exceeds a fixed band; otherwise no action.
 
 **Behavior:**
-- All applicable controls use identical cost/execution/timing semantics as model-driven QAP.
-- Every applicable control receives the identical exogenous flow schedule; control policy determines only what happens *after* the flow becomes owned inventory.
+- Both controls use identical cost/execution/timing semantics as model-driven QAP.
 - A research family chooses one control as `primary_incremental_benchmark` before final OOS; trying many baselines and reporting whichever is easiest to beat is not allowed.
 - Controls are baselines, not endorsed production strategies.
-- Band width, partial correction fraction, contribution allocation, and cadence are explicit frozen parameters, not optimized inside the runner.
+- Band width and partial correction fraction are explicit frozen parameters, not optimized inside the runner.
 
 **Steps:**
-- [ ] Write deterministic HODL, matched-contribution, cadence, drift-band/no-action, and contribution-routing tests.
+- [ ] Write deterministic cadence and drift-band/no-action tests.
 - [ ] Implement controls by producing normal `PolicyDecision`/`AllocationTarget` objects; do not create a separate backtester.
 
 ## Section 07.4 — Experiment Runner
 
 **Interfaces:**
 - Consumes: manifest + data resolved by fingerprint.
-- Produces: strategy replay, strict-HODL comparison, applicable matched-contribution/passive comparison, declared simple-control replays, and one result record.
+- Produces: strategy replay, HODL comparison, declared simple-control replays, and one result record.
 
 **Behavior:**
 - Validate data fingerprints before replay.
 - Construct fresh starting portfolio independently for strategy/HODL/control.
-- Apply the same declared exogenous flow schedule through the Phase-06 replay/ledger contract for every compared role.
 - Run strategy and all declared controls through the same execution engine.
 - Evaluate all terminal states using the same terminal valuation snapshot.
 - Classify result as `positive` when the primary metric is greater than the predeclared threshold, `neutral` when exactly equal, and `negative` when below; classification has no promotion side effect.
-- An accumulation/timing conclusion with external flows additionally reports improvement versus matched-contribution static HODL; beating strict inventory HODL alone may only show that contributed quote inventory gained market exposure.
 - A relationship-alpha conclusion additionally reports improvement versus the predeclared `primary_incremental_benchmark`; beating HODL alone is insufficient.
 
 **Steps:**
@@ -159,10 +151,10 @@ runs/<run_id>/
 
 **Behavior:**
 - `run_id` is a deterministic prefix/hash of manifest hash + ordered data fingerprints + `code_fingerprint`. Git commit/dirty state remains supplemental provenance and therefore cannot cause two different dirty source trees to collide under one run ID.
-- `result.json` is compact and contains primary/secondary terminal metrics, benchmark-ladder increments, research family/parent, data role, final-OOS consumption status, and result status. When external flows exist it also records the matched-contribution comparator and flow-adjusted/unitized diagnostics.
-- `performance.parquet` contains one row per evaluation timestamp with strategy value, strict-HODL value, applicable matched-contribution/static value, declared simple-control values, relative-performance fields, and strategy-minus-primary-control incremental fields. When external flows exist, add an explicitly labeled flow-adjusted/unitized series rather than treating deposits as investment return. Exact financial values use a lossless representation; API chart DTOs may convert presentation copies to floats.
+- `result.json` is compact and contains primary/secondary terminal metrics, benchmark-ladder increments, research family/parent, data role, final-OOS consumption status, and result status.
+- `performance.parquet` contains one row per evaluation timestamp with strategy value, matched-HODL value, declared simple-control values, relative-performance fields, and strategy-minus-primary-control incremental fields. Exact financial values use a lossless representation; API chart DTOs may convert presentation copies to floats.
 - `inventory.parquet` is long-form with timestamp, role (`strategy`, `hodl`, or `control:<control_id>`), asset, exact quantity/value representation, and presentation weight. It is the source for allocation/inventory history.
-- `events.jsonl` is append-ordered external-flow/decision/rebalance/fill trace data sufficient to reconstruct web markers and audit inventory/execution identity without serializing Python objects.
+- `events.jsonl` is append-ordered decision/rebalance/fill trace data sufficient to reconstruct web markers and audit execution identity without serializing Python objects.
 - Large bar inputs are not copied into each run; `manifest.json` retains the validated relative locator plus expected fingerprint.
 - Existing `runs/<run_id>/` is never overwritten. A repeated semantic run is executed under a fresh temporary test/output root when reproducibility is being checked; production tooling must not silently replace prior artifacts.
 - Artifact reader validates schema versions for JSON and tabular files.
@@ -196,7 +188,6 @@ runs/<run_id>/
 - [ ] Change data-role from `exploratory` to `development` and confirm the label appears in result/provenance without changing the financial calculation itself.
 - [ ] Add a `final_oos` scenario proving a commitment artifact exists before replay output and the completed run records the holdout as consumed.
 - [ ] Add two sibling variants under one `research_family_id` and confirm both remain discoverable even when one is negative.
-- [ ] Add an external-flow scenario proving strategy, strict HODL, matched-contribution HODL, and simple controls receive byte-for-byte equivalent exogenous flow schedules before policy-specific actions.
 
 **Verification:**
 
@@ -216,7 +207,7 @@ uv run pyright src tests
 ## Phase Exit Criteria
 
 - [ ] Manifest/config/data/code provenance is explicit and durable.
-- [ ] Strategy, strict HODL, applicable matched-contribution HODL, periodic control, band/partial control, and contribution-aware control use the same starting basket, exogenous flows when present, and timing/cost semantics.
+- [ ] Strategy, HODL, periodic control, and band/partial control use the same starting basket and timing/cost semantics.
 - [ ] Data role, research family lineage, and final-OOS consumption are explicit.
 - [ ] Relationship-alpha reporting is incremental to the predeclared primary simple control, not merely HODL.
 - [ ] Negative and neutral results persist normally.
@@ -242,7 +233,3 @@ Minimum method-selection rules:
 - No arbitrary trial-count threshold triggers multiplicity correction. The trigger is reuse of evaluation information for selection and inference.
 
 OSS rule: do not implement bootstrap/SPA machinery from scratch. `arch` is the preferred first library to adopt when these procedures are actually required; its block-bootstrap and SPA/RealityCheck/StepM implementations remain outside the QAP kernel.
-
-### Research-alpha falsification/robustness record
-
-Before a strong `research alpha` claim, record the candidate's predeclared falsifier and the smallest relevant robustness set: baseline/adverse costs, nearby-parameter stability, regime/subperiod concentration, a causal-delay check, and asset/venue/stablecoin robustness when those dimensions materially support the claim. Do not build a universal factor platform or require every diagnostic for every trivial experiment; the test must match the mechanism being claimed.

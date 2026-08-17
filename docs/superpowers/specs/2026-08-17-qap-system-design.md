@@ -105,7 +105,7 @@ Orientation is explicit everywhere. `X/Y` means **Y units per one X unit** (base
 
 Simple summation of heterogeneous coin quantities is meaningless. Raw standalone USD P&L can confuse market beta with strategy value. Clean QAP therefore measures **portfolio wealth relative to matched passive ownership**, using one declared numeraire only to aggregate heterogeneous holdings consistently.
 
-For a frozen starting basket `q0`, strategy ending quantities `qS(T)`, passive HODL ending quantities `qH(T)=q0` when there are no external flows, and one consistent terminal cross-price vector `p(T)`:
+For a frozen starting basket `q0`, strategy ending quantities `qS(T)`, passive HODL ending quantities `qH(T)=q0`, and one consistent terminal cross-price vector `p(T)`:
 
 ```text
 strategy_value(T) = value(qS(T), p(T))
@@ -118,8 +118,6 @@ HODL-relative portfolio wealth growth
 The ratio is the primary scalar score. A valuation numeraire is a coordinate for aggregation, not the product objective; when conversion prices are internally consistent at the same timestamp, the strategy/HODL ratio is invariant to the chosen common numeraire. Per-asset coin accumulation remains secondary attribution and may not override a negative primary wealth result.
 
 A strategy cannot claim success when this matched HODL-relative result is negative merely because one coin count increased.
-
-When a run contains explicit external deposits or withdrawals, every compared portfolio receives the same exogenous flow stream at the same effective timestamps before tactical policy differences are evaluated. **Strict inventory HODL** remains the primary passive counterfactual: it receives those same asset flows and never tactically trades them. An accumulation/timing claim additionally requires a **matched-contribution static HODL** control that mechanically deploys each contribution according to one predeclared static allocation using the same feasible execution semantics. This prevents simple crypto-market exposure from being mislabeled as smart accumulation.
 
 ### 4.5 Secondary economic diagnostics
 
@@ -134,10 +132,7 @@ Every result also reports:
 - rebalance count and notional;
 - anchor-relative diagnostics;
 - drawdown of QAP relative to HODL;
-- comparison against a simple admissible rebalance baseline where applicable;
-- time below HODL/the declared primary incremental control;
-- flow-adjusted or unitized return diagnostics when external deposits/withdrawals exist;
-- explicit inventory-flow trace sufficient to explain how quantities changed.
+- comparison against a simple admissible rebalance baseline where applicable.
 
 ## 5. Shariah/action-space boundary
 
@@ -375,8 +370,6 @@ PolicyOutput:
 
 Target allocations are long-only and sum to 1 within declared tolerance for the mutable portfolio value.
 
-The core policy/rebalance contract is deliberately agnostic about why a target was requested. Scheduled fixed targets, threshold/no-trade rules, contribution-aware rules, slow trend/momentum gates, volatility-aware rules, and relationship-conditioned rules must all pass through the same target/no-action boundary. Momentum and mean reversion are research hypotheses, not policy-layer truths.
-
 ### 11.1 Dummy policy first
 
 The first vertical slice uses a deterministic policy with no statistical claims. Example: at predefined evidence states, request a known 50/50 or 70/30 target.
@@ -438,22 +431,13 @@ Every executable experiment starts from one frozen ownership vector and produces
 The benchmark ladder is an economic contract:
 
 ```text
-strict inventory HODL
-  -> matched-contribution static HODL when external flows exist
+matched HODL
   -> one predeclared periodic/fixed-weight rebalance control
   -> one predeclared cost-aware band/partial-rebalance control
-  -> one predeclared contribution-aware band control when external flows exist
-  -> one predeclared pair-blind predictive/common-mode control when the claim requires it
   -> relationship-conditioned policy
 ```
 
-The controls use the same starting inventory, exogenous flow stream when present, prices, timing, costs, and execution model as QAP. A research family must predeclare which simple control is the **primary incremental benchmark** before final OOS evaluation; researchers may not search many simple controls and report whichever is easiest to beat. Relationship intelligence may be described as adding economic value only when it improves on that predeclared simple control after costs.
-
-Research language distinguishes evidence strength without creating a promotion state machine:
-
-- **promising candidate** — positive development/validation economics after costs with causal replay and no obvious parameter pathology;
-- **research alpha** — positive predeclared historical final-OOS economics with appropriate selection-pressure treatment and credible robustness;
-- **deployment candidate** — research alpha plus a genuinely prospective `forward_paper` period after the rule is frozen, operational/capacity evidence, and explicit readiness review.
+The controls use the same starting inventory, prices, timing, costs, and execution model as QAP. A research family must predeclare which simple control is the **primary incremental benchmark** before final OOS evaluation; researchers may not search many simple controls and report whichever is easiest to beat. Relationship intelligence may be described as adding economic value only when it improves on that predeclared simple control after costs.
 
 ## 14. Research protocol
 
@@ -491,8 +475,6 @@ Rules:
 - concentrated edge is reported as concentrated, not generalized;
 - no research result silently changes default production policy;
 - one research result is not promoted to constitutional invariant.
-
-The default search order is intentionally simple-first: mechanical fixed/band rebalancing; contribution-aware rebalancing when explicit flows exist; slow time-series momentum/trend gating; relative-momentum/volatility controls when justified; transparent ratio/log-ratio relationship hypotheses; pair-blind common-mode/cross-sectional controls; and only then richer dependence models such as Student-t Copulas when a specific remaining falsifiable question justifies the added search denominator.
 
 The repository will not recreate v2's candidate/promotion bureaucracy. Reproducibility is achieved with small manifests, fingerprints, deterministic runners, and concise result records.
 

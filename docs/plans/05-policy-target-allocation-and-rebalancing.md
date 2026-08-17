@@ -14,7 +14,6 @@
 - Partial rebalancing and no-action are first-class.
 - A deterministic dummy policy is implemented before any statistical policy.
 - Rebalance planning uses explicit current prices and cannot infer hidden market routes.
-- The Phase-05 primitives must remain generic enough for later periodic, banded, contribution-aware, momentum/volatility-gated, and relationship-conditioned policies to use the same target/no-action contract; this phase does not implement or endorse those research hypotheses.
 
 ## File Map
 
@@ -31,7 +30,7 @@
 ## Section 05.1 — Policy Decision Contract
 
 **Interfaces:**
-- Consumes: current `PortfolioState`, admitted basket, optional evidence references.
+- Consumes: current `PortfolioState`, admitted basket, optional relationship evidence references.
 - Produces: `PolicyDecision` containing either validated `AllocationTarget` or explicit no-action.
 
 **Behavior:**
@@ -42,7 +41,7 @@
 **Steps:**
 - [ ] Write construction tests for target and no-action decisions.
 - [ ] Implement immutable decision type.
-- [ ] Keep reason codes finite and explicit (`scheduled_target`, `evidence_target`, `below_threshold`, `insufficient_evidence`) rather than free-form-only state. Later phases may add bounded domain-specific reason codes without changing this contract.
+- [ ] Keep reason codes finite and explicit (`scheduled_target`, `evidence_target`, `below_threshold`, `insufficient_evidence`) rather than free-form-only state.
 
 ## Section 05.2 — Deterministic Target Policy
 
@@ -147,5 +146,3 @@ uv run pyright src tests
 ## Stop Conditions
 
 Do not add Kelly sizing, leverage, stop-loss position objects, order types, market routing, model selection, optimizer frameworks, or environment-driven thresholds. Those either violate the action space or belong to later boundaries.
-
-Do not hard-code "buy weakness", mean reversion, momentum, or any other predictive direction into Phase 05. Those are later research hypotheses that must earn authority against simpler controls.

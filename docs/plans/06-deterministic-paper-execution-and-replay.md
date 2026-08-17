@@ -14,7 +14,6 @@
 - Fees are modeled explicitly in the direct market's quote asset.
 - Slippage is an explicit adverse price adjustment, not a second hidden fee.
 - Fill application is idempotent.
-- Explicit exogenous inventory flows, when supplied by a later experiment, are deterministic/idempotent and are the only non-fill state-change source admitted by replay.
 - No negative balances, leverage, borrowing, synthetic execution, or hidden stablecoin routing.
 - Multi-leg bridge routing is deferred to Phase 11.
 
@@ -26,13 +25,11 @@
 - `src/qap/execution/fills.py` — fill record and buy/sell arithmetic.
 - `src/qap/execution/direct.py` — direct-market execution of one rebalance leg.
 - `src/qap/execution/replay.py` — deterministic event loop and trace.
-- `src/qap/portfolio/ledger.py` — sole replay-state owner for applied fill/flow IDs and resulting inventory snapshots.
-- `src/qap/portfolio/flows.py` — optional explicit deposit/withdrawal event contract for later accumulation experiments.
+- `src/qap/portfolio/ledger.py` — sole fill-application owner with applied-fill IDs.
 - `tests/unit/execution/test_costs.py`
 - `tests/unit/execution/test_fills.py`
 - `tests/unit/execution/test_direct.py`
 - `tests/unit/portfolio/test_ledger.py`
-- `tests/unit/portfolio/test_flows.py`
 - `tests/scenarios/test_deterministic_replay.py`
 - `tests/scenarios/test_last_bar_cannot_fill.py`
 - `tests/scenarios/test_cost_applied_once.py`
@@ -98,15 +95,13 @@
 - Produces: next state and append-only applied-fill record.
 
 **Behavior:**
-- `PortfolioLedger` owns current state and the applied event identities needed to prevent duplicate fills/flows.
+- `PortfolioLedger` owns current state and set/sequence of applied fill IDs.
 - Applying an unseen fill validates every resulting balance before committing.
 - Applying the same fill ID twice returns/rejects as duplicate without changing state a second time.
-- Fill deltas and explicitly declared exogenous inventory-flow deltas are the only paths into actual holdings in replay.
-- An `ExternalInventoryFlow` has a stable flow ID, effective UTC timestamp, asset, and signed `Decimal` quantity delta. Withdrawals that would make inventory negative fail closed.
-- External flows are not fills, do not acquire invented execution costs, and cannot be synthesized from policy decisions.
+- Fill deltas are the only path from execution into actual holdings in replay.
 
 **Steps:**
-- [ ] Write duplicate-fill, duplicate-flow, insufficient-balance/withdrawal, and valid-fill/flow tests.
+- [ ] Write duplicate-fill, insufficient-balance, and valid-fill tests.
 - [ ] Implement ledger as the sole mutable object; exposed snapshots remain immutable.
 
 **Verification:**
@@ -144,7 +139,6 @@ uv run pytest -q tests/unit/portfolio/test_ledger.py
 ```text
 for each completed decision bar t except final bar:
   decision_time = bar_t.open_time + interval
-  apply each not-yet-applied declared external flow with effective_time <= decision_time
   expose only bars with bar_end_exclusive <= decision_time
   build relationship evidence
   ask policy for decision
@@ -159,7 +153,6 @@ for each completed decision bar t except final bar:
 
 **Behavior:**
 - Relationship builder never sees `t+1` when deciding at `t`.
-- A contribution with `effective_time <= decision_time` is owned inventory visible to policy at that decision; a later contribution is not. The same declared flow schedule must be replayable identically for strategy and controls in Phase 07.
 - Reference price comes only from `t+1` open; modeled execution price is derived deterministically from that reference plus the declared cost/slippage contract.
 - Final-bar decision cannot fill.
 - Iteration order and IDs are deterministic.
@@ -194,7 +187,6 @@ uv run pyright src tests
 - [ ] Ledger idempotency prevents duplicate fills.
 - [ ] Replay is deterministic.
 - [ ] No lookahead is possible through the replay's public history boundary.
-- [ ] Explicit external flows are ordered, idempotent, auditable, and cannot create negative inventory.
 - [ ] Final-bar decisions remain unfilled.
 - [ ] Unsupported routing fails closed.
 
