@@ -17,11 +17,11 @@ test('known run portfolio preserves HODL-relative evidence and reaches pair work
   if (!runId) throw new Error('fixture API returned no valid run')
 
   await page.goto(`/experiments/${runId}`)
-  await page.getByRole('link', { name: 'Open portfolio economics' }).click()
+  await page.getByRole('link', { name: 'Portfolio economics' }).click()
 
-  await expect(page).toHaveURL(new RegExp(`/portfolio/${runId}$`))
+  await expect(page).toHaveURL(new RegExp(`/portfolio/${runId}`))
   await expect(page.getByRole('heading', { name: 'Portfolio economics' })).toBeVisible()
-  await expect(page.getByText('HODL-relative wealth')).toBeVisible()
+  await expect(page.getByText('vs strict inventory HODL', { exact: true }).first()).toBeVisible()
   await expect(
     page.getByRole('heading', {
       name: 'Relative wealth through time',
@@ -29,7 +29,7 @@ test('known run portfolio preserves HODL-relative evidence and reaches pair work
     }),
   ).toBeVisible()
 
-  await page.goto(`/experiments/${runId}`)
-  await page.getByRole('link', { name: 'Open pair workbench' }).click()
-  await expect(page.getByRole('heading', { name: 'Pair workbench' })).toBeVisible()
+  await page.getByRole('link', { name: 'Pair workbench' }).click()
+  await expect(page).toHaveURL(new RegExp(`/pair/${runId}/`))
+  await expect(page.getByText('Pair workbench', { exact: true })).toBeVisible()
 })

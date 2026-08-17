@@ -19,10 +19,10 @@ test('pair workbench keeps reciprocal orientation and anchor lens in URL state',
   await page.goto(
     `/pair/${runId}/BTC/USDT?orientation=BTC%2FUSDT&anchor=none&view=ratio`,
   )
-  await expect(page.getByText('Displayed orientation: BTC/USDT')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'BTC / USDT' })).toBeVisible()
 
-  await page.getByRole('button', { name: 'Show USDT/BTC' }).click()
-  await expect(page.getByText('Displayed orientation: USDT/BTC')).toBeVisible()
+  await page.getByRole('button', { name: 'Show USDT / BTC' }).click()
+  await expect(page.getByRole('heading', { name: 'USDT / BTC' })).toBeVisible()
   await expect(page).toHaveURL(/orientation=USDT%2FBTC/)
 
   const anchor = page.getByRole('combobox', { name: 'Anchor lens' })
@@ -32,7 +32,7 @@ test('pair workbench keeps reciprocal orientation and anchor lens in URL state',
   await expect(page).toHaveURL(/anchor=USDT/)
   await expect(page).toHaveURL(/view=anchor/)
   await expect(page.getByRole('heading', { name: 'Anchor decomposition' })).toBeVisible()
-  await expect(page.getByText('Displayed orientation: USDT/BTC')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'USDT / BTC' })).toBeVisible()
   await expect(page.getByLabel('Synchronized anchor charts')).toBeVisible()
   await expect(
     page.getByRole('heading', { name: 'BTC/USDT reduced anchor path' }),

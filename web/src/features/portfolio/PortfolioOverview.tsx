@@ -37,6 +37,17 @@ interface PortfolioOverviewProps {
   onDecisionChange?: (decisionId: string) => void
 }
 
+function pairWorkbenchHref(experiment: ExperimentDetailDto): string | null {
+  const [assetX, assetY] = experiment.manifest.basket
+  if (!assetX || !assetY) return null
+  const search = new URLSearchParams({
+    orientation: `${assetX}/${assetY}`,
+    anchor: experiment.manifest.analysis_anchor ?? 'none',
+    view: 'ratio',
+  })
+  return `/pair/${encodeURIComponent(experiment.run_id)}/${encodeURIComponent(assetX)}/${encodeURIComponent(assetY)}?${search}`
+}
+
 function DashboardMetric({
   label,
   value,
@@ -126,6 +137,7 @@ export function PortfolioOverview({
     result.primary_incremental_benchmark,
     result.strategy_vs_primary_control,
   )
+  const pairHref = pairWorkbenchHref(experiment)
 
   return (
     <article className="min-w-0" aria-labelledby="portfolio-heading">
@@ -189,6 +201,17 @@ export function PortfolioOverview({
             detail={`Fees ${fees.display} · slippage ${slippage.display} ${valueUnit}`}
           />
         </div>
+
+        {pairHref ? (
+          <nav className="mt-5 flex flex-wrap gap-2" aria-label="Portfolio evidence links">
+            <a
+              className="inline-flex min-h-11 items-center rounded-md border border-border-strong bg-subtle px-4 py-2 text-sm font-semibold text-foreground no-underline hover:border-accent"
+              href={pairHref}
+            >
+              Pair workbench
+            </a>
+          </nav>
+        ) : null}
       </header>
 
       <div className="mt-6 space-y-6">
