@@ -1,0 +1,183 @@
+import inspect
+import math
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta
+
+import qap.scanner.asset_momentum as asset_momentum_module
+from qap.market import BarInterval, MarketBar, VenueInstrument, validate_bar_series
+from qap.portfolio import AssetId
+from qap.scanner.asset_momentum import (
+    MomentumObservationStatus,
+    build_asset_momentum_generation,
+)
+from qap.scanner.protocol import ScannerHorizon
+from qap.scanner.slices import EvaluatedSeries, evaluate_series
+from qap.scanner.universe import (
+    EligibleAssetRecord,
+    HistoricalEligibilityState,
+    UniverseSnapshot,
+)
+
+START = datetime(2026, 8, 1, tzinfo=UTC)
+INTERVAL = BarInterval("1h")
+CUTOFF = START + timedelta(days=2)
+USDT = AssetId("USDT")
+
+
+def _evaluated(
+    asset: str,
+    start_price: float,
+    end_price: float,
+    *,
+    extra: int = 0,
+) -> EvaluatedSeries:
+    instrument = VenueInstrument(
+        venue="binance",
+        venue_symbol=f"{asset}USDT",
+        base=AssetId(asset),
+        quote=USDT,
+    )
+    count = 48 + extra
+    bars: list[MarketBar] = []
+    for index in range(count):
+        fraction = min(index, 47) / 47
+        price = start_price + (end_price - start_price) * fraction
+        bars.append(
+            MarketBar(
+                instrument=instrument,
+                interval=INTERVAL,
+                candle_open_time=START + index * INTERVAL.duration,
+                open=start_price if index == 0 else price,
+                high=max(start_price, price, end_price) + 1,
+                low=min(start_price, price, end_price) - 1,
+                close=end_price if index == 47 else price,
+                volume=10.0,
+            )
+        )
+    return evaluate_series(
+        validate_bar_series(tuple(bars)),
+        dataset_id=f"binance-{asset.lower()}-1h",
+        eligible_information_end=CUTOFF,
+        lookback=timedelta(days=2),
+    )
+
+
+def _snapshot(values: dict[str, EvaluatedSeries]) -> UniverseSnapshot:
+    records = tuple(
+        EligibleAssetRecord(
+            scan_id="a" * 64,
+            venue="binance",
+            horizon=ScannerHorizon.SHORT,
+            asset_id=asset,
+            venue_symbol=evaluated.instrument.venue_symbol,
+            eligibility_state=HistoricalEligibilityState.KNOWN_ELIGIBLE,
+            eligibility_reason="eligible_through_required_window",
+            lifecycle_evidence_refs=(f"{asset}-listing",),
+            source_artifact_fingerprint=evaluated.source_artifact_fingerprint,
+            selection_slice_fingerprint=evaluated.selection_slice_fingerprint,
+            bar_coverage=evaluated.bar_coverage,
+            longest_missing_run=evaluated.longest_missing_run,
+            automatic_eligible=True,
+            forensic_research_allowed=False,
+        )
+        for asset, evaluated in sorted(values.items())
+    )
+    return UniverseSnapshot(
+        scan_id="a" * 64,
+        venue="binance",
+        horizon=ScannerHorizon.SHORT,
+        records=records,
+        universe_snapshot_id="b" * 64,
+    )
+
+
+def test_asset_momentum_scores_common_mode_and_deterministic_ties() -> None:
+    series = {
+        "AAA": _evaluated("AAA", 100.0, 200.0),
+        "BBB": _evaluated("BBB", 100.0, 100.0),
+        "CCC": _evaluated("CCC", 100.0, 50.0),
+    }
+
+    generation = build_asset_momentum_generation(
+        _snapshot(series),
+        series,
+        as_of=CUTOFF,
+    )
+    rows = {item.asset_id: item for item in generation.observations}
+
+    assert math.isclose(rows["AAA"].own_momentum or 0.0, math.log(2.0))
+    assert rows["BBB"].own_momentum is not None
+    assert math.isclose(rows["BBB"].own_momentum, 0.0)
+    assert math.isclose(rows["CCC"].own_momentum or 0.0, math.log(0.5))
+    assert rows["AAA"].common_mode is not None
+    assert math.isclose(rows["AAA"].common_mode, 0.0, abs_tol=1e-15)
+    assert rows["AAA"].rank == 1
+    assert rows["BBB"].rank == 2
+    assert rows["CCC"].rank == 3
+
+    tied = {
+        "AAA": _evaluated("AAA", 100.0, 100.0),
+        "BBB": _evaluated("BBB", 100.0, 100.0),
+    }
+    tied_generation = build_asset_momentum_generation(
+        _snapshot(tied), tied, as_of=CUTOFF
+    )
+    assert [(item.asset_id, item.rank) for item in tied_generation.observations] == [
+        ("AAA", 1),
+        ("BBB", 2),
+    ]
+
+
+def test_invalid_asset_stays_visible_and_scope_requires_two_valid_assets() -> None:
+    series = {
+        "AAA": _evaluated("AAA", 100.0, 110.0),
+        "BBB": _evaluated("BBB", 100.0, 90.0),
+    }
+    snapshot = _snapshot(series)
+    invalid = replace(
+        snapshot.records[1],
+        automatic_eligible=False,
+        eligibility_reason="insufficient_bar_coverage",
+    )
+    snapshot = replace(snapshot, records=(snapshot.records[0], invalid))
+
+    generation = build_asset_momentum_generation(snapshot, series, as_of=CUTOFF)
+    rows = {item.asset_id: item for item in generation.observations}
+
+    assert rows["BBB"].status is MomentumObservationStatus.INVALID
+    assert rows["BBB"].reason == "insufficient_bar_coverage"
+    assert rows["AAA"].status is MomentumObservationStatus.INVALID
+    assert rows["AAA"].reason == "insufficient_valid_assets_for_common_mode"
+    assert rows["AAA"].own_momentum is not None
+    assert rows["AAA"].relative_momentum is None
+
+
+def test_future_source_append_does_not_change_frozen_momentum_identity() -> None:
+    original = {
+        "AAA": _evaluated("AAA", 100.0, 110.0),
+        "BBB": _evaluated("BBB", 100.0, 90.0),
+    }
+    snapshot = _snapshot(original)
+    first = build_asset_momentum_generation(snapshot, original, as_of=CUTOFF)
+
+    extended = {
+        "AAA": _evaluated("AAA", 100.0, 110.0, extra=2),
+        "BBB": _evaluated("BBB", 100.0, 90.0, extra=2),
+    }
+    second = build_asset_momentum_generation(snapshot, extended, as_of=CUTOFF)
+
+    assert first.momentum_scan_id == second.momentum_scan_id
+    assert [item.selection_slice_fingerprint for item in first.observations] == [
+        item.selection_slice_fingerprint for item in second.observations
+    ]
+    assert [item.source_artifact_fingerprint for item in first.observations] != [
+        item.source_artifact_fingerprint for item in second.observations
+    ]
+
+
+def test_asset_momentum_owner_has_no_pair_graph_enumeration_path() -> None:
+    source = inspect.getsource(asset_momentum_module)
+
+    assert "qap.scanner.graph" not in source
+    assert "build_ssd_graph" not in source
+    assert "combinations(" not in source

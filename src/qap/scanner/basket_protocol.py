@@ -1,0 +1,101 @@
+"""Typed Scanner-V1 basket and asset-momentum protocol."""
+
+import json
+from dataclasses import dataclass
+from datetime import timedelta
+from decimal import Decimal
+from hashlib import sha256
+from typing import cast
+
+from qap.market import BarInterval
+from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon, protocol_identity
+
+
+@dataclass(frozen=True, slots=True)
+class MomentumRule:
+    horizon: ScannerHorizon
+    resolution: BarInterval
+    formation: timedelta
+
+
+@dataclass(frozen=True, slots=True)
+class BasketProtocol:
+    protocol_id: str = "scanner-v1-basket-v1"
+    source_pair_protocol_id: str = SCANNER_V1_SLICE1.protocol_id
+    source_pair_protocol_identity: str = protocol_identity(SCANNER_V1_SLICE1)
+    venues: tuple[str, ...] = SCANNER_V1_SLICE1.venues
+    execution_bridge: str = "USDT"
+    minimum_economic_assets: int = 3
+    maximum_economic_assets: int = 6
+    neutral_allocation_rule: str = "equal-weight-economic-assets-v1"
+    maximum_asset_tilt: Decimal = Decimal("0.10")
+    mechanical_control_reference: str = (
+        f"{SCANNER_V1_SLICE1.primary_control.policy_id}:"
+        f"{SCANNER_V1_SLICE1.primary_control.control_id}"
+    )
+    pair_blind_control_reference: str = "scanner-v1-pair-blind-relative-momentum-v1"
+    cost_policy_reference: str = SCANNER_V1_SLICE1.cost_policy.policy_id
+    momentum_rules: tuple[MomentumRule, ...] = (
+        MomentumRule(ScannerHorizon.SHORT, BarInterval("1h"), timedelta(days=2)),
+        MomentumRule(ScannerHorizon.MEDIUM, BarInterval("4h"), timedelta(days=10)),
+        MomentumRule(ScannerHorizon.SWING, BarInterval("1d"), timedelta(days=28)),
+    )
+
+    def momentum_rule(self, horizon: ScannerHorizon) -> MomentumRule:
+        if not isinstance(cast(object, horizon), ScannerHorizon):
+            raise TypeError("horizon must be a ScannerHorizon")
+        for rule in self.momentum_rules:
+            if rule.horizon is horizon:
+                return rule
+        raise KeyError(horizon)
+
+    def allowed_basket_resolutions(
+        self,
+        horizon: ScannerHorizon,
+    ) -> tuple[BarInterval, ...]:
+        return SCANNER_V1_SLICE1.horizon(horizon).model_resolutions
+
+
+def basket_protocol_identity(protocol: BasketProtocol) -> str:
+    if not isinstance(cast(object, protocol), BasketProtocol):
+        raise TypeError("protocol must be a BasketProtocol")
+    payload = {
+        "protocol_id": protocol.protocol_id,
+        "source_pair_protocol_id": protocol.source_pair_protocol_id,
+        "source_pair_protocol_identity": protocol.source_pair_protocol_identity,
+        "venues": list(protocol.venues),
+        "execution_bridge": protocol.execution_bridge,
+        "minimum_economic_assets": protocol.minimum_economic_assets,
+        "maximum_economic_assets": protocol.maximum_economic_assets,
+        "neutral_allocation_rule": protocol.neutral_allocation_rule,
+        "maximum_asset_tilt": str(protocol.maximum_asset_tilt),
+        "mechanical_control_reference": protocol.mechanical_control_reference,
+        "pair_blind_control_reference": protocol.pair_blind_control_reference,
+        "cost_policy_reference": protocol.cost_policy_reference,
+        "momentum_rules": [
+            {
+                "horizon": rule.horizon.value,
+                "resolution": rule.resolution.label,
+                "formation_seconds": int(rule.formation.total_seconds()),
+            }
+            for rule in protocol.momentum_rules
+        ],
+    }
+    encoded = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    ).encode("utf-8")
+    return sha256(encoded).hexdigest()
+
+
+SCANNER_V1_BASKET = BasketProtocol()
+
+__all__ = [
+    "BasketProtocol",
+    "MomentumRule",
+    "SCANNER_V1_BASKET",
+    "basket_protocol_identity",
+]
