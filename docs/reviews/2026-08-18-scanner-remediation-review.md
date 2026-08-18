@@ -4,16 +4,16 @@ Update context — 2026-08-18
 
 Trigger: two external review reports supplied after Slice-2 Tasks 4-7 were committed.
 Purpose: verify every supplied finding against the current worktree, de-duplicate overlapping findings, preserve reproducible evidence, and maintain a fix/verification checklist that can be marked as remediation progresses.
-Impact: Slice-1 remediation is verified and committed. Slice 2 must not proceed to Task 8 until the remaining prospective-integrity gaps are remediated and re-verified.
-Evidence: current branch `qap-implementation-20260818` at `8ce0c31` (Slice-1 remediation), base/merge-base `30adfb75e78792c5656003b4c6564ca97fcdcf27`, approved Slice-1/Slice-2 specs and implementation plans, and the verification commands recorded below.
+Impact: Slice-1 and Slice-2 remediation are verified and committed. The tracked remediation findings are closed; Slice 3 remains a separate hard design/approval gate.
+Evidence: current tested branch state `dbc968a` on `qap-implementation-20260818`, base/merge-base `30adfb75e78792c5656003b4c6564ca97fcdcf27`, approved Slice-1/Slice-2 specs and implementation plans, the Slice-1/Slice-2 result records, and the verification commands recorded below.
 
 ## Verdict
 
-**NO-GO — Request changes.**
+**GREEN — Slice-1 / Slice-2 remediation closed.**
 
-Current verified disposition: **0 blockers, 5 major open Slice-2 findings, 0 minor open issues, 15 findings resolved and re-verified.**
+Current verified disposition: **0 blockers, 0 major open findings, 0 minor open issues, 20 findings resolved and re-verified.**
 
-The Slice-1 design did not need reopening; its implementation-fidelity and verification findings are closed. The remaining NO-GO scope is Slice-2 prospective causality, cohort-denominator semantics, and append-only artifact integrity.
+Slice 1 remained architecturally intact while its implementation-fidelity gaps were corrected. Slice 2 now enforces strict prospective causality, zero-member/reselection denominator semantics, exact cohort/checkpoint/qualification integrity, monotonic checkpoint publication, explicit-capital qualification, and the bounded vertical operator path. Slice 3 is not authorized by this closure.
 
 ## Review baseline
 
@@ -56,11 +56,11 @@ The Slice-1 design did not need reopening; its implementation-fidelity and verif
 
 ### Slice-2 prospective integrity
 
-- [ ] **S2-01** Prospective checkpoint timing is not structurally strict: equality at `freeze_at` is accepted and the model has no candidate-specific `forward_start` / first-outcome-completion boundary.
-- [ ] **S2-02** Zero-new-member prospective cohorts are rejected despite the approved denominator contract.
-- [ ] **S2-05** The current cohort model cannot represent required active-freeze deduplication/reselection lineage and the approved automatic/manual cohort denominator fields.
-- [ ] **S2-06** Completed Slice-2 checkpoint table hashes are written to the manifest but not validated when completed evidence is later read/reindexed; tampered qualification data can become authoritative index state.
-- [ ] **S2-07** Slice-2 checkpoint persistence allows retroactive/out-of-order publication; an earlier checkpoint can be added after a later checkpoint has already been observed.
+- [x] **S2-01** Strict freeze/forward/first-outcome timing is structurally enforced and sealed by checkpoint identity. Resolved by `819d91a`; verified in final state `dbc968a`.
+- [x] **S2-02** Zero-new-member automatic cohorts are valid immutable evidence and remain visible in scoreboards. Resolved by `819d91a`; verified in final state `dbc968a`.
+- [x] **S2-05** Active semantic freezes are deduplicated as reselections with separate automatic/manual denominator lineage; matured freezes may open later generations. Resolved by `819d91a`; verified in final state `dbc968a`.
+- [x] **S2-06** Cohort/checkpoint/qualification evidence is exact-file/digest validated before read/reindex; post-publication tamper is rejected. Resolved across `819d91a` and `7d57b66`; verified in final state `dbc968a`.
+- [x] **S2-07** Checkpoint publication advances monotonically per freeze and rejects retroactive backfill/collisions. Resolved by `819d91a`; verified in final state `dbc968a`.
 
 ### Supplied findings now resolved
 
@@ -159,9 +159,9 @@ Verification:
 
 **Mark fixed only when:**
 
-- [ ] A sealed fingerprint is rejected before the storage reader is invoked.
-- [ ] Scanner core still has no dependency on experiment/evaluation/policy/execution.
-- [ ] Regression test proves final-OOS cannot enter scanner warm-up/search/replay.
+- [x] A sealed fingerprint is rejected before the storage reader is invoked.
+- [x] Scanner core still has no dependency on experiment/evaluation/policy/execution.
+- [x] Regression test proves final-OOS cannot enter scanner warm-up/search/replay.
 
 ### S1-04 [Major] Slice-1 completed artifacts do not enforce the exact physical authoritative file set
 
@@ -186,10 +186,10 @@ The experiment subsystem already has an exact-file-set integrity pattern in `src
 
 **Mark fixed only when:**
 
-- [ ] Undeclared authoritative file causes publication/read failure.
-- [ ] Missing declared file causes discovery/read failure.
-- [ ] Digest tamper causes failure.
-- [ ] Completed discovery validates evidence instead of checking only `manifest.json` + `definition.json` + directory name.
+- [x] Undeclared authoritative file causes publication/read failure.
+- [x] Missing declared file causes discovery/read failure.
+- [x] Digest tamper causes failure.
+- [x] Completed discovery validates evidence instead of checking only `manifest.json` + `definition.json` + directory name.
 
 ### S1-05 [Major] Full SSD comparison denominator is not persisted
 
@@ -213,9 +213,9 @@ but `_search_scope()` returns `graph.records`, not graph metadata, and the autho
 
 **Mark fixed only when:**
 
-- [ ] Published artifact contains denominator count and digest for every searched scope.
-- [ ] Manifest/integrity seals the graph metadata.
-- [ ] A regression changes one non-retained valid comparison and proves the digest changes.
+- [x] Published artifact contains denominator count and digest for every searched scope.
+- [x] Manifest/integrity seals the graph metadata.
+- [x] A regression changes one non-retained valid comparison and proves the digest changes.
 
 ### S1-06 [Major] Future source extension re-identifies historical candidates
 
@@ -240,10 +240,10 @@ The approved design explicitly requires future-row append stability for older ca
 
 **Mark fixed only when:**
 
-- [ ] Future rows change whole-source identity.
-- [ ] Old `selection_slice_fingerprint` remains identical.
-- [ ] Old candidate/trial IDs remain identical.
-- [ ] Partial-generation resume still fails if its frozen whole-source identity changed.
+- [x] Future rows change whole-source identity.
+- [x] Old `selection_slice_fingerprint` remains identical.
+- [x] Old candidate/trial IDs remain identical.
+- [x] Partial-generation resume still fails if its frozen whole-source identity changed.
 
 ### S1-07 [Major] Persisted component-version labels disagree with the actual scanner protocol
 
@@ -264,9 +264,9 @@ Only promotion version currently matches.
 
 **Mark fixed only when:**
 
-- [ ] Definition fields equal the exact protocol instance passed to the scan.
-- [ ] Manifest fields repeat the corrected definition values.
-- [ ] Regression uses a modified protocol instance and proves the persisted component labels follow it.
+- [x] Definition fields equal the exact protocol instance passed to the scan.
+- [x] Manifest fields repeat the corrected definition values.
+- [x] Regression uses a modified protocol instance and proves the persisted component labels follow it.
 
 ### S1-08 [Major] Explicit manual deep replay is not wired through production
 
@@ -287,10 +287,10 @@ Only promotion version currently matches.
 
 **Mark fixed only when:**
 
-- [ ] Production entry accepts explicit manual candidate replay IDs.
-- [ ] Manual replay remains outside automatic `10/horizon` count.
-- [ ] Automatic/manual overlap produces one replay attempt with both lineage facts.
-- [ ] CLI/operator path has deterministic validation for unknown candidate IDs.
+- [x] Production entry accepts explicit manual candidate replay IDs.
+- [x] Manual replay remains outside automatic `10/horizon` count.
+- [x] Automatic/manual overlap produces one replay attempt with both lineage facts.
+- [x] CLI/operator path has deterministic validation for unknown candidate IDs.
 
 ### S1-09 [Major] Whole-repository pytest collection fails due scanner `test_cli.py` basename collision
 
@@ -306,8 +306,8 @@ Only promotion version currently matches.
 
 **Mark fixed only when:**
 
-- [ ] Default `uv run pytest -q --collect-only` completes without import mismatch.
-- [ ] Full pytest gate can run without requiring a nonstandard import mode.
+- [x] Default `uv run pytest -q --collect-only` completes without import mismatch.
+- [x] Full pytest gate can run without requiring a nonstandard import mode.
 
 ### S1-10 [Major] `scanner/run.py` violates the hard source-size gate
 
@@ -325,9 +325,9 @@ Only promotion version currently matches.
 
 **Mark fixed only when:**
 
-- [ ] No hand-written scanner source file exceeds 700 lines.
-- [ ] The decomposition does not create circular/new forbidden dependency edges.
-- [ ] Slice-1 end-to-end behavior and replay ordering remain unchanged.
+- [x] No hand-written scanner source file exceeds 700 lines.
+- [x] The decomposition does not create circular/new forbidden dependency edges.
+- [x] Slice-1 end-to-end behavior and replay ordering remain unchanged.
 
 ### S1-11 [Major] Required 500/1,000 benchmark cannot run
 
@@ -345,11 +345,11 @@ Current protocol names are `neighbors_per_asset` and `automatic_replay_cap_per_h
 
 **Mark fixed only when:**
 
-- [ ] Small benchmark smoke runs.
-- [ ] 500-asset result recorded.
-- [ ] 1,000-asset result recorded.
-- [ ] Trial counts and `10/horizon` replay ceiling are included.
-- [ ] Any optimization is justified by the measured bottleneck.
+- [x] Small benchmark smoke runs.
+- [x] 500-asset result recorded.
+- [x] 1,000-asset result recorded.
+- [x] Trial counts and `10/horizon` replay ceiling are included.
+- [x] No optimization was added without measured need; the measured SSD loop remains the documented future target if required.
 
 ### S1-12 [Major] Import-linter does not enforce the scanner architecture boundary
 
@@ -365,10 +365,10 @@ Current protocol names are `neighbors_per_asset` and `automatic_replay_cap_per_h
 
 **Mark fixed only when:**
 
-- [ ] `.importlinter` names scanner restrictions explicitly.
-- [ ] Intentional outer adapter/composition exceptions are narrow and documented.
-- [ ] Temporary prohibited-edge probes make `lint-imports` fail.
-- [ ] Clean configuration returns green after probes are removed.
+- [x] `.importlinter` names scanner restrictions explicitly.
+- [x] Intentional outer adapter/composition exceptions are narrow and documented.
+- [x] Temporary prohibited-edge probes make `lint-imports` fail.
+- [x] Clean configuration returns green after probes are removed.
 
 ### S1-13 [Minor / gate hygiene] Scanner artifact resume test expects the wrong error wording
 
@@ -384,8 +384,8 @@ Current protocol names are `neighbors_per_asset` and `automatic_replay_cap_per_h
 
 **Mark fixed only when:**
 
-- [ ] The targeted test passes.
-- [ ] Tampered frozen definition still fails closed.
+- [x] The targeted test passes.
+- [x] Tampered frozen definition still fails closed.
 
 ### S2-01 [Major] Prospective timing is not strictly enforceable
 
@@ -406,10 +406,10 @@ Current protocol names are `neighbors_per_asset` and `automatic_replay_cap_per_h
 
 **Mark fixed only when:**
 
-- [ ] Outcome completing exactly at freeze is rejected.
-- [ ] `forward_start` is strictly after `freeze_at`.
-- [ ] First counted outcome completes strictly after `forward_start`.
-- [ ] Checkpoint identity seals those boundaries.
+- [x] Outcome completing exactly at freeze is rejected.
+- [x] `forward_start` is strictly after `freeze_at`.
+- [x] First counted outcome completes strictly after `forward_start`.
+- [x] Checkpoint identity seals those boundaries.
 
 ### S2-02 [Major] Zero-new-member cohorts are rejected
 
@@ -425,9 +425,9 @@ Current protocol names are `neighbors_per_asset` and `automatic_replay_cap_per_h
 
 **Mark fixed only when:**
 
-- [ ] Empty automatic cohort is valid and has deterministic identity.
-- [ ] It publishes immutable cohort/freeze evidence without fabricating members.
-- [ ] Zero-member generations remain discoverable in prospective policy summaries.
+- [x] Empty automatic cohort is valid and has deterministic identity.
+- [x] It publishes immutable cohort/freeze evidence without fabricating members.
+- [x] Zero-member generations remain discoverable in prospective policy summaries.
 
 ### S2-03 [Resolved] Mid-relative book friction includes spread cost
 
@@ -463,10 +463,10 @@ Current protocol names are `neighbors_per_asset` and `automatic_replay_cap_per_h
 
 **Mark fixed only when:**
 
-- [ ] Same semantic unmatured candidate is linked as reselection, not duplicated.
-- [ ] Manual membership stays separate from automatic cohort summary.
-- [ ] Cohort persists horizon and member counts.
-- [ ] Matured freeze may legitimately permit a later new generation.
+- [x] Same semantic unmatured candidate is linked as reselection, not duplicated.
+- [x] Manual membership stays separate from automatic cohort summary.
+- [x] Cohort persists horizon and member counts.
+- [x] Matured freeze may legitimately permit a later new generation.
 
 ### S2-06 [Major, related finding] Completed Slice-2 checkpoint digests are not revalidated on read/reindex
 
@@ -486,10 +486,10 @@ with a stale manifest hash still present.
 
 **Mark fixed only when:**
 
-- [ ] Post-publication Parquet value tamper is rejected.
-- [ ] Missing/extra authoritative files are rejected.
-- [ ] Reindexing consumes only validated completed generations.
-- [ ] Integrity regression covers qualification and checkpoint tables.
+- [x] Post-publication Parquet value tamper is rejected.
+- [x] Missing/extra authoritative files are rejected.
+- [x] Reindexing consumes only validated completed generations.
+- [x] Integrity regression covers qualification and checkpoint evidence.
 
 ### S2-07 [Major, related finding] Retroactive checkpoint backfill is accepted after later outcomes exist
 
@@ -503,10 +503,10 @@ with a stale manifest hash still present.
 
 **Mark fixed only when:**
 
-- [ ] Index 2 cannot be followed by new index 1.
-- [ ] Same index with different checkpoint identity is rejected.
-- [ ] `information_end`/window schedule is monotone according to the frozen checkpoint policy.
-- [ ] Append-only ordering has an explicit regression test, including interrupted recovery.
+- [x] Index 2 cannot be followed by new index 1.
+- [x] Same index with different checkpoint identity is rejected.
+- [x] `information_end`/window schedule is monotone according to the frozen checkpoint policy.
+- [x] Append-only ordering has an explicit regression test, including interrupted recovery.
 
 ---
 
@@ -608,25 +608,25 @@ Commands below were run fresh against `d951bf9` plus the two untracked files unl
 
 Slice 1 may move from NO-GO only when all of the following are true:
 
-- [ ] S1-01 through S1-12 are checked off with fresh evidence.
-- [ ] S1-13 is closed or explicitly reclassified with an approved stable error contract.
-- [ ] `uv run pytest -q` completes and passes from the ordinary repository configuration.
-- [ ] `uv run ruff check .` passes.
-- [ ] `uv run ruff format --check .` passes.
-- [ ] `uv run pyright src tests scripts` passes.
-- [ ] `uv run python scripts/check_source_size.py` passes.
-- [ ] `uv run lint-imports` passes **with scanner contracts present**.
-- [ ] repaired 500- and 1,000-asset benchmark evidence is recorded.
-- [ ] clean-checkout Slice-1 scenario suite passes with no shims/untracked dependencies.
-- [ ] adversarial final-OOS, artifact-file-set, source-append identity and SSD-denominator regressions pass.
+- [x] S1-01 through S1-12 are checked off with fresh evidence.
+- [x] S1-13 is closed with the stable fail-closed error contract.
+- [x] `uv run pytest -q` completes and passes from the ordinary repository configuration (`625 passed, 1 skipped`).
+- [x] `uv run ruff check .` passes.
+- [x] `uv run ruff format --check .` passes.
+- [x] `uv run pyright src tests scripts` passes.
+- [x] `uv run python scripts/check_source_size.py` passes.
+- [x] `uv run lint-imports` passes **with scanner contracts present** (`8/8`).
+- [x] repaired 500- and 1,000-asset benchmark evidence is recorded.
+- [x] clean-checkout Slice-1 scenario suite passes with no shims/untracked dependencies.
+- [x] adversarial final-OOS, artifact-file-set, source-append identity and SSD-denominator regressions pass.
 
 Before Slice-2 Task 8 resumes:
 
-- [ ] S2-01, S2-02, S2-05, S2-06 and S2-07 are checked off.
+- [x] S2-01, S2-02, S2-05, S2-06 and S2-07 are checked off.
 - [x] S2-03 mid-relative friction remains green.
 - [x] S2-04 direction-specific capacity / 0.5 haircut remains green.
-- [ ] Prospective checkpoint/cohort artifact tests are updated to enforce the corrected strict timing, denominator, integrity and append-order contracts.
+- [x] Prospective checkpoint/cohort/qualification artifact tests enforce the corrected strict timing, denominator, integrity and append-order contracts.
 
 ## Current recommendation
 
-**FIX FINDINGS THEN RE-REVIEW. Do not merge or declare Slice 1 complete, and do not start Slice-2 Task 8 yet.**
+**Slice 1 and Slice 2 are remediation-complete at tested commit `dbc968a`.** Keep reserved final OOS sealed, do not reinterpret prospective/current evidence as a live trading recommendation, and do not begin Slice 3 without its separately approved design and implementation plan.

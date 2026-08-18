@@ -10,6 +10,11 @@
 > **Impact:** Phase 15 now delegates detailed semantics to the approved slice specs. Scanner V1 has one pair generator, fixed pair-native templates, a separate prospective/liquidity slice, and a later asset-native momentum/basket slice. A generic strategy DSL, selector chooser, optimizer, or “run everything” UI is not Phase-15 scope.
 > **Evidence:** `docs/superpowers/specs/2026-08-18-qap-scanner-slice1-design.md`; `docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md`; 2026-08-18 Deep Research reviews.
 
+> **Implementation status — 2026-08-18**
+> **Slice 1:** complete and remediation-verified; results in `docs/research/2026-08-18-qap-scanner-slice1-results.md`.
+> **Slice 2:** complete and repository-verified at tested commit `dbc968a`; results in `docs/research/2026-08-18-qap-scanner-slice2-results.md`.
+> **Slice 3:** not started. It remains a hard separate design/approval gate and is not authorized by Slice-1/Slice-2 completion.
+
 ## 1. Authoritative slice map
 
 Phase 15 is an umbrella plan. Detailed Scanner-V1 contracts live in the slice specs and take precedence if this plan is less specific.
