@@ -29,6 +29,14 @@ class BasketProtocol:
     maximum_economic_assets: int = 6
     neutral_allocation_rule: str = "equal-weight-economic-assets-v1"
     maximum_asset_tilt: Decimal = Decimal("0.10")
+    basket_construction_rule: str = "manual-only"
+    one_venue_per_basket: bool = True
+    one_horizon_per_basket: bool = True
+    one_decision_resolution_per_basket: bool = True
+    maximum_selected_candidates_per_unordered_pair: int = 1
+    pair_edge_weight_rule: str = "equal"
+    cross_horizon_combination_allowed: bool = False
+    cross_venue_combination_allowed: bool = False
     mechanical_control_reference: str = (
         f"{SCANNER_V1_SLICE1.primary_control.policy_id}:"
         f"{SCANNER_V1_SLICE1.primary_control.control_id}"
@@ -69,6 +77,20 @@ def basket_protocol_identity(protocol: BasketProtocol) -> str:
         "maximum_economic_assets": protocol.maximum_economic_assets,
         "neutral_allocation_rule": protocol.neutral_allocation_rule,
         "maximum_asset_tilt": str(protocol.maximum_asset_tilt),
+        "basket_construction_rule": protocol.basket_construction_rule,
+        "one_venue_per_basket": protocol.one_venue_per_basket,
+        "one_horizon_per_basket": protocol.one_horizon_per_basket,
+        "one_decision_resolution_per_basket": (
+            protocol.one_decision_resolution_per_basket
+        ),
+        "maximum_selected_candidates_per_unordered_pair": (
+            protocol.maximum_selected_candidates_per_unordered_pair
+        ),
+        "pair_edge_weight_rule": protocol.pair_edge_weight_rule,
+        "cross_horizon_combination_allowed": (
+            protocol.cross_horizon_combination_allowed
+        ),
+        "cross_venue_combination_allowed": protocol.cross_venue_combination_allowed,
         "mechanical_control_reference": protocol.mechanical_control_reference,
         "pair_blind_control_reference": protocol.pair_blind_control_reference,
         "cost_policy_reference": protocol.cost_policy_reference,

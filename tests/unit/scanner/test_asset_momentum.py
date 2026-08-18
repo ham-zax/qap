@@ -2,14 +2,22 @@ import inspect
 import math
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import qap.scanner.asset_momentum as asset_momentum_module
+import pytest
 from qap.market import BarInterval, MarketBar, VenueInstrument, validate_bar_series
 from qap.portfolio import AssetId
 from qap.scanner.asset_momentum import (
     MomentumObservationStatus,
     build_asset_momentum_generation,
 )
+from qap.scanner.asset_momentum_artifacts import (
+    AssetMomentumArtifactError,
+    publish_asset_momentum_generation,
+    read_asset_momentum_generation,
+)
+from qap.scanner.basket_protocol import SCANNER_V1_BASKET, basket_protocol_identity
 from qap.scanner.protocol import ScannerHorizon
 from qap.scanner.slices import EvaluatedSeries, evaluate_series
 from qap.scanner.universe import (
@@ -91,6 +99,22 @@ def _snapshot(values: dict[str, EvaluatedSeries]) -> UniverseSnapshot:
     )
 
 
+def test_basket_protocol_freezes_manual_single_scope_contract() -> None:
+    protocol = SCANNER_V1_BASKET
+
+    assert protocol.basket_construction_rule == "manual-only"
+    assert protocol.one_venue_per_basket
+    assert protocol.one_horizon_per_basket
+    assert protocol.one_decision_resolution_per_basket
+    assert protocol.maximum_selected_candidates_per_unordered_pair == 1
+    assert protocol.pair_edge_weight_rule == "equal"
+    assert not protocol.cross_horizon_combination_allowed
+    assert not protocol.cross_venue_combination_allowed
+    assert basket_protocol_identity(protocol) != basket_protocol_identity(
+        replace(protocol, maximum_asset_tilt=protocol.maximum_asset_tilt / 2)
+    )
+
+
 def test_asset_momentum_scores_common_mode_and_deterministic_ties() -> None:
     series = {
         "AAA": _evaluated("AAA", 100.0, 200.0),
@@ -167,6 +191,10 @@ def test_future_source_append_does_not_change_frozen_momentum_identity() -> None
     second = build_asset_momentum_generation(snapshot, extended, as_of=CUTOFF)
 
     assert first.momentum_scan_id == second.momentum_scan_id
+    assert (
+        first.momentum_scan_id
+        == replace(first, source_scan_id="c" * 64).momentum_scan_id
+    )
     assert [item.selection_slice_fingerprint for item in first.observations] == [
         item.selection_slice_fingerprint for item in second.observations
     ]
@@ -181,3 +209,77 @@ def test_asset_momentum_owner_has_no_pair_graph_enumeration_path() -> None:
     assert "qap.scanner.graph" not in source
     assert "build_ssd_graph" not in source
     assert "combinations(" not in source
+
+
+def test_asset_momentum_artifact_round_trip_preserves_invalid_rows(
+    tmp_path: Path,
+) -> None:
+    series = {
+        "AAA": _evaluated("AAA", 100.0, 110.0),
+        "BBB": _evaluated("BBB", 100.0, 90.0),
+    }
+    snapshot = _snapshot(series)
+    snapshot = replace(
+        snapshot,
+        records=(
+            snapshot.records[0],
+            replace(
+                snapshot.records[1],
+                automatic_eligible=False,
+                eligibility_reason="insufficient_bar_coverage",
+            ),
+        ),
+    )
+    generation = build_asset_momentum_generation(snapshot, series, as_of=CUTOFF)
+
+    directory = publish_asset_momentum_generation(tmp_path, generation, snapshot)
+    loaded, loaded_snapshot = read_asset_momentum_generation(directory)
+
+    assert loaded == generation
+    assert loaded_snapshot == snapshot
+    assert loaded.observations[1].status is MomentumObservationStatus.INVALID
+
+
+def test_asset_momentum_artifact_rejects_tamper_and_undeclared_file(
+    tmp_path: Path,
+) -> None:
+    series = {
+        "AAA": _evaluated("AAA", 100.0, 110.0),
+        "BBB": _evaluated("BBB", 100.0, 90.0),
+    }
+    snapshot = _snapshot(series)
+    generation = build_asset_momentum_generation(snapshot, series, as_of=CUTOFF)
+
+    tampered = publish_asset_momentum_generation(tmp_path / "tamper", generation, snapshot)
+    (tampered / "definition.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(AssetMomentumArtifactError, match="digest mismatch"):
+        read_asset_momentum_generation(tampered)
+
+    extra = publish_asset_momentum_generation(tmp_path / "extra", generation, snapshot)
+    (extra / "unexpected.txt").write_text("unexpected", encoding="utf-8")
+    with pytest.raises(AssetMomentumArtifactError, match="file set mismatch"):
+        read_asset_momentum_generation(extra)
+
+
+def test_asset_momentum_artifact_reuses_frozen_semantic_generation_after_append(
+    tmp_path: Path,
+) -> None:
+    original = {
+        "AAA": _evaluated("AAA", 100.0, 110.0),
+        "BBB": _evaluated("BBB", 100.0, 90.0),
+    }
+    snapshot = _snapshot(original)
+    first = build_asset_momentum_generation(snapshot, original, as_of=CUTOFF)
+    first_path = publish_asset_momentum_generation(tmp_path, first, snapshot)
+
+    extended = {
+        "AAA": _evaluated("AAA", 100.0, 110.0, extra=2),
+        "BBB": _evaluated("BBB", 100.0, 90.0, extra=2),
+    }
+    second = build_asset_momentum_generation(snapshot, extended, as_of=CUTOFF)
+    second_path = publish_asset_momentum_generation(tmp_path, second, snapshot)
+
+    assert first.momentum_scan_id == second.momentum_scan_id
+    assert second_path == first_path
+    loaded, _ = read_asset_momentum_generation(first_path)
+    assert loaded == first

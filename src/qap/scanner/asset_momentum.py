@@ -62,7 +62,6 @@ class AssetMomentumGeneration:
         payload = {
             "schema": "qap.scanner.asset-momentum.v1",
             "protocol_identity": self.protocol_identity,
-            "source_scan_id": self.source_scan_id,
             "venue": self.venue,
             "horizon": self.horizon.value,
             "as_of": self.as_of.isoformat(),
@@ -202,9 +201,7 @@ def build_asset_momentum_generation(
         )
     else:
         common_mode = sum(score for _, score in valid_scores) / valid_count
-        relatives = {
-            asset_id: score - common_mode for asset_id, score in valid_scores
-        }
+        relatives = {asset_id: score - common_mode for asset_id, score in valid_scores}
         ranked = sorted(relatives, key=lambda asset: (-relatives[asset], asset))
         ranks = {asset_id: index for index, asset_id in enumerate(ranked, start=1)}
         observations = tuple(
@@ -212,9 +209,7 @@ def build_asset_momentum_generation(
                 item,
                 common_mode=(common_mode if item.own_momentum is not None else None),
                 relative_momentum=(
-                    relatives[item.asset_id]
-                    if item.asset_id in relatives
-                    else None
+                    relatives[item.asset_id] if item.asset_id in relatives else None
                 ),
                 common_mode_member_count=valid_count,
                 rank=ranks.get(item.asset_id),
