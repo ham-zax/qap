@@ -152,9 +152,6 @@ def build_asset_momentum_generation(
             raise AssetMomentumError("evaluated asset cutoff mismatch")
         if evaluated.window_start != cutoff - rule.formation:
             raise AssetMomentumError("evaluated asset formation window mismatch")
-        if evaluated.selection_slice_fingerprint != record.selection_slice_fingerprint:
-            raise AssetMomentumError("evaluated slice does not match universe snapshot")
-
         admitted = record.automatic_eligible or record.forensic_research_allowed
         score: float | None = None
         reason = record.eligibility_reason

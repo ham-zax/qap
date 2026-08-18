@@ -14,13 +14,20 @@ from pydantic import (
     ConfigDict,
     Field,
     JsonValue,
-    PositiveInt,
     StringConstraints,
     field_validator,
     model_validator,
 )
 
 from qap.execution import CostModel, ExecutionQuantization
+from qap.experiment.basket_manifest import validate_basket_manifest_contract
+from qap.experiment.control_specs import (
+    BandPartialControlSpec,
+    ContributionAwareBandControlSpec,
+    ControlSpec,
+    PairBlindRelativeMomentumControlSpec,
+    PeriodicFixedWeightControlSpec,
+)
 from qap.market import BarInterval, VenueInstrument
 from qap.portfolio import AssetId, ExternalInventoryFlow, PortfolioState
 
@@ -322,50 +329,6 @@ class ExternalFlowSpec(_FrozenModel):
         )
 
 
-class PeriodicFixedWeightControlSpec(_FrozenModel):
-    kind: Literal["periodic_fixed_weight"]
-    control_id: Identifier
-    cadence_bars: PositiveInt
-
-
-class BandPartialControlSpec(_FrozenModel):
-    kind: Literal["band_partial"]
-    control_id: Identifier
-    band_width: ExactDecimal
-    partial_correction_fraction: ExactDecimal
-
-    @model_validator(mode="after")
-    def validate_parameters(self) -> Self:
-        if not (_ZERO <= self.band_width < _ONE):
-            raise ValueError("band_width must be in [0, 1)")
-        if not (_ZERO < self.partial_correction_fraction <= _ONE):
-            raise ValueError("partial_correction_fraction must be in (0, 1]")
-        return self
-
-
-class ContributionAwareBandControlSpec(_FrozenModel):
-    kind: Literal["contribution_aware_band"]
-    control_id: Identifier
-    band_width: ExactDecimal
-    partial_correction_fraction: ExactDecimal
-
-    @model_validator(mode="after")
-    def validate_parameters(self) -> Self:
-        if not (_ZERO <= self.band_width < _ONE):
-            raise ValueError("band_width must be in [0, 1)")
-        if not (_ZERO < self.partial_correction_fraction <= _ONE):
-            raise ValueError("partial_correction_fraction must be in (0, 1]")
-        return self
-
-
-ControlSpec = Annotated[
-    PeriodicFixedWeightControlSpec
-    | BandPartialControlSpec
-    | ContributionAwareBandControlSpec,
-    Field(discriminator="kind"),
-]
-
-
 class BenchmarkSpec(_FrozenModel):
     relationship_alpha_claim: bool = False
     primary_incremental_benchmark: Identifier | None = None
@@ -624,6 +587,20 @@ class ExperimentManifest(_FrozenModel):
             raise ValueError(
                 "primary-control metric requires primary_incremental_benchmark"
             )
+        validate_basket_manifest_contract(
+            policy_component_id=self.policy.component_id,
+            policy_config=self.policy.config,
+            interval=self.interval,
+            relationship_component_id=self.relationship.component_id,
+            relationship_config=self.relationship.config,
+            execution_mode=self.execution.mode,
+            has_adverse_cost=self.execution.adverse_cost_scenario is not None,
+            relationship_alpha_claim=self.benchmarks.relationship_alpha_claim,
+            primary_incremental_benchmark=(
+                self.benchmarks.primary_incremental_benchmark
+            ),
+            controls=self.benchmarks.controls,
+        )
         return self
 
     def asset(self, key: str) -> AssetId:
@@ -693,6 +670,7 @@ __all__ = [
     "ExperimentManifest",
     "ExternalFlowSpec",
     "InstrumentSpec",
+    "PairBlindRelativeMomentumControlSpec",
     "PeriodicFixedWeightControlSpec",
     "PrimaryMetric",
     "UniverseMode",

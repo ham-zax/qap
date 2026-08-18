@@ -507,6 +507,7 @@ def run_deterministic_replay(
                     )
                     multi_asset_execution = execute_multi_asset_rebalance(
                         decision_id=decision.decision_id,
+                        fill_id_prefix=(f"{normalized_run_id}:{decision.decision_id}"),
                         execution_timestamp=decision_time,
                         plan=selected_plan,
                         bridge=execution_bridge,

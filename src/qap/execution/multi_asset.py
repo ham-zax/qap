@@ -246,6 +246,7 @@ def _execute_planned_orders(
     *,
     planned: tuple[_PlannedOrder, ...],
     decision_id: str,
+    fill_id_prefix: str,
     execution_timestamp: datetime,
     starting_state: PortfolioState,
     bridge: AssetId,
@@ -287,7 +288,7 @@ def _execute_planned_orders(
 
         routed = execute_routed_conversion(
             route=order.route,
-            fill_id_prefix=f"{decision_id}:order-{order_index + 1}",
+            fill_id_prefix=f"{fill_id_prefix}:order-{order_index + 1}",
             decision_id=decision_id,
             execution_timestamp=execution_timestamp,
             source_quantity=requested_source,
@@ -328,6 +329,7 @@ def execute_multi_asset_rebalance(
     *,
     decision_id: str,
     execution_timestamp: datetime,
+    fill_id_prefix: str | None = None,
     plan: RebalancePlan,
     bridge: AssetId,
     instruments: Iterable[VenueInstrument],
@@ -343,6 +345,10 @@ def execute_multi_asset_rebalance(
         raise TypeError("plan must be RebalancePlan")
     if not isinstance(cast(object, bridge), AssetId):
         raise TypeError("bridge must be AssetId")
+
+    prefix = decision_id if fill_id_prefix is None else fill_id_prefix
+    if not isinstance(cast(object, prefix), str) or not prefix.strip():
+        raise ValueError("fill_id_prefix must be a non-empty string when supplied")
 
     available = _validated_instruments(instruments)
     declared_assets = frozenset((*plan.target.weights, bridge))
@@ -367,6 +373,7 @@ def execute_multi_asset_rebalance(
     preview = _execute_planned_orders(
         planned=planned,
         decision_id=decision_id,
+        fill_id_prefix=prefix,
         execution_timestamp=execution_timestamp,
         starting_state=plan.current_state,
         bridge=bridge,
@@ -381,6 +388,7 @@ def execute_multi_asset_rebalance(
     executed = _execute_planned_orders(
         planned=planned,
         decision_id=decision_id,
+        fill_id_prefix=prefix,
         execution_timestamp=execution_timestamp,
         starting_state=plan.current_state,
         bridge=bridge,

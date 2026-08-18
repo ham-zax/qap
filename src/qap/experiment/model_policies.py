@@ -6,16 +6,13 @@ from decimal import Decimal, InvalidOperation
 from typing import cast
 
 from qap.execution import ReplayPolicy
+from qap.experiment.cross_sectional_policy import cross_sectional_replay_policy
 from qap.experiment.data import ExperimentSetupError, LoadedExperimentData
 from qap.experiment.manifest import ExperimentManifest
 from qap.experiment.momentum import slow_log_momentum
 from qap.market import AlignedBarSeries, AlignedInstrumentSeries, PriceSnapshot
 from qap.policy import PolicyDecision
-from qap.policy.evidence_tilt import (
-    CrossSectionalTiltPolicy,
-    EvidenceTiltPolicy,
-    NeutralBandMode,
-)
+from qap.policy.evidence_tilt import EvidenceTiltPolicy, NeutralBandMode
 from qap.portfolio import (
     AllocationTarget,
     AssetId,
@@ -29,8 +26,6 @@ from qap.relationship import (
     build_log_ratio_series,
 )
 from qap.relationship.models import (
-    CrossSectionalRelativeStatus,
-    cross_sectional_relative_observation,
     rolling_log_ratio_observation,
     rolling_residual_observation,
 )
@@ -392,47 +387,6 @@ class _RollingResidualReplayPolicy:
         )
 
 
-@dataclass(slots=True)
-class _CrossSectionalReplayPolicy:
-    policy_id: str
-    loaded: LoadedExperimentData
-    basket: tuple[AssetId, ...]
-    window_returns: int
-    tilt: CrossSectionalTiltPolicy
-
-    def decide(
-        self,
-        *,
-        as_of: datetime,
-        current_state: PortfolioState,
-        price_snapshot: PriceSnapshot,
-        applied_flows: tuple[ExternalInventoryFlow, ...],
-        evidence_ids: Iterable[str] = (),
-    ) -> PolicyDecision:
-        del price_snapshot, applied_flows, evidence_ids
-        observation = cross_sectional_relative_observation(
-            self.loaded.aligned,
-            basket=self.basket,
-            window_returns=self.window_returns,
-            as_of=as_of,
-        )
-        scores = (
-            observation.scores
-            if observation.status is CrossSectionalRelativeStatus.VALID
-            else None
-        )
-        return self.tilt.decide(
-            as_of=as_of,
-            current_state=current_state,
-            scores=scores,
-            evidence_id=_decision_evidence_id(
-                model_id=observation.model_id,
-                model_version=observation.model_version,
-                input_fingerprint=observation.input_fingerprint,
-            ),
-        )
-
-
 def _compose_momentum(
     manifest: ExperimentManifest,
     loaded: LoadedExperimentData,
@@ -634,7 +588,7 @@ def _compose_cross_sectional(
             "cross_sectional_tilt config must contain neutral_weights and maximum_tilt"
         )
     policy_id = "strategy:cross_sectional_tilt"
-    policy = _CrossSectionalReplayPolicy(
+    policy = cross_sectional_replay_policy(
         policy_id=policy_id,
         loaded=loaded,
         basket=tuple(manifest.asset(key) for key in manifest.basket),
@@ -642,13 +596,10 @@ def _compose_cross_sectional(
             relationship["window_returns"],
             field_name="relationship.config.window_returns",
         ),
-        tilt=CrossSectionalTiltPolicy(
-            policy_id=policy_id,
-            neutral_target=_neutral_target(manifest, policy_config),
-            maximum_tilt=_exact_decimal(
-                policy_config["maximum_tilt"],
-                field_name="policy.config.maximum_tilt",
-            ),
+        neutral_target=_neutral_target(manifest, policy_config),
+        maximum_tilt=_exact_decimal(
+            policy_config["maximum_tilt"],
+            field_name="policy.config.maximum_tilt",
         ),
     )
     return ModelPolicyComposition(policy_id=policy_id, policy=policy)

@@ -13,6 +13,14 @@ from qap.execution import (
     ReplayPolicy,
     run_deterministic_replay,
 )
+from qap.experiment.basket_manifest import (
+    BASKET_MAXIMUM_TILT,
+    pair_blind_window_returns,
+)
+from qap.experiment.basket_policy import (
+    BasketPolicyComposition,
+    compose_basket_strategy_policy,
+)
 from qap.experiment.controls import (
     BandPartialPolicy,
     ContributionAwareBandPolicy,
@@ -21,6 +29,7 @@ from qap.experiment.controls import (
     StrictHodlPolicy,
     starting_value_target,
 )
+from qap.experiment.cross_sectional_policy import cross_sectional_replay_policy
 from qap.experiment.data import (
     DatasetFingerprintMismatchError,
     ExperimentSetupError,
@@ -41,6 +50,7 @@ from qap.experiment.manifest import (
     ContributionAwareBandControlSpec,
     DataRole,
     ExperimentManifest,
+    PairBlindRelativeMomentumControlSpec,
     PeriodicFixedWeightControlSpec,
 )
 from qap.experiment.model_policies import (
@@ -56,6 +66,7 @@ from qap.portfolio import (
     ExternalInventoryFlow,
     PortfolioLedger,
 )
+from qap.portfolio._decimal import divide
 from qap.relationship import RelationshipObservation
 
 _ZERO = Decimal("0")
@@ -158,7 +169,9 @@ def _sequence(value: object, *, field: str) -> Sequence[object]:
 def _strategy_policy(
     manifest: ExperimentManifest,
     loaded: LoadedExperimentData,
-) -> _PolicyComposition | ModelPolicyComposition:
+) -> _PolicyComposition | ModelPolicyComposition | BasketPolicyComposition:
+    if manifest.policy.component_id == "basket_graph":
+        return compose_basket_strategy_policy(manifest, loaded)
     if not (
         manifest.relationship.component_id == "none"
         and not manifest.relationship.config
@@ -224,7 +237,7 @@ def _run_role(
     *,
     prepared: PreparedExperiment,
     role: str,
-    composition: _PolicyComposition | ModelPolicyComposition,
+    composition: _PolicyComposition | ModelPolicyComposition | BasketPolicyComposition,
     flows: tuple[ExternalInventoryFlow, ...],
     cost_model_override: CostModel | None = None,
 ) -> RoleRun:
@@ -283,6 +296,7 @@ def _control_policy(
     target: AllocationTarget,
     first_decision_time: datetime,
     manifest: ExperimentManifest,
+    loaded: LoadedExperimentData,
 ) -> _PolicyComposition:
     if isinstance(control, PeriodicFixedWeightControlSpec):
         policy: ReplayPolicy = PeriodicFixedWeightPolicy(
@@ -301,6 +315,25 @@ def _control_policy(
             partial_correction_fraction=control.partial_correction_fraction,
         )
         control_id = control.control_id
+    elif isinstance(control, PairBlindRelativeMomentumControlSpec):
+        basket = tuple(manifest.asset(key) for key in manifest.basket)
+        neutral_weight = divide(Decimal("1"), Decimal(len(basket)))
+        neutral = AllocationTarget.for_basket(
+            {asset: neutral_weight for asset in basket},
+            basket=basket,
+        )
+        control_id = control.control_id
+        policy = cross_sectional_replay_policy(
+            policy_id=f"control:{control_id}",
+            loaded=loaded,
+            basket=basket,
+            window_returns=pair_blind_window_returns(
+                manifest.policy.config,
+                manifest.interval,
+            ),
+            neutral_target=neutral,
+            maximum_tilt=BASKET_MAXIMUM_TILT,
+        )
     else:
         validated = cast(ContributionAwareBandControlSpec, control)
         policy = ContributionAwareBandPolicy(
@@ -384,6 +417,7 @@ def execute_precommitted_experiment(
             target=target,
             first_decision_time=first_decision_time,
             manifest=manifest,
+            loaded=prepared.loaded,
         )
         role_runs.append(
             _run_role(
@@ -418,6 +452,7 @@ def execute_precommitted_experiment(
                 target=target,
                 first_decision_time=first_decision_time,
                 manifest=manifest,
+                loaded=prepared.loaded,
             )
             role_runs.append(
                 _run_role(
