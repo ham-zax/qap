@@ -4,8 +4,9 @@ from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-import qap.scanner.asset_momentum as asset_momentum_module
 import pytest
+
+import qap.scanner.asset_momentum as asset_momentum_module
 from qap.market import BarInterval, MarketBar, VenueInstrument, validate_bar_series
 from qap.portfolio import AssetId
 from qap.scanner.asset_momentum import (
@@ -250,7 +251,11 @@ def test_asset_momentum_artifact_rejects_tamper_and_undeclared_file(
     snapshot = _snapshot(series)
     generation = build_asset_momentum_generation(snapshot, series, as_of=CUTOFF)
 
-    tampered = publish_asset_momentum_generation(tmp_path / "tamper", generation, snapshot)
+    tampered = publish_asset_momentum_generation(
+        tmp_path / "tamper",
+        generation,
+        snapshot,
+    )
     (tampered / "definition.json").write_text("{}", encoding="utf-8")
     with pytest.raises(AssetMomentumArtifactError, match="digest mismatch"):
         read_asset_momentum_generation(tampered)
