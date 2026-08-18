@@ -36,9 +36,7 @@ DEFINITION = "definition.json"
 ELIGIBLE_ASSETS = "eligible_assets.parquet"
 OBSERVATIONS = "observations.parquet"
 MANIFEST = "manifest.json"
-AUTHORITATIVE_FILES = frozenset(
-    {DEFINITION, ELIGIBLE_ASSETS, OBSERVATIONS, MANIFEST}
-)
+AUTHORITATIVE_FILES = frozenset({DEFINITION, ELIGIBLE_ASSETS, OBSERVATIONS, MANIFEST})
 
 OBSERVATION_SCHEMA = pa.schema(
     [
