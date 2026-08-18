@@ -15,10 +15,11 @@ Trigger: user approval of the bounded Scanner-V1 architecture, Slice 1 correctio
 Slice 2 prospective/liquidity design, and Phase-15 reconciliation.
 Purpose: authorize the implementation mission to execute the new scanner slices in
 dependency order without reverting to the earlier generic NxM scanner concept.
-Impact: Phases 14 and 15 are explicit mission scope. Slice 1 and Slice 2 are now
-complete. Slice 3 has a detailed design and implementation plan in the repository,
-but implementation remains separately gated until the user explicitly approves
-those documents; do not treat documentation existence as implementation authority.
+Impact: Phases 14 and 15 are explicit mission scope. Scanner V1 Slices 1–3 are
+now complete and repository-verified; Slice-3 final source/test state is `a79bd4d`
+and results are recorded in `docs/research/2026-08-18-qap-scanner-slice3-results.md`.
+The frozen Slice-4 unified-workbench plan is post-Phase-15 product work and must not
+begin merely because Phase 15 is complete; require an explicit user start for Slice 4.
 Evidence: docs/plans/15-research-scanner-and-candidate-workbench.md;
 docs/superpowers/specs/2026-08-18-qap-scanner-slice1-design.md;
 docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md;
@@ -376,8 +377,8 @@ Required boundaries:
 - existing QAP replay remains the source of candidate forward economics;
 - do not algebraically sum overlapping pair candidate P&Ls into a fake scanner
   portfolio return;
-- scanner-policy evidence records what the frozen selection procedure produced,
-  while combined capital allocation waits for Slice 3's one-inventory resolver;
+- scanner-policy evidence records what the frozen selection procedure produced;
+  combined capital allocation is owned separately by Slice 3's one-inventory resolver;
 - `forward_paper` remains operational dry-run evidence and may not masquerade as
   prospective scanner-alpha evidence;
 - capture promoted/pinned instruments' L1/book-ticker and shallow depth using the
@@ -406,23 +407,22 @@ Do NOT add in Slice 2:
 Slice 3 / Phase-15 completion gate
 ------------------------------
 
-Slice 3 is intentionally NOT authorized from the Phase-15 umbrella description
-or from document existence alone. The detailed authority is now present at:
+Slice 3 is complete and repository-verified. Its detailed authority remains:
 
 - docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-design.md
 - docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md
 
 Those documents freeze the O(N) asset-native momentum stream, manual same-venue
 3-6 asset BasketDefinition, exact ternary graph resolver, pair-blind momentum
-control, ordinary-QAP multi-fill/multi-asset replay integration, and read-only
-Candidate Workbench boundaries. They also explicitly defer automatic basket
-discovery, learned weights, cross-venue inventory, basket capacity, and live action.
+control, and ordinary-QAP multi-fill/multi-asset replay integration. The former
+Slice-3 Candidate Workbench is explicitly superseded by the frozen Slice-4 unified
+workbench plan. Automatic basket discovery, learned weights, cross-venue inventory,
+basket capacity, and live action remain deferred.
 
-Before implementing Slice 3, require explicit user approval of the detailed design
-and implementation plan. Do not infer authorization merely because both files are
-present. Once that approval exists, implement the plan in the same mission and then
-run the integrated Phase-15 exit criteria. A negative/no-survivor scanner or basket
-result is valid research evidence; never loosen rules to force a candidate.
+Slice-3 implementation and the integrated Phase-15 exit criteria are complete. A
+negative/no-survivor scanner or basket result remains valid research evidence; never
+loosen rules to force a candidate. Do not proceed into Slice 4 without an explicit
+user start for the separately frozen Slice-4 plan.
 
 
 ======================================================================
@@ -1392,11 +1392,12 @@ The mission is complete only when ALL of the following are true:
 6. Required frontend tests/typechecks/builds are freshly green.
 
 7. Planned backend/frontend integration works locally, including the Phase-14
-   critical workbench flows and the Phase-15 bounded scanner/candidate workflow.
-   Phase 15 must include verified Slice-1 bounded discovery and Slice-2 prospective/
-   liquidity behavior. Slice 3 may be implemented only after the user explicitly
-   approves the now-present detailed design and implementation plan; Phase 15 closes
-   only after that approved Slice-3 implementation is verified.
+   critical workbench flows and the Phase-15 bounded scanner/basket backend.
+   Phase 15 includes verified Slice-1 bounded discovery, Slice-2 prospective/
+   liquidity behavior, and the completed Slice-3 asset-momentum/manual-basket
+   one-inventory QAP path. The former Slice-3 Candidate Workbench is superseded by
+   the separately frozen Slice-4 unified-workbench plan and is not a Phase-15 exit
+   requirement.
 
 8. Agent-browser product inspection has been performed when applicable and material
    UI/integration defects found there have been addressed or documented.

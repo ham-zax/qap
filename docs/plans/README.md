@@ -4,7 +4,7 @@
 
 ## Current wave
 
-Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is implemented and its integrated rendered acceptance is green. **Phase 15 — Research Scanner and Basket Backend** is the active research-kernel wave: Scanner V1 Slices 1 and 2 are complete and repository-verified, and Slice 3 is implemented through Milestone 6 with authoritative handoff baseline `dd9df14`; Milestone 7 plus backend closure remain. The former Slice-3 Candidate Workbench milestone is explicitly superseded by the post-Phase-15 **Slice 4 Unified QAP Workbench** plan. Later dependent work still begins only after predecessor exit criteria are green or the user explicitly approves a documented exception.
+Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is implemented and its integrated rendered acceptance is green. **Phase 15 — Research Scanner and Basket Backend** is complete and repository-verified through Scanner V1 Slice 3 at final source/test state `a79bd4d`; Slice-3 results are in `docs/research/2026-08-18-qap-scanner-slice3-results.md`. The former Slice-3 Candidate Workbench milestone is explicitly superseded by the post-Phase-15 **Slice 4 Unified QAP Workbench** plan, which is frozen but not yet implemented. Later dependent work still begins only after predecessor exit criteria are green or the user explicitly approves a documented exception.
 
 ## Implementation waves
 

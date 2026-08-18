@@ -13,7 +13,7 @@
 > **Implementation status — 2026-08-18**
 > **Slice 1:** complete and remediation-verified; results in `docs/research/2026-08-18-qap-scanner-slice1-results.md`.
 > **Slice 2:** complete and repository-verified at tested commit `809431c`; results in `docs/research/2026-08-18-qap-scanner-slice2-results.md`.
-> **Slice 3:** explicitly approved and implemented through Milestone 6; implementation landed at `46ef407` and research-integrity closure at `dd9df14`, which is the authoritative Milestone-6 handoff baseline. Milestone 7 remains the final backend vertical; the former Milestone-8 Candidate Workbench is superseded by Slice 4, and Milestone 9 closes the Slice-3 backend/Phase-15 research kernel.
+> **Slice 3:** complete and repository-verified. Milestone-6 integrity closure is `dd9df14`, the Milestone-7 application vertical is `0a15506`, and the final repository-verified Slice-3 source/test state is `a79bd4d`. The former Milestone-8 Candidate Workbench is superseded by Slice 4; Milestone-9 backend/Phase-15 research-kernel closure is complete. Results: `docs/research/2026-08-18-qap-scanner-slice3-results.md`.
 
 > **Product-boundary amendment — 2026-08-19**
 > The standalone Slice-3 read-only Candidate Workbench is intentionally not implemented. One unified Slice-4 QAP application/workbench will expose the completed Slice-1 discovery, Slice-2 prospective/actionability, and Slice-3 basket-research operations instead of duplicating API DTOs, route hierarchies, navigation, and frontend evidence views across two consecutive workbenches.
@@ -125,7 +125,7 @@ Prospective evidence does not grant live authority.
 
 ## 6. Slice 3 — designed basket and broader discovery surface
 
-The detailed Slice-3 design is now `docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-design.md`, with its file/task plan at `docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md`. Those documents are the detailed authority if this umbrella summary is less specific. Implementation still requires explicit user approval.
+The detailed Slice-3 design is `docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-design.md`, with its completed file/task plan at `docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md`. Those documents remain the detailed authority if this umbrella summary is less specific. Verified results are recorded in `docs/research/2026-08-18-qap-scanner-slice3-results.md`.
 
 The frozen Scanner-V1 boundary is now:
 
@@ -174,7 +174,7 @@ No scanner table becomes an alternative owner of run economics.
 
 Slice 1 is pair-native and may use the existing deterministic historical direct replay to compare QAP, matched HODL, and the strongest declared simple control under identical costs/timing **only when a real direct venue instrument and admitted historical bars exist for that candidate pair**. Discovered indirect crosses may remain scout/research evidence but are ineligible for authoritative deep replay; Slice 1 must not synthesize a cross, route through a bridge, or pretend the single-instrument replay engine executed Phase-11 bridge semantics. It must not synthesize historical venue metadata or Binance/Gate MARKET notional-reference truth from current exchange state or OHLCV. Missing contemporaneous execution/capacity observations remain unknown.
 
-Slice 2 is the first scanner slice allowed to turn captured current public order constraints/spread/depth/reference evidence into `research_only`, `small_capacity`, or `tradable_now` statements. Its capacity math is conservative: required order fraction comes from the frozen policy's 40/60↔60/40 transition envelope plus any larger current drift correction, and the liquidity friction ceiling derives only from the frozen adverse QAP `CostModel`. Required book snapshots that cannot fill a tested size make that size infeasible rather than disappearing from the percentile denominator. A future approved Slice 3 must use the existing Phase-11 multi-asset/bridge executor for basket execution rather than creating scanner-owned routing.
+Slice 2 is the first scanner slice allowed to turn captured current public order constraints/spread/depth/reference evidence into `research_only`, `small_capacity`, or `tradable_now` statements. Its capacity math is conservative: required order fraction comes from the frozen policy's 40/60↔60/40 transition envelope plus any larger current drift correction, and the liquidity friction ceiling derives only from the frozen adverse QAP `CostModel`. Required book snapshots that cannot fill a tested size make that size infeasible rather than disappearing from the percentile denominator. Slice 3 uses the existing Phase-11 multi-asset/bridge executor for basket execution and does not create scanner-owned routing.
 
 ### Forward evidence
 
@@ -258,10 +258,10 @@ Phase 15 is complete only when all approved scanner slices have reached their ow
 - [x] forward candidate evidence is frozen before outcomes arrive;
 - [x] liquidity/capacity claims are backed by captured market evidence or fail closed;
 - [x] historical missing depth is not retroactively fabricated;
-- [ ] broad momentum is implemented asset-native rather than pairwise NxM;
-- [ ] user-selected basket research produces one long-only QAP target/inventory through the approved Slice-3 resolver;
+- [x] broad momentum is implemented asset-native rather than pairwise NxM;
+- [x] user-selected basket research produces one long-only QAP target/inventory through the approved Slice-3 resolver;
 - [x] negative/no-survivor research generations remain valid outcomes;
-- [x] no live/deployment authority has been introduced through Slices 1–2.
+- [x] no live/deployment authority has been introduced through Slices 1–3.
 
 ## 13. Stop conditions
 
