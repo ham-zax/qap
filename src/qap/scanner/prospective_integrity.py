@@ -21,8 +21,6 @@ from qap.scanner.prospective_artifact_schemas import (
     LIQUIDITY_TABLE,
     MANIFEST,
     OUTCOME_FILE,
-    QUALIFICATION_SCHEMA,
-    QUALIFICATION_TABLE,
 )
 
 
@@ -114,7 +112,6 @@ def validate_completed_generation(
     schemas = {
         CHECKPOINT_TABLE: CHECKPOINT_SCHEMA,
         LIQUIDITY_TABLE: LIQUIDITY_SCHEMA,
-        QUALIFICATION_TABLE: QUALIFICATION_SCHEMA,
     }
     tables = {
         name: _read_table(directory / name, schema) for name, schema in schemas.items()

@@ -36,8 +36,6 @@ from qap.scanner.prospective_artifact_schemas import (
     OUTCOME_FILE,
     OUTCOME_INDEX_SCHEMA,
     OUTCOMES_INDEX,
-    QUALIFICATION_SCHEMA,
-    QUALIFICATION_TABLE,
 )
 from qap.scanner.prospective_integrity import (
     ProspectiveArtifactError,
@@ -46,7 +44,6 @@ from qap.scanner.prospective_integrity import (
     read_outcome,
     validate_completed_generation,
 )
-from qap.scanner.qualification import QualificationReason, QualificationState
 
 
 def _identity(value: str, *, field: str) -> str:
@@ -121,40 +118,6 @@ class LiquidityEvidenceRecord:
     fee_bps: Decimal
     book_price_impact_bps: Decimal | None
     total_friction_bps: Decimal | None
-
-
-@dataclass(frozen=True, slots=True)
-class CapacityQualificationRecord:
-    checkpoint_id: str
-    candidate_id: str
-    freeze_id: str
-    as_of: datetime
-    requested_capital: Decimal
-    prospective_protocol_version: str
-    prospective_protocol_identity: str
-    capture_snapshot_ids: tuple[str, ...]
-    market_metadata_fingerprint: str
-    q_star_buy: Decimal | None
-    q_safe_buy: Decimal | None
-    q_star_sell: Decimal | None
-    q_safe_sell: Decimal | None
-    current_base_weight: Decimal | None
-    required_buy_fraction: Decimal | None
-    required_sell_fraction: Decimal | None
-    candidate_capital_ceiling: Decimal | None
-    qualification_state: QualificationState
-    reason: QualificationReason
-    eligibility_resolved: bool
-    capture_contract_satisfied: bool
-    current_two_way_trading: bool
-    order_constraints_satisfied: bool
-    requested_capital_qap_run_id: str | None
-    requested_baseline_gate_passed: bool
-    requested_adverse_gate_passed: bool
-    lower_tested_capital: Decimal | None
-    lower_capital_qap_run_id: str | None
-    lower_baseline_gate_passed: bool
-    lower_adverse_gate_passed: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -395,55 +358,12 @@ def _liquidity_table(records: tuple[LiquidityEvidenceRecord, ...]) -> Any:
     return pa.Table.from_pylist(rows, schema=LIQUIDITY_SCHEMA)
 
 
-def _qualification_table(records: tuple[CapacityQualificationRecord, ...]) -> Any:
-    rows = [
-        {
-            "checkpoint_id": item.checkpoint_id,
-            "candidate_id": item.candidate_id,
-            "freeze_id": item.freeze_id,
-            "as_of": item.as_of,
-            "requested_capital": _decimal_text(item.requested_capital),
-            "prospective_protocol_version": item.prospective_protocol_version,
-            "prospective_protocol_identity": item.prospective_protocol_identity,
-            "capture_snapshot_ids": list(item.capture_snapshot_ids),
-            "market_metadata_fingerprint": item.market_metadata_fingerprint,
-            "q_star_buy": _decimal_text(item.q_star_buy),
-            "q_safe_buy": _decimal_text(item.q_safe_buy),
-            "q_star_sell": _decimal_text(item.q_star_sell),
-            "q_safe_sell": _decimal_text(item.q_safe_sell),
-            "current_base_weight": _decimal_text(item.current_base_weight),
-            "required_buy_fraction": _decimal_text(item.required_buy_fraction),
-            "required_sell_fraction": _decimal_text(item.required_sell_fraction),
-            "candidate_capital_ceiling": _decimal_text(item.candidate_capital_ceiling),
-            "qualification_state": item.qualification_state.value,
-            "reason": item.reason.value,
-            "eligibility_resolved": item.eligibility_resolved,
-            "capture_contract_satisfied": item.capture_contract_satisfied,
-            "current_two_way_trading": item.current_two_way_trading,
-            "order_constraints_satisfied": item.order_constraints_satisfied,
-            "requested_capital_qap_run_id": item.requested_capital_qap_run_id,
-            "requested_baseline_gate_passed": item.requested_baseline_gate_passed,
-            "requested_adverse_gate_passed": item.requested_adverse_gate_passed,
-            "lower_tested_capital": _decimal_text(item.lower_tested_capital),
-            "lower_capital_qap_run_id": item.lower_capital_qap_run_id,
-            "lower_baseline_gate_passed": item.lower_baseline_gate_passed,
-            "lower_adverse_gate_passed": item.lower_adverse_gate_passed,
-        }
-        for item in records
-    ]
-    return pa.Table.from_pylist(rows, schema=QUALIFICATION_SCHEMA)
-
-
 def _validate_lineage(
     generation: ForwardCheckpointGeneration,
     outcome: ForwardOutcome,
     liquidity: tuple[LiquidityEvidenceRecord, ...],
-    qualifications: tuple[CapacityQualificationRecord, ...],
 ) -> None:
     checkpoint = generation.checkpoint
-    if len(qualifications) != 1:
-        raise ProspectiveArtifactError("checkpoint requires one qualification row")
-    qualification = qualifications[0]
     if (
         outcome.checkpoint_id != checkpoint.checkpoint_id
         or outcome.candidate_id != checkpoint.candidate_id
@@ -455,24 +375,12 @@ def _validate_lineage(
         or outcome.through != checkpoint.information_end
     ):
         raise ProspectiveArtifactError("forward outcome lineage mismatch")
-    for row in (*liquidity, *qualifications):
+    for row in liquidity:
         if (
             getattr(row, "checkpoint_id", None) != checkpoint.checkpoint_id
             or getattr(row, "candidate_id", None) != checkpoint.candidate_id
         ):
             raise ProspectiveArtifactError("checkpoint lineage mismatch")
-    if (
-        qualification.freeze_id != checkpoint.freeze_id
-        or qualification.prospective_protocol_version
-        != checkpoint.prospective_protocol_version
-        or qualification.prospective_protocol_identity
-        != checkpoint.prospective_protocol_identity
-    ):
-        raise ProspectiveArtifactError("qualification freeze/protocol lineage mismatch")
-    if qualification.as_of != checkpoint.information_end:
-        raise ProspectiveArtifactError(
-            "qualification timestamp must match checkpoint cutoff"
-        )
 
 
 def write_checkpoint_evidence(
@@ -480,11 +388,10 @@ def write_checkpoint_evidence(
     *,
     outcome: ForwardOutcome,
     liquidity: tuple[LiquidityEvidenceRecord, ...],
-    qualifications: tuple[CapacityQualificationRecord, ...],
 ) -> None:
     """Persist evidence while the checkpoint remains recoverable partial state."""
 
-    _validate_lineage(generation, outcome, liquidity, qualifications)
+    _validate_lineage(generation, outcome, liquidity)
     _atomic_write_bytes(
         generation.staging_directory / OUTCOME_FILE,
         (outcome.model_dump_json(indent=2) + "\n").encode("utf-8"),
@@ -493,17 +400,12 @@ def write_checkpoint_evidence(
         generation.staging_directory / LIQUIDITY_TABLE,
         _liquidity_table(liquidity),
     )
-    _write_table(
-        generation.staging_directory / QUALIFICATION_TABLE,
-        _qualification_table(qualifications),
-    )
 
 
 def _required_tables(directory: Path) -> dict[str, Any]:
     schemas = {
         CHECKPOINT_TABLE: CHECKPOINT_SCHEMA,
         LIQUIDITY_TABLE: LIQUIDITY_SCHEMA,
-        QUALIFICATION_TABLE: QUALIFICATION_SCHEMA,
     }
     tables: dict[str, Any] = {}
     for name, schema in schemas.items():
@@ -515,10 +417,7 @@ def _required_tables(directory: Path) -> dict[str, Any]:
 
 
 def _reconcile(generation: ForwardCheckpointGeneration, tables: dict[str, Any]) -> None:
-    if (
-        tables[CHECKPOINT_TABLE].num_rows != 1
-        or tables[QUALIFICATION_TABLE].num_rows != 1
-    ):
+    if tables[CHECKPOINT_TABLE].num_rows != 1:
         raise ProspectiveArtifactError("checkpoint row counts do not reconcile")
     for name, table in tables.items():
         for row in table.to_pylist():
@@ -547,7 +446,6 @@ def _rebuild_indices(cohort_root: Path) -> None:
     for directory in completed_generation_dirs(cohort_root):
         _manifest, tables = validate_completed_generation(directory)
         checkpoint = tables[CHECKPOINT_TABLE].to_pylist()[0]
-        qualification = tables[QUALIFICATION_TABLE].to_pylist()[0]
         outcome = read_outcome(directory)
         checkpoint_rows.append(checkpoint)
         outcome_rows.append(
@@ -571,10 +469,6 @@ def _rebuild_indices(cohort_root: Path) -> None:
                 "adverse_economic_gates_passed": (
                     outcome.adverse_economic_gates_passed
                 ),
-                "qualification_state": qualification["qualification_state"],
-                "qualification_reason": qualification["reason"],
-                "requested_capital": qualification["requested_capital"],
-                "candidate_capital_ceiling": qualification["candidate_capital_ceiling"],
             }
         )
     _write_table(
@@ -596,7 +490,6 @@ def publish_checkpoint(generation: ForwardCheckpointGeneration) -> Path:
     _reconcile(generation, tables)
     table_counts = {name: table.num_rows for name, table in tables.items()}
     outcome = read_outcome(generation.staging_directory)
-    qualification = tables[QUALIFICATION_TABLE].to_pylist()[0]
     manifest = {
         "schema_version": "qap.scanner.prospective-checkpoint-manifest.v1",
         "cohort_id": generation.checkpoint.cohort_id,
@@ -613,7 +506,6 @@ def publish_checkpoint(generation: ForwardCheckpointGeneration) -> Path:
         "outcome_id": outcome.outcome_id,
         "outcome_status": outcome.status.value,
         "qap_run_id": outcome.qap_run_id,
-        "qualification_state": qualification["qualification_state"],
         "table_counts": dict(sorted(table_counts.items())),
         "published_at": datetime.now(UTC).isoformat(),
     }
@@ -638,7 +530,6 @@ def read_completed_checkpoints(cohort_root: str | Path) -> tuple[Path, ...]:
 
 
 __all__ = [
-    "CapacityQualificationRecord",
     "LiquidityEvidenceRecord",
     "ProspectiveArtifactError",
     "ForwardCheckpointGeneration",

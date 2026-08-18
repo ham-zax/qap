@@ -23,8 +23,6 @@ from qap.scanner.prospective_artifacts import (
     INTEGRITY_FILE,
     LIQUIDITY_TABLE,
     OUTCOMES_INDEX,
-    QUALIFICATION_TABLE,
-    CapacityQualificationRecord,
     LiquidityEvidenceRecord,
     ProspectiveArtifactError,
     publish_checkpoint,
@@ -38,7 +36,6 @@ from qap.scanner.prospective_protocol import (
     prospective_protocol_identity,
 )
 from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon, protocol_identity
-from qap.scanner.qualification import QualificationReason, QualificationState
 
 FREEZE = datetime(2026, 8, 18, 0, 0, tzinfo=UTC)
 FORWARD_START = FREEZE + timedelta(hours=1)
@@ -147,48 +144,12 @@ def _liquidity(checkpoint: ForwardCheckpoint) -> LiquidityEvidenceRecord:
     )
 
 
-def _qualification(checkpoint: ForwardCheckpoint) -> CapacityQualificationRecord:
-    return CapacityQualificationRecord(
-        checkpoint_id=checkpoint.checkpoint_id,
-        candidate_id=checkpoint.candidate_id,
-        freeze_id=checkpoint.freeze_id,
-        as_of=checkpoint.information_end,
-        requested_capital=Decimal("500"),
-        prospective_protocol_version=checkpoint.prospective_protocol_version,
-        prospective_protocol_identity=checkpoint.prospective_protocol_identity,
-        capture_snapshot_ids=("9" * 64,),
-        market_metadata_fingerprint="7" * 64,
-        q_star_buy=None,
-        q_safe_buy=None,
-        q_star_sell=None,
-        q_safe_sell=None,
-        current_base_weight=Decimal("0.50"),
-        required_buy_fraction=Decimal("0.20"),
-        required_sell_fraction=Decimal("0.20"),
-        candidate_capital_ceiling=None,
-        qualification_state=QualificationState.RESEARCH_ONLY,
-        reason=QualificationReason.CAPACITY_UNKNOWN,
-        eligibility_resolved=True,
-        capture_contract_satisfied=False,
-        current_two_way_trading=True,
-        order_constraints_satisfied=True,
-        requested_capital_qap_run_id=None,
-        requested_baseline_gate_passed=False,
-        requested_adverse_gate_passed=False,
-        lower_tested_capital=None,
-        lower_capital_qap_run_id=None,
-        lower_baseline_gate_passed=False,
-        lower_adverse_gate_passed=False,
-    )
-
-
 def _publish(root: Path, checkpoint: ForwardCheckpoint) -> Path:
     generation = start_checkpoint(root, checkpoint)
     write_checkpoint_evidence(
         generation,
         outcome=_outcome(checkpoint),
         liquidity=(_liquidity(checkpoint),),
-        qualifications=(_qualification(checkpoint),),
     )
     return publish_checkpoint(generation)
 
@@ -224,13 +185,13 @@ def test_completed_checkpoint_has_integrity_and_repairs_indices(tmp_path: Path) 
 def test_completed_checkpoint_tamper_fails_before_reindex(tmp_path: Path) -> None:
     root = start_forward_cohort(tmp_path, _cohort())
     final = _publish(root, _checkpoint(1))
-    table = pq.read_table(final / QUALIFICATION_TABLE).to_pylist()
-    table[0]["requested_capital"] = "999"
+    table = pq.read_table(final / LIQUIDITY_TABLE).to_pylist()
+    table[0]["quote_notional"] = "999"
     pq.write_table(
-        pq.read_table(final / QUALIFICATION_TABLE).from_pylist(
-            table, schema=pq.read_table(final / QUALIFICATION_TABLE).schema
+        pq.read_table(final / LIQUIDITY_TABLE).from_pylist(
+            table, schema=pq.read_table(final / LIQUIDITY_TABLE).schema
         ),
-        final / QUALIFICATION_TABLE,
+        final / LIQUIDITY_TABLE,
     )
 
     with pytest.raises(ProspectiveArtifactError, match="digest mismatch"):

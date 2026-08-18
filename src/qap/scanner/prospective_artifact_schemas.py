@@ -10,7 +10,6 @@ CHECKPOINTS_INDEX = "checkpoints.parquet"
 OUTCOMES_INDEX = "outcomes.parquet"
 CHECKPOINT_TABLE = "checkpoint.parquet"
 LIQUIDITY_TABLE = "liquidity.parquet"
-QUALIFICATION_TABLE = "qualification.parquet"
 OUTCOME_FILE = "outcome.json"
 MANIFEST = "manifest.json"
 CHECKPOINT_DIRECTORY = "checkpoint-generations"
@@ -18,7 +17,6 @@ CHECKPOINT_AUTHORITATIVE_FILES = frozenset(
     {
         CHECKPOINT_TABLE,
         LIQUIDITY_TABLE,
-        QUALIFICATION_TABLE,
         OUTCOME_FILE,
         MANIFEST,
     }
@@ -93,41 +91,6 @@ LIQUIDITY_SCHEMA = pa.schema(
     ]
 )
 
-QUALIFICATION_SCHEMA = pa.schema(
-    [
-        ("checkpoint_id", pa.string()),
-        ("candidate_id", pa.string()),
-        ("freeze_id", pa.string()),
-        ("as_of", pa.timestamp("us", tz="UTC")),
-        ("requested_capital", pa.string()),
-        ("prospective_protocol_version", pa.string()),
-        ("prospective_protocol_identity", pa.string()),
-        ("capture_snapshot_ids", pa.list_(pa.string())),
-        ("market_metadata_fingerprint", pa.string()),
-        ("q_star_buy", pa.string()),
-        ("q_safe_buy", pa.string()),
-        ("q_star_sell", pa.string()),
-        ("q_safe_sell", pa.string()),
-        ("current_base_weight", pa.string()),
-        ("required_buy_fraction", pa.string()),
-        ("required_sell_fraction", pa.string()),
-        ("candidate_capital_ceiling", pa.string()),
-        ("qualification_state", pa.string()),
-        ("reason", pa.string()),
-        ("eligibility_resolved", pa.bool_()),
-        ("capture_contract_satisfied", pa.bool_()),
-        ("current_two_way_trading", pa.bool_()),
-        ("order_constraints_satisfied", pa.bool_()),
-        ("requested_capital_qap_run_id", pa.string()),
-        ("requested_baseline_gate_passed", pa.bool_()),
-        ("requested_adverse_gate_passed", pa.bool_()),
-        ("lower_tested_capital", pa.string()),
-        ("lower_capital_qap_run_id", pa.string()),
-        ("lower_baseline_gate_passed", pa.bool_()),
-        ("lower_adverse_gate_passed", pa.bool_()),
-    ]
-)
-
 OUTCOME_INDEX_SCHEMA = pa.schema(
     [
         ("outcome_id", pa.string()),
@@ -143,10 +106,6 @@ OUTCOME_INDEX_SCHEMA = pa.schema(
         ("strategy_vs_primary_control", pa.string()),
         ("baseline_economic_gates_passed", pa.bool_()),
         ("adverse_economic_gates_passed", pa.bool_()),
-        ("qualification_state", pa.string()),
-        ("qualification_reason", pa.string()),
-        ("requested_capital", pa.string()),
-        ("candidate_capital_ceiling", pa.string()),
     ]
 )
 
@@ -165,6 +124,4 @@ __all__ = [
     "OUTCOME_FILE",
     "OUTCOME_INDEX_SCHEMA",
     "OUTCOMES_INDEX",
-    "QUALIFICATION_SCHEMA",
-    "QUALIFICATION_TABLE",
 ]
