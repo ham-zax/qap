@@ -11,10 +11,17 @@ OUTCOMES_INDEX = "outcomes.parquet"
 CHECKPOINT_TABLE = "checkpoint.parquet"
 LIQUIDITY_TABLE = "liquidity.parquet"
 QUALIFICATION_TABLE = "qualification.parquet"
+OUTCOME_FILE = "outcome.json"
 MANIFEST = "manifest.json"
 CHECKPOINT_DIRECTORY = "checkpoint-generations"
 CHECKPOINT_AUTHORITATIVE_FILES = frozenset(
-    {CHECKPOINT_TABLE, LIQUIDITY_TABLE, QUALIFICATION_TABLE, MANIFEST}
+    {
+        CHECKPOINT_TABLE,
+        LIQUIDITY_TABLE,
+        QUALIFICATION_TABLE,
+        OUTCOME_FILE,
+        MANIFEST,
+    }
 )
 
 FREEZE_SCHEMA = pa.schema(
@@ -69,9 +76,6 @@ CHECKPOINT_SCHEMA = pa.schema(
         ("evidence_role", pa.string()),
         ("prospective_protocol_version", pa.string()),
         ("prospective_protocol_identity", pa.string()),
-        ("prospective_complete", pa.bool_()),
-        ("prospective_status", pa.string()),
-        ("authoritative_run_id", pa.string()),
     ]
 )
 
@@ -116,13 +120,19 @@ QUALIFICATION_SCHEMA = pa.schema(
 
 OUTCOME_INDEX_SCHEMA = pa.schema(
     [
+        ("outcome_id", pa.string()),
         ("checkpoint_id", pa.string()),
         ("cohort_id", pa.string()),
         ("candidate_id", pa.string()),
+        ("freeze_id", pa.string()),
         ("checkpoint_index", pa.int64()),
-        ("information_end", pa.timestamp("us", tz="UTC")),
-        ("prospective_status", pa.string()),
-        ("authoritative_run_id", pa.string()),
+        ("through", pa.timestamp("us", tz="UTC")),
+        ("status", pa.string()),
+        ("qap_run_id", pa.string()),
+        ("strategy_vs_hodl", pa.string()),
+        ("strategy_vs_primary_control", pa.string()),
+        ("baseline_economic_gates_passed", pa.bool_()),
+        ("adverse_economic_gates_passed", pa.bool_()),
         ("qualification_state", pa.string()),
         ("qualification_reason", pa.string()),
         ("requested_capital", pa.string()),
@@ -142,6 +152,7 @@ __all__ = [
     "LIQUIDITY_SCHEMA",
     "LIQUIDITY_TABLE",
     "MANIFEST",
+    "OUTCOME_FILE",
     "OUTCOME_INDEX_SCHEMA",
     "OUTCOMES_INDEX",
     "QUALIFICATION_SCHEMA",

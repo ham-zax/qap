@@ -14,6 +14,8 @@ from qap.scanner.models import ScanInputIdentity
 from qap.scanner.prospective import (
     CandidateFreeze,
     ForwardCheckpoint,
+    ForwardOutcome,
+    ForwardOutcomeStatus,
     enroll_forward_cohort,
 )
 from qap.scanner.prospective_artifacts import (
@@ -24,7 +26,6 @@ from qap.scanner.prospective_artifacts import (
     OUTCOMES_INDEX,
     QUALIFICATION_TABLE,
     CapacityQualificationRecord,
-    CheckpointObservationRecord,
     LiquidityEvidenceRecord,
     ProspectiveArtifactError,
     publish_checkpoint,
@@ -113,12 +114,22 @@ def _checkpoint(index: int) -> ForwardCheckpoint:
     )
 
 
-def _observation(checkpoint: ForwardCheckpoint) -> CheckpointObservationRecord:
-    return CheckpointObservationRecord.from_checkpoint(
-        checkpoint,
-        prospective_complete=False,
-        prospective_status="partial",
-        authoritative_run_id=None,
+def _outcome(checkpoint: ForwardCheckpoint) -> ForwardOutcome:
+    return ForwardOutcome(
+        freeze_id=checkpoint.freeze_id,
+        candidate_id=checkpoint.candidate_id,
+        checkpoint_id=checkpoint.checkpoint_id,
+        prospective_protocol_version=checkpoint.prospective_protocol_version,
+        prospective_protocol_identity=checkpoint.prospective_protocol_identity,
+        status=ForwardOutcomeStatus.PARTIAL,
+        through=checkpoint.information_end,
+        qap_run_id="qap-forward-run",
+        primary_control_reference=PROSPECTIVE_V1.primary_control_reference,
+        cost_policy_reference=PROSPECTIVE_V1.adverse_cost_reference,
+        strategy_vs_hodl=Decimal("0.01"),
+        strategy_vs_primary_control=Decimal("0.005"),
+        baseline_economic_gates_passed=True,
+        adverse_economic_gates_passed=False,
     )
 
 
@@ -165,7 +176,7 @@ def _publish(root: Path, checkpoint: ForwardCheckpoint) -> Path:
     generation = start_checkpoint(root, checkpoint)
     write_checkpoint_evidence(
         generation,
-        observations=(_observation(checkpoint),),
+        outcome=_outcome(checkpoint),
         liquidity=(_liquidity(checkpoint),),
         qualifications=(_qualification(checkpoint),),
     )

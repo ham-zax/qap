@@ -11,6 +11,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from qap.artifact_integrity import read_and_validate_integrity
+from qap.scanner.prospective import ForwardOutcome
 from qap.scanner.prospective_artifact_schemas import (
     CHECKPOINT_AUTHORITATIVE_FILES,
     CHECKPOINT_DIRECTORY,
@@ -19,6 +20,7 @@ from qap.scanner.prospective_artifact_schemas import (
     LIQUIDITY_SCHEMA,
     LIQUIDITY_TABLE,
     MANIFEST,
+    OUTCOME_FILE,
     QUALIFICATION_SCHEMA,
     QUALIFICATION_TABLE,
 )
@@ -62,6 +64,14 @@ def read_manifest(directory: Path) -> dict[str, object]:
     if not isinstance(payload, dict):
         raise ProspectiveArtifactError("completed checkpoint manifest is malformed")
     return payload
+
+
+def read_outcome(directory: Path) -> ForwardOutcome:
+    path = directory / OUTCOME_FILE
+    try:
+        return ForwardOutcome.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ProspectiveArtifactError("forward outcome is malformed") from exc
 
 
 def validate_completed_generation(
@@ -116,6 +126,7 @@ def validate_completed_generation(
         )
 
     checkpoint = tables[CHECKPOINT_TABLE].to_pylist()[0]
+    outcome = read_outcome(directory)
     expected = {
         "checkpoint_id": checkpoint_id,
         "candidate_id": candidate_id,
@@ -128,6 +139,20 @@ def validate_completed_generation(
     for key, value in expected.items():
         if checkpoint.get(key) != value:
             raise ProspectiveArtifactError(f"completed checkpoint {key} mismatch")
+    if (
+        outcome.checkpoint_id != checkpoint_id
+        or outcome.candidate_id != candidate_id
+        or outcome.freeze_id != freeze_id
+        or outcome.prospective_protocol_version
+        != payload.get("prospective_protocol_version")
+        or outcome.prospective_protocol_identity
+        != payload.get("prospective_protocol_identity")
+        or outcome.through != checkpoint.get("information_end")
+        or outcome.outcome_id != payload.get("outcome_id")
+        or outcome.status.value != payload.get("outcome_status")
+        or outcome.qap_run_id != payload.get("qap_run_id")
+    ):
+        raise ProspectiveArtifactError("forward outcome lineage mismatch")
     for name, table in tables.items():
         for row in table.to_pylist():
             if row["checkpoint_id"] != checkpoint_id:
@@ -159,5 +184,6 @@ __all__ = [
     "ProspectiveArtifactError",
     "completed_generation_dirs",
     "read_manifest",
+    "read_outcome",
     "validate_completed_generation",
 ]

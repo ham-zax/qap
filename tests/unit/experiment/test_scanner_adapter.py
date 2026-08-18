@@ -10,6 +10,10 @@ import pyarrow.parquet as pq
 
 from qap.experiment.artifacts import read_run_artifacts
 from qap.experiment.manifest import DataRole, PrimaryMetric
+from qap.experiment.prospective_scanner_adapter import (
+    prepare_prospective_manifest,
+    run_prospective_checkpoint,
+)
 from qap.experiment.scanner_adapter import (
     ScannerEconomicGateStatus,
     ScannerReplayStatus,
@@ -41,6 +45,15 @@ from qap.scanner.catalog import (
 from qap.scanner.graph import GraphMetadataRecord, NeighborRecord
 from qap.scanner.models import ScanDefinition, ScanInputIdentity
 from qap.scanner.promotion import PromotionRecord, PromotionStatus
+from qap.scanner.prospective import (
+    CandidateFreeze,
+    ForwardCheckpoint,
+    ForwardOutcomeStatus,
+)
+from qap.scanner.prospective_protocol import (
+    PROSPECTIVE_V1,
+    prospective_protocol_identity,
+)
 from qap.scanner.protocol import (
     SCANNER_V1_SLICE1,
     ScannerHorizon,
@@ -85,9 +98,10 @@ def _write_source(
     dataset_id: str,
     instrument: VenueInstrument,
     closes: tuple[float, ...],
+    path_suffix: str = "",
 ) -> ScannerSourceSpec:
     series = _series(instrument, closes)
-    relative = f"market/{dataset_id}.parquet"
+    relative = f"market/{dataset_id}{path_suffix}.parquet"
     path = data_root / relative
     path.parent.mkdir(parents=True, exist_ok=True)
     write_parquet_bar_series(path, series)
@@ -103,14 +117,20 @@ def _write_source(
     )
 
 
-def _catalog(data_root: Path, *, include_direct: bool) -> ScannerCatalog:
+def _catalog(
+    data_root: Path,
+    *,
+    include_direct: bool,
+    bar_count: int = BAR_COUNT,
+    path_suffix: str = "",
+) -> ScannerCatalog:
     btc_prices = tuple(
         100.0 + index * 0.03 + math.sin(index / 11.0) * 2.0
-        for index in range(BAR_COUNT)
+        for index in range(bar_count)
     )
     eth_prices = tuple(
         50.0 + index * 0.012 + math.cos(index / 13.0) * 1.2
-        for index in range(BAR_COUNT)
+        for index in range(bar_count)
     )
     btc_usdt = VenueInstrument(
         venue="binance", venue_symbol="BTCUSDT", base=BTC, quote=USDT
@@ -124,12 +144,14 @@ def _catalog(data_root: Path, *, include_direct: bool) -> ScannerCatalog:
             dataset_id="btc-usdt-1h",
             instrument=btc_usdt,
             closes=btc_prices,
+            path_suffix=path_suffix,
         ),
         _write_source(
             data_root,
             dataset_id="eth-usdt-1h",
             instrument=eth_usdt,
             closes=eth_prices,
+            path_suffix=path_suffix,
         ),
     ]
     if include_direct:
@@ -144,6 +166,7 @@ def _catalog(data_root: Path, *, include_direct: bool) -> ScannerCatalog:
                 closes=tuple(
                     btc / eth for btc, eth in zip(btc_prices, eth_prices, strict=True)
                 ),
+                path_suffix=path_suffix,
             )
         )
     lifecycle = data_root / "lifecycle.jsonl"
@@ -469,3 +492,120 @@ def test_unsupported_cross_becomes_durable_setup_failure_without_experiment_run(
     assert persisted.attempt_status is ReplayAttemptStatus.SETUP_FAILED
     assert persisted.failure_reason == "unsupported_direct_market"
     assert not experiment_root.exists() or not any(experiment_root.iterdir())
+
+
+def test_frozen_candidate_runs_strictly_forward_through_ordinary_qap(
+    tmp_path: Path,
+) -> None:
+    data_root = tmp_path / "data"
+    data_root.mkdir()
+    historical_catalog = _catalog(data_root, include_direct=True)
+    generation, trial, attempt = _generation(tmp_path, historical_catalog)
+    experiment_root = tmp_path / "experiment-runs"
+    historical = run_scanner_candidate_replay(
+        generation=generation,
+        attempt_id=attempt.attempt_id,
+        trial=trial,
+        catalog=historical_catalog,
+        data_root=data_root,
+        repository_root=REPOSITORY_ROOT,
+        run_root=experiment_root,
+        run_timestamp=datetime(2026, 8, 18, tzinfo=UTC),
+    )
+    assert historical.deep_replay_run_id is not None
+    assert (
+        historical.economic_gate_status
+        is ScannerEconomicGateStatus.DEEP_REPLAY_SURVIVOR
+    )
+
+    forward_catalog = _catalog(
+        data_root,
+        include_direct=True,
+        bar_count=BAR_COUNT + 8,
+        path_suffix="-forward",
+    )
+    forward_start = END + INTERVAL.duration
+    freeze = CandidateFreeze(
+        candidate_id=trial.candidate_id,
+        scan_id=trial.scan_id,
+        scanner_protocol_version=SCANNER_V1_SLICE1.protocol_id,
+        scanner_protocol_identity=protocol_identity(SCANNER_V1_SLICE1),
+        prospective_protocol_version=PROSPECTIVE_V1.protocol_id,
+        prospective_protocol_identity=prospective_protocol_identity(PROSPECTIVE_V1),
+        automatic_selected=True,
+        manual_selected=False,
+        frozen_at=END,
+        eligible_information_end=END,
+        forward_start=forward_start,
+        forward_end=forward_start + timedelta(hours=48),
+        horizon=trial.horizon,
+        venue=trial.venue,
+        pair_id=trial.pair_id,
+        orientation=f"{trial.orientation.base.key}/{trial.orientation.quote.key}",
+        resolution=trial.resolution.label,
+        model_family=trial.model_family.value,
+        template_id=trial.template_id.value,
+        model_parameters=(("window_bars", str(trial.window_bars)),),
+        source_artifact_fingerprints=trial.source_artifact_fingerprints,
+        selection_slice_fingerprints=trial.selection_slice_fingerprints,
+        universe_snapshot_id=trial.universe_snapshot_id,
+        cost_policy_reference=PROSPECTIVE_V1.adverse_cost_reference,
+        primary_control_reference=PROSPECTIVE_V1.primary_control_reference,
+        candidate_deep_replay_run_id=historical.deep_replay_run_id,
+        candidate_deep_replay_gate_status="deep_replay_survivor",
+    )
+    information_end = forward_start + timedelta(hours=6)
+    checkpoint = ForwardCheckpoint(
+        cohort_id="f" * 64,
+        candidate_id=trial.candidate_id,
+        freeze_id=freeze.freeze_id,
+        checkpoint_index=1,
+        freeze_at=END,
+        eligible_information_end=END,
+        forward_start=forward_start,
+        first_outcome_complete_at=forward_start + INTERVAL.duration,
+        evidence_window_start=forward_start,
+        evidence_window_end=information_end,
+        information_end=information_end,
+        forward_slices=tuple(
+            ScanInputIdentity(
+                dataset_id=source.dataset_id,
+                source_artifact_fingerprint=source.expected_semantic_fingerprint,
+                selection_slice_fingerprint=f"{index:x}" * 64,
+            )
+            for index, source in enumerate(forward_catalog.sources, start=1)
+        ),
+        evidence_role="prospective",
+        prospective_protocol_version=PROSPECTIVE_V1.protocol_id,
+        prospective_protocol_identity=prospective_protocol_identity(PROSPECTIVE_V1),
+        created_at=information_end + timedelta(seconds=1),
+    )
+
+    manifest = prepare_prospective_manifest(
+        freeze,
+        checkpoint,
+        data_root=data_root,
+        run_root=experiment_root,
+        catalog=forward_catalog,
+    )
+    assert manifest.data_role is DataRole.DEVELOPMENT
+    assert manifest.parent_run_id == historical.deep_replay_run_id
+    assert manifest.effective_evaluation_window().start == forward_start
+    assert manifest.effective_evaluation_window().start > freeze.frozen_at
+    assert manifest.effective_evaluation_window().end == information_end
+    assert manifest.benchmarks.primary_incremental_benchmark == "band-5pct-half"
+
+    outcome = run_prospective_checkpoint(
+        freeze,
+        checkpoint,
+        data_root=data_root,
+        repository_root=REPOSITORY_ROOT,
+        run_root=experiment_root,
+        catalog=forward_catalog,
+        run_timestamp=datetime(2026, 8, 18, 1, 0, tzinfo=UTC),
+    )
+    assert outcome.status is ForwardOutcomeStatus.PARTIAL
+    assert outcome.qap_run_id is not None
+    loaded = read_run_artifacts(experiment_root / outcome.qap_run_id)
+    assert loaded.result.data_role is DataRole.DEVELOPMENT
+    assert loaded.result.start_timestamp == forward_start

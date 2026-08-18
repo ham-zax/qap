@@ -21,7 +21,7 @@ from qap.artifact_integrity import (
     build_integrity_record,
 )
 from qap.scanner.liquidity_policy import QualificationReason, QualificationState
-from qap.scanner.prospective import ForwardCheckpoint, ForwardCohort
+from qap.scanner.prospective import ForwardCheckpoint, ForwardCohort, ForwardOutcome
 from qap.scanner.prospective_artifact_schemas import (
     CHECKPOINT_AUTHORITATIVE_FILES,
     CHECKPOINT_DIRECTORY,
@@ -34,6 +34,7 @@ from qap.scanner.prospective_artifact_schemas import (
     LIQUIDITY_SCHEMA,
     LIQUIDITY_TABLE,
     MANIFEST,
+    OUTCOME_FILE,
     OUTCOME_INDEX_SCHEMA,
     OUTCOMES_INDEX,
     QUALIFICATION_SCHEMA,
@@ -43,6 +44,7 @@ from qap.scanner.prospective_integrity import (
     ProspectiveArtifactError,
     completed_generation_dirs,
     read_manifest,
+    read_outcome,
     validate_completed_generation,
 )
 
@@ -106,63 +108,6 @@ def _read_table(path: Path, schema: Any) -> Any:
     if not table.schema.equals(schema):
         raise ProspectiveArtifactError(f"table schema mismatch: {path.name}")
     return table
-
-
-@dataclass(frozen=True, slots=True)
-class CheckpointObservationRecord:
-    checkpoint_id: str
-    cohort_id: str
-    candidate_id: str
-    freeze_id: str
-    checkpoint_index: int
-    freeze_at: datetime
-    eligible_information_end: datetime
-    forward_start: datetime
-    first_outcome_complete_at: datetime
-    evidence_window_start: datetime
-    evidence_window_end: datetime
-    information_end: datetime
-    forward_slices_json: str
-    evidence_role: str
-    prospective_protocol_version: str
-    prospective_protocol_identity: str
-    prospective_complete: bool
-    prospective_status: str
-    authoritative_run_id: str | None
-
-    @classmethod
-    def from_checkpoint(
-        cls,
-        checkpoint: ForwardCheckpoint,
-        *,
-        prospective_complete: bool,
-        prospective_status: str,
-        authoritative_run_id: str | None,
-    ) -> "CheckpointObservationRecord":
-        slices = [item.model_dump(mode="json") for item in checkpoint.forward_slices]
-        return cls(
-            checkpoint_id=checkpoint.checkpoint_id,
-            cohort_id=checkpoint.cohort_id,
-            candidate_id=checkpoint.candidate_id,
-            freeze_id=checkpoint.freeze_id,
-            checkpoint_index=checkpoint.checkpoint_index,
-            freeze_at=checkpoint.freeze_at,
-            eligible_information_end=checkpoint.eligible_information_end,
-            forward_start=checkpoint.forward_start,
-            first_outcome_complete_at=checkpoint.first_outcome_complete_at,
-            evidence_window_start=checkpoint.evidence_window_start,
-            evidence_window_end=checkpoint.evidence_window_end,
-            information_end=checkpoint.information_end,
-            forward_slices_json=_json_bytes(slices).decode("utf-8"),
-            evidence_role=checkpoint.evidence_role,
-            prospective_protocol_version=checkpoint.prospective_protocol_version,
-            prospective_protocol_identity=checkpoint.prospective_protocol_identity,
-            prospective_complete=prospective_complete,
-            prospective_status=prospective_status.strip(),
-            authoritative_run_id=(
-                None if authoritative_run_id is None else authoritative_run_id.strip()
-            ),
-        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -345,9 +290,6 @@ def _checkpoint_row(checkpoint: ForwardCheckpoint) -> dict[str, object]:
         "evidence_role": checkpoint.evidence_role,
         "prospective_protocol_version": checkpoint.prospective_protocol_version,
         "prospective_protocol_identity": checkpoint.prospective_protocol_identity,
-        "prospective_complete": False,
-        "prospective_status": "enumerated",
-        "authoritative_run_id": None,
     }
 
 
@@ -412,12 +354,6 @@ def start_checkpoint(
             )
         stored = table.to_pylist()[0]
         for key, value in expected.items():
-            if key in {
-                "prospective_complete",
-                "prospective_status",
-                "authoritative_run_id",
-            }:
-                continue
             if stored[key] != value:
                 raise ProspectiveArtifactError(
                     "checkpoint definition does not match request"
@@ -429,34 +365,6 @@ def start_checkpoint(
         pa.Table.from_pylist([expected], schema=CHECKPOINT_SCHEMA),
     )
     return ForwardCheckpointGeneration(root, checkpoint, staging, final)
-
-
-def _observation_table(records: tuple[CheckpointObservationRecord, ...]) -> Any:
-    rows = [
-        {
-            "checkpoint_id": record.checkpoint_id,
-            "cohort_id": record.cohort_id,
-            "candidate_id": record.candidate_id,
-            "freeze_id": record.freeze_id,
-            "checkpoint_index": record.checkpoint_index,
-            "freeze_at": record.freeze_at,
-            "eligible_information_end": record.eligible_information_end,
-            "forward_start": record.forward_start,
-            "first_outcome_complete_at": record.first_outcome_complete_at,
-            "evidence_window_start": record.evidence_window_start,
-            "evidence_window_end": record.evidence_window_end,
-            "information_end": record.information_end,
-            "forward_slices_json": record.forward_slices_json,
-            "evidence_role": record.evidence_role,
-            "prospective_protocol_version": record.prospective_protocol_version,
-            "prospective_protocol_identity": record.prospective_protocol_identity,
-            "prospective_complete": record.prospective_complete,
-            "prospective_status": record.prospective_status,
-            "authoritative_run_id": record.authoritative_run_id,
-        }
-        for record in records
-    ]
-    return pa.Table.from_pylist(rows, schema=CHECKPOINT_SCHEMA)
 
 
 def _liquidity_table(records: tuple[LiquidityEvidenceRecord, ...]) -> Any:
@@ -510,23 +418,30 @@ def _qualification_table(records: tuple[CapacityQualificationRecord, ...]) -> An
 
 def _validate_lineage(
     generation: ForwardCheckpointGeneration,
-    observations: tuple[CheckpointObservationRecord, ...],
+    outcome: ForwardOutcome,
     liquidity: tuple[LiquidityEvidenceRecord, ...],
     qualifications: tuple[CapacityQualificationRecord, ...],
 ) -> None:
     checkpoint = generation.checkpoint
-    if len(observations) != 1 or len(qualifications) != 1:
-        raise ProspectiveArtifactError(
-            "checkpoint requires one observation and qualification row"
-        )
-    for row in (*observations, *liquidity, *qualifications):
+    if len(qualifications) != 1:
+        raise ProspectiveArtifactError("checkpoint requires one qualification row")
+    if (
+        outcome.checkpoint_id != checkpoint.checkpoint_id
+        or outcome.candidate_id != checkpoint.candidate_id
+        or outcome.freeze_id != checkpoint.freeze_id
+        or outcome.prospective_protocol_version
+        != checkpoint.prospective_protocol_version
+        or outcome.prospective_protocol_identity
+        != checkpoint.prospective_protocol_identity
+        or outcome.through != checkpoint.information_end
+    ):
+        raise ProspectiveArtifactError("forward outcome lineage mismatch")
+    for row in (*liquidity, *qualifications):
         if (
             getattr(row, "checkpoint_id", None) != checkpoint.checkpoint_id
             or getattr(row, "candidate_id", None) != checkpoint.candidate_id
         ):
             raise ProspectiveArtifactError("checkpoint lineage mismatch")
-    if observations[0].cohort_id != checkpoint.cohort_id:
-        raise ProspectiveArtifactError("checkpoint lineage mismatch")
     if qualifications[0].as_of != checkpoint.information_end:
         raise ProspectiveArtifactError(
             "qualification timestamp must match checkpoint cutoff"
@@ -536,16 +451,16 @@ def _validate_lineage(
 def write_checkpoint_evidence(
     generation: ForwardCheckpointGeneration,
     *,
-    observations: tuple[CheckpointObservationRecord, ...],
+    outcome: ForwardOutcome,
     liquidity: tuple[LiquidityEvidenceRecord, ...],
     qualifications: tuple[CapacityQualificationRecord, ...],
 ) -> None:
     """Persist evidence while the checkpoint remains recoverable partial state."""
 
-    _validate_lineage(generation, observations, liquidity, qualifications)
-    _write_table(
-        generation.staging_directory / CHECKPOINT_TABLE,
-        _observation_table(observations),
+    _validate_lineage(generation, outcome, liquidity, qualifications)
+    _atomic_write_bytes(
+        generation.staging_directory / OUTCOME_FILE,
+        (outcome.model_dump_json(indent=2) + "\n").encode("utf-8"),
     )
     _write_table(
         generation.staging_directory / LIQUIDITY_TABLE,
@@ -606,16 +521,29 @@ def _rebuild_indices(cohort_root: Path) -> None:
         _manifest, tables = validate_completed_generation(directory)
         checkpoint = tables[CHECKPOINT_TABLE].to_pylist()[0]
         qualification = tables[QUALIFICATION_TABLE].to_pylist()[0]
+        outcome = read_outcome(directory)
         checkpoint_rows.append(checkpoint)
         outcome_rows.append(
             {
+                "outcome_id": outcome.outcome_id,
                 "checkpoint_id": checkpoint["checkpoint_id"],
                 "cohort_id": checkpoint["cohort_id"],
                 "candidate_id": checkpoint["candidate_id"],
+                "freeze_id": checkpoint["freeze_id"],
                 "checkpoint_index": checkpoint["checkpoint_index"],
-                "information_end": checkpoint["information_end"],
-                "prospective_status": checkpoint["prospective_status"],
-                "authoritative_run_id": checkpoint["authoritative_run_id"],
+                "through": outcome.through,
+                "status": outcome.status.value,
+                "qap_run_id": outcome.qap_run_id,
+                "strategy_vs_hodl": _decimal_text(outcome.strategy_vs_hodl),
+                "strategy_vs_primary_control": _decimal_text(
+                    outcome.strategy_vs_primary_control
+                ),
+                "baseline_economic_gates_passed": (
+                    outcome.baseline_economic_gates_passed
+                ),
+                "adverse_economic_gates_passed": (
+                    outcome.adverse_economic_gates_passed
+                ),
                 "qualification_state": qualification["qualification_state"],
                 "qualification_reason": qualification["reason"],
                 "requested_capital": qualification["requested_capital"],
@@ -640,7 +568,7 @@ def publish_checkpoint(generation: ForwardCheckpointGeneration) -> Path:
     tables = _required_tables(generation.staging_directory)
     _reconcile(generation, tables)
     table_counts = {name: table.num_rows for name, table in tables.items()}
-    observation = tables[CHECKPOINT_TABLE].to_pylist()[0]
+    outcome = read_outcome(generation.staging_directory)
     qualification = tables[QUALIFICATION_TABLE].to_pylist()[0]
     manifest = {
         "schema_version": "qap.scanner.prospective-checkpoint-manifest.v1",
@@ -655,8 +583,9 @@ def publish_checkpoint(generation: ForwardCheckpointGeneration) -> Path:
             generation.checkpoint.prospective_protocol_identity
         ),
         "freeze_id": generation.checkpoint.freeze_id,
-        "prospective_status": observation["prospective_status"],
-        "authoritative_run_id": observation["authoritative_run_id"],
+        "outcome_id": outcome.outcome_id,
+        "outcome_status": outcome.status.value,
+        "qap_run_id": outcome.qap_run_id,
         "qualification_state": qualification["qualification_state"],
         "table_counts": dict(sorted(table_counts.items())),
         "published_at": datetime.now(UTC).isoformat(),
@@ -683,7 +612,6 @@ def read_completed_checkpoints(cohort_root: str | Path) -> tuple[Path, ...]:
 
 __all__ = [
     "CapacityQualificationRecord",
-    "CheckpointObservationRecord",
     "LiquidityEvidenceRecord",
     "ProspectiveArtifactError",
     "ForwardCheckpointGeneration",

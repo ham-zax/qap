@@ -3,6 +3,8 @@
 import json
 import string
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
+from enum import StrEnum
 from hashlib import sha256
 from typing import Literal, Self, cast
 
@@ -569,10 +571,113 @@ class ForwardCheckpoint(_FrozenModel):
         return sha256(_canonical_json(payload)).hexdigest()
 
 
+class ForwardOutcomeStatus(StrEnum):
+    PENDING = "pending"
+    PARTIAL = "partial"
+    MATURED = "matured"
+    INVALID = "invalid"
+
+
+class ForwardOutcome(_FrozenModel):
+    schema_version: Literal["qap.scanner.forward-outcome.v1"] = (
+        "qap.scanner.forward-outcome.v1"
+    )
+    freeze_id: str
+    candidate_id: str
+    checkpoint_id: str
+    prospective_protocol_version: str
+    prospective_protocol_identity: str
+    status: ForwardOutcomeStatus
+    through: datetime
+    matured_at: datetime | None = None
+    qap_run_id: str | None = None
+    primary_control_reference: str
+    cost_policy_reference: str
+    strategy_vs_hodl: Decimal | None = None
+    strategy_vs_primary_control: Decimal | None = None
+    baseline_economic_gates_passed: bool | None = None
+    adverse_economic_gates_passed: bool | None = None
+    failure_reason: str | None = None
+
+    @field_validator(
+        "freeze_id",
+        "candidate_id",
+        "checkpoint_id",
+        "prospective_protocol_identity",
+    )
+    @classmethod
+    def validate_outcome_fingerprint(cls, value: str, info: object) -> str:
+        return _fingerprint(value, field=getattr(info, "field_name", "fingerprint"))
+
+    @field_validator(
+        "prospective_protocol_version",
+        "primary_control_reference",
+        "cost_policy_reference",
+    )
+    @classmethod
+    def validate_outcome_text(cls, value: str, info: object) -> str:
+        return _text(value, field=getattr(info, "field_name", "text"))
+
+    @field_validator("through", "matured_at")
+    @classmethod
+    def validate_outcome_time(
+        cls,
+        value: datetime | None,
+        info: object,
+    ) -> datetime | None:
+        if value is None:
+            return None
+        return _utc(value, field=getattr(info, "field_name", "timestamp"))
+
+    @field_validator("strategy_vs_hodl", "strategy_vs_primary_control")
+    @classmethod
+    def validate_outcome_decimal(cls, value: Decimal | None) -> Decimal | None:
+        if value is not None and not value.is_finite():
+            raise ValueError("forward outcome financial values must be finite")
+        return value
+
+    @model_validator(mode="after")
+    def validate_outcome_state(self) -> Self:
+        has_economics = self.status in {
+            ForwardOutcomeStatus.PARTIAL,
+            ForwardOutcomeStatus.MATURED,
+        }
+        if has_economics and (
+            self.qap_run_id is None
+            or self.strategy_vs_hodl is None
+            or self.strategy_vs_primary_control is None
+            or self.baseline_economic_gates_passed is None
+            or self.adverse_economic_gates_passed is None
+        ):
+            raise ValueError(
+                "observed forward outcome requires authoritative QAP economics"
+            )
+        if self.status is ForwardOutcomeStatus.MATURED and self.matured_at is None:
+            raise ValueError("matured forward outcome requires matured_at")
+        if (
+            self.status is not ForwardOutcomeStatus.MATURED
+            and self.matured_at is not None
+        ):
+            raise ValueError("only matured forward outcome may set matured_at")
+        if self.status is ForwardOutcomeStatus.INVALID and not self.failure_reason:
+            raise ValueError("invalid forward outcome requires failure_reason")
+        if self.status is ForwardOutcomeStatus.PENDING and self.qap_run_id is not None:
+            raise ValueError("pending forward outcome cannot have a QAP run")
+        return self
+
+    @property
+    def outcome_id(self) -> str:
+        payload = self.model_dump(mode="json")
+        payload["identity_version"] = "qap.scanner.forward-outcome-identity.v1"
+        return sha256(_canonical_json(payload)).hexdigest()
+
+
 __all__ = [
     "CandidateFreeze",
     "ForwardCheckpoint",
     "ForwardCohort",
+    "ForwardOutcome",
+    "ForwardOutcomeStatus",
     "ReselectionRecord",
     "enroll_forward_cohort",
 ]
