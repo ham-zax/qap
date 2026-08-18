@@ -24,6 +24,9 @@ export function AppShell({ children }: AppShellProps) {
           <p className="text-xs text-muted sm:text-sm">Research evidence workbench</p>
         </div>
         <nav className="flex w-full flex-row gap-2 md:w-auto" aria-label="Primary navigation">
+          <Link className={navLinkClass} to="/scanner">
+            Discovery
+          </Link>
           <Link className={navLinkClass} to="/experiments">
             Research runs
           </Link>
@@ -37,8 +40,8 @@ export function AppShell({ children }: AppShellProps) {
       </main>
       <footer>
         <p>
-          Read-only local evidence. Portfolio state and economics remain
-          authoritative in QAP artifacts.
+          Local research application. Portfolio state, economics, and scientific
+          evidence remain authoritative in QAP artifacts.
         </p>
         <ChartAttribution />
       </footer>

@@ -15,6 +15,9 @@ import { Route as ExperimentsRunIdRouteImport } from './routes/experiments.$runI
 import { Route as PaperOperationsIndexRouteImport } from './routes/paper-operations.index'
 import { Route as PaperOperationsOperationIdRouteImport } from './routes/paper-operations.$operationId'
 import { Route as PortfolioRunIdRouteImport } from './routes/portfolio.$runId'
+import { Route as ScannerIndexRouteImport } from './routes/scanner.index'
+import { Route as ScannerScanIdRouteImport } from './routes/scanner.$scanId'
+import { Route as CandidateScanIdCandidateIdRouteImport } from './routes/candidate.$scanId.$candidateId'
 import { Route as PairRunIdAssetXAssetYRouteImport } from './routes/pair.$runId.$assetX.$assetY'
 
 const IndexRoute = IndexRouteImport.update({
@@ -48,6 +51,22 @@ const PortfolioRunIdRoute = PortfolioRunIdRouteImport.update({
   path: '/portfolio/$runId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScannerIndexRoute = ScannerIndexRouteImport.update({
+  id: '/scanner/',
+  path: '/scanner/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScannerScanIdRoute = ScannerScanIdRouteImport.update({
+  id: '/scanner/$scanId',
+  path: '/scanner/$scanId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CandidateScanIdCandidateIdRoute =
+  CandidateScanIdCandidateIdRouteImport.update({
+    id: '/candidate/$scanId/$candidateId',
+    path: '/candidate/$scanId/$candidateId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PairRunIdAssetXAssetYRoute = PairRunIdAssetXAssetYRouteImport.update({
   id: '/pair/$runId/$assetX/$assetY',
   path: '/pair/$runId/$assetX/$assetY',
@@ -59,8 +78,11 @@ export interface FileRoutesByFullPath {
   '/experiments/$runId': typeof ExperimentsRunIdRoute
   '/paper-operations/$operationId': typeof PaperOperationsOperationIdRoute
   '/portfolio/$runId': typeof PortfolioRunIdRoute
+  '/scanner/$scanId': typeof ScannerScanIdRoute
   '/experiments/': typeof ExperimentsIndexRoute
   '/paper-operations/': typeof PaperOperationsIndexRoute
+  '/scanner/': typeof ScannerIndexRoute
+  '/candidate/$scanId/$candidateId': typeof CandidateScanIdCandidateIdRoute
   '/pair/$runId/$assetX/$assetY': typeof PairRunIdAssetXAssetYRoute
 }
 export interface FileRoutesByTo {
@@ -68,8 +90,11 @@ export interface FileRoutesByTo {
   '/experiments/$runId': typeof ExperimentsRunIdRoute
   '/paper-operations/$operationId': typeof PaperOperationsOperationIdRoute
   '/portfolio/$runId': typeof PortfolioRunIdRoute
+  '/scanner/$scanId': typeof ScannerScanIdRoute
   '/experiments': typeof ExperimentsIndexRoute
   '/paper-operations': typeof PaperOperationsIndexRoute
+  '/scanner': typeof ScannerIndexRoute
+  '/candidate/$scanId/$candidateId': typeof CandidateScanIdCandidateIdRoute
   '/pair/$runId/$assetX/$assetY': typeof PairRunIdAssetXAssetYRoute
 }
 export interface FileRoutesById {
@@ -78,8 +103,11 @@ export interface FileRoutesById {
   '/experiments/$runId': typeof ExperimentsRunIdRoute
   '/paper-operations/$operationId': typeof PaperOperationsOperationIdRoute
   '/portfolio/$runId': typeof PortfolioRunIdRoute
+  '/scanner/$scanId': typeof ScannerScanIdRoute
   '/experiments/': typeof ExperimentsIndexRoute
   '/paper-operations/': typeof PaperOperationsIndexRoute
+  '/scanner/': typeof ScannerIndexRoute
+  '/candidate/$scanId/$candidateId': typeof CandidateScanIdCandidateIdRoute
   '/pair/$runId/$assetX/$assetY': typeof PairRunIdAssetXAssetYRoute
 }
 export interface FileRouteTypes {
@@ -89,8 +117,11 @@ export interface FileRouteTypes {
     | '/experiments/$runId'
     | '/paper-operations/$operationId'
     | '/portfolio/$runId'
+    | '/scanner/$scanId'
     | '/experiments/'
     | '/paper-operations/'
+    | '/scanner/'
+    | '/candidate/$scanId/$candidateId'
     | '/pair/$runId/$assetX/$assetY'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -98,8 +129,11 @@ export interface FileRouteTypes {
     | '/experiments/$runId'
     | '/paper-operations/$operationId'
     | '/portfolio/$runId'
+    | '/scanner/$scanId'
     | '/experiments'
     | '/paper-operations'
+    | '/scanner'
+    | '/candidate/$scanId/$candidateId'
     | '/pair/$runId/$assetX/$assetY'
   id:
     | '__root__'
@@ -107,8 +141,11 @@ export interface FileRouteTypes {
     | '/experiments/$runId'
     | '/paper-operations/$operationId'
     | '/portfolio/$runId'
+    | '/scanner/$scanId'
     | '/experiments/'
     | '/paper-operations/'
+    | '/scanner/'
+    | '/candidate/$scanId/$candidateId'
     | '/pair/$runId/$assetX/$assetY'
   fileRoutesById: FileRoutesById
 }
@@ -117,8 +154,11 @@ export interface RootRouteChildren {
   ExperimentsRunIdRoute: typeof ExperimentsRunIdRoute
   PaperOperationsOperationIdRoute: typeof PaperOperationsOperationIdRoute
   PortfolioRunIdRoute: typeof PortfolioRunIdRoute
+  ScannerScanIdRoute: typeof ScannerScanIdRoute
   ExperimentsIndexRoute: typeof ExperimentsIndexRoute
   PaperOperationsIndexRoute: typeof PaperOperationsIndexRoute
+  ScannerIndexRoute: typeof ScannerIndexRoute
+  CandidateScanIdCandidateIdRoute: typeof CandidateScanIdCandidateIdRoute
   PairRunIdAssetXAssetYRoute: typeof PairRunIdAssetXAssetYRoute
 }
 
@@ -166,6 +206,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortfolioRunIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/scanner/': {
+      id: '/scanner/'
+      path: '/scanner'
+      fullPath: '/scanner/'
+      preLoaderRoute: typeof ScannerIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scanner/$scanId': {
+      id: '/scanner/$scanId'
+      path: '/scanner/$scanId'
+      fullPath: '/scanner/$scanId'
+      preLoaderRoute: typeof ScannerScanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/candidate/$scanId/$candidateId': {
+      id: '/candidate/$scanId/$candidateId'
+      path: '/candidate/$scanId/$candidateId'
+      fullPath: '/candidate/$scanId/$candidateId'
+      preLoaderRoute: typeof CandidateScanIdCandidateIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pair/$runId/$assetX/$assetY': {
       id: '/pair/$runId/$assetX/$assetY'
       path: '/pair/$runId/$assetX/$assetY'
@@ -181,8 +242,11 @@ const rootRouteChildren: RootRouteChildren = {
   ExperimentsRunIdRoute: ExperimentsRunIdRoute,
   PaperOperationsOperationIdRoute: PaperOperationsOperationIdRoute,
   PortfolioRunIdRoute: PortfolioRunIdRoute,
+  ScannerScanIdRoute: ScannerScanIdRoute,
   ExperimentsIndexRoute: ExperimentsIndexRoute,
   PaperOperationsIndexRoute: PaperOperationsIndexRoute,
+  ScannerIndexRoute: ScannerIndexRoute,
+  CandidateScanIdCandidateIdRoute: CandidateScanIdCandidateIdRoute,
   PairRunIdAssetXAssetYRoute: PairRunIdAssetXAssetYRoute,
 }
 export const routeTree = rootRouteImport

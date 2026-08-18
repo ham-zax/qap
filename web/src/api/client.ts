@@ -10,6 +10,25 @@ type PairEvidenceDto = components['schemas']['PairEvidenceDto']
 type PairSeriesDto = components['schemas']['PairSeriesDto']
 type AnchorLensDto = components['schemas']['AnchorLensDto']
 type ErrorDetailDto = components['schemas']['ErrorDetailDto']
+type ScannerProtocolDto = components['schemas']['ScannerProtocolDto']
+type ScanListDto = components['schemas']['ScanListDto']
+type ScanDetailDto = components['schemas']['ScanDetailDto']
+type CandidateListDto = components['schemas']['CandidateListDto']
+type CandidateDetailDto = components['schemas']['CandidateDetailDto']
+type ForwardCohortListDto = components['schemas']['ForwardCohortListDto']
+type ForwardCohortDetailDto = components['schemas']['ForwardCohortDetailDto']
+type BasketListDto = components['schemas']['BasketListDto']
+type BasketDetailDto = components['schemas']['BasketDetailDto']
+type OperationRefDto = components['schemas']['OperationRefDto']
+type OperationDto = components['schemas']['OperationDto']
+type OperationListDto = components['schemas']['OperationListDto']
+type RunScanRequestDto = components['schemas']['RunScanRequestDto']
+type MomentumGenerationRequestDto = components['schemas']['MomentumGenerationRequestDto']
+type FreezeForwardCohortRequestDto = components['schemas']['FreezeForwardCohortRequestDto']
+type AdvanceForwardCohortRequestDto = components['schemas']['AdvanceForwardCohortRequestDto']
+type CapturePublicEvidenceRequestDto = components['schemas']['CapturePublicEvidenceRequestDto']
+type QualificationRequestDto = components['schemas']['QualificationRequestDto']
+type BasketRunRequestDto = components['schemas']['BasketRunRequestDto']
 
 interface ErrorEnvelopeDto {
   error: ErrorDetailDto
@@ -45,9 +64,14 @@ export function createApiClient({
 }: ApiClientOptions) {
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, '')
 
-  async function request<T>(path: string): Promise<T> {
+  async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const response = await fetchImpl(`${normalizedBaseUrl}${path}`, {
-      headers: { Accept: 'application/json' },
+      ...init,
+      headers: {
+        Accept: 'application/json',
+        ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+        ...init?.headers,
+      },
     })
     const payload: unknown = await response.json()
     if (!response.ok) {
@@ -106,6 +130,68 @@ export function createApiClient({
         `/api/pairs/${encodeURIComponent(options.assetX)}/${encodeURIComponent(options.assetY)}/evidence?${query}`,
       )
     },
+    getScannerProtocol: () => request<ScannerProtocolDto>('/api/scanner/protocol'),
+    listScans: () => request<ScanListDto>('/api/scans'),
+    getScan: (scanId: string) =>
+      request<ScanDetailDto>(`/api/scans/${encodeURIComponent(scanId)}`),
+    listScanCandidates: (scanId: string) =>
+      request<CandidateListDto>(
+        `/api/scans/${encodeURIComponent(scanId)}/candidates`,
+      ),
+    getScanCandidate: (scanId: string, candidateId: string) =>
+      request<CandidateDetailDto>(
+        `/api/scans/${encodeURIComponent(scanId)}/candidates/${encodeURIComponent(candidateId)}`,
+      ),
+    listForwardCohorts: () =>
+      request<ForwardCohortListDto>('/api/forward/cohorts'),
+    getForwardCohort: (cohortId: string) =>
+      request<ForwardCohortDetailDto>(
+        `/api/forward/cohorts/${encodeURIComponent(cohortId)}`,
+      ),
+    listBaskets: () => request<BasketListDto>('/api/baskets'),
+    getBasket: (basketId: string) =>
+      request<BasketDetailDto>(`/api/baskets/${encodeURIComponent(basketId)}`),
+    listOperations: () => request<OperationListDto>('/api/operations'),
+    getOperation: (operationId: string) =>
+      request<OperationDto>(`/api/operations/${encodeURIComponent(operationId)}`),
+    runScan: (command: RunScanRequestDto) =>
+      request<OperationRefDto>('/api/scans', {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }),
+    generateAssetMomentum: (scanId: string, command: MomentumGenerationRequestDto) =>
+      request<OperationRefDto>(
+        `/api/scans/${encodeURIComponent(scanId)}/momentum-generations`,
+        { method: 'POST', body: JSON.stringify(command) },
+      ),
+    freezeForwardCohort: (command: FreezeForwardCohortRequestDto) =>
+      request<OperationRefDto>('/api/forward/cohorts', {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }),
+    advanceForwardCohort: (
+      cohortId: string,
+      command: AdvanceForwardCohortRequestDto,
+    ) =>
+      request<OperationRefDto>(
+        `/api/forward/cohorts/${encodeURIComponent(cohortId)}/advances`,
+        { method: 'POST', body: JSON.stringify(command) },
+      ),
+    capturePublicEvidence: (command: CapturePublicEvidenceRequestDto) =>
+      request<OperationRefDto>('/api/captures', {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }),
+    qualifyCandidate: (command: QualificationRequestDto) =>
+      request<OperationRefDto>('/api/qualifications', {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }),
+    runBasket: (command: BasketRunRequestDto) =>
+      request<OperationRefDto>('/api/basket-runs', {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }),
     getAnchorLens: (options: {
       runId: string
       assetX: string

@@ -1,12 +1,14 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 
+import type { QapApiClient } from '../api/client'
 import type { QapQueries } from '../api/queries'
 import { AppShell } from '../components/AppShell'
 import { ErrorDetails } from '../components/ErrorDetails'
 import { StatusMessage } from '../components/StatusMessage'
 
 export interface QapRouterContext {
+  apiClient: QapApiClient
   queryClient: QueryClient
   queries: QapQueries
 }

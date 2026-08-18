@@ -32,7 +32,7 @@ export function createQapApp(options: CreateQapAppOptions = {}) {
   const router = createRouter({
     routeTree,
     ...(options.history ? { history: options.history } : {}),
-    context: { queryClient, queries },
+    context: { apiClient, queryClient, queries },
     defaultPreload: 'intent',
   })
 
