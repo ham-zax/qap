@@ -368,6 +368,32 @@ def test_build_basket_from_completed_scan_accepts_indirect_and_propagates_forens
     )
 
 
+def test_build_basket_rejects_changed_source_catalog(tmp_path: Path) -> None:
+    source_scan, catalog, candidate_id = _source_scan(tmp_path / "source")
+    changed = catalog.model_copy(
+        update={
+            "sources": tuple(
+                source.model_copy(update={"expected_semantic_fingerprint": "9" * 64})
+                if source.dataset_id == "aaa-1h"
+                else source
+                for source in catalog.sources
+            )
+        }
+    )
+
+    with pytest.raises(BasketDefinitionError, match="catalog does not match"):
+        build_basket_definition_from_scan(
+            source_scan,
+            changed,
+            venue="binance",
+            horizon=ScannerHorizon.SHORT,
+            decision_resolution="1h",
+            economic_assets=("AAA", "BBB", "CCC"),
+            candidate_ids=(candidate_id,),
+            created_at=NOW,
+        )
+
+
 def test_build_basket_rejects_tampered_source_scan(tmp_path: Path) -> None:
     source_scan, catalog, candidate_id = _source_scan(tmp_path / "source")
     (source_scan / "scout_trials.parquet").write_bytes(b"tampered")

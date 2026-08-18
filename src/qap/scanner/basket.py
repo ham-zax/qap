@@ -22,7 +22,11 @@ from qap.scanner.basket_protocol import (
     SCANNER_V1_BASKET,
     basket_protocol_identity,
 )
-from qap.scanner.catalog import ScannerCatalog, ScannerSourceSpec
+from qap.scanner.catalog import (
+    ScannerCatalog,
+    ScannerSourceSpec,
+    catalog_semantic_identity,
+)
 from qap.scanner.integrity import validate_scanner_integrity
 from qap.scanner.models import ScanDefinition
 from qap.scanner.protocol import (
@@ -429,6 +433,8 @@ def build_basket_definition_from_scan(
         raise BasketDefinitionError("candidate IDs must be unique")
     if normalized_venue not in definition.venues or horizon not in definition.horizons:
         raise BasketDefinitionError("basket scope is absent from source scan")
+    if catalog_semantic_identity(catalog) != definition.catalog_identity:
+        raise BasketDefinitionError("catalog does not match frozen source scan")
     eligible_by_asset = {
         str(row["asset_id"]): row
         for row in tables["eligible_assets.parquet"]
