@@ -1,7 +1,5 @@
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from hashlib import sha256
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -22,7 +20,7 @@ from qap.scanner.liquidity_policy import (
     qualify_candidate,
     required_trade_fractions,
 )
-from qap.scanner.slice2_contract import (
+from qap.scanner.prospective_protocol import (
     C95_QUANTILE,
     DAILY_COVERAGE_MINIMUM,
     DEPTH_CADENCE,
@@ -31,7 +29,6 @@ from qap.scanner.slice2_contract import (
     MINIMUM_QUALIFICATION_WINDOW,
     OVERALL_COVERAGE_MINIMUM,
     SAFE_CAPACITY_HAIRCUT,
-    SLICE2_DESIGN_SHA256,
     STRUCTURAL_REBALANCE_FRACTION,
 )
 
@@ -104,12 +101,7 @@ def _friction(
     )
 
 
-def test_slice2_liquidity_contract_is_frozen_to_approved_design() -> None:
-    design = Path(
-        "docs/superpowers/specs/"
-        "2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md"
-    )
-    assert sha256(design.read_bytes()).hexdigest() == SLICE2_DESIGN_SHA256
+def test_liquidity_contract_uses_typed_prospective_protocol_values() -> None:
     assert LIQUIDITY_POLICY_VERSION == "liquidity-policy-v1"
     assert L1_CADENCE == timedelta(seconds=60)
     assert DEPTH_CADENCE == timedelta(minutes=5)

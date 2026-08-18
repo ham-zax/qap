@@ -23,8 +23,7 @@ from qap.scanner.liquidity import (
     friction_evidence,
     walk_quote_notional,
 )
-from qap.scanner.protocol import SCANNER_V1_SLICE1
-from qap.scanner.slice2_contract import (
+from qap.scanner.prospective_protocol import (
     C95_QUANTILE,
     DAILY_COVERAGE_MINIMUM,
     DEPTH_CADENCE,
@@ -36,6 +35,7 @@ from qap.scanner.slice2_contract import (
     STRUCTURAL_REBALANCE_FRACTION,
     TARGET_BASE_WEIGHTS,
 )
+from qap.scanner.protocol import SCANNER_V1_SLICE1
 
 _ZERO = Decimal("0")
 _ONE = Decimal("1")

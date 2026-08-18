@@ -1,7 +1,7 @@
 # pyright: reportUnknownArgumentType=false
 # pyright: reportUnknownMemberType=false
 # pyright: reportUnknownVariableType=false
-"""Recoverable immutable evidence artifacts for Scanner-V1 Slice 2."""
+"""Recoverable immutable artifacts for scanner prospective evidence."""
 
 import json
 import os
@@ -9,37 +9,42 @@ import string
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
-from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+from qap.artifact_integrity import (
+    INTEGRITY_FILE,
+    ArtifactIntegrity,
+    build_integrity_record,
+)
 from qap.scanner.liquidity_policy import QualificationReason, QualificationState
-from qap.scanner.prospective import ProspectiveCheckpoint, ProspectiveCohort
-from qap.scanner.slice2_artifact_contract import (
+from qap.scanner.prospective import ForwardCheckpoint, ForwardCohort
+from qap.scanner.prospective_artifact_schemas import (
+    CHECKPOINT_AUTHORITATIVE_FILES,
     CHECKPOINT_DIRECTORY,
+    CHECKPOINT_SCHEMA,
     CHECKPOINT_TABLE,
     CHECKPOINTS_INDEX,
     COHORT_DEFINITION,
+    FREEZE_SCHEMA,
     FREEZES_TABLE,
+    LIQUIDITY_SCHEMA,
     LIQUIDITY_TABLE,
     MANIFEST,
+    OUTCOME_INDEX_SCHEMA,
     OUTCOMES_INDEX,
+    QUALIFICATION_SCHEMA,
     QUALIFICATION_TABLE,
 )
-from qap.scanner.slice2_artifact_schemas import (
-    CHECKPOINT_SCHEMA,
-    FREEZE_SCHEMA,
-    LIQUIDITY_SCHEMA,
-    OUTCOME_INDEX_SCHEMA,
-    QUALIFICATION_SCHEMA,
+from qap.scanner.prospective_integrity import (
+    ProspectiveArtifactError,
+    completed_generation_dirs,
+    read_manifest,
+    validate_completed_generation,
 )
-
-
-class Slice2ArtifactError(ValueError):
-    """Raised when prospective evidence cannot be published without ambiguity."""
 
 
 def _identity(value: str, *, field: str) -> str:
@@ -47,7 +52,9 @@ def _identity(value: str, *, field: str) -> str:
     if len(normalized) != 64 or any(
         character not in string.hexdigits.lower() for character in normalized
     ):
-        raise Slice2ArtifactError(f"{field} identity must be a SHA-256 fingerprint")
+        raise ProspectiveArtifactError(
+            f"{field} identity must be a SHA-256 fingerprint"
+        )
     return normalized
 
 
@@ -77,7 +84,7 @@ def _atomic_write_bytes(path: Path, payload: bytes) -> None:
         os.replace(temporary, path)
     except OSError as exc:
         temporary.unlink(missing_ok=True)
-        raise Slice2ArtifactError(f"failed to publish {path.name}") from exc
+        raise ProspectiveArtifactError(f"failed to publish {path.name}") from exc
 
 
 def _write_table(path: Path, table: Any) -> None:
@@ -88,16 +95,16 @@ def _write_table(path: Path, table: Any) -> None:
         os.replace(temporary, path)
     except (OSError, pa.ArrowException) as exc:
         temporary.unlink(missing_ok=True)
-        raise Slice2ArtifactError(f"failed to write {path.name}") from exc
+        raise ProspectiveArtifactError(f"failed to write {path.name}") from exc
 
 
 def _read_table(path: Path, schema: Any) -> Any:
     try:
         table = pq.read_table(path)
     except (OSError, pa.ArrowException) as exc:
-        raise Slice2ArtifactError(f"table is malformed: {path.name}") from exc
+        raise ProspectiveArtifactError(f"table is malformed: {path.name}") from exc
     if not table.schema.equals(schema):
-        raise Slice2ArtifactError(f"table schema mismatch: {path.name}")
+        raise ProspectiveArtifactError(f"table schema mismatch: {path.name}")
     return table
 
 
@@ -106,15 +113,19 @@ class CheckpointObservationRecord:
     checkpoint_id: str
     cohort_id: str
     candidate_id: str
+    freeze_id: str
     checkpoint_index: int
     freeze_at: datetime
+    eligible_information_end: datetime
+    forward_start: datetime
+    first_outcome_complete_at: datetime
     evidence_window_start: datetime
     evidence_window_end: datetime
     information_end: datetime
     forward_slices_json: str
     evidence_role: str
-    slice2_protocol_version: str
-    protocol_identity: str
+    prospective_protocol_version: str
+    prospective_protocol_identity: str
     prospective_complete: bool
     prospective_status: str
     authoritative_run_id: str | None
@@ -122,7 +133,7 @@ class CheckpointObservationRecord:
     @classmethod
     def from_checkpoint(
         cls,
-        checkpoint: ProspectiveCheckpoint,
+        checkpoint: ForwardCheckpoint,
         *,
         prospective_complete: bool,
         prospective_status: str,
@@ -133,15 +144,19 @@ class CheckpointObservationRecord:
             checkpoint_id=checkpoint.checkpoint_id,
             cohort_id=checkpoint.cohort_id,
             candidate_id=checkpoint.candidate_id,
+            freeze_id=checkpoint.freeze_id,
             checkpoint_index=checkpoint.checkpoint_index,
             freeze_at=checkpoint.freeze_at,
+            eligible_information_end=checkpoint.eligible_information_end,
+            forward_start=checkpoint.forward_start,
+            first_outcome_complete_at=checkpoint.first_outcome_complete_at,
             evidence_window_start=checkpoint.evidence_window_start,
             evidence_window_end=checkpoint.evidence_window_end,
             information_end=checkpoint.information_end,
             forward_slices_json=_json_bytes(slices).decode("utf-8"),
             evidence_role=checkpoint.evidence_role,
-            slice2_protocol_version=checkpoint.slice2_protocol_version,
-            protocol_identity=checkpoint.protocol_identity,
+            prospective_protocol_version=checkpoint.prospective_protocol_version,
+            prospective_protocol_identity=checkpoint.prospective_protocol_identity,
             prospective_complete=prospective_complete,
             prospective_status=prospective_status.strip(),
             authoritative_run_id=(
@@ -188,51 +203,81 @@ class CapacityQualificationRecord:
 
 
 @dataclass(frozen=True, slots=True)
-class Slice2CheckpointGeneration:
+class ForwardCheckpointGeneration:
     cohort_root: Path
-    checkpoint: ProspectiveCheckpoint
+    checkpoint: ForwardCheckpoint
     staging_directory: Path
     final_directory: Path
 
 
-def _cohort_payload(cohort: ProspectiveCohort) -> dict[str, object]:
+def _cohort_payload(cohort: ForwardCohort) -> dict[str, object]:
     payload = cohort.model_dump(mode="json")
     payload["cohort_id"] = cohort.cohort_id
     payload["candidate_ids"] = list(cohort.candidate_ids)
+    payload["checkpoint_freeze_ids"] = list(cohort.candidate_freeze_ids)
     return payload
 
 
-def _freeze_table(cohort: ProspectiveCohort) -> Any:
+def _freeze_table(cohort: ForwardCohort) -> Any:
     rows = [
         {
             "cohort_id": cohort.cohort_id,
+            "freeze_id": item.freeze_id,
             "candidate_id": item.candidate_id,
-            "deep_replay_run_id": item.deep_replay_run_id,
-            "slice1_economic_gate_status": item.slice1_economic_gate_status,
-            "freeze_at": cohort.freeze_at,
-            "source_scan_id": cohort.source_scan_id,
-            "slice2_protocol_version": cohort.slice2_protocol_version,
-            "protocol_identity": cohort.protocol_identity,
+            "scan_id": item.scan_id,
+            "scanner_protocol_version": item.scanner_protocol_version,
+            "scanner_protocol_identity": item.scanner_protocol_identity,
+            "prospective_protocol_version": item.prospective_protocol_version,
+            "prospective_protocol_identity": item.prospective_protocol_identity,
+            "automatic_selected": item.automatic_selected,
+            "manual_selected": item.manual_selected,
+            "frozen_at": item.frozen_at,
+            "eligible_information_end": item.eligible_information_end,
+            "forward_start": item.forward_start,
+            "forward_end": item.forward_end,
+            "horizon": item.horizon.value,
+            "venue": item.venue,
+            "pair_id": item.pair_id,
+            "orientation": item.orientation,
+            "resolution": item.resolution,
+            "model_family": item.model_family,
+            "template_id": item.template_id,
+            "model_parameters_json": _json_bytes(list(item.model_parameters)).decode(
+                "utf-8"
+            ),
+            "source_artifact_fingerprints": list(item.source_artifact_fingerprints),
+            "selection_slice_fingerprints": list(item.selection_slice_fingerprints),
+            "universe_snapshot_id": item.universe_snapshot_id,
+            "cost_policy_reference": item.cost_policy_reference,
+            "primary_control_reference": item.primary_control_reference,
+            "candidate_deep_replay_run_id": item.candidate_deep_replay_run_id,
+            "candidate_deep_replay_gate_status": (
+                item.candidate_deep_replay_gate_status
+            ),
         }
-        for item in cohort.candidates
+        for item in cohort.candidate_freezes
     ]
     return pa.Table.from_pylist(rows, schema=FREEZE_SCHEMA)
 
 
-def _verify_cohort_root(root: Path, cohort: ProspectiveCohort) -> None:
+def _verify_cohort_root(root: Path, cohort: ForwardCohort) -> None:
     definition = root / COHORT_DEFINITION
     freezes = root / FREEZES_TABLE
     if not definition.is_file() or not freezes.is_file():
-        raise Slice2ArtifactError("cohort definition is incomplete")
+        raise ProspectiveArtifactError("cohort definition is incomplete")
     if definition.read_bytes() != _json_bytes(_cohort_payload(cohort)):
-        raise Slice2ArtifactError("cohort definition does not match frozen identity")
+        raise ProspectiveArtifactError(
+            "cohort definition does not match frozen identity"
+        )
     if not _read_table(freezes, FREEZE_SCHEMA).equals(_freeze_table(cohort)):
-        raise Slice2ArtifactError("cohort freeze table does not match frozen identity")
+        raise ProspectiveArtifactError(
+            "cohort freeze table does not match frozen identity"
+        )
 
 
-def start_prospective_cohort(
+def start_forward_cohort(
     run_root: str | Path,
-    cohort: ProspectiveCohort,
+    cohort: ForwardCohort,
     *,
     cohort_id_override: str | None = None,
 ) -> Path:
@@ -275,27 +320,31 @@ def _load_cohort_payload(root: Path) -> dict[str, object]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise Slice2ArtifactError("cohort definition is malformed") from exc
+        raise ProspectiveArtifactError("cohort definition is malformed") from exc
     if not isinstance(payload, dict):
-        raise Slice2ArtifactError("cohort definition is malformed")
+        raise ProspectiveArtifactError("cohort definition is malformed")
     return payload
 
 
-def _checkpoint_row(checkpoint: ProspectiveCheckpoint) -> dict[str, object]:
+def _checkpoint_row(checkpoint: ForwardCheckpoint) -> dict[str, object]:
     slices = [item.model_dump(mode="json") for item in checkpoint.forward_slices]
     return {
         "checkpoint_id": checkpoint.checkpoint_id,
         "cohort_id": checkpoint.cohort_id,
         "candidate_id": checkpoint.candidate_id,
+        "freeze_id": checkpoint.freeze_id,
         "checkpoint_index": checkpoint.checkpoint_index,
         "freeze_at": checkpoint.freeze_at,
+        "eligible_information_end": checkpoint.eligible_information_end,
+        "forward_start": checkpoint.forward_start,
+        "first_outcome_complete_at": checkpoint.first_outcome_complete_at,
         "evidence_window_start": checkpoint.evidence_window_start,
         "evidence_window_end": checkpoint.evidence_window_end,
         "information_end": checkpoint.information_end,
         "forward_slices_json": _json_bytes(slices).decode("utf-8"),
         "evidence_role": checkpoint.evidence_role,
-        "slice2_protocol_version": checkpoint.slice2_protocol_version,
-        "protocol_identity": checkpoint.protocol_identity,
+        "prospective_protocol_version": checkpoint.prospective_protocol_version,
+        "prospective_protocol_identity": checkpoint.prospective_protocol_identity,
         "prospective_complete": False,
         "prospective_status": "enumerated",
         "authoritative_run_id": None,
@@ -304,22 +353,38 @@ def _checkpoint_row(checkpoint: ProspectiveCheckpoint) -> dict[str, object]:
 
 def start_checkpoint(
     cohort_root: str | Path,
-    checkpoint: ProspectiveCheckpoint,
+    checkpoint: ForwardCheckpoint,
     *,
     checkpoint_id_override: str | None = None,
-) -> Slice2CheckpointGeneration:
+) -> ForwardCheckpointGeneration:
     """Create or resume one immutable checkpoint staging generation."""
 
     root = Path(cohort_root).resolve()
     payload = _load_cohort_payload(root)
     if payload.get("cohort_id") != checkpoint.cohort_id:
-        raise Slice2ArtifactError("checkpoint cohort identity mismatch")
-    candidate_ids = payload.get("candidate_ids")
-    if (
-        not isinstance(candidate_ids, list)
-        or checkpoint.candidate_id not in candidate_ids
-    ):
-        raise Slice2ArtifactError("checkpoint candidate is not frozen in cohort")
+        raise ProspectiveArtifactError("checkpoint cohort identity mismatch")
+    freeze_ids = payload.get("checkpoint_freeze_ids")
+    if not isinstance(freeze_ids, list) or checkpoint.freeze_id not in freeze_ids:
+        raise ProspectiveArtifactError("checkpoint freeze is not owned by cohort")
+    freeze_rows = _read_table(root / FREEZES_TABLE, FREEZE_SCHEMA).to_pylist()
+    freeze_row = next(
+        (row for row in freeze_rows if row["freeze_id"] == checkpoint.freeze_id),
+        None,
+    )
+    if freeze_row is None or freeze_row["candidate_id"] != checkpoint.candidate_id:
+        raise ProspectiveArtifactError("checkpoint candidate/freeze lineage mismatch")
+    completed_indices = [
+        manifest["checkpoint_index"]
+        for directory in completed_generation_dirs(root)
+        for manifest in [read_manifest(directory)]
+        if manifest.get("freeze_id") == checkpoint.freeze_id
+        and isinstance(manifest["checkpoint_index"], int)
+        and not isinstance(manifest["checkpoint_index"], bool)
+    ]
+    if completed_indices and checkpoint.checkpoint_index <= max(completed_indices):
+        raise ProspectiveArtifactError(
+            "checkpoint index must advance monotonically for the freeze"
+        )
     identity = _identity(
         (
             checkpoint.checkpoint_id
@@ -332,15 +397,19 @@ def start_checkpoint(
     final = generations / f"{checkpoint.checkpoint_index:04d}-{identity}"
     staging = final.with_name(f"{final.name}.partial")
     if final.exists():
-        raise Slice2ArtifactError("completed checkpoint is immutable")
+        raise ProspectiveArtifactError("completed checkpoint is immutable")
     definition_path = staging / CHECKPOINT_TABLE
     expected = _checkpoint_row(checkpoint)
     if staging.exists():
         if identity != checkpoint.checkpoint_id or not definition_path.is_file():
-            raise Slice2ArtifactError("checkpoint definition does not match request")
+            raise ProspectiveArtifactError(
+                "checkpoint definition does not match request"
+            )
         table = _read_table(definition_path, CHECKPOINT_SCHEMA)
         if table.num_rows != 1:
-            raise Slice2ArtifactError("checkpoint definition does not match request")
+            raise ProspectiveArtifactError(
+                "checkpoint definition does not match request"
+            )
         stored = table.to_pylist()[0]
         for key, value in expected.items():
             if key in {
@@ -350,16 +419,16 @@ def start_checkpoint(
             }:
                 continue
             if stored[key] != value:
-                raise Slice2ArtifactError(
+                raise ProspectiveArtifactError(
                     "checkpoint definition does not match request"
                 )
-        return Slice2CheckpointGeneration(root, checkpoint, staging, final)
+        return ForwardCheckpointGeneration(root, checkpoint, staging, final)
     staging.mkdir(parents=True, exist_ok=False)
     _write_table(
         definition_path,
         pa.Table.from_pylist([expected], schema=CHECKPOINT_SCHEMA),
     )
-    return Slice2CheckpointGeneration(root, checkpoint, staging, final)
+    return ForwardCheckpointGeneration(root, checkpoint, staging, final)
 
 
 def _observation_table(records: tuple[CheckpointObservationRecord, ...]) -> Any:
@@ -368,15 +437,19 @@ def _observation_table(records: tuple[CheckpointObservationRecord, ...]) -> Any:
             "checkpoint_id": record.checkpoint_id,
             "cohort_id": record.cohort_id,
             "candidate_id": record.candidate_id,
+            "freeze_id": record.freeze_id,
             "checkpoint_index": record.checkpoint_index,
             "freeze_at": record.freeze_at,
+            "eligible_information_end": record.eligible_information_end,
+            "forward_start": record.forward_start,
+            "first_outcome_complete_at": record.first_outcome_complete_at,
             "evidence_window_start": record.evidence_window_start,
             "evidence_window_end": record.evidence_window_end,
             "information_end": record.information_end,
             "forward_slices_json": record.forward_slices_json,
             "evidence_role": record.evidence_role,
-            "slice2_protocol_version": record.slice2_protocol_version,
-            "protocol_identity": record.protocol_identity,
+            "prospective_protocol_version": record.prospective_protocol_version,
+            "prospective_protocol_identity": record.prospective_protocol_identity,
             "prospective_complete": record.prospective_complete,
             "prospective_status": record.prospective_status,
             "authoritative_run_id": record.authoritative_run_id,
@@ -436,14 +509,14 @@ def _qualification_table(records: tuple[CapacityQualificationRecord, ...]) -> An
 
 
 def _validate_lineage(
-    generation: Slice2CheckpointGeneration,
+    generation: ForwardCheckpointGeneration,
     observations: tuple[CheckpointObservationRecord, ...],
     liquidity: tuple[LiquidityEvidenceRecord, ...],
     qualifications: tuple[CapacityQualificationRecord, ...],
 ) -> None:
     checkpoint = generation.checkpoint
     if len(observations) != 1 or len(qualifications) != 1:
-        raise Slice2ArtifactError(
+        raise ProspectiveArtifactError(
             "checkpoint requires one observation and qualification row"
         )
     for row in (*observations, *liquidity, *qualifications):
@@ -451,17 +524,17 @@ def _validate_lineage(
             getattr(row, "checkpoint_id", None) != checkpoint.checkpoint_id
             or getattr(row, "candidate_id", None) != checkpoint.candidate_id
         ):
-            raise Slice2ArtifactError("checkpoint lineage mismatch")
+            raise ProspectiveArtifactError("checkpoint lineage mismatch")
     if observations[0].cohort_id != checkpoint.cohort_id:
-        raise Slice2ArtifactError("checkpoint lineage mismatch")
+        raise ProspectiveArtifactError("checkpoint lineage mismatch")
     if qualifications[0].as_of != checkpoint.information_end:
-        raise Slice2ArtifactError(
+        raise ProspectiveArtifactError(
             "qualification timestamp must match checkpoint cutoff"
         )
 
 
 def write_checkpoint_evidence(
-    generation: Slice2CheckpointGeneration,
+    generation: ForwardCheckpointGeneration,
     *,
     observations: tuple[CheckpointObservationRecord, ...],
     liquidity: tuple[LiquidityEvidenceRecord, ...],
@@ -494,57 +567,43 @@ def _required_tables(directory: Path) -> dict[str, Any]:
     for name, schema in schemas.items():
         path = directory / name
         if not path.is_file():
-            raise Slice2ArtifactError(f"checkpoint is missing {name}")
+            raise ProspectiveArtifactError(f"checkpoint is missing {name}")
         tables[name] = _read_table(path, schema)
     return tables
 
 
-def _reconcile(generation: Slice2CheckpointGeneration, tables: dict[str, Any]) -> None:
+def _reconcile(generation: ForwardCheckpointGeneration, tables: dict[str, Any]) -> None:
     if (
         tables[CHECKPOINT_TABLE].num_rows != 1
         or tables[QUALIFICATION_TABLE].num_rows != 1
     ):
-        raise Slice2ArtifactError("checkpoint row counts do not reconcile")
+        raise ProspectiveArtifactError("checkpoint row counts do not reconcile")
     for name, table in tables.items():
         for row in table.to_pylist():
             if row["checkpoint_id"] != generation.checkpoint.checkpoint_id:
-                raise Slice2ArtifactError(f"{name} checkpoint lineage mismatch")
+                raise ProspectiveArtifactError(f"{name} checkpoint lineage mismatch")
             if row["candidate_id"] != generation.checkpoint.candidate_id:
-                raise Slice2ArtifactError(f"{name} candidate lineage mismatch")
+                raise ProspectiveArtifactError(f"{name} candidate lineage mismatch")
 
 
-def _table_hash(path: Path) -> str:
-    return sha256(path.read_bytes()).hexdigest()
-
-
-def _completed_generation_dirs(cohort_root: Path) -> tuple[Path, ...]:
-    root = cohort_root / CHECKPOINT_DIRECTORY
-    if not root.is_dir():
-        return ()
-    completed: list[tuple[int, Path]] = []
-    for path in root.iterdir():
-        if not path.is_dir() or path.name.endswith(".partial"):
-            continue
-        manifest = path / MANIFEST
-        if not manifest.is_file():
-            continue
-        try:
-            payload = json.loads(manifest.read_text(encoding="utf-8"))
-            index = int(payload["checkpoint_index"])
-        except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
-            raise Slice2ArtifactError(
-                "completed checkpoint manifest is malformed"
-            ) from exc
-        completed.append((index, path))
-    completed.sort(key=lambda item: (item[0], item[1].name))
-    return tuple(path for _index, path in completed)
+def _write_integrity(directory: Path, *, checkpoint_id: str) -> ArtifactIntegrity:
+    record = build_integrity_record(
+        directory,
+        artifact_id=checkpoint_id,
+        file_names=tuple(sorted(CHECKPOINT_AUTHORITATIVE_FILES)),
+    )
+    _atomic_write_bytes(
+        directory / INTEGRITY_FILE,
+        (record.model_dump_json(indent=2) + "\n").encode("utf-8"),
+    )
+    return record
 
 
 def _rebuild_indices(cohort_root: Path) -> None:
     checkpoint_rows: list[dict[str, object]] = []
     outcome_rows: list[dict[str, object]] = []
-    for directory in _completed_generation_dirs(cohort_root):
-        tables = _required_tables(directory)
+    for directory in completed_generation_dirs(cohort_root):
+        _manifest, tables = validate_completed_generation(directory)
         checkpoint = tables[CHECKPOINT_TABLE].to_pylist()[0]
         qualification = tables[QUALIFICATION_TABLE].to_pylist()[0]
         checkpoint_rows.append(checkpoint)
@@ -573,17 +632,14 @@ def _rebuild_indices(cohort_root: Path) -> None:
     )
 
 
-def publish_checkpoint(generation: Slice2CheckpointGeneration) -> Path:
+def publish_checkpoint(generation: ForwardCheckpointGeneration) -> Path:
     """Reconcile and atomically publish one completed checkpoint generation."""
 
     if generation.final_directory.exists():
-        raise Slice2ArtifactError("completed checkpoint publication collision")
+        raise ProspectiveArtifactError("completed checkpoint publication collision")
     tables = _required_tables(generation.staging_directory)
     _reconcile(generation, tables)
     table_counts = {name: table.num_rows for name, table in tables.items()}
-    table_hashes = {
-        name: _table_hash(generation.staging_directory / name) for name in tables
-    }
     observation = tables[CHECKPOINT_TABLE].to_pylist()[0]
     qualification = tables[QUALIFICATION_TABLE].to_pylist()[0]
     manifest = {
@@ -592,30 +648,29 @@ def publish_checkpoint(generation: Slice2CheckpointGeneration) -> Path:
         "checkpoint_id": generation.checkpoint.checkpoint_id,
         "candidate_id": generation.checkpoint.candidate_id,
         "checkpoint_index": generation.checkpoint.checkpoint_index,
-        "slice2_protocol_version": generation.checkpoint.slice2_protocol_version,
-        "protocol_identity": generation.checkpoint.protocol_identity,
+        "prospective_protocol_version": (
+            generation.checkpoint.prospective_protocol_version
+        ),
+        "prospective_protocol_identity": (
+            generation.checkpoint.prospective_protocol_identity
+        ),
+        "freeze_id": generation.checkpoint.freeze_id,
         "prospective_status": observation["prospective_status"],
         "authoritative_run_id": observation["authoritative_run_id"],
         "qualification_state": qualification["qualification_state"],
         "table_counts": dict(sorted(table_counts.items())),
-        "table_hashes": dict(sorted(table_hashes.items())),
         "published_at": datetime.now(UTC).isoformat(),
     }
     manifest_path = generation.staging_directory / MANIFEST
     _atomic_write_bytes(manifest_path, _json_bytes(manifest))
-    reread = json.loads(manifest_path.read_text(encoding="utf-8"))
-    reread_tables = _required_tables(generation.staging_directory)
-    _reconcile(generation, reread_tables)
-    if reread["table_counts"] != {
-        name: table.num_rows for name, table in reread_tables.items()
-    }:
-        raise Slice2ArtifactError("checkpoint manifest table counts do not reconcile")
-    if reread["table_hashes"] != {
-        name: _table_hash(generation.staging_directory / name) for name in reread_tables
-    }:
-        raise Slice2ArtifactError("checkpoint manifest table hashes do not reconcile")
+    _write_integrity(
+        generation.staging_directory,
+        checkpoint_id=generation.checkpoint.checkpoint_id,
+    )
+    validate_completed_generation(generation.staging_directory, allow_partial=True)
     generation.final_directory.parent.mkdir(parents=True, exist_ok=True)
     os.replace(generation.staging_directory, generation.final_directory)
+    validate_completed_generation(generation.final_directory)
     _rebuild_indices(generation.cohort_root)
     return generation.final_directory
 
@@ -623,18 +678,18 @@ def publish_checkpoint(generation: Slice2CheckpointGeneration) -> Path:
 def read_completed_checkpoints(cohort_root: str | Path) -> tuple[Path, ...]:
     """Return manifest-bearing checkpoint generations, never partial state."""
 
-    return _completed_generation_dirs(Path(cohort_root).resolve())
+    return completed_generation_dirs(Path(cohort_root).resolve())
 
 
 __all__ = [
     "CapacityQualificationRecord",
     "CheckpointObservationRecord",
     "LiquidityEvidenceRecord",
-    "Slice2ArtifactError",
-    "Slice2CheckpointGeneration",
+    "ProspectiveArtifactError",
+    "ForwardCheckpointGeneration",
     "publish_checkpoint",
     "read_completed_checkpoints",
     "start_checkpoint",
-    "start_prospective_cohort",
+    "start_forward_cohort",
     "write_checkpoint_evidence",
 ]
