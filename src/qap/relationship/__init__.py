@@ -1,6 +1,7 @@
 """Relationship-analysis primitives and admitted descriptive transforms."""
 
 from qap.relationship.anchor import AnchorLens, AnchorReduction, build_anchor_lens
+from qap.relationship.models.rolling_residual import rolling_residual_observation
 from qap.relationship.normalized import (
     NormalizationScale,
     NormalizedPath,
@@ -46,4 +47,5 @@ __all__ = [
     "normalize_to_hundred",
     "normalize_to_one",
     "raw_ratio",
+    "rolling_residual_observation",
 ]
