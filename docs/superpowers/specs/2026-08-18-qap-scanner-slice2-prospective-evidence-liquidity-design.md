@@ -8,6 +8,8 @@
 
 **Scope:** Turn Slice-1 historical survivors into immutable prospective research cohorts and collect enough current microstructure evidence to classify hypothetical actionability without pretending historical OHLCV proves executable capacity.
 
+> **Contract correction — 2026-08-18:** This revision resolves the implementation-plan review findings before Slice-2 execution resumes. It makes prospective freeze/control lineage explicit, makes book capacity direction-specific, assigns public-capture and evidence-integrity ownership, and establishes one typed/versioned semantic protocol as runtime authority. Editorial Markdown hashes are not protocol identity.
+
 ## 1. Goal
 
 Slice 2 answers two questions that Slice 1 intentionally cannot:
@@ -31,6 +33,56 @@ The slice does **not** build live trading, a scheduler platform, a portfolio opt
 - Liquidity evidence may restrict actionability but cannot create alpha.
 - Missing historical order-book evidence remains unknown rather than imputed.
 - No live credentials, order placement, capital authority, borrowing, leverage, derivatives, or unowned shorts.
+
+### 2.1 Executable protocol and enforcement ownership
+
+One typed/versioned prospective protocol owns the numerical and semantic Slice-2 defaults used at runtime. Its canonical semantic payload includes at least:
+
+```text
+prospective_protocol_version
+forward_window_by_horizon
+primary_control_reference
+cost_policy_reference
+liquidity_policy_version
+capture_cadence_contract
+coverage_thresholds
+capacity_quantile
+capacity_safety_haircut
+structural_rebalance_fraction
+qualification_policy_version
+```
+
+Semantic protocol identity is derived from that canonical payload. The SHA-256 of this Markdown document is **not** runtime semantic authority; editorial changes must not re-identify otherwise unchanged research evidence.
+
+Protected contracts have one first enforcement owner:
+
+| Contract | First enforcement owner | Required evidence |
+| --- | --- | --- |
+| freeze-before-outcome causality | scanner prospective domain | `CandidateFreeze` timestamps + forward slice identity |
+| mandatory prospective economics | `qap.experiment` prospective adapter | ordinary QAP run/result reference |
+| reserved `FINAL_OOS` / `FORWARD_PAPER` exclusion | experiment data-role admission before replay bytes | rejected role/source before replay |
+| public microstructure provenance | `qap.market` public capture/admission | exact venue/instrument/timestamp observation identity |
+| exact prospective artifact set | neutral/shared artifact-integrity primitive | required/allowed files + exact digests |
+| liquidity/capacity semantics | scanner typed prospective protocol | protocol version + evidence/result references |
+
+Do not create parallel implementations of a protected contract in several scanner modules. The implementation plan references these contracts instead of restating alternative formulas.
+
+The implementation plan uses these design contract IDs:
+
+| ID | Design contract |
+| --- | --- |
+| `PR-01` | immutable `CandidateFreeze` and strict freeze-before-outcome timing (§5) |
+| `PR-02` | automatic cohort enrollment, zero-new-member cohorts, reselection and manual separation (§6) |
+| `PR-03` | fixed 48h / 10d / 28d forward horizons and causal checkpoint extension (§5.3, §7–8) |
+| `PR-04` | mandatory ordinary-QAP prospective economics with frozen control/cost and no `FORWARD_PAPER`/`FINAL_OOS` (§7.2, §9) |
+| `EV-01` | immutable append-only prospective publication with exact physical integrity (§18–19) |
+| `EV-02` | candidate outcomes plus scanner-selection cohort scoreboards without portfolio aggregation (§4, §9–10) |
+| `LQ-01` | bounded public Binance/Gate capture and instrument-state provenance (§11–12) |
+| `LQ-02` | 14d / 60s / 5m / 95% overall / 90% daily coverage contract (§11.2) |
+| `LQ-03` | exact mid-relative book friction with fee counted once (§13) |
+| `LQ-04` | directional nearest-rank `C95_*`, Decimal `q_star_*`, and `q_safe_* = 0.5*q_star_*` (§13) |
+| `LQ-05` | direction-specific drift/transition capital ceiling (§14) |
+| `LQ-06` | explicit-`requested_capital` qualification state machine and QAP economic gates (§15, §17) |
 
 ## 3. Architecture
 
@@ -113,6 +165,7 @@ freeze_id
 candidate_id
 scan_id
 scanner_protocol_version
+prospective_protocol_version
 automatic/manual selection facts
 frozen_at
 eligible_information_end
@@ -129,6 +182,7 @@ model_parameters
 source/selection-slice fingerprints at freeze
 universe_snapshot_id
 cost_policy_reference
+primary_control_reference
 candidate_deep_replay_run_id
 candidate_deep_replay_gate_status
 ```
@@ -140,12 +194,14 @@ Only a Slice-1 `deep_replay_survivor` may enter the canonical automatic prospect
 ### 5.2 Freeze timing invariant
 
 ```text
+eligible_information_end <= frozen_at
+AND
 frozen_at < forward_start
 AND
-eligible_information_end < first outcome observation used
+forward_start < first_outcome_observation_complete_at
 ```
 
-The pair, orientation, model, thresholds, target policy, costs, and evaluation horizon are immutable after freeze. Changing them creates a new candidate/freeze generation; old prospective evidence does not transfer.
+The pair, orientation, model, thresholds, target policy, primary control, costs, prospective protocol, and evaluation horizon are immutable after freeze. Changing them creates a new candidate/freeze generation; old prospective evidence does not transfer.
 
 `forward_start` is candidate-specific: use the first model-resolution decision boundary strictly after `frozen_at`, and require the first outcome observation used to complete after that boundary. Cohort members do not need one shared bar boundary.
 
@@ -172,13 +228,14 @@ For each completed automatic Slice-1 scan/horizon:
 5. allow a zero-new-member cohort as a valid result;
 6. preserve manual/pinned membership separately.
 
-Do not ask the operator to cherry-pick one historical winner before prospective tracking. Active-freeze deduplication bounds repeated 4-hour/daily scans without pretending repeated overlapping selections are independent experiments. The deduplication key is the frozen semantic rule `(protocol, venue, pair, orientation, horizon, resolution, model_family, template_id, model_parameters, cost_policy)`, not the source scan ID. After a freeze matures, a later reselection may open a new prospective generation.
+Do not ask the operator to cherry-pick one historical winner before prospective tracking. Active-freeze deduplication bounds repeated 4-hour/daily scans without pretending repeated overlapping selections are independent experiments. The deduplication key is the frozen semantic rule `(prospective_protocol, scanner_protocol, venue, pair, orientation, horizon, resolution, model_family, template_id, model_parameters, primary_control, cost_policy)`, not the source scan ID. After a freeze matures, a later reselection may open a new prospective generation.
 
 A cohort records:
 
 ```text
 forward_cohort_id
 scanner_protocol_version
+prospective_protocol_version
 source_scan_id
 horizon
 cohort_frozen_at
@@ -224,6 +281,8 @@ Prospective status is proven by scanner freeze/cohort timing and immutable linea
 
 Reserved `FINAL_OOS` data is never used by this path.
 
+Canonical prospective candidate economics are **always** established through ordinary QAP experiment/replay authority. There is no scanner-local or optional alternative economic engine for a matured `ForwardOutcome`.
+
 ## 8. Forward processing and checkpoints
 
 Expose deterministic commands that advance frozen cohorts against newly admitted data. Do not build a daemon or scheduler.
@@ -242,7 +301,9 @@ A checkpoint records:
 ```text
 checkpoint_id
 freeze_id
+prospective_protocol_version
 through
+first_outcome_observation_complete_at
 market_slice_fingerprints
 replay_run_id
 status: pending | partial | matured | invalid
@@ -265,6 +326,20 @@ External/manual invocation may later follow the already chosen cadence: short ro
 
 ## 9. Prospective economic outcome
 
+`ForwardOutcome` is the candidate-level prospective evidence product. It records at least:
+
+```text
+outcome_id
+freeze_id
+prospective_protocol_version
+status: pending | partial | matured | invalid
+through / matured_at
+qap_run_id
+qap_result_reference
+primary_control_reference
+cost_policy_reference
+```
+
 A matured candidate outcome references authoritative QAP economics and exposes separately:
 
 ```text
@@ -286,6 +361,8 @@ QAP wealth > strongest simple admissible control
 ```
 
 Historical pass followed by prospective failure is a normal result and must remain visible.
+
+The prospective replay uses the `primary_control_reference` and `cost_policy_reference` frozen into the `CandidateFreeze`. It must not rediscover or substitute a different control/cost policy at checkpoint or maturity time.
 
 ## 10. Prospective scoreboards
 
@@ -333,6 +410,8 @@ instrument state
 ```
 
 No private account data or credentials are required.
+
+`qap.market` owns bounded one-shot public capture. Extend the existing public Binance adapter for the required L1/depth/instrument-state reads and add the equivalent bounded Gate public adapter because Gate is an approved Slice-1 venue. Scanner code consumes admitted `qap.market` observations; it does not implement exchange HTTP calls. External/manual invocation supplies cadence, so no internal daemon or scheduler is required.
 
 ### 11.2 Capture cadence contract
 
@@ -398,10 +477,10 @@ c_t(q) = abs(VWAP_t(q) - mid_t) / mid_t + configured_taker_fee
 Across the qualified microstructure window use a conservative nearest-rank percentile (`ceil(0.95*n)-1` after sorting), with no interpolated quantile:
 
 ```text
-C95(q) = max(
-  95th_percentile(buy_cost_t(q)),
-  95th_percentile(sell_cost_t(q))
-)
+C95_buy(q)  = 95th_percentile(buy_cost_t(q))
+C95_sell(q) = 95th_percentile(sell_cost_t(q))
+
+C95_combined(q) = max(C95_buy(q), C95_sell(q))  # reporting diagnostic only
 ```
 
 A snapshot that belongs to the qualified window but cannot fill `q` from the captured book is **not omitted** from this calculation. That `q` is infeasible for the window and its capacity result is `capacity_unknown_at_that_size` / fail for qualification. The implementation may represent the missing side as `+infinity` internally, but publication must not compute a lower percentile from only the fillable snapshots.
@@ -422,17 +501,22 @@ c_t(q) = book_price_impact_t(q) + fee_h
 
 so the capacity condition is equivalent to `book_price_impact <= slippage_budget_h`. If the frozen cost policy has no adverse cost model, Slice 2 cannot infer a friction budget and the candidate remains `research_only`; it must not invent a horizon budget.
 
-Then:
+Capacity remains direction-specific:
 
 ```text
-q_star = max q such that every required snapshot is fillable at q
-                     AND C95(q) <= B_h
-q_safe = 0.5 * q_star
+q_star_buy = max q such that every required snapshot is buy-fillable at q
+                         AND C95_buy(q) <= B_h
+
+q_star_sell = max q such that every required snapshot is sell-fillable at q
+                          AND C95_sell(q) <= B_h
+
+q_safe_buy  = 0.5 * q_star_buy
+q_safe_sell = 0.5 * q_star_sell
 ```
 
-The `0.5` haircut belongs to `liquidity-policy-v1`; it is a conservative engineering factor and must not be tuned to candidate profitability.
+The `0.5` haircut belongs to `liquidity-policy-v1`; it is a conservative engineering factor and must not be tuned to candidate profitability. A combined `C95_combined` may be published as a diagnostic, but it must not collapse the independent buy/sell capacities used by §14.
 
-Compute `q_star` deterministically with Decimal arithmetic/bisection over the executable quote-notional range, using venue quote/order precision as the stopping tolerance. If the captured book or venue precision cannot establish that range, capacity remains unknown. Use conservative taker/marketable execution only; maker queue/fill probability is future work.
+Compute each directional `q_star_*` deterministically with Decimal arithmetic/bisection over that side's executable quote-notional range, using admitted venue quote/order precision as the stopping tolerance. If the captured book or venue precision cannot establish a side's range, that side's capacity remains unknown. Use conservative taker/marketable execution only; maker queue/fill probability is future work.
 
 ## 14. Candidate capital ceiling
 
@@ -478,6 +562,8 @@ liquidity_policy_version
 ```
 
 Slice 2 does not invent the user's actual capital. The operator must supply explicit hypothetical `requested_capital` for classification.
+
+Represent classification as an immutable qualification request/evidence record containing `candidate_id`/`freeze_id`, `as_of`, explicit `requested_capital`, prospective protocol/liquidity-policy version, capture-contract result, current two-way instrument/order-constraint status, directional capacity evidence, and the ordinary-QAP empirical/adverse economic result references used by the decision. The label is a derived result of those inputs, never an asset property.
 
 ### 15.1 `tradable_now`
 
@@ -570,6 +656,8 @@ market/microstructure/<venue>/<instrument>/<UTC-date>/
 
 Published cohort/freeze records are immutable. Checkpoints/outcomes append new immutable records.
 
+Completed prospective evidence uses the same neutral exact-file-set integrity primitive as other authoritative QAP evidence: required/allowed authoritative names plus exact digests are validated before publication and again when completed evidence is discovered/read. Do not maintain another scanner-specific integrity algorithm when the existing primitive can be reused or minimally extracted to a neutral owner.
+
 Market capture partitions retain provenance fingerprints and reject conflicting duplicate observations rather than silently overwrite them.
 
 No database is required.
@@ -620,10 +708,10 @@ A delisting/suspension during the prospective period is real prospective evidenc
 
 - L1/depth timestamps and venue instruments are exact;
 - coverage uses expected cadence without fill/interpolation;
-- insufficient depth yields `capacity_unknown_at_that_size` and the unfillable snapshot never disappears from the `C95(q)` denominator;
+- insufficient depth yields `capacity_unknown_at_that_size` and the unfillable snapshot never disappears from either directional `C95_buy(q)` / `C95_sell(q)` denominator;
 - buy/sell VWAP walk is deterministic;
 - `B_h` resolves only from the frozen QAP adverse `CostModel`, with fee counted once and book impact consuming the adverse slippage allowance;
-- `C95`, `q_star`, `q_safe` follow frozen policy;
+- directional `C95_*`, `q_star_*`, and `q_safe_*` follow the frozen policy and preserve buy/sell asymmetry;
 - capital ceiling uses the conservative actual/structural rebalance fraction rather than a fixed `0.10` divisor;
 - 14d/95%/90%-daily rules fail closed;
 - tier classification requires explicit hypothetical capital;

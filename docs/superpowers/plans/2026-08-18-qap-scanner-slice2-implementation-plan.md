@@ -1,222 +1,189 @@
 # QAP Scanner Slice 2 Prospective Evidence + Liquidity Implementation Plan
 
-> **Execution contract:** implement sequentially in the existing `qap-implementation-20260818` worktree. Do not dispatch external coding/review agents. Slice 2 is already implementation-authorized; Slice 3 remains a separate design/user gate.
+**Goal:** Implement the corrected Slice-2 prospective-evidence and liquidity-qualification contracts on top of the remediated Slice-1 scanner without reopening Slice-1 economics or introducing a second execution/accounting engine.
 
-**Goal:** Add the approved Scanner-V1 Slice-2 prospective-evidence and liquidity-qualification layer so a frozen Slice-1 survivor can accumulate forward-only checkpoint evidence and candidate-local public microstructure/capacity evidence without changing Slice-1 identity, inventing historical venue feasibility, creating a second execution/accounting engine, or allocating combined portfolio capital.
+**Architecture:** Slice 2 has two implementation tracks that share immutable candidate lineage but have different clocks and evidence sources: prospective candidate/cohort evidence (`PR-*`, `EV-*`) and current public liquidity evidence (`LQ-*`). `qap.scanner` owns research identity, qualification, orchestration, and evidence references; `qap.market` owns public venue observations/capture; `qap.experiment` remains mandatory economic authority. Slice 3 remains the only combined-inventory/basket boundary.
 
-**Architecture:** Slice 2 attaches immutable evidence to an existing Slice-1 candidate/run lineage. `qap.scanner` owns prospective freeze/checkpoint identity, public microstructure evidence normalization, deterministic liquidity calculations, qualification state, and evidence artifacts only. Any prospective economic replay that needs QAP financial truth crosses through an outer composition adapter and ordinary `qap.experiment`; scanner artifacts retain references/statuses rather than copying balances/fills/terminal wealth. Public order-book evidence lives in `qap.market`. Slice 2 never routes private orders, never mutates `PortfolioState`, and never resolves competing candidates into one combined inventory allocation.
+**Tech Stack:** Existing Python 3.14/QAP stack, Pydantic, PyArrow/Parquet, Decimal arithmetic, argparse, existing public HTTP adapter facilities. No new runtime dependency, database, scheduler, queue, service, or UI.
 
-## Frozen boundaries
+## Global Constraints
 
-- Slice-1 `scan_id`, `candidate_id`, direct-market lineage, model/template/orientation identity, and deep-replay run identity are immutable inputs. Slice 2 attaches new evidence; it does not rewrite Slice-1 artifacts or identity.
-- Prospective evidence is forward-only: a cohort/freeze timestamp is established before observations used for prospective scoring. Rows observed before or at freeze may be context only; they cannot be relabeled as prospective after results are known.
-- A prospective checkpoint is identified from frozen cohort/candidate identity, checkpoint schedule/index, information cutoff, exact admitted forward slice identities, and the Slice-2 protocol version. Creation timestamp and filesystem location are non-semantic.
-- Prospective evidence is not `final_oos`. Scanner code must continue to treat protected `final_oos` experiment roles as unavailable for automatic search/qualification.
-- Public market/microstructure inputs are evidence only. No authenticated/private exchange action, order placement, balance query, API key, or live-capital authority is added.
-- Slice 2 may report candidate-local evidence/capacity. It must not allocate one owned inventory across several survivors; that one-inventory resolver remains a Slice-3 design concern.
-- Historical/current capacity is not backfilled. Liquidity/capacity claims are valid only for the prospective/current microstructure cohort actually captured under the declared evidence protocol.
-- Liquidity friction authority is the frozen **adverse** QAP cost model bound by Slice 1. Scanner does not create a second fee/slippage budget. Fees are counted exactly once.
-- A required shallow-book snapshot that cannot fill tested quote notional `q` makes that observation/test size infeasible. It must not be dropped from the `C95(q)` denominator.
-- Capacity must use the approved conservative policy transition/drift requirement. Do **not** infer portfolio capacity as `q_safe / 0.10`; maximum tilt is not the same thing as maximum required one-way transition after state changes and NO_ACTION drift.
-- Qualification labels remain the approved bounded states: `research_only`, `small_capacity`, and `tradable_now`. No learned reliability score, optimizer, or discretionary ranking layer is introduced.
-- Scanner/prospective artifacts may reference authoritative QAP run IDs/statuses and candidate-local liquidity numbers, but may not copy `PortfolioState`, fills, terminal strategy/HODL/control wealth, or user account balances.
-- Same worktree/branch. No scanner UI, scheduler, database, queue, private exchange integration, or Slice-3 basket allocator.
+- Authoritative semantics are `docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md`; this plan references its contract IDs instead of restating alternative formulas.
+- Slice-1 code baseline is the remediated `8ce0c31` implementation plus its committed result/remediation records. Do not reopen Slice-1 code unless a new concrete regression is demonstrated.
+- Existing dirty Slice-2 work is non-authoritative WIP. Reuse only code that conforms to the corrected design; delete or replace stale interpretations rather than preserving sunk effort.
+- Use the existing worktree and one writer. No secondary coding agents or per-task worktrees.
+- `qap.scanner` must not own fills, balances, HODL/control wealth, private exchange actions, or combined multi-candidate inventory allocation.
+- Prospective candidate economics always route through ordinary `qap.experiment`; neither `DataRole.FORWARD_PAPER` nor reserved `FINAL_OOS` may satisfy scanner prospective evidence.
+- Public capture is bounded/one-shot and owned by `qap.market`; invocation cadence remains external.
+- Keep permanent runtime names domain-based (`prospective`, `forward`, `liquidity`), not delivery labels such as `slice2_*`.
+- The typed prospective protocol is runtime semantic authority. Do not hash the whole Markdown design as protocol identity.
+- Testing/verification below is limited to checks explicitly required by the approved design/repository gates or checks that directly disprove one protected contract.
 
-## File map
+## Current Repository Reuse
 
-### Public market evidence
+Keep and reconcile:
 
-- Create `src/qap/market/microstructure.py` — immutable public top-of-book and bounded shallow-depth snapshot contracts; exact venue/instrument/source/observed-at provenance; bid/ask level validation; deterministic fingerprint.
-- Create `src/qap/market/microstructure_storage.py` — explicit current-schema Parquet read/write for prospective public microstructure snapshots; no network client and no live polling loop.
-- Modify `src/qap/market/__init__.py` — export only stable snapshot/storage types.
-- Create `tests/unit/market/test_microstructure.py` — validation, causality, level ordering, fillability, fingerprint and storage round-trip tests.
+- `src/qap/scanner/prospective.py` — prospective domain records and semantic identity.
+- `src/qap/scanner/liquidity.py` — deterministic book walking / mid-relative friction mechanics.
+- `src/qap/scanner/liquidity_policy.py` — coverage, directional capacity, qualification policy.
+- `src/qap/market/microstructure.py` and `microstructure_storage.py` — immutable public book evidence and storage.
+- `src/qap/market/adapters/binance_public.py` — existing bounded public Binance HTTP owner.
+- existing `qap.experiment` run/artifact/evaluation authority.
+- existing exact-file/digest integrity primitives; extract only the smallest neutral helper needed by multiple authoritative artifact families.
 
-### Slice-2 protocol / freeze identity
+Rename/reconcile before more behavior is added:
 
-- Create `src/qap/scanner/prospective.py` — Slice-2 protocol/version references, frozen cohort and candidate attachment identity, checkpoint schedule/index, forward-slice identity, current-schema qualification enums and immutable records.
-- Create `tests/unit/scanner/test_prospective.py` — candidate identity preservation, freeze/checkpoint causality, append-only schedule semantics, semantic hash stability, final-OOS rejection.
+- `src/qap/scanner/slice2_contract.py` -> `src/qap/scanner/prospective_protocol.py`.
+- `src/qap/scanner/slice2_artifact_schemas.py` -> `src/qap/scanner/prospective_artifact_schemas.py`.
+- `src/qap/scanner/slice2_artifacts.py` -> `src/qap/scanner/prospective_artifacts.py`.
+- Remove `slice2_artifact_contract.py` if its only remaining responsibility is filename constants; keep those constants beside the artifact owner.
+- `tests/unit/scanner/test_slice2_artifacts.py` -> `tests/unit/scanner/test_prospective_artifacts.py`.
 
-### Liquidity / capacity evidence
+New files are justified only where no current owner exists:
 
-- Create `src/qap/scanner/liquidity.py` — deterministic book-walk, one-way friction calculation, `C95(q)` aggregation, fail-closed unfillable observation handling, `q_safe`, conservative policy transition/drift capacity conversion, and bounded qualification state.
-- Create `tests/unit/scanner/test_liquidity.py` — hand-computed book walks, fee counted once, unfillable snapshots remain infeasible, monotone tested-size feasibility, adverse-cost authority, no `q_safe/0.10` shortcut, qualification transitions.
+- `src/qap/experiment/prospective_scanner_adapter.py` — mandatory ordinary-QAP prospective replay adapter.
+- `src/qap/market/adapters/gate_public.py` — bounded Gate public capture equivalent required by `LQ-01`.
+- `src/qap/scanner/prospective_run.py` — thin vertical orchestration over freeze/advance/qualify/outcome publication.
+- `src/qap/scanner/forward_cli.py` — bounded operator commands.
+- focused adapter/capture/scenario tests required by the design contracts.
 
-### Prospective / liquidity evidence artifacts
+## Milestone 0 — Reconcile the existing Slice-2 WIP
 
-- Create `src/qap/scanner/slice2_artifact_schemas.py` — explicit PyArrow schemas for frozen cohort, checkpoint observations, liquidity snapshots/aggregates, capacity qualifications, and authoritative prospective-run references.
-- Create `src/qap/scanner/slice2_artifacts.py` — immutable cohort publication, append-only checkpoint staging, deterministic table hashes/counts, resume validation, checkpoint reconciliation, atomic publication.
-- Create `tests/unit/scanner/test_slice2_artifacts.py` — freeze immutability, append-only checkpoints, interrupted write/resume, identity mismatch rejection, unfillable evidence persistence, run-reference reconciliation.
+**Contracts:** all; no new behavior.
 
-### Outer economic adapter
+**Files:** current dirty prospective/artifact files plus committed Slice-2 protocol/artifact modules.
 
-- Create `src/qap/experiment/prospective_scanner_adapter.py` only if the approved prospective checkpoint needs authoritative QAP economic replay. It must consume one frozen prospective checkpoint request and execute through ordinary experiment artifacts with a forward-only development/prospective evidence boundary; it must not make scanner the economic authority.
-- Modify `src/qap/scanner_entry.py` — compose the Slice-2 scanner service with the experiment adapter if authoritative replay is required, preserving scanner-core dependency inversion.
-- Create `tests/unit/experiment/test_prospective_scanner_adapter.py` — freeze cutoff, no pre-freeze outcome leakage, no final-OOS access, ordinary QAP artifact reference only.
+**Steps:**
 
-### Sequential operator surface
+- Compare the current WIP to the corrected design contract IDs.
+- Keep already-correct `CandidateFreeze`, zero-member cohort, reselection, strict timing, book-walk, coverage, and capacity work.
+- Remove the Markdown-design SHA from runtime semantic identity.
+- Rename `slice2_*` runtime modules to domain names and update imports.
+- Do not preserve compatibility aliases unless a committed external caller requires them.
 
-- Create `src/qap/scanner/slice2_run.py` — deterministic attach/freeze/checkpoint/liquidity qualification orchestration over existing Slice-1 completed scan evidence.
-- Create `src/qap/scanner/slice2_cli.py` — bounded argparse operator surface for explicit freeze/checkpoint processing from local admitted data/evidence; no scheduler/daemon.
-- Create `tests/unit/scanner/test_slice2_cli.py`.
-- Create `tests/scenarios/test_scanner_slice2.py` — end-to-end frozen survivor -> forward checkpoint -> public book evidence -> qualification, including negative/infeasible cases.
+**Acceptance:** repository imports resolve under the domain names; no `slice2_*` runtime module remains solely as planning terminology; the WIP diff contains only behavior required by the corrected contracts.
 
-### Architecture/results
+## Milestone 1 — Prospective protocol, freeze, cohort, and checkpoint domain
 
-- Extend `.importlinter` and `tests/unit/scanner/test_architecture.py` only as needed so new Slice-2 scanner modules remain unable to import policy/execution/evaluation/experiment; any experiment composition remains in outer adapter/root.
-- Create `scripts/benchmark_scanner_slice2.py` only if the approved design has a meaningful local workload requiring measured performance evidence; otherwise use bounded unit/scenario evidence and do not invent a performance framework.
-- Update `docs/plans/15-research-scanner-and-candidate-workbench.md` with verified Slice-2 status after implementation.
-- Create `docs/research/2026-08-18-qap-scanner-slice2-results.md` with exact prospective/liquidity evidence scope, commands/results, negative outcomes, limitations, and explicit Slice-3 deferral.
+**Contracts:** `PR-01`, `PR-02`, `PR-03`.
 
-## Task 1 — Freeze the Slice-2 protocol and prospective attachment identity
+**Files:** `prospective_protocol.py`, `prospective.py`, `test_prospective.py`.
 
-**Behavior:**
+**Interfaces:**
 
-- Define one current-schema Slice-2 protocol/version whose semantic payload binds the approved cohort/checkpoint policy, microstructure evidence requirements, tested-size policy, adverse-cost reference, capacity transition/drift rule, and qualification semantics.
-- Define immutable `ProspectiveCohort` with cohort ID, freeze timestamp, originating Slice-1 scan ID, ordered attached candidate IDs, originating deep-replay run references/statuses, and protocol identity.
-- A cohort may attach only to completed Slice-1 survivors/eligible candidate lineage admitted by the approved design. Attachment never changes the original candidate ID.
-- Define deterministic checkpoint identity from cohort/candidate, checkpoint index/schedule, information cutoff, exact forward-data identities and protocol identity. `created_at` is excluded from semantic identity.
-- Reject any checkpoint whose admitted outcome/economic observation precedes or is available at the freeze boundary in a way that would create hindsight labeling.
-- Reject `final_oos` as an automatic Slice-2 scanner input/role.
+- `ProspectiveProtocol`: one typed/versioned canonical semantic payload for forward windows, control/cost references, coverage/capacity policy references, and qualification policy version.
+- `CandidateFreeze`: immutable hypothesis including `primary_control_reference`, `cost_policy_reference`, candidate/model lineage, `forward_start`, `forward_end`, and semantic rule identity.
+- `ForwardCohort`: exactly one record per completed automatic Slice-1 scan/horizon, including valid zero-new-member cohorts and separate manual membership.
+- `Reselection`: links a repeated automatic/manual selection to an active identical semantic freeze instead of opening a duplicate.
+- `ForwardCheckpoint`: belongs to `freeze_id`; seals `through`, first outcome completion boundary, and exact forward information-state identity.
 
-**Verification:** `uv run pytest -q tests/unit/scanner/test_prospective.py` plus Ruff/Pyright on the new module.
+**Steps:**
 
-## Task 2 — Add immutable public microstructure evidence contracts
+- Enforce `eligible_information_end <= frozen_at < forward_start < first_outcome_observation_complete_at` when outcome evidence is admitted.
+- Freeze `short=48h`, `medium=10d`, `swing=28d` in `ProspectiveProtocol`.
+- Deduplicate active freezes by semantic rule identity, never source scan ID.
+- Allow a new generation only after the prior identical freeze matures.
+- Preserve automatic/manual/reselection counts and lineage in cohort evidence.
 
-**Behavior:**
+**Required evidence:** focused prospective contract tests for strict timing, zero-member cohorts, active reselection, matured re-entry, and semantic-ID stability.
 
-- Model public top-of-book/shallow-depth evidence as one immutable timestamped venue/instrument snapshot with explicit source ID/fingerprint and observation-complete timestamp.
-- Bids must be strictly descending positive prices; asks strictly ascending positive prices; quantities positive finite; best bid < best ask; no duplicate/zero/negative/non-finite levels.
-- The evidence object exposes no authenticated client, order API, balances, or mutable venue state.
-- Fingerprint all economically used fields with canonical exact numeric serialization; append/future observations cannot mutate an older snapshot fingerprint.
-- Persist/read current-schema Parquet with safe paths and exact schema validation.
+## Milestone 2 — Prospective publication and integrity
 
-**Verification:** focused unit/storage round-trip tests; no network tests.
+**Contracts:** `EV-01`.
 
-## Task 3 — Implement deterministic one-way book walk and friction evidence
+**Files:** `prospective_artifact_schemas.py`, `prospective_artifacts.py`, the neutral shared integrity primitive if extraction is necessary, `test_prospective_artifacts.py`.
 
-**Behavior:**
+**Steps:**
 
-For each tested quote notional `q` and required snapshot/side:
+- Persist the full immutable `CandidateFreeze` contract; do not reduce it to a candidate attachment tuple.
+- Keep `cohort.json` / freezes immutable and checkpoints/outcomes logically append-only.
+- Completed checkpoint generations validate exact required/allowed file names, digests, counts, directory identity, cohort/freeze/checkpoint lineage before publication and whenever read/reindexed.
+- Enforce monotonic checkpoint sequence per freeze; reject retroactive insertion/backfill after a later checkpoint is completed.
+- Recover derived top-level indexes only from already-validated completed checkpoint generations.
+- `.partial` remains recovery state and never counts as evidence.
 
-- walk only the recorded shallow depth in price priority;
-- return exact acquired/sold base quantity, VWAP, best-reference price, quote notional consumed, and book-impact/slippage evidence;
-- if recorded depth cannot fill the entire requested `q`, mark the observation `unfillable`/infeasible; never extrapolate hidden depth;
-- calculate candidate liquidity friction against the approved direct execution instrument/economic direction only; do not synthesize USDT bridge execution;
-- combine book-derived friction with the Slice-1 adverse QAP `CostModel` exactly as approved, counting the fee once and never adding a scanner-local fee budget.
+**Required evidence:** adversarial tamper/read/reindex check, retroactive-backfill rejection, interruption-before-index-refresh recovery, immutable prior-checkpoint check.
 
-**Verification:** hand-calculated bid/ask examples, partial final level, unfillable examples, fee-once regression.
+## Milestone 3 — Mandatory prospective QAP economics
 
-## Task 4 — Compute `C95(q)` and `q_safe` fail-closed
+**Contracts:** `PR-04`, part of `EV-02`.
 
-**Behavior:**
+**Files:** `src/qap/experiment/prospective_scanner_adapter.py`, `src/qap/scanner_entry.py`, focused experiment tests.
 
-- A checkpoint/cohort liquidity test uses the frozen required snapshot set. The denominator is fixed before looking at which sizes fill.
-- For tested notional `q`, every required snapshot contributes either finite friction evidence or explicit infeasible/unfillable evidence.
-- Any required unfillable snapshot makes that `q` infeasible for the checkpoint rather than disappearing from the percentile calculation.
-- For fully fillable `q`, compute deterministic `C95(q)` using the approved percentile/interpolation convention and compare it only with the frozen adverse-cost authority from Slice 1.
-- Determine `q_star` by deterministic Decimal bisection over the executable quote-notional range established by captured depth and admitted venue order precision. Do not invent a fixed notional ladder or extrapolate hidden depth.
-- Apply the frozen `liquidity-policy-v1` safety haircut exactly: `q_safe = 0.5 * q_star`.
-- Preserve every evaluated bisection point and its fixed-denominator evidence so a later reader can reconstruct why a larger size failed.
+**Steps:**
 
-**Verification:** percentile examples, denominator preservation, monotonic feasibility tests, all-unfillable and boundary cases.
+- Convert one frozen candidate/checkpoint into an ordinary QAP `DataRole.DEVELOPMENT` experiment without rerunning discovery/ranking on forward outcomes.
+- Use the exact model/template/orientation, `primary_control_reference`, and `cost_policy_reference` frozen in `CandidateFreeze`.
+- Reject `FORWARD_PAPER`, `FINAL_OOS`, pre-forward outcome rows, and any changed freeze/protocol identity before replay.
+- Preserve existing next-observation execution semantics and matched starting quantities.
+- Scanner artifacts retain run/result references and status only; QAP artifacts remain financial authority.
+- Persist one `ForwardOutcome` reference/status (`pending | partial | matured | invalid`) per freeze generation; candidate-specific setup/replay failure remains visible and never deletes cohort membership.
 
-## Task 5 — Convert `q_safe` to conservative candidate-local capacity
+**Required evidence:** one real adapter scenario proving strict post-freeze replay, frozen control/cost use, both economic gates, and role rejection.
 
-**Behavior:**
+## Milestone 4 — Bounded public capture and coverage
 
-- Implement direction-specific buy/sell demand from the actual prospective base-asset weight and frozen target set `{0.40, 0.50, 0.60}`. Each direction has a structural `0.20` floor, and observed NO_ACTION drift may increase one side beyond that floor. Do not use maximum tilt (`0.10`) as the trade-fraction divisor.
-- Capacity conversion must be conservative under direct transitions among neutral/tilted states and NO_ACTION drift. If the required one-way transition fraction cannot be established from the approved evidence, capacity fails closed to `research_only` rather than substituting a favorable number.
-- Keep candidate-local quote-capacity evidence separate from portfolio allocation. No cross-candidate allocator or combined balance resolver.
-- Store the exact transition/drift evidence and formula inputs used so qualification is auditable.
+**Contracts:** `LQ-01`, `LQ-02`.
 
-**Verification:** regression explicitly showing a case where `q_safe/0.10` would overstate capacity; transition/drift boundary tests; missing-evidence fail-closed test.
+**Files:** extend `binance_public.py`; create `gate_public.py`; reuse `microstructure.py` / storage; add focused public-adapter/capture tests.
 
-## Task 6 — Implement bounded qualification states
+**Steps:**
 
-**Behavior:**
+- Add bounded one-shot Binance/Gate reads for L1/book ticker, shallow depth, and current instrument state/order constraints needed by QAP execution rules.
+- Normalize all responses into the existing immutable `qap.market` microstructure/instrument metadata contracts before scanner use.
+- No credentials, account endpoints, private order endpoints, persistent polling, or internal scheduler.
+- Coverage is computed from actual captured timestamps against the design cadence: L1 60s, depth 5m, >=14 calendar days, >=95% overall and >=90% each UTC day. Missing scheduled observations remain missing; no interpolation.
 
-- `research_only`: prospective or liquidity evidence is incomplete/insufficient, required size is infeasible, or conservative capacity cannot be established.
-- `small_capacity`: approved evidence establishes positive bounded capacity but does not satisfy the stricter current/actionable evidence required for `tradable_now`.
-- `tradable_now`: all approved prospective/current microstructure freshness/completeness and capacity conditions are satisfied at the declared candidate-local test size/current checkpoint.
-- Qualification is evidence/status, not an instruction to trade. It cannot mutate balances or submit an order.
-- Preserve failure/reason codes rather than collapsing negative evidence into missing rows.
+**Required evidence:** payload normalization checks for both venues and coverage fail-closed examples. Do not require live-network tests; the operator capture command itself is the bounded integration surface.
 
-**Verification:** table-driven state/reason tests and stale/missing/current boundary cases.
+## Milestone 5 — Directional liquidity capacity and qualification
 
-## Task 7 — Persist immutable cohort/checkpoint/liquidity evidence
+**Contracts:** `LQ-03`, `LQ-04`, `LQ-05`, `LQ-06`.
 
-**Behavior:**
+**Files:** `liquidity.py`, `liquidity_policy.py`, their existing tests.
 
-- Publish the approved top-level cohort surface under `runs/scanner-forward/<cohort_id>/`: immutable `cohort.json` and `freezes.parquet`, plus append-only logical `checkpoints.parquet` and `outcomes.parquet` indexes.
-- Publish a cohort definition immutably before any prospective outcome is admitted.
-- Checkpoint staging persists definition/evidence rows before economic/liquidity evaluation can fail.
-- Use explicit PyArrow schemas and deterministic hashes/counts for candidate checkpoint rows, microstructure evidence references, tested-size liquidity rows, capacity/qualification rows, and any authoritative QAP run references.
-- Resume only when cohort/protocol/frozen source identities match exactly; otherwise fail closed.
-- Keep recoverable per-checkpoint detail generations beneath the cohort as an internal implementation detail; a completed detail generation is immutable and atomically published, while `.partial` is recovery state only. Reopening an existing cohort must reconcile derived top-level indexes from completed immutable generations after an interrupted index refresh.
-- Forward checkpoints append by new checkpoint identity; they never rewrite prior completed checkpoint evidence.
+**Steps:**
 
-**Verification:** interrupted staging, duplicate/collision, resume mismatch, append-only checkpoint ordering, table/manifest reconciliation tests.
+- Preserve exact mid-relative book cost with adverse fee counted once.
+- Keep buy/sell evidence separate through nearest-rank `C95_buy` / `C95_sell`, Decimal bisection `q_star_buy` / `q_star_sell`, and the frozen `0.5` haircuts `q_safe_buy` / `q_safe_sell`.
+- Required unfillable observations remain denominator failures; never compute a favorable percentile from only fillable rows.
+- Compute direction-specific required rebalance fractions from authoritative current prospective weight with the structural `0.20` floor and observed drift; candidate ceiling is the conservative minimum of buy/sell ceilings.
+- Replace any design-document SHA dependency with typed protocol identity.
+- Classification consumes an explicit immutable `requested_capital` request plus capture, instrument constraints, directional capacity, and ordinary-QAP empirical/adverse economic result references.
+- Implement the design state machine literally: insufficient execution evidence -> `research_only`; `small_capacity` only when the evidence contract is satisfied, ceiling is usable, requested capital exceeds it, and economics survive at an allowed lower capital; `tradable_now` requires every §15.1 gate.
 
-## Task 8 — Add prospective economic checkpoint adapter only through ordinary QAP authority
+**Required evidence:** asymmetric buy/sell capacity example, 80/20 drift example, unfillable denominator example, explicit requested-capital state table, empirical/adverse-QAP gate references.
 
-If the approved design requires QAP economic replay at forward checkpoints:
+## Milestone 6 — Vertical orchestration, operator surface, and scoreboards
 
-- construct one forward-only manifest/data request from the frozen candidate/cohort without rerunning discovery/ranking on checkpoint outcome data;
-- preserve the candidate model/template/orientation and frozen costs/control from Slice 1;
-- make forward evaluation start strictly after the cohort freeze and use only data causally available by checkpoint cutoff;
-- execute through `run_experiment_to_artifacts` and retain only run ID/status/economic-gate reference in scanner artifacts;
-- never consume reserved `final_oos` automatically;
-- candidate-specific replay/setup failure is recorded and does not delete the cohort/checkpoint denominator.
+**Contracts:** `PR-02`, `PR-03`, `PR-04`, `EV-02`, `LQ-01`, `LQ-06`.
 
-If the design records forward returns/score evidence without authoritative QAP replay, do not add the adapter merely because the file map permits it. The approved evidence contract decides; YAGNI applies.
+**Files:** `prospective_run.py`, `forward_cli.py`, `scanner_entry.py`, scenario tests, Slice-2 results record.
 
-## Task 9 — Sequential Slice-2 attach/freeze/checkpoint orchestrator
+**Operator commands:**
 
-**Behavior:**
+```text
+freeze automatic survivors from one completed Slice-1 scan/horizon
+advance one cohort --through <UTC>
+show candidate/cohort prospective evidence
+capture one Binance/Gate L1 snapshot
+capture one Binance/Gate shallow-depth snapshot
+qualify one freeze/candidate --as-of <UTC> --requested-capital <decimal>
+```
 
-- Input is one completed Slice-1 scan generation plus explicit candidate/cohort selection allowed by the approved design; never rescan/reselect historical outcomes during a checkpoint.
-- Freeze cohort identity first.
-- At checkpoint processing: admit exact forward data/evidence through cutoff -> persist checkpoint attempt/definition -> evaluate prospective evidence -> evaluate liquidity sizes -> derive capacity/qualification -> write authoritative run references if applicable -> reconcile -> atomically publish.
-- Candidate-specific missing book/source/replay evidence produces explicit negative/incomplete qualification and continues unrelated candidates.
-- Generation-level frozen identity/hash/cutoff collisions abort the checkpoint.
+**Steps:**
 
-## Task 10 — Bounded CLI/operator surface
+- `freeze` automatically enrolls every automatic Slice-1 survivor or records a reselection link; it never asks the operator to cherry-pick an automatic winner.
+- `advance` admits exact forward data, persists checkpoint intent, invokes mandatory QAP replay, records partial/matured/invalid outcome status, then atomically publishes.
+- Capture commands perform one bounded public request and persist admitted evidence; external scheduling remains outside QAP.
+- Qualification consumes only admitted current evidence and explicit capital; it has no order authority.
+- Scoreboards report candidate count, matured/partial/invalid counts, pass fraction/distributions versus HODL/control, horizon/model/family, and automatic/manual/reselection attribution. Never sum overlapping pair wealth into scanner portfolio return.
 
-- Use explicit local file roots and UTC timestamps only.
-- Expose separate freeze/checkpoint actions or subcommands only if required by the approved design; no daemon/scheduler/poll loop.
-- Print bounded counts/statuses/IDs/paths. Do not print `tradable_now` as an order recommendation or claim confirmed alpha.
-- No API/web route in Slice 2 unless the approved design explicitly requires one; the current mission assumes CLI/local artifacts only.
+**Required evidence:** one no-network vertical scenario from completed Slice-1 survivor -> freeze -> future checkpoint -> QAP outcome -> liquidity qualification -> scoreboard, plus negative paths for zero cohort, prospective failure, insufficient coverage, and unfillable capacity.
 
-## Task 11 — Architecture and research-integrity guards
+## Milestone 7 — Completion gate and handoff
 
-Prove with import-linter/source tests/scenarios:
-
-- scanner core does not import experiment/execution/policy/evaluation;
-- financial kernel does not depend on scanner;
-- prospective evidence cannot rewrite Slice-1 identity or completed checkpoint artifacts;
-- post-freeze observations cannot be injected into pre-freeze identity/model selection;
-- final-OOS cannot enter automatic Slice-2 evidence;
-- unfillable snapshots remain denominator failures;
-- fee counted exactly once;
-- no `q_safe / 0.10` capacity shortcut exists;
-- no private exchange/authenticated action path exists;
-- qualification carries no order/live-capital authority;
-- no combined multi-candidate inventory allocation is introduced.
-
-## Task 12 — Integrated negative/positive scenarios
-
-Create deterministic no-network scenarios covering at least:
-
-1. frozen Slice-1 survivor + forward checkpoint + fully fillable shallow books -> finite `C95(q)`, bounded capacity, qualification according to evidence;
-2. one required shallow-book snapshot unfillable at a larger tested size -> larger `q` infeasible and excluded from `q_safe`, with the observation retained;
-3. insufficient/stale public evidence -> `research_only`, not silently dropped;
-4. positive candidate-local capacity but insufficient stricter current evidence -> `small_capacity`;
-5. all approved current evidence satisfied -> `tradable_now` evidence label without order authority;
-6. a later checkpoint appends new evidence without changing prior checkpoint/cohort/Slice-1 identities.
-
-## Task 13 — Final verification and result record
-
-Run fresh affected checks followed by the repository-wide gate:
+Run only the repository/design-required completion checks after the vertical path is complete:
 
 ```text
 uv run pytest -q
@@ -228,31 +195,13 @@ uv run lint-imports
 git diff --check
 ```
 
-Run OpenAPI/frontend generation only if an API-visible manifest/schema changes. Slice-2 scanner-local artifact schemas alone do not require frontend regeneration.
+Additional completion requirements:
 
-Perform a separate inline self-review against the approved Slice-2 design, especially prospective causality, denominator preservation, friction/fee authority, capacity conversion, current-evidence freshness, and the Slice-3 one-inventory boundary. Record honest negative/research-only results; do not relax qualification to manufacture `tradable_now`.
+- exact-file integrity/readback and monotonic checkpoint order are green;
+- no scanner-core dependency on experiment/execution/policy/evaluation;
+- no `FORWARD_PAPER`, `FINAL_OOS`, private exchange action, scheduler/database/UI, or combined candidate inventory allocation path exists;
+- current Slice-2 runtime files use domain names, not `slice2_*` delivery names;
+- `docs/research/2026-08-18-qap-scanner-slice2-results.md` records the exact source commit, evidence produced, negative outcomes, limitations, and explicit Slice-3 deferral;
+- update the Phase-15 umbrella status only after this exact source state is green.
 
-Update the Phase-15 umbrella and write `docs/research/2026-08-18-qap-scanner-slice2-results.md`. Commit coherent verified changes. Do not begin Slice 3 without its separately user-approved detailed design/implementation plan.
-
-## Slice-2 completion gate
-
-Slice 2 is complete only when repository evidence proves all of the following:
-
-- a prospective cohort is frozen before forward outcome evidence and never mutates Slice-1 identity;
-- checkpoint IDs bind frozen candidate/cohort/protocol/cutoff/exact forward evidence identities;
-- completed forward checkpoints are append-only immutable evidence;
-- public microstructure snapshots are causal, source-attributed, bounded-depth evidence with no private/live authority;
-- every tested liquidity size preserves the fixed evidence denominator; required unfillable snapshots make the size infeasible;
-- `C95(q)` and `q_safe` use only the approved prospective/current evidence and frozen adverse cost authority, with fee counted once;
-- conservative capacity uses the approved policy transition/drift requirement and never `q_safe/0.10`;
-- qualification is one of `research_only`, `small_capacity`, `tradable_now` with auditable reasons and no order authority;
-- candidate-local capacity never becomes combined portfolio allocation;
-- scanner core dependency boundaries remain intact;
-- final-OOS, private exchange actions, scheduler/database/queue/UI, and Slice-3 basket allocation remain absent;
-- full repository verification is green and the result record states the actual evidence/limitations.
-
-## Pre-execution review note
-
-Plan review classifies Slice 2 as mixed executable/persistence research infrastructure. Existing QAP abstractions should be reused for asset/instrument identity, cost authority, experiment replay, artifact hashing and import boundaries. No new runtime dependency, service, scheduler or database is justified.
-
-The only implementation-sensitive values are the approved tested-size/percentile/freshness/transition-demand conventions in the Slice-2 design. They are protected research semantics: implementation must lift them from the authoritative design verbatim and add regression tests before Tasks 3–6; no numeric fallback, operator-tunable substitute or `q_safe / 0.10` shortcut is permitted. Tasks 1–2 can proceed independently because they establish identity/evidence contracts without choosing those values.
+Do not begin Slice 3 without its separately approved design/plan.
