@@ -20,6 +20,12 @@ from qap.market.lifecycle import (
     source_supports_historical_state,
 )
 from qap.market.metadata import MarketMetadata
+from qap.market.microstructure import BookLevel, PublicBookSnapshot
+from qap.market.microstructure_storage import (
+    MicrostructureStorageError,
+    read_public_book_snapshots,
+    write_public_book_snapshots,
+)
 from qap.market.prices import PriceSnapshot
 from qap.market.storage import (
     MarketDataStorageError,
@@ -47,10 +53,13 @@ __all__ = [
     "LifecycleConfidence",
     "LifecycleEventType",
     "LifecycleSourceType",
+    "BookLevel",
     "MarketBar",
     "MarketDataStorageError",
     "MarketMetadata",
+    "MicrostructureStorageError",
     "PriceSnapshot",
+    "PublicBookSnapshot",
     "ValidatedBarSeries",
     "VenueInstrument",
     "align_bar_series",
@@ -58,7 +67,9 @@ __all__ = [
     "lifecycle_source_priority",
     "load_csv_bar_series",
     "read_parquet_bar_series",
+    "read_public_book_snapshots",
     "source_supports_historical_state",
     "validate_bar_series",
     "write_parquet_bar_series",
+    "write_public_book_snapshots",
 ]
