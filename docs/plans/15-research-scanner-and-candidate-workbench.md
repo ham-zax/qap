@@ -12,7 +12,7 @@
 
 > **Implementation status — 2026-08-18**
 > **Slice 1:** complete and remediation-verified; results in `docs/research/2026-08-18-qap-scanner-slice1-results.md`.
-> **Slice 2:** complete and repository-verified at tested commit `dbc968a`; results in `docs/research/2026-08-18-qap-scanner-slice2-results.md`.
+> **Slice 2:** complete and repository-verified at tested commit `809431c`; results in `docs/research/2026-08-18-qap-scanner-slice2-results.md`.
 > **Slice 3:** detailed design and implementation plan are now present in the repository; implementation remains a hard separate user-approval gate and is not authorized merely by Slice-1/Slice-2 completion or by the existence of those documents.
 
 ## 1. Authoritative slice map
