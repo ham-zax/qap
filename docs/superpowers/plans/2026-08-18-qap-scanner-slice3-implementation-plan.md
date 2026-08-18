@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-18
 
-**Status:** amended 2026-08-19 after Milestone 6 completion at `46ef407`. Milestone 7 remains the final Slice-3 backend vertical. Milestone 8 is explicitly superseded by Slice 4's unified QAP Workbench. Milestone 9 closes the Slice-3 backend only.
+**Status:** amended 2026-08-19 after Milestone 6 implementation at `46ef407` and integrity closure at `dd9df14`. `dd9df14` is the authoritative Milestone-6 handoff baseline. Milestone 7 remains the final Slice-3 backend vertical. Milestone 8 is explicitly superseded by Slice 4's unified QAP Workbench. Milestone 9 closes the Slice-3 backend only.
 
 **Goal:** implement the approved Slice-3 asset-native momentum surface and manual 3–6 asset one-inventory basket workflow without creating a second backtester, optimizer, cross-venue wallet, or live-capital path.
 
@@ -488,7 +488,7 @@ Relationship intelligence and its pair-blind predictive control run under the sa
 
 ---
 
-## 10. Milestone 7 — BasketDefinition -> ordinary QAP adapter and operator vertical
+## 10. Milestone 7 — application operations and BasketDefinition -> ordinary QAP vertical
 
 **Design contracts:** `BASK-*`, `EXEC-*`, `EVAL-*`, `RSCH-*`, `ART-*`.
 
@@ -503,9 +503,10 @@ Relationship intelligence and its pair-blind predictive control run under the sa
 ### Work
 
 1. Implement the only intentional scanner->experiment basket adapter.
-2. Load and validate one completed `BasketDefinition`/enumerated attempt.
-3. Resolve exact source scan catalog/data identities.
-4. Build one self-contained development `ExperimentManifest` that freezes:
+2. Add one thin `qap.scanner_entry` application operation for first-class asset-momentum generation from a completed source scan + venue + horizon. The operation must derive the frozen momentum resolution/formation from `SCANNER_V1_BASKET`, select the matching immutable PIT universe snapshot, build/publish the momentum generation through the existing scanner owners, and accept no override for those protocol constants.
+3. Add one thin `qap.scanner_entry` basket-run operation that accepts manual basket intent (source scan, venue, horizon, decision resolution, 3–6 assets, selected candidate IDs, optional persisted momentum reference when available), then internally builds the immutable `BasketDefinition`, enumerates the attempt, runs ordinary QAP, transitions the attempt, and publishes the terminal basket generation. Do not expose a separate durable `create_basket` draft operation.
+4. The experiment adapter receives the validated `BasketDefinition`/enumerated attempt from that application operation and resolves exact source scan catalog/data identities.
+5. Build one self-contained development `ExperimentManifest` that freezes:
    - economic basket assets;
    - equal-value starting quantities;
    - all selected edge model rules;
@@ -517,18 +518,18 @@ Relationship intelligence and its pair-blind predictive control run under the sa
    - pair-blind relative-momentum control as primary incremental benchmark;
    - common evaluation/warm-up window;
    - `DataRole.DEVELOPMENT`.
-5. Prepare/run through normal `qap.experiment` artifacts.
-6. Derive `basket_development_survivor` only from the authoritative run result/roles and the three required gates; store only the status/reference in the basket attempt record.
-7. Transition the basket attempt to completed/replay-failed/setup-failed and publish the basket generation atomically.
-8. Make retry/recovery deterministic around `.partial` staging and existing deterministic QAP run identity; do not overwrite completed artifacts.
-9. Update `.importlinter` with one narrow intentional exception:
+6. Prepare/run through normal `qap.experiment` artifacts.
+7. Derive `basket_development_survivor` only from the authoritative run result/roles and the three required gates; store only the status/reference in the basket attempt record.
+8. Transition the basket attempt to completed/replay-failed/setup-failed and publish the basket generation atomically.
+9. Make retry/recovery deterministic around `.partial` staging and existing deterministic QAP run identity; do not overwrite completed artifacts.
+10. Update `.importlinter` with one narrow intentional exception:
 
 ```text
 qap.experiment.basket_scanner_adapter -> qap.scanner.**
 ```
 
 and no broader scanner dependency.
-10. Add the thin operator surface under `basket_cli.py`; it may route through `qap.scanner_entry` in the same pattern as existing scanner/forward CLIs.
+11. Add the thin operator surface under `basket_cli.py`; it may route through `qap.scanner_entry` in the same pattern as existing scanner/forward CLIs. If momentum generation is exposed in the CLI, it must call the same application operation rather than rebuilding momentum rules locally.
 
 ### Required no-network vertical scenario
 
@@ -536,7 +537,7 @@ Using deterministic local data:
 
 ```text
 completed Slice-1 scan
-  -> optional asset-native momentum generation
+  -> optional first-class asset-native momentum generation
   -> manual 3–6 asset BasketDefinition
   -> selected direct + indirect/scout pair rules
   -> enumerated basket replay attempt
@@ -549,7 +550,7 @@ Include at least one negative basket that fails an economic comparator and remai
 
 ### Exit
 
-One manual basket reaches one authoritative QAP portfolio result end-to-end without scanner-owned economics.
+One completed scan can produce first-class immutable asset-momentum evidence, and one manual basket intent reaches one authoritative QAP portfolio result end-to-end without a separate durable draft state or scanner-owned economics.
 
 ---
 

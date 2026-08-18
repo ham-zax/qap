@@ -2,11 +2,11 @@
 
 **Date:** 2026-08-19
 
-**Status:** implementation plan created from the approved Slice-4 product-boundary decision. Do not execute until Slice-3 Milestone 7 and backend closure are complete and the user explicitly starts Slice 4.
+**Status:** amended 2026-08-19 after plan review. Slice-3 Milestone 6 handoff baseline is `dd9df14`. Do not execute until Slice-3 Milestone 7 and backend closure are complete and the user explicitly starts Slice 4.
 
 **Goal:** make the completed Slice-1 discovery, Slice-2 prospective/actionability, and Slice-3 basket-research workflows operable and inspectable from one local web application without moving scientific or financial authority into FastAPI or React.
 
-**Architecture:** extend the existing FastAPI + React analytical workbench into a local single-operator command/query application. FastAPI remains a thin boundary over existing Python application operations and immutable artifact readers. Long-running commands create a small durable local operation record and execute in a bounded local Python worker process; immutable QAP/scanner artifacts remain the scientific source of truth.
+**Architecture:** extend the existing FastAPI + React analytical workbench into a local single-operator command/query application. FastAPI remains a thin boundary over existing Python application operations and immutable artifact readers. Long-running mutations create a small durable local operation record and execute through at most one active local Python worker at a time; immutable QAP/scanner artifacts remain the scientific source of truth.
 
 **Tech Stack:** existing FastAPI/Pydantic backend; Python standard-library process/filesystem primitives; existing QAP scanner/experiment/market application entry points; React 19, TypeScript, Vite, TanStack Router, TanStack Query, generated OpenAPI TypeScript contracts, existing chart/table/accessibility primitives, and native SVG for the bounded 3–6 node basket graph. No new runtime dependency is expected.
 
@@ -33,7 +33,8 @@
 - No private exchange/account/order APIs, live-capital deployment, leverage, borrowing, derivatives, or final-OOS search/preview authority.
 - Public capture remains the existing bounded one-shot public Binance/Gate capture. Slice 4 does not add a scheduler/daemon.
 - Pair-level `tradable_now`/capacity remains pair/candidate evidence and must never be promoted to a basket-level capacity/actionability claim.
-- Local/single-operator deployment remains the product boundary. Keep loopback binding as the default; do not add authentication, tenancy, cloud deployment, Redis, Celery, Kafka, a database, or a distributed queue without a separately demonstrated need.
+- Local/single-operator deployment is a V1 invariant, not merely a default. A mutation-capable API must bind to loopback only; wildcard CORS is forbidden and every admitted browser origin must itself be loopback/local. Do not add authentication, tenancy, cloud deployment, Redis, Celery, Kafka, a database, or a distributed queue without a separately demonstrated need.
+- At most one mutating research operation may be active at a time in V1. Run one mutation-capable FastAPI process and guard the active-check → operation reservation → worker spawn critical section with one process-local launch lock. A second mutation request fails synchronously with typed `409 operation_busy` and the active operation ID. Read-only queries remain available while an operation runs.
 - CORS remains explicit and narrow. Mutation routes add only the HTTP methods/headers they require.
 - Preserve negative, invalid, failed, no-survivor, insufficient-evidence, and rejected outcomes in API/read models and UI. Do not filter them into a positive-only workflow.
 - Keep OpenAPI the frontend contract source; do not hand-maintain parallel TypeScript DTOs.
@@ -93,9 +94,16 @@ qap.scanner_entry.qualify_forward_with_qap(...)
 qap.market.public_capture.capture_public_spot(...)
 ```
 
-Slice-3 Milestone 7 must add the basket application/composition operation that loads a persisted `BasketDefinition`, runs the ordinary-QAP basket experiment, and persists the basket attempt/result reference.
+Slice-3 Milestone 7 must add two finite application operations before the Slice-4 handoff:
 
-Slice 4 may add thin application glue only when a browser command cannot call these owners without reconstructing persisted intent. It must not add a second scanner, replay, qualification, capture, or basket engine.
+```text
+generate_asset_momentum(...)
+run_basket_with_qap(...)
+```
+
+`generate_asset_momentum` accepts completed scan + venue + horizon intent and derives all frozen momentum formation/resolution rules in the backend before publishing the existing immutable momentum artifact. `run_basket_with_qap` accepts manual basket intent, internally builds the immutable `BasketDefinition`, enumerates the attempt, runs ordinary QAP, and publishes the terminal basket generation/result reference. There is no separate durable server-side basket draft/create operation.
+
+Slice 4 may add thin application glue only when a browser command cannot call these owners without reconstructing persisted intent. It must not add a second scanner, momentum engine, replay, qualification, capture, or basket engine.
 
 ---
 
@@ -112,10 +120,10 @@ src/qap/api/
   basket_schemas.py         # Slice-3 basket read DTOs + basket command request DTOs
   basket_views.py           # basket/momentum/attempt/resolver projections
   operations.py             # local operation records, atomic lifecycle store, launcher
-  operation_worker.py       # direct Python dispatch to existing application operations
+  operation_worker.py       # single active direct-Python worker dispatch + process hygiene
   routes/
     scanner.py              # scanner/prospective/capture/qualification GET+POST resources
-    baskets.py              # momentum/basket GET+POST resources
+    baskets.py              # momentum/basket-run GET+POST resources
     operations.py           # operation list/detail
 ```
 
@@ -189,11 +197,11 @@ The initial browser mutation surface is finite:
 
 ```text
 run_scan
+generate_asset_momentum
 freeze_forward_cohort
 advance_forward_cohort
 capture_public_evidence
 qualify_candidate
-create_basket
 run_basket
 ```
 
@@ -202,6 +210,8 @@ A manual/pinned Slice-1 investigation is represented through the admitted scan/p
 ### Acceptance criteria
 
 - Every command maps to one existing application owner.
+- Asset momentum is generatable from the browser without exposing formation/resolution protocol constants.
+- Basket submission is one intent-to-terminal-evidence application operation; there is no durable pre-run basket artifact exposed to the browser.
 - Every scientific result maps to an immutable existing artifact identity.
 - No browser command requires a hidden model/cost/benchmark/protocol constant.
 - No Slice-4 code begins until this inventory matches the actual Slice-3 backend handoff.
@@ -231,7 +241,7 @@ A manual/pinned Slice-1 investigation is represented through the admitted scan/p
 
 ### Steps
 
-- [ ] Add backend-authoritative projections for Scanner-V1 protocol, scan summaries, PIT universe, candidates, promotions/manual lineage, replay status, asset momentum, forward cohorts/checkpoints, qualifications, baskets, basket attempts, selected edges, resolver audit inputs/target, and QAP run references.
+- [ ] Add backend-authoritative projections for Scanner-V1 protocol, scan summaries, PIT universe, candidates, promotions/manual lineage, replay status, asset momentum, forward cohorts/checkpoints, qualifications, terminal basket generations/attempts, selected edges, and QAP run references. Resolver opinions/audit/target are exposed only when authoritative QAP replay evidence exists; they are never synthesized for an unrun browser draft.
 - [ ] Reuse existing artifact validators/readers. A view must fail closed on invalid artifacts rather than parse filenames or partially trust unvalidated tables.
 - [ ] Preserve negative/invalid/failed rows and explicit automatic/manual lineage.
 - [ ] Return identifiers and routeable references, not arbitrary absolute filesystem paths.
@@ -255,7 +265,7 @@ The exact child endpoints may be collapsed into a sufficiently bounded detail DT
 ### Acceptance criteria
 
 - A candidate detail can navigate to its historical QAP result, prospective evidence, qualifications, and basket memberships without browser-side joins over raw files.
-- A basket detail exposes its selected candidates, resolver audit/target, attempt state, and authoritative QAP run reference without duplicating run economics.
+- A terminal basket detail exposes its selected candidates and attempt state; when a QAP run exists it also exposes/link-projects authoritative resolver opinions/audit/target and the QAP run reference without duplicating run economics.
 - Invalid/negative evidence remains visible.
 - Existing Experiment/Portfolio/Pair routes remain the authority for experiment economics and time-series detail.
 
@@ -293,11 +303,12 @@ Because API DTOs change, regenerate/check the existing deterministic OpenAPI con
 Use a minimal lifecycle:
 
 ```text
-queued -> running -> completed
-                  -> failed
+running -> completed
+        -> failed
+        -> interrupted
 ```
 
-V1 deliberately does not add cancel/retry/pause/scheduling semantics. A new user request creates a new operation; deterministic underlying QAP/scanner identities continue to own idempotence/recovery where already supported.
+V1 deliberately has no queued worker pool and does not add cancel/retry/pause/scheduling semantics. Before creating a new mutation operation, the API checks the durable operation namespace for any active `running` operation. If one exists, the new request fails synchronously with typed `409 operation_busy` and the active operation ID. Deterministic underlying QAP/scanner identities continue to own scientific idempotence/recovery where already supported.
 
 Persist operation state under the configured run root in a separate operational namespace, for example:
 
@@ -308,20 +319,26 @@ Persist operation state under the configured run root in a separate operational 
 
 - `request.json` is immutable after creation.
 - `status.json` is operational mutable state written by atomic replace.
-- Operation IDs may use a standard random UUID; they are not scientific hashes.
+- Internal status records may retain worker PID/start metadata needed for interruption detection; public DTOs need not expose it.
+- Operation IDs may use a standard random UUID; they are not scientific hashes and must not become a second semantic-idempotency namespace.
 - Public DTOs expose domain request summaries, timestamps, status, safe failure details, and authoritative result IDs/references. They do not expose arbitrary local paths.
 
 ### Worker boundary
 
-- [ ] Launch a local worker with `subprocess.Popen([...])` using `sys.executable` and an importable Python module; do not invoke a shell and do not call the existing CLI.
+- [ ] Enforce one active mutating worker globally in V1. Run one mutation-capable API process and use one process-local lock around active-operation check, operation reservation, and worker spawn so concurrent/double-submit HTTP requests cannot both launch. This serializes scan/forward/capture/qualification/momentum/basket mutations and therefore prevents concurrent read-modify-write capture streams without changing Slice-2 storage.
+- [ ] Launch the local worker with `subprocess.Popen([...])` using `sys.executable`, an importable Python module, `start_new_session=True`, no shell, and no CLI invocation.
+- [ ] Redirect worker stdout/stderr to operation-local operational logs/files rather than inheriting the HTTP process streams.
+- [ ] Persist internal PID + worker start metadata after successful spawn. A spawn failure immediately records `failed`; it must not leave an operation indefinitely active.
 - [ ] Worker reads the internal operation request and calls the existing Python owner directly.
-- [ ] API restart must not erase completed/failed operation history. A worker process may continue independently of the HTTP process.
-- [ ] If a previously `running` operation is later observed with no live worker after a process/machine interruption, mark it failed with an explicit `interrupted_worker` operational reason rather than pretending completion.
+- [ ] API restart must not erase completed/failed/interrupted operation history. A worker process may continue independently of the HTTP process.
+- [ ] On startup/read reconciliation, if a previously `running` operation has no live worker, transition it to `interrupted` with an explicit operational reason rather than pretending completion or auto-resuming it.
 - [ ] Scientific/application exceptions become operation failure state; they do not mutate completed evidence or convert fatal research-integrity failures into ordinary positive results.
 
 ### Operational settings
 
 Extend `ApiSettings` only with operational roots genuinely required by the command owners, such as repository root and public capture root. Continue to derive business/scientific rules from existing protocols, not environment variables.
+
+The mutation-capable V1 application must fail closed unless `host` is loopback and every configured allowed origin is loopback/local; reject `*` origins. No authentication subsystem is added while this local-only invariant holds.
 
 The browser never supplies `data_root`, `run_root`, `capture_root`, or `repository_root`.
 
@@ -331,12 +348,12 @@ Prefer finite resource commands rather than `POST /api/operations/execute`:
 
 ```text
 POST /api/scans
+POST /api/scans/{scan_id}/momentum-generations
 POST /api/forward/cohorts
 POST /api/forward/cohorts/{cohort_id}/advances
 POST /api/captures
 POST /api/qualifications
-POST /api/baskets
-POST /api/baskets/{basket_id}/runs
+POST /api/basket-runs
 
 GET  /api/operations
 GET  /api/operations/{operation_id}
@@ -347,15 +364,17 @@ GET  /api/operations/{operation_id}
 ### CORS/API boundary
 
 - Add only `POST` to the existing local CORS method set when mutation routes land.
-- Continue `allow_credentials=False` and the existing explicit origin list.
-- Preserve the existing typed error envelope for synchronous request-validation errors; asynchronous operation failures are represented in the operation resource.
+- Continue `allow_credentials=False`; reject wildcard origins and reject non-loopback origins/host configuration for the mutation-capable V1 app.
+- Preserve the existing typed error envelope for synchronous request-validation and `operation_busy` errors; asynchronous operation failures are represented in the operation resource.
 
 ### Acceptance criteria
 
 - A long scan returns an operation ID promptly rather than keeping the browser request open until the scan finishes.
-- A completed operation points to an authoritative scan/cohort/qualification/basket/QAP identity.
-- API restart does not destroy completed operation history.
-- No CLI, shell command, Redis/Celery/database, or scheduler is introduced.
+- While one mutation is running, a second mutation receives typed `409 operation_busy`; read-only API access remains available.
+- A completed operation points to an authoritative scan/momentum/cohort/qualification/basket/QAP identity.
+- API restart does not destroy completed/failed/interrupted operation history.
+- Mutation-capable serving fails closed outside the loopback/local-origin boundary.
+- No CLI, shell command, Redis/Celery/database, worker pool, or scheduler is introduced.
 
 ---
 
@@ -375,7 +394,7 @@ GET  /api/operations/{operation_id}
 
 ### Interfaces
 
-**Consumes:** Milestone-1 scan/candidate read DTOs and Milestone-2 `run_scan` operation endpoint.
+**Consumes:** Milestone-1 scan/candidate/momentum read DTOs and Milestone-2 `run_scan` + `generate_asset_momentum` operation endpoints.
 
 **Produces:** browser workflow for admitted universe discovery, scan execution, candidate inspection, pin/manual intent, and historical-QAP navigation.
 
@@ -384,15 +403,16 @@ GET  /api/operations/{operation_id}
 - [ ] Add one Discovery entry route with venue/horizon/UTC `as_of` intent and bounded `ScannerPinSpec` inputs.
 - [ ] Present the frozen Scanner-V1 protocol rather than editable generator/model/template/threshold fields.
 - [ ] Launch the scan as an operation and navigate to/track that operation while it runs.
-- [ ] Show completed scan context: PIT universe state, graph/candidate counts, selection lineage, failures/no-survivor outcomes, and asset-native momentum when available.
+- [ ] From a completed scan, allow explicit asset-momentum generation for one admitted venue/horizon. The browser submits only scan/venue/horizon intent; the backend derives the frozen resolution/formation contract.
+- [ ] Show completed scan context: PIT universe state, graph/candidate counts, selection lineage, failures/no-survivor outcomes, and any persisted asset-native momentum generation.
 - [ ] Candidate detail must explain why the candidate exists: PIT admission -> graph/neighbor evidence -> fixed trial/template/orientation -> scout -> promotion/manual lineage -> authoritative QAP result.
 - [ ] Manual/pinned research remains visibly labeled and separate from automatic-selection evidence.
 - [ ] Reuse existing Experiment/Portfolio/Pair navigation for economic/relationship detail instead of duplicating those views.
 
 ### Acceptance criteria
 
-- The browser can initiate the canonical bounded scan and inspect all outcomes, including zero-survivor and failed candidates.
-- No arbitrary scanner strategy/config editor exists.
+- The browser can initiate the canonical bounded scan, generate the first-class asset-momentum artifact, and inspect all outcomes, including zero-survivor and failed candidates.
+- No arbitrary scanner strategy/config editor or momentum-window editor exists.
 - Scientific/economic values shown by the workbench are backend values or links to existing authoritative workbenches.
 
 ---
@@ -449,27 +469,29 @@ GET  /api/operations/{operation_id}
 
 ### Interfaces
 
-**Consumes:** basket/momentum read DTOs plus `create_basket` and `run_basket` operations from the Slice-3 M7 handoff.
+**Consumes:** scan/candidate/momentum read DTOs plus the single `run_basket` operation from the Slice-3 M7 handoff.
 
-**Produces:** manual 3–6 asset basket construction, selected candidate-edge review, graph/target inspection, and authoritative basket-QAP navigation.
+**Produces:** browser-local manual 3–6 asset basket drafting, selected candidate-edge review, one authoritative basket-run submission, and post-run graph/QAP inspection.
 
 ### Steps
 
+- [ ] Keep basket draft state in browser memory/URL-local form only until submission. Do not persist or expose a server-side authoritative basket draft.
 - [ ] Let the operator select one source scan, one venue, one horizon, one decision resolution, and 3–6 admitted economic assets.
 - [ ] Show candidate rules available for each unordered relationship and allow at most one admitted candidate ID per unordered pair.
 - [ ] Keep scout-only/indirect/manual evidence visibly attributed rather than hiding it behind a generic edge state.
 - [ ] Show asset-native momentum as contextual pair-blind evidence, not an automatic basket optimizer.
-- [ ] Render the bounded 3–6 node selected-edge graph with native SVG. The frontend receives and displays backend edge identity/opinion/resolver audit values; it does not recompute pressure or target weights.
-- [ ] Show the backend final target and execution-only USDT bridge separately from the economic basket.
-- [ ] Launch the authoritative basket QAP operation.
+- [ ] Before submission, render only the bounded 3–6 node topology, selected candidate edges/orientations, and existing candidate evidence with native SVG. Do not show current edge opinions, resolver pressures, or a final target because those do not exist authoritatively before ordinary QAP replay.
+- [ ] Submit the complete basket intent through the single authoritative basket-run operation; the Slice-3 application owner creates `BasketDefinition`, enumerates/persists the attempt, and runs QAP atomically from the browser's point of view.
+- [ ] After terminal basket evidence exists, overlay backend-provided edge opinions/resolver audit/target history from the authoritative QAP result. The frontend never recomputes pressure or target weights.
+- [ ] Show the post-run backend target and execution-only USDT bridge separately from the economic basket.
 - [ ] Present the required benchmark ladder through existing QAP run data: strategy, HODL, band-5pct-half, pair-blind relative momentum, and the declared adverse roles.
 - [ ] Link to existing Portfolio Economics, Experiment Detail, and Pair Workbench routes for fills, costs, holdings, relative wealth, and relationship series.
 - [ ] Show negative baskets and comparator failures as first-class outcomes.
 
 ### Acceptance criteria
 
-- A manual basket can be created and run entirely from the browser using backend-owned scientific rules.
-- The graph shown in React matches backend-provided selected edges/opinions/target; no financial target is reconstructed client-side.
+- A manual basket can be drafted and submitted entirely from the browser using backend-owned scientific rules, with no durable server-side pre-run draft.
+- Before replay, the graph shows topology/selected evidence only. After replay, React displays backend-provided opinions/resolver audit/target; no financial target is previewed or reconstructed client-side.
 - Basket QAP economics remain owned by existing experiment/portfolio resources.
 - No basket capacity or basket `tradable_now` state is invented.
 
@@ -496,7 +518,7 @@ GET  /api/operations/{operation_id}
 
 ### Steps
 
-- [ ] Add an Operation Center showing queued/running/completed/failed work with type, requested time, duration, safe failure reason, and authoritative result links.
+- [ ] Add an Operation Center showing running/completed/failed/interrupted work with type, requested time, duration, safe failure reason, and authoritative result links. V1 has no queued state.
 - [ ] Do not show operation state as research success/failure; distinguish operational completion from scientific/economic outcome.
 - [ ] Add a compact lineage view that can traverse:
 
@@ -545,6 +567,7 @@ The required end-to-end browser/application evidence is intentionally small and 
 Discovery:
 run canonical bounded scan
  -> operation completes
+ -> generate persisted asset momentum for one horizon
  -> inspect candidate including negative/manual lineage
  -> navigate to authoritative experiment/portfolio/pair evidence
 
@@ -557,11 +580,11 @@ freeze
  -> inspect reasoned actionability state
 
 Portfolio:
-select 3-6 admitted assets + candidate edges
- -> create basket
- -> inspect backend graph/target
- -> run ordinary QAP basket experiment
- -> inspect HODL/band/pair-blind/strategy economics
+select 3-6 admitted assets + candidate edges in a browser-local draft
+ -> inspect topology + selected evidence only
+ -> submit one basket-run operation
+ -> ordinary QAP produces terminal BasketDefinition/attempt/result evidence
+ -> inspect authoritative opinions/resolver audit/target + HODL/band/pair-blind/strategy economics
  -> navigate to Portfolio/Experiment evidence
 ```
 
@@ -596,7 +619,7 @@ Run the repository Playwright wrapper for the existing Phase-14 critical flows p
 uv run python scripts/run_playwright_e2e.py
 ```
 
-Use the existing rendered-browser/accessibility acceptance process for new primary routes at desktop and mobile widths. Do not add screenshot-snapshot or CSS-trivia tests merely to increase coverage.
+Use the existing rendered-browser/accessibility acceptance process for new primary routes at desktop and mobile widths. Keep all Slice-4 Playwright flows deterministic and no-network: use local fixture scan/capture/basket data, never real Binance/Gate capture or a production-sized 1,000-asset scan in the repository gate. Do not add screenshot-snapshot or CSS-trivia tests merely to increase coverage.
 
 ### Exit criteria
 
@@ -604,7 +627,8 @@ Slice 4 is complete only when:
 
 - Slices 1–3 can be initiated/inspected through one local web application without using the CLI for the supported workflows;
 - FastAPI exposes a finite typed mutation surface rather than a generic execution API;
-- long-running work uses the minimal durable local operation lifecycle and does not require a distributed queue/database;
+- long-running work uses the minimal durable single-active-worker local operation lifecycle and does not require a distributed queue/database;
+- mutation-capable serving is loopback/local-origin only and double-submit/concurrent mutation fails with typed `operation_busy`;
 - operation state remains operational metadata rather than scientific truth;
 - browser inputs are domain intent, not hidden research/financial constants;
 - immutable scanner/QAP artifacts remain authoritative and negative evidence is preserved;
@@ -631,6 +655,7 @@ Do not treat these as prerequisites for a finished human-operated research produ
 - configurable strategy/model/plugin builders;
 - generalized dashboard builder;
 - cancellation/resume semantics for arbitrary operations;
+- multi-worker mutation concurrency, per-resource lock frameworks, or concurrent capture-stream writers until real local usage proves the single-active-worker rule insufficient;
 - new graph/chart libraries solely for the bounded Scanner-V1 basket graph.
 
 Each requires a concrete product need and separate design authority.

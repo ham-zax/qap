@@ -13,7 +13,7 @@
 > **Implementation status — 2026-08-18**
 > **Slice 1:** complete and remediation-verified; results in `docs/research/2026-08-18-qap-scanner-slice1-results.md`.
 > **Slice 2:** complete and repository-verified at tested commit `809431c`; results in `docs/research/2026-08-18-qap-scanner-slice2-results.md`.
-> **Slice 3:** explicitly approved and implemented through Milestone 6 at `46ef407`. Milestone 7 remains the final backend vertical; the former Milestone-8 Candidate Workbench is superseded by Slice 4, and Milestone 9 closes the Slice-3 backend/Phase-15 research kernel.
+> **Slice 3:** explicitly approved and implemented through Milestone 6; implementation landed at `46ef407` and research-integrity closure at `dd9df14`, which is the authoritative Milestone-6 handoff baseline. Milestone 7 remains the final backend vertical; the former Milestone-8 Candidate Workbench is superseded by Slice 4, and Milestone 9 closes the Slice-3 backend/Phase-15 research kernel.
 
 > **Product-boundary amendment — 2026-08-19**
 > The standalone Slice-3 read-only Candidate Workbench is intentionally not implemented. One unified Slice-4 QAP application/workbench will expose the completed Slice-1 discovery, Slice-2 prospective/actionability, and Slice-3 basket-research operations instead of duplicating API DTOs, route hierarchies, navigation, and frontend evidence views across two consecutive workbenches.
