@@ -8,12 +8,14 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from qap.api.basket_views import BasketArtifactReader
 from qap.api.errors import ApiBoundaryError
+from qap.api.operations import OperationManager
 from qap.api.paper_operation_views import PaperOperationReader
 from qap.api.readers import RunArtifactReader
 from qap.api.routes import (
     baskets_router,
     experiments_router,
     health_router,
+    operations_router,
     pairs_router,
     paper_operations,
     portfolios_router,
@@ -41,12 +43,15 @@ def _error_response(
 
 
 def create_app(settings: ApiSettings) -> FastAPI:
-    """Create one local read-only API from explicit operational settings."""
+    """Create the local single-operator QAP application boundary."""
 
     app = FastAPI(
-        title="QAP Research Evidence API",
+        title="QAP Research Application API",
         version="1.0.0",
-        description="Read-only access to validated immutable QAP experiment artifacts.",
+        description=(
+            "Local command/query access to QAP research operations and validated "
+            "immutable evidence."
+        ),
     )
     app.state.settings = settings
     app.state.run_reader = RunArtifactReader(
@@ -58,11 +63,12 @@ def create_app(settings: ApiSettings) -> FastAPI:
     )
     app.state.scanner_reader = ScannerArtifactReader(settings.run_root)
     app.state.basket_reader = BasketArtifactReader(settings.run_root)
+    app.state.operation_manager = OperationManager(settings)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.allowed_origins),
         allow_credentials=False,
-        allow_methods=["GET", "OPTIONS"],
+        allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Accept", "Content-Type"],
     )
 
@@ -139,6 +145,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.include_router(paper_operations.router)
     app.include_router(scanner_router)
     app.include_router(baskets_router)
+    app.include_router(operations_router)
     return app
 
 

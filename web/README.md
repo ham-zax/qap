@@ -15,13 +15,15 @@ uv run python -m qap.experiment.cli \
   --run-timestamp 2026-08-17T10:00:00Z
 ```
 
-Start the read-only API:
+Start the local single-operator API. The mutation-capable launcher is loopback-only and explicitly single-worker:
 
 ```bash
 QAP_API_RUN_ROOT=/tmp/qap-ui-runs \
 QAP_API_MARKET_DATA_ROOT="$PWD" \
+QAP_API_REPOSITORY_ROOT="$PWD" \
+QAP_API_CAPTURE_ROOT=/tmp/qap-ui-runs/public-capture \
 uv run uvicorn qap.api.app:create_default_app \
-  --factory --host 127.0.0.1 --port 8000
+  --factory --host 127.0.0.1 --port 8000 --workers 1
 ```
 
 In a second shell, generate the API types and start Vite:

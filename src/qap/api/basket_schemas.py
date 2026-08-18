@@ -3,6 +3,8 @@
 from datetime import datetime
 from typing import Literal
 
+from pydantic import Field
+
 from qap.api.schemas import ApiDto, ErrorDetailDto
 
 
@@ -56,9 +58,20 @@ class BasketDetailDto(ApiDto):
     resolver_audit_available: bool
 
 
+class BasketRunRequestDto(ApiDto):
+    scan_id: str
+    venue: Literal["binance", "gate"]
+    horizon: Literal["short", "medium", "swing"]
+    decision_resolution: str
+    economic_assets: tuple[str, ...] = Field(min_length=3, max_length=6)
+    candidate_ids: tuple[str, ...] = Field(min_length=1)
+    momentum_scan_id: str | None = None
+
+
 __all__ = [
     "BasketDetailDto",
     "BasketEdgeDto",
     "BasketListDto",
+    "BasketRunRequestDto",
     "BasketSummaryDto",
 ]

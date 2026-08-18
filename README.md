@@ -61,13 +61,15 @@ uv run python scripts/run_paper_operation.py \
 
 ## Start the local evidence workbench
 
-Start the read-only API from the repository root:
+Start the local single-operator API from the repository root. Mutation-capable serving is intentionally loopback-only and uses exactly one Uvicorn worker:
 
 ```bash
 QAP_API_RUN_ROOT="$QAP_RUN_ROOT" \
 QAP_API_MARKET_DATA_ROOT="$PWD" \
+QAP_API_REPOSITORY_ROOT="$PWD" \
+QAP_API_CAPTURE_ROOT="$QAP_RUN_ROOT/public-capture" \
 uv run uvicorn qap.api.app:create_default_app \
-  --factory --host 127.0.0.1 --port 8000
+  --factory --host 127.0.0.1 --port 8000 --workers 1
 ```
 
 Then start the frontend in another terminal:

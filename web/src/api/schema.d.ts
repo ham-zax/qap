@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/basket-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Basket */
+        post: operations["runBasket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/baskets": {
         parameters: {
             query?: never;
@@ -32,6 +49,23 @@ export interface paths {
         get: operations["getBasket"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/captures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Capture Public Evidence */
+        post: operations["capturePublicEvidence"];
         delete?: never;
         options?: never;
         head?: never;
@@ -82,7 +116,8 @@ export interface paths {
         /** List Forward Cohorts */
         get: operations["listForwardCohorts"];
         put?: never;
-        post?: never;
+        /** Freeze Forward Cohort */
+        post: operations["freezeForwardCohort"];
         delete?: never;
         options?: never;
         head?: never;
@@ -106,6 +141,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/forward/cohorts/{cohort_id}/advances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Advance Forward Cohort */
+        post: operations["advanceForwardCohort"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -115,6 +167,40 @@ export interface paths {
         };
         /** Health */
         get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Operations */
+        get: operations["listOperations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/{operation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Operation Detail */
+        get: operations["getOperation"];
         put?: never;
         post?: never;
         delete?: never;
@@ -242,6 +328,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/qualifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Qualify Candidate */
+        post: operations["qualifyCandidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/scanner/protocol": {
         parameters: {
             query?: never;
@@ -269,7 +372,8 @@ export interface paths {
         /** List Scans */
         get: operations["listScans"];
         put?: never;
-        post?: never;
+        /** Run Scan */
+        post: operations["runScan"];
         delete?: never;
         options?: never;
         head?: never;
@@ -327,10 +431,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/scans/{scan_id}/momentum-generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Momentum */
+        post: operations["generateAssetMomentum"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AdvanceForwardCohortRequestDto */
+        AdvanceForwardCohortRequestDto: {
+            /**
+             * Through
+             * Format: date-time
+             */
+            through: string;
+        };
         /** AnchorLensDto */
         AnchorLensDto: {
             /** Anchor */
@@ -482,6 +611,29 @@ export interface components {
              * @constant
              */
             schema_version: "qap.api.basket_list.v1";
+        };
+        /** BasketRunRequestDto */
+        BasketRunRequestDto: {
+            /** Candidate Ids */
+            candidate_ids: string[];
+            /** Decision Resolution */
+            decision_resolution: string;
+            /** Economic Assets */
+            economic_assets: string[];
+            /**
+             * Horizon
+             * @enum {string}
+             */
+            horizon: "short" | "medium" | "swing";
+            /** Momentum Scan Id */
+            momentum_scan_id?: string | null;
+            /** Scan Id */
+            scan_id: string;
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
         };
         /** BasketSummaryDto */
         BasketSummaryDto: {
@@ -672,6 +824,25 @@ export interface components {
             trial_status: string;
             /** Venue */
             venue: string;
+        };
+        /** CapturePublicEvidenceRequestDto */
+        CapturePublicEvidenceRequestDto: {
+            /** Base Asset */
+            base_asset: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "l1" | "depth" | "metadata";
+            /** Quote Asset */
+            quote_asset: string;
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+            /** Venue Symbol */
+            venue_symbol: string;
         };
         /** ComponentSpec */
         ComponentSpec: {
@@ -1147,6 +1318,21 @@ export interface components {
             /** Source Scan Id */
             source_scan_id?: string | null;
         };
+        /** FreezeForwardCohortRequestDto */
+        FreezeForwardCohortRequestDto: {
+            /**
+             * Freeze At
+             * Format: date-time
+             */
+            freeze_at: string;
+            /**
+             * Horizon
+             * @enum {string}
+             */
+            horizon: "short" | "medium" | "swing";
+            /** Scan Id */
+            scan_id: string;
+        };
         /** GraphScopeDto */
         GraphScopeDto: {
             /** Eligible Asset Count */
@@ -1249,6 +1435,19 @@ export interface components {
             /** Venue */
             venue: string;
         };
+        /** MomentumGenerationRequestDto */
+        MomentumGenerationRequestDto: {
+            /**
+             * Horizon
+             * @enum {string}
+             */
+            horizon: "short" | "medium" | "swing";
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+        };
         /** MomentumObservationDto */
         MomentumObservationDto: {
             /** Asset Id */
@@ -1273,6 +1472,73 @@ export interface components {
             status: string;
             /** Venue Symbol */
             venue_symbol: string;
+        };
+        /** OperationDto */
+        OperationDto: {
+            failure: components["schemas"]["ErrorDetailDto"] | null;
+            /** Finished At */
+            finished_at: string | null;
+            /** Kind */
+            kind: string;
+            /** Operation Id */
+            operation_id: string;
+            /** Request Summary */
+            request_summary: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            /** Result */
+            result: {
+                [key: string]: components["schemas"]["JsonValue"];
+            } | null;
+            /**
+             * Schema Version
+             * @default qap.api.operation.v1
+             * @constant
+             */
+            schema_version: "qap.api.operation.v1";
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "completed" | "failed" | "interrupted";
+        };
+        /** OperationListDto */
+        OperationListDto: {
+            /** Items */
+            items: components["schemas"]["OperationDto"][];
+            /**
+             * Schema Version
+             * @default qap.api.operation_list.v1
+             * @constant
+             */
+            schema_version: "qap.api.operation_list.v1";
+        };
+        /** OperationRefDto */
+        OperationRefDto: {
+            /** Operation Id */
+            operation_id: string;
+            /**
+             * Schema Version
+             * @default qap.api.operation_ref.v1
+             * @constant
+             */
+            schema_version: "qap.api.operation_ref.v1";
+            /**
+             * Status
+             * @default running
+             * @constant
+             */
+            status: "running";
         };
         /** PairBlindRelativeMomentumControlSpec */
         PairBlindRelativeMomentumControlSpec: {
@@ -1742,6 +2008,20 @@ export interface components {
             /** State */
             state: string;
         };
+        /** QualificationRequestDto */
+        QualificationRequestDto: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Checkpoint Id */
+            checkpoint_id: string;
+            /** Cohort Id */
+            cohort_id: string;
+            /** Requested Capital */
+            requested_capital: string;
+        };
         /** RebalanceDecisionAuditDto */
         RebalanceDecisionAuditDto: {
             /** Baseline Target Weights */
@@ -1907,6 +2187,26 @@ export interface components {
              */
             schema_version: "qap.experiment.provenance.v1";
         };
+        /** RunScanRequestDto */
+        RunScanRequestDto: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Horizons */
+            horizons: ("short" | "medium" | "swing")[];
+            /**
+             * Manual Replay Candidate Ids
+             * @default []
+             */
+            manual_replay_candidate_ids: string[];
+            /**
+             * Pins
+             * @default []
+             */
+            pins: components["schemas"]["ScannerPinRequestDto"][];
+        };
         /** RunSummaryDto */
         RunSummaryDto: {
             /** Analysis Anchor */
@@ -2033,6 +2333,25 @@ export interface components {
             /** Momentum Resolution */
             momentum_resolution: string;
         };
+        /** ScannerPinRequestDto */
+        ScannerPinRequestDto: {
+            /** Asset A */
+            asset_a: string;
+            /** Asset B */
+            asset_b: string;
+            /**
+             * Forensic
+             * @default false
+             */
+            forensic: boolean;
+            /** Horizons */
+            horizons: ("short" | "medium" | "swing")[];
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+        };
         /** ScannerProtocolDto */
         ScannerProtocolDto: {
             /** Basket Protocol Id */
@@ -2106,6 +2425,39 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    runBasket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BasketRunRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listBaskets: {
         parameters: {
             query?: never;
@@ -2144,6 +2496,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BasketDetailDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    capturePublicEvidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CapturePublicEvidenceRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
                 };
             };
             /** @description Validation Error */
@@ -2228,6 +2613,39 @@ export interface operations {
             };
         };
     };
+    freezeForwardCohort: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FreezeForwardCohortRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getForwardCohort: {
         parameters: {
             query?: never;
@@ -2259,6 +2677,41 @@ export interface operations {
             };
         };
     };
+    advanceForwardCohort: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdvanceForwardCohortRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getHealth: {
         parameters: {
             query?: never;
@@ -2275,6 +2728,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthDto"];
+                };
+            };
+        };
+    };
+    listOperations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationListDto"];
+                };
+            };
+        };
+    };
+    getOperation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2498,6 +3002,39 @@ export interface operations {
             };
         };
     };
+    qualifyCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QualificationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getScannerProtocol: {
         parameters: {
             query?: never;
@@ -2534,6 +3071,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScanListDto"];
+                };
+            };
+        };
+    };
+    runScan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunScanRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2619,6 +3189,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CandidateDetailDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generateAssetMomentum: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MomentumGenerationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
                 };
             };
             /** @description Validation Error */

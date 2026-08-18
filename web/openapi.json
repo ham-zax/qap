@@ -1,6 +1,21 @@
 {
   "components": {
     "schemas": {
+      "AdvanceForwardCohortRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "through": {
+            "format": "date-time",
+            "title": "Through",
+            "type": "string"
+          }
+        },
+        "required": [
+          "through"
+        ],
+        "title": "AdvanceForwardCohortRequestDto",
+        "type": "object"
+      },
       "AnchorLensDto": {
         "additionalProperties": false,
         "properties": {
@@ -441,6 +456,74 @@
           "items"
         ],
         "title": "BasketListDto",
+        "type": "object"
+      },
+      "BasketRunRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Candidate Ids",
+            "type": "array"
+          },
+          "decision_resolution": {
+            "title": "Decision Resolution",
+            "type": "string"
+          },
+          "economic_assets": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 3,
+            "title": "Economic Assets",
+            "type": "array"
+          },
+          "horizon": {
+            "enum": [
+              "short",
+              "medium",
+              "swing"
+            ],
+            "title": "Horizon",
+            "type": "string"
+          },
+          "momentum_scan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Momentum Scan Id"
+          },
+          "scan_id": {
+            "title": "Scan Id",
+            "type": "string"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scan_id",
+          "venue",
+          "horizon",
+          "decision_resolution",
+          "economic_assets",
+          "candidate_ids"
+        ],
+        "title": "BasketRunRequestDto",
         "type": "object"
       },
       "BasketSummaryDto": {
@@ -1023,6 +1106,49 @@
           "manual_pinned"
         ],
         "title": "CandidateSummaryDto",
+        "type": "object"
+      },
+      "CapturePublicEvidenceRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "base_asset": {
+            "title": "Base Asset",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "l1",
+              "depth",
+              "metadata"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "quote_asset": {
+            "title": "Quote Asset",
+            "type": "string"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "title": "Venue Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "venue",
+          "venue_symbol",
+          "base_asset",
+          "quote_asset",
+          "kind"
+        ],
+        "title": "CapturePublicEvidenceRequestDto",
         "type": "object"
       },
       "ComponentSpec": {
@@ -2320,6 +2446,36 @@
         "title": "ForwardCohortSummaryDto",
         "type": "object"
       },
+      "FreezeForwardCohortRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "freeze_at": {
+            "format": "date-time",
+            "title": "Freeze At",
+            "type": "string"
+          },
+          "horizon": {
+            "enum": [
+              "short",
+              "medium",
+              "swing"
+            ],
+            "title": "Horizon",
+            "type": "string"
+          },
+          "scan_id": {
+            "title": "Scan Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scan_id",
+          "horizon",
+          "freeze_at"
+        ],
+        "title": "FreezeForwardCohortRequestDto",
+        "type": "object"
+      },
       "GraphScopeDto": {
         "additionalProperties": false,
         "properties": {
@@ -2575,6 +2731,34 @@
         "title": "MomentumGenerationDto",
         "type": "object"
       },
+      "MomentumGenerationRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "horizon": {
+            "enum": [
+              "short",
+              "medium",
+              "swing"
+            ],
+            "title": "Horizon",
+            "type": "string"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "venue",
+          "horizon"
+        ],
+        "title": "MomentumGenerationRequestDto",
+        "type": "object"
+      },
       "MomentumObservationDto": {
         "additionalProperties": false,
         "properties": {
@@ -2665,6 +2849,150 @@
           "rank"
         ],
         "title": "MomentumObservationDto",
+        "type": "object"
+      },
+      "OperationDto": {
+        "additionalProperties": false,
+        "properties": {
+          "failure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorDetailDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "operation_id": {
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "request_summary": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Request Summary",
+            "type": "object"
+          },
+          "requested_at": {
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "schema_version": {
+            "const": "qap.api.operation.v1",
+            "default": "qap.api.operation.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "completed",
+              "failed",
+              "interrupted"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "kind",
+          "status",
+          "requested_at",
+          "started_at",
+          "finished_at",
+          "request_summary",
+          "result",
+          "failure"
+        ],
+        "title": "OperationDto",
+        "type": "object"
+      },
+      "OperationListDto": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OperationDto"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "qap.api.operation_list.v1",
+            "default": "qap.api.operation_list.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "OperationListDto",
+        "type": "object"
+      },
+      "OperationRefDto": {
+        "additionalProperties": false,
+        "properties": {
+          "operation_id": {
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.operation_ref.v1",
+            "default": "qap.api.operation_ref.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "status": {
+            "const": "running",
+            "default": "running",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id"
+        ],
+        "title": "OperationRefDto",
         "type": "object"
       },
       "PairBlindRelativeMomentumControlSpec": {
@@ -4037,6 +4365,36 @@
         "title": "QualificationDto",
         "type": "object"
       },
+      "QualificationRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "checkpoint_id": {
+            "title": "Checkpoint Id",
+            "type": "string"
+          },
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "requested_capital": {
+            "title": "Requested Capital",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cohort_id",
+          "checkpoint_id",
+          "as_of",
+          "requested_capital"
+        ],
+        "title": "QualificationRequestDto",
+        "type": "object"
+      },
       "RebalanceDecisionAuditDto": {
         "additionalProperties": false,
         "properties": {
@@ -4467,6 +4825,51 @@
           "data_role"
         ],
         "title": "RunProvenance",
+        "type": "object"
+      },
+      "RunScanRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "horizons": {
+            "items": {
+              "enum": [
+                "short",
+                "medium",
+                "swing"
+              ],
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Horizons",
+            "type": "array"
+          },
+          "manual_replay_candidate_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Manual Replay Candidate Ids",
+            "type": "array"
+          },
+          "pins": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ScannerPinRequestDto"
+            },
+            "title": "Pins",
+            "type": "array"
+          }
+        },
+        "required": [
+          "as_of",
+          "horizons"
+        ],
+        "title": "RunScanRequestDto",
         "type": "object"
       },
       "RunSummaryDto": {
@@ -4946,6 +5349,53 @@
         "title": "ScannerHorizonDto",
         "type": "object"
       },
+      "ScannerPinRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_a": {
+            "title": "Asset A",
+            "type": "string"
+          },
+          "asset_b": {
+            "title": "Asset B",
+            "type": "string"
+          },
+          "forensic": {
+            "default": false,
+            "title": "Forensic",
+            "type": "boolean"
+          },
+          "horizons": {
+            "items": {
+              "enum": [
+                "short",
+                "medium",
+                "swing"
+              ],
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Horizons",
+            "type": "array"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "venue",
+          "asset_a",
+          "asset_b",
+          "horizons"
+        ],
+        "title": "ScannerPinRequestDto",
+        "type": "object"
+      },
       "ScannerProtocolDto": {
         "additionalProperties": false,
         "properties": {
@@ -5112,12 +5562,53 @@
     }
   },
   "info": {
-    "description": "Read-only access to validated immutable QAP experiment artifacts.",
-    "title": "QAP Research Evidence API",
+    "description": "Local command/query access to QAP research operations and validated immutable evidence.",
+    "title": "QAP Research Application API",
     "version": "1.0.0"
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/basket-runs": {
+      "post": {
+        "operationId": "runBasket",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BasketRunRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationRefDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Basket",
+        "tags": [
+          "baskets"
+        ]
+      }
+    },
     "/api/baskets": {
       "get": {
         "operationId": "listBaskets",
@@ -5178,6 +5669,47 @@
         "summary": "Basket Detail",
         "tags": [
           "baskets"
+        ]
+      }
+    },
+    "/api/captures": {
+      "post": {
+        "operationId": "capturePublicEvidence",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapturePublicEvidenceRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationRefDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Capture Public Evidence",
+        "tags": [
+          "scanner"
         ]
       }
     },
@@ -5263,6 +5795,45 @@
         "tags": [
           "scanner"
         ]
+      },
+      "post": {
+        "operationId": "freezeForwardCohort",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FreezeForwardCohortRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationRefDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Freeze Forward Cohort",
+        "tags": [
+          "scanner"
+        ]
       }
     },
     "/api/forward/cohorts/{cohort_id}": {
@@ -5307,6 +5878,58 @@
         ]
       }
     },
+    "/api/forward/cohorts/{cohort_id}/advances": {
+      "post": {
+        "operationId": "advanceForwardCohort",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvanceForwardCohortRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationRefDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Advance Forward Cohort",
+        "tags": [
+          "scanner"
+        ]
+      }
+    },
     "/api/health": {
       "get": {
         "operationId": "getHealth",
@@ -5325,6 +5948,69 @@
         "summary": "Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/operations": {
+      "get": {
+        "operationId": "listOperations",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationListDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Operations",
+        "tags": [
+          "operations"
+        ]
+      }
+    },
+    "/api/operations/{operation_id}": {
+      "get": {
+        "operationId": "getOperation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "title": "Operation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Operation Detail",
+        "tags": [
+          "operations"
         ]
       }
     },
@@ -5723,6 +6409,47 @@
         ]
       }
     },
+    "/api/qualifications": {
+      "post": {
+        "operationId": "qualifyCandidate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualificationRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationRefDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Qualify Candidate",
+        "tags": [
+          "scanner"
+        ]
+      }
+    },
     "/api/scanner/protocol": {
       "get": {
         "operationId": "getScannerProtocol",
@@ -5760,6 +6487,45 @@
           }
         },
         "summary": "List Scans",
+        "tags": [
+          "scanner"
+        ]
+      },
+      "post": {
+        "operationId": "runScan",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunScanRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationRefDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Scan",
         "tags": [
           "scanner"
         ]
@@ -5895,6 +6661,58 @@
           }
         },
         "summary": "Candidate Detail",
+        "tags": [
+          "scanner"
+        ]
+      }
+    },
+    "/api/scans/{scan_id}/momentum-generations": {
+      "post": {
+        "operationId": "generateAssetMomentum",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scan_id",
+            "required": true,
+            "schema": {
+              "title": "Scan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MomentumGenerationRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationRefDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Momentum",
         "tags": [
           "scanner"
         ]

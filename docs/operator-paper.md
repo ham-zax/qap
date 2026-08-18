@@ -54,15 +54,18 @@ If a future independently motivated research generation produces a frozen surviv
 
 ## 3. Inspect immutable evidence through the local API and workbench
 
-Launch the read-only API from the repository root:
+Launch the local single-operator API from the repository root. Mutation-capable serving remains loopback-only and explicitly single-worker:
 
 ```bash
 QAP_API_RUN_ROOT=runs \
 QAP_API_MARKET_DATA_ROOT=. \
+QAP_API_REPOSITORY_ROOT=. \
+QAP_API_CAPTURE_ROOT=runs/public-capture \
 uv run uvicorn qap.api.app:create_default_app \
   --factory \
   --host 127.0.0.1 \
-  --port 8000
+  --port 8000 \
+  --workers 1
 ```
 
 In a second shell:
