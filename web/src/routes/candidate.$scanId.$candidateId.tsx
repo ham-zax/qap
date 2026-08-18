@@ -11,5 +11,6 @@ export const Route = createFileRoute('/candidate/$scanId/$candidateId')({
 })
 
 function CandidateDetailRoute() {
-  return <CandidateDetail data={Route.useLoaderData()} />
+  const { apiClient } = Route.useRouteContext()
+  return <CandidateDetail apiClient={apiClient} data={Route.useLoaderData()} />
 }

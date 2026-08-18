@@ -198,9 +198,17 @@ class QualificationDto(ApiDto):
     requested_capital: str
     state: str
     reason: str
+    capture_snapshot_ids: tuple[str, ...]
+    capture_contract_satisfied: bool
+    eligibility_resolved: bool
+    current_two_way_trading: bool
+    order_constraints_satisfied: bool
+    market_metadata_fingerprint: str | None
     candidate_capital_ceiling: str | None
     current_state_qap_run_id: str | None
     requested_capital_qap_run_id: str | None
+    requested_baseline_gate_passed: bool | None
+    requested_adverse_gate_passed: bool | None
     q_star_buy: str | None
     q_safe_buy: str | None
     q_star_sell: str | None
@@ -214,6 +222,8 @@ class ForwardCohortSummaryDto(ApiDto):
     horizon: str | None = None
     freeze_at: datetime | None = None
     candidate_ids: tuple[str, ...] = ()
+    automatic_member_count: int | None = None
+    manual_member_count: int | None = None
     checkpoint_count: int | None = None
     qualification_count: int | None = None
     error: ErrorDetailDto | None = None

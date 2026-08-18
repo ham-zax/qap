@@ -1299,6 +1299,8 @@ export interface components {
              * @enum {string}
              */
             artifact_status: "valid" | "invalid";
+            /** Automatic Member Count */
+            automatic_member_count?: number | null;
             /**
              * Candidate Ids
              * @default []
@@ -1313,6 +1315,8 @@ export interface components {
             freeze_at?: string | null;
             /** Horizon */
             horizon?: string | null;
+            /** Manual Member Count */
+            manual_member_count?: number | null;
             /** Qualification Count */
             qualification_count?: number | null;
             /** Source Scan Id */
@@ -1983,12 +1987,24 @@ export interface components {
             candidate_capital_ceiling: string | null;
             /** Candidate Id */
             candidate_id: string;
+            /** Capture Contract Satisfied */
+            capture_contract_satisfied: boolean;
+            /** Capture Snapshot Ids */
+            capture_snapshot_ids: string[];
             /** Checkpoint Id */
             checkpoint_id: string;
             /** Current State Qap Run Id */
             current_state_qap_run_id: string | null;
+            /** Current Two Way Trading */
+            current_two_way_trading: boolean;
+            /** Eligibility Resolved */
+            eligibility_resolved: boolean;
             /** Freeze Id */
             freeze_id: string;
+            /** Market Metadata Fingerprint */
+            market_metadata_fingerprint: string | null;
+            /** Order Constraints Satisfied */
+            order_constraints_satisfied: boolean;
             /** Q Safe Buy */
             q_safe_buy: string | null;
             /** Q Safe Sell */
@@ -2001,6 +2017,10 @@ export interface components {
             qualification_id: string;
             /** Reason */
             reason: string;
+            /** Requested Adverse Gate Passed */
+            requested_adverse_gate_passed: boolean | null;
+            /** Requested Baseline Gate Passed */
+            requested_baseline_gate_passed: boolean | null;
             /** Requested Capital */
             requested_capital: string;
             /** Requested Capital Qap Run Id */

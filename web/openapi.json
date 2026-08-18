@@ -2360,6 +2360,17 @@
             "title": "Artifact Status",
             "type": "string"
           },
+          "automatic_member_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Automatic Member Count"
+          },
           "candidate_ids": {
             "default": [],
             "items": {
@@ -2415,6 +2426,17 @@
               }
             ],
             "title": "Horizon"
+          },
+          "manual_member_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Member Count"
           },
           "qualification_count": {
             "anyOf": [
@@ -4254,6 +4276,17 @@
             "title": "Candidate Id",
             "type": "string"
           },
+          "capture_contract_satisfied": {
+            "title": "Capture Contract Satisfied",
+            "type": "boolean"
+          },
+          "capture_snapshot_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Capture Snapshot Ids",
+            "type": "array"
+          },
           "checkpoint_id": {
             "title": "Checkpoint Id",
             "type": "string"
@@ -4269,9 +4302,32 @@
             ],
             "title": "Current State Qap Run Id"
           },
+          "current_two_way_trading": {
+            "title": "Current Two Way Trading",
+            "type": "boolean"
+          },
+          "eligibility_resolved": {
+            "title": "Eligibility Resolved",
+            "type": "boolean"
+          },
           "freeze_id": {
             "title": "Freeze Id",
             "type": "string"
+          },
+          "market_metadata_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Metadata Fingerprint"
+          },
+          "order_constraints_satisfied": {
+            "title": "Order Constraints Satisfied",
+            "type": "boolean"
           },
           "q_safe_buy": {
             "anyOf": [
@@ -4325,6 +4381,28 @@
             "title": "Reason",
             "type": "string"
           },
+          "requested_adverse_gate_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Adverse Gate Passed"
+          },
+          "requested_baseline_gate_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Baseline Gate Passed"
+          },
           "requested_capital": {
             "title": "Requested Capital",
             "type": "string"
@@ -4354,9 +4432,17 @@
           "requested_capital",
           "state",
           "reason",
+          "capture_snapshot_ids",
+          "capture_contract_satisfied",
+          "eligibility_resolved",
+          "current_two_way_trading",
+          "order_constraints_satisfied",
+          "market_metadata_fingerprint",
           "candidate_capital_ceiling",
           "current_state_qap_run_id",
           "requested_capital_qap_run_id",
+          "requested_baseline_gate_passed",
+          "requested_adverse_gate_passed",
           "q_star_buy",
           "q_safe_buy",
           "q_star_sell",

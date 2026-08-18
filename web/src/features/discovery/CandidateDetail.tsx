@@ -1,7 +1,12 @@
-import type { CandidateDetailDto } from '../../api/types'
+import { useMutation } from '@tanstack/react-query'
+import { useState } from 'react'
+
+import type { QapApiClient } from '../../api/client'
+import type { CandidateDetailDto, OperationRefDto } from '../../api/types'
 import { Badge } from '../../components/ui/Badge'
 
 interface CandidateDetailProps {
+  apiClient: QapApiClient
   data: CandidateDetailDto
 }
 
@@ -9,8 +14,19 @@ function shortId(value: string) {
   return value.length <= 18 ? value : `${value.slice(0, 10)}…${value.slice(-6)}`
 }
 
-export function CandidateDetail({ data }: CandidateDetailProps) {
+export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
   const candidate = data.candidate
+  const [freezeAt, setFreezeAt] = useState('')
+  const [operation, setOperation] = useState<OperationRefDto | null>(null)
+  const freeze = useMutation({
+    mutationFn: () =>
+      apiClient.freezeForwardCohort({
+        scan_id: candidate.scan_id,
+        horizon: candidate.horizon as 'short' | 'medium' | 'swing',
+        freeze_at: freezeAt,
+      }),
+    onSuccess: setOperation,
+  })
   const [assetX, assetY] = candidate.pair_id.split('/')
   const manual = candidate.manual_pinned || candidate.manual_selected
 
@@ -131,6 +147,48 @@ export function CandidateDetail({ data }: CandidateDetailProps) {
           </div>
         </article>
       </div>
+
+      {candidate.economic_gate_status === 'deep_replay_survivor' ? (
+        <section className="mt-8 rounded-lg border border-border bg-panel p-5" aria-labelledby="freeze-heading">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <h2 id="freeze-heading" className="mt-0 text-lg font-semibold text-foreground">
+                Freeze prospective cohort
+              </h2>
+              <p className="mb-0 text-sm leading-6 text-secondary">
+                Freezing is a scan/horizon operation. The backend enrolls the admitted
+                survivors and records automatic/manual membership before future outcomes.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <input
+                className="min-h-11 rounded-md border border-border bg-canvas px-3 text-foreground"
+                value={freezeAt}
+                onChange={(event) => setFreezeAt(event.target.value)}
+                placeholder="Freeze UTC"
+                aria-label="Freeze UTC"
+              />
+              <button
+                type="button"
+                className="min-h-11 rounded-md bg-accent px-4 font-semibold text-canvas disabled:opacity-50"
+                disabled={!freezeAt || freeze.isPending}
+                onClick={() => freeze.mutate()}
+              >
+                {freeze.isPending ? 'Starting…' : 'Freeze cohort'}
+              </button>
+            </div>
+          </div>
+          {freeze.isError ? <p className="mt-3 text-sm text-negative">{freeze.error.message}</p> : null}
+          {operation ? (
+            <p className="mt-3 text-sm text-secondary">
+              Freeze operation started.{' '}
+              <a className="font-semibold text-accent" href={`/operations/${operation.operation_id}`}>
+                Track {shortId(operation.operation_id)}
+              </a>
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       <div className="mt-8 grid gap-5 lg:grid-cols-3">
         <section className="rounded-lg border border-border bg-panel p-4">

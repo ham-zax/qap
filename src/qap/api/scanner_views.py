@@ -469,6 +469,8 @@ class ScannerArtifactReader:
             horizon=cohort.horizon.value,
             freeze_at=cohort.freeze_at,
             candidate_ids=cohort.candidate_ids,
+            automatic_member_count=cohort.automatic_member_count,
+            manual_member_count=cohort.manual_member_count,
             checkpoint_count=len(checkpoints),
             qualification_count=len(qualifications),
         )
@@ -570,6 +572,18 @@ class ScannerArtifactReader:
             requested_capital=str(request["requested_capital"]),
             state=str(document["state"]),
             reason=str(document["reason"]),
+            capture_snapshot_ids=tuple(
+                str(item) for item in cast(Any, request.get("capture_snapshot_ids", ()))
+            ),
+            capture_contract_satisfied=bool(request["capture_contract_satisfied"]),
+            eligibility_resolved=bool(request["eligibility_resolved"]),
+            current_two_way_trading=bool(request["current_two_way_trading"]),
+            order_constraints_satisfied=bool(request["order_constraints_satisfied"]),
+            market_metadata_fingerprint=(
+                None
+                if request.get("market_metadata_fingerprint") is None
+                else str(request["market_metadata_fingerprint"])
+            ),
             candidate_capital_ceiling=(
                 None
                 if request.get("candidate_capital_ceiling") is None
@@ -584,6 +598,16 @@ class ScannerArtifactReader:
                 None
                 if request.get("requested_capital_qap_run_id") is None
                 else str(request["requested_capital_qap_run_id"])
+            ),
+            requested_baseline_gate_passed=(
+                None
+                if request.get("requested_baseline_gate_passed") is None
+                else bool(request["requested_baseline_gate_passed"])
+            ),
+            requested_adverse_gate_passed=(
+                None
+                if request.get("requested_adverse_gate_passed") is None
+                else bool(request["requested_adverse_gate_passed"])
             ),
             q_star_buy=(
                 None
