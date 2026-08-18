@@ -594,6 +594,7 @@ class ExperimentManifest(_FrozenModel):
             relationship_component_id=self.relationship.component_id,
             relationship_config=self.relationship.config,
             execution_mode=self.execution.mode,
+            data_role=self.data_role.value,
             has_adverse_cost=self.execution.adverse_cost_scenario is not None,
             relationship_alpha_claim=self.benchmarks.relationship_alpha_claim,
             primary_incremental_benchmark=(

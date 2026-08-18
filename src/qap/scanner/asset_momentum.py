@@ -146,6 +146,12 @@ def build_asset_momentum_generation(
         evaluated = by_asset[record.asset_id]
         if evaluated.instrument.venue != snapshot.venue:
             raise AssetMomentumError("evaluated asset venue mismatch")
+        if (
+            evaluated.instrument.base.key != record.asset_id
+            or evaluated.instrument.quote.key != protocol.execution_bridge
+            or evaluated.instrument.venue_symbol != record.venue_symbol
+        ):
+            raise AssetMomentumError("evaluated asset identity mismatch")
         if evaluated.interval != rule.resolution:
             raise AssetMomentumError("evaluated asset resolution mismatch")
         if evaluated.eligible_information_end != cutoff:

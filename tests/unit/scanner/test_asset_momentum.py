@@ -10,6 +10,7 @@ import qap.scanner.asset_momentum as asset_momentum_module
 from qap.market import BarInterval, MarketBar, VenueInstrument, validate_bar_series
 from qap.portfolio import AssetId
 from qap.scanner.asset_momentum import (
+    AssetMomentumError,
     MomentumObservationStatus,
     build_asset_momentum_generation,
 )
@@ -151,6 +152,21 @@ def test_asset_momentum_scores_common_mode_and_deterministic_ties() -> None:
         ("AAA", 1),
         ("BBB", 2),
     ]
+
+
+def test_asset_momentum_rejects_series_mapped_to_wrong_asset() -> None:
+    series = {
+        "AAA": _evaluated("AAA", 100.0, 110.0),
+        "BBB": _evaluated("BBB", 100.0, 90.0),
+    }
+    snapshot = _snapshot(series)
+
+    with pytest.raises(AssetMomentumError, match="evaluated asset identity mismatch"):
+        build_asset_momentum_generation(
+            snapshot,
+            {"AAA": series["BBB"], "BBB": series["AAA"]},
+            as_of=CUTOFF,
+        )
 
 
 def test_invalid_asset_stays_visible_and_scope_requires_two_valid_assets() -> None:

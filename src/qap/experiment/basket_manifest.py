@@ -77,6 +77,7 @@ def validate_basket_manifest_contract(
     relationship_component_id: str,
     relationship_config: Mapping[str, object],
     execution_mode: str,
+    data_role: str,
     has_adverse_cost: bool,
     relationship_alpha_claim: bool,
     primary_incremental_benchmark: str | None,
@@ -92,6 +93,8 @@ def validate_basket_manifest_contract(
             raise ValueError("pair-blind momentum control requires basket_graph")
         return
     basket_horizon(policy_config, interval)
+    if data_role != "development":
+        raise ValueError("basket_graph requires development data_role")
     if relationship_component_id != "none" or relationship_config:
         raise ValueError("basket_graph requires relationship 'none'")
     if execution_mode != "multi_asset_bridge":

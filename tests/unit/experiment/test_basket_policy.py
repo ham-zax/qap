@@ -252,3 +252,17 @@ def test_basket_contract_derives_rule_and_rejects_weakened_benchmark_ladder() ->
     raw["benchmarks"]["controls"][1]["maximum_tilt"] = "0.20"
     with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
         ExperimentManifest.model_validate(raw)
+
+
+@pytest.mark.parametrize("data_role", ("final_oos", "exploratory"))
+def test_basket_graph_requires_development_data_role(data_role: str) -> None:
+    loaded, manifest = _loaded_and_manifest()
+    del loaded
+    raw = manifest.model_dump(mode="json")
+    raw["data_role"] = data_role
+
+    with pytest.raises(
+        ValidationError,
+        match="basket_graph requires development data_role",
+    ):
+        ExperimentManifest.model_validate(raw)
