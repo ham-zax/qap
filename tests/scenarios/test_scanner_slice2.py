@@ -1,3 +1,4 @@
+# pyright: reportPrivateUsage=false
 # pyright: reportUnknownArgumentType=false
 # pyright: reportUnknownMemberType=false
 # pyright: reportUnknownVariableType=false
@@ -8,6 +9,7 @@ import math
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
+from typing import cast
 
 import pyarrow.parquet as pq
 import pytest
@@ -296,10 +298,11 @@ def test_slice2_vertical_freeze_advance_qualify_and_scoreboard(
         run_timestamp=datetime(2026, 8, 18, 3, 0, tzinfo=UTC),
     )
     record = read_qualification(qualified)
-    assert record["request"]["capture_contract_satisfied"] is True
+    request = cast(dict[str, object], record["request"])
+    assert request["capture_contract_satisfied"] is True
     assert record["state"] == "tradable_now"
     assert record["reason"] == "all_current_evidence_satisfied"
-    assert record["request"]["requested_capital_qap_run_id"] is not None
+    assert request["requested_capital_qap_run_id"] is not None
 
     scoreboard = cohort_scoreboard(cohort_root)
     assert scoreboard["manual_selected_count"] == 1

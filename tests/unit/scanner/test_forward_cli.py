@@ -1,3 +1,4 @@
+# pyright: reportUnknownArgumentType=false
 # pyright: reportUnknownLambdaType=false
 """Thin wiring checks for the bounded prospective scanner CLI."""
 

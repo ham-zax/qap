@@ -1,3 +1,7 @@
+# pyright: reportUnknownArgumentType=false
+# pyright: reportUnknownMemberType=false
+# pyright: reportUnknownVariableType=false
+
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
