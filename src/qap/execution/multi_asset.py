@@ -160,6 +160,7 @@ def _preflight_order_data(
     reference_prices: Mapping[VenueInstrument, Decimal],
     market_notional_reference_prices: Mapping[VenueInstrument, Decimal],
     market_metadata: Mapping[VenueInstrument, MarketMetadata],
+    require_market_metadata: bool,
 ) -> None:
     for order in orders:
         for leg in order.route.legs:
@@ -167,7 +168,11 @@ def _preflight_order_data(
                 raise MultiAssetPreflightError(order.asset, "missing_reference_price")
             metadata = market_metadata.get(leg.instrument)
             if metadata is None:
-                raise MultiAssetPreflightError(order.asset, "missing_market_metadata")
+                if require_market_metadata:
+                    raise MultiAssetPreflightError(
+                        order.asset, "missing_market_metadata"
+                    )
+                continue
             if metadata.instrument != leg.instrument:
                 raise MultiAssetPreflightError(
                     order.asset, "metadata_instrument_mismatch"
@@ -250,6 +255,7 @@ def _execute_planned_orders(
     market_notional_reference_prices: Mapping[VenueInstrument, Decimal],
     market_metadata: Mapping[VenueInstrument, MarketMetadata],
     cost_model: CostModel,
+    require_market_metadata: bool,
 ) -> _ExecutionPass:
     state = starting_state
     outcomes: list[MultiAssetOrderOutcome] = []
@@ -290,6 +296,7 @@ def _execute_planned_orders(
             market_notional_reference_prices=market_notional_reference_prices,
             market_metadata=market_metadata,
             cost_model=cost_model,
+            require_market_metadata=require_market_metadata,
         )
         state = routed.ending_state
         fills.extend(routed.fills)
@@ -328,6 +335,7 @@ def execute_multi_asset_rebalance(
     market_notional_reference_prices: Mapping[VenueInstrument, Decimal],
     market_metadata: Mapping[VenueInstrument, MarketMetadata],
     cost_model: CostModel,
+    require_market_metadata: bool = True,
 ) -> MultiAssetRebalanceResult:
     """Execute one policy-owned rebalance plan through the declared bridge."""
 
@@ -350,6 +358,7 @@ def execute_multi_asset_rebalance(
         reference_prices=reference_prices,
         market_notional_reference_prices=market_notional_reference_prices,
         market_metadata=market_metadata,
+        require_market_metadata=require_market_metadata,
     )
 
     bridge_target = plan.target_quantities.get(bridge, _ZERO)
@@ -367,6 +376,7 @@ def execute_multi_asset_rebalance(
         market_notional_reference_prices=market_notional_reference_prices,
         market_metadata=market_metadata,
         cost_model=cost_model,
+        require_market_metadata=require_market_metadata,
     )
     executed = _execute_planned_orders(
         planned=planned,
@@ -380,6 +390,7 @@ def execute_multi_asset_rebalance(
         market_notional_reference_prices=market_notional_reference_prices,
         market_metadata=market_metadata,
         cost_model=cost_model,
+        require_market_metadata=require_market_metadata,
     )
     if executed != preview:
         raise RuntimeError(

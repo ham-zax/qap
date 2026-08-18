@@ -89,19 +89,17 @@ def _role_costs(trace: ReplayTrace) -> tuple[Decimal, Decimal, Decimal]:
     slippage = _ZERO
     turnover = _ZERO
     for step in trace.steps:
-        fill = step.fill
-        if fill is None:
-            continue
-        quote_price = step.valuation_price_snapshot.price(fill.quote)
-        fees = exact_add(fees, exact_multiply(fill.fee_amount, quote_price))
-        slippage = exact_add(
-            slippage,
-            exact_multiply(fill.slippage_value, quote_price),
-        )
-        turnover = exact_add(
-            turnover,
-            exact_multiply(fill.gross_quote_notional, quote_price),
-        )
+        for fill in step.fills:
+            quote_price = step.valuation_price_snapshot.price(fill.quote)
+            fees = exact_add(fees, exact_multiply(fill.fee_amount, quote_price))
+            slippage = exact_add(
+                slippage,
+                exact_multiply(fill.slippage_value, quote_price),
+            )
+            turnover = exact_add(
+                turnover,
+                exact_multiply(fill.gross_quote_notional, quote_price),
+            )
     return fees, slippage, turnover
 
 

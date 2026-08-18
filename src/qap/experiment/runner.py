@@ -231,22 +231,32 @@ def _run_role(
     manifest = prepared.manifest
     cost_model = cost_model_override or manifest.execution.cost_model()
     evaluation_window = manifest.evaluation_window
+    multi_asset = manifest.execution.mode == "multi_asset_bridge"
+    bridge = (
+        None if not multi_asset else AssetId(cast(str, manifest.execution.bridge_asset))
+    )
     trace = run_deterministic_replay(
         run_id=f"{prepared.provenance.run_id}:{role}",
         aligned=prepared.loaded.aligned,
         ledger=PortfolioLedger(manifest.starting_state()),
         policy=composition.policy,
-        execution_instrument=manifest.execution_instrument(),
-        numeraire=manifest.asset(manifest.execution.numeraire_asset),
+        execution_instrument=(None if multi_asset else manifest.execution_instrument()),
+        execution_instruments=(manifest.execution_instruments() if multi_asset else ()),
+        execution_bridge=bridge,
+        numeraire=manifest.execution_numeraire(),
         cost_model=cost_model,
         min_rebalance_notional=manifest.execution.minimum_rebalance_notional,
         quantization=manifest.execution.quantization(),
+        require_market_metadata=(manifest.execution.market_metadata_mode == "required"),
         external_flows=flows,
         evaluation_start=(
             None if evaluation_window is None else evaluation_window.start
         ),
         evaluation_end=None if evaluation_window is None else evaluation_window.end,
-        valuation_assets=tuple(manifest.asset(key) for key in manifest.basket),
+        valuation_assets=(
+            tuple(manifest.asset(key) for key in manifest.basket)
+            + (() if bridge is None else (bridge,))
+        ),
     )
     if trace.unapplied_flows:
         raise ExperimentSetupError(f"role {role} left declared flows unapplied")

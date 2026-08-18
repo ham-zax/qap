@@ -227,7 +227,11 @@ class CostScenarioSpec(_FrozenModel):
 
 
 class ExecutionSpec(_FrozenModel):
-    execution_instrument_id: Identifier
+    mode: Literal["direct", "multi_asset_bridge"] = "direct"
+    execution_instrument_id: Identifier | None = None
+    execution_instrument_ids: tuple[Identifier, ...] = ()
+    bridge_asset: Identifier | None = None
+    market_metadata_mode: Literal["required", "historical_unconstrained"] = "required"
     numeraire_asset: Identifier
     fee_bps: ExactDecimal
     slippage_bps: ExactDecimal
@@ -240,6 +244,13 @@ class ExecutionSpec(_FrozenModel):
     def normalize_numeraire(cls, value: object) -> str:
         return _asset_key(value, field="execution.numeraire_asset")
 
+    @field_validator("bridge_asset", mode="before")
+    @classmethod
+    def normalize_optional_bridge(cls, value: object) -> str | None:
+        if value is None:
+            return None
+        return _asset_key(value, field="execution.bridge_asset")
+
     @model_validator(mode="after")
     def validate_execution(self) -> Self:
         CostModel(fee_bps=self.fee_bps, slippage_bps=self.slippage_bps)
@@ -247,6 +258,30 @@ class ExecutionSpec(_FrozenModel):
             raise ValueError("minimum_rebalance_notional must be non-negative")
         if self.base_step is not None and self.base_step <= _ZERO:
             raise ValueError("base_step must be strictly positive when present")
+        if self.mode == "direct":
+            if self.execution_instrument_id is None:
+                raise ValueError("direct execution requires execution_instrument_id")
+            if self.execution_instrument_ids:
+                raise ValueError(
+                    "direct execution cannot declare execution_instrument_ids"
+                )
+            if self.bridge_asset is not None:
+                raise ValueError("direct execution cannot declare bridge_asset")
+        else:
+            if self.execution_instrument_id is not None:
+                raise ValueError(
+                    "multi_asset_bridge cannot use singular execution_instrument_id"
+                )
+            if not self.execution_instrument_ids:
+                raise ValueError("multi_asset_bridge requires execution_instrument_ids")
+            if len(set(self.execution_instrument_ids)) != len(
+                self.execution_instrument_ids
+            ):
+                raise ValueError("execution_instrument_ids must be unique")
+            if self.bridge_asset is None:
+                raise ValueError("multi_asset_bridge requires bridge_asset")
+            if self.base_step is not None:
+                raise ValueError("multi_asset_bridge cannot use singular base_step")
         return self
 
     def cost_model(self) -> CostModel:
@@ -456,8 +491,17 @@ class ExperimentManifest(_FrozenModel):
             raise ValueError("starting_quantities must be non-negative")
         if not any(quantity > _ZERO for quantity in self.starting_quantities.values()):
             raise ValueError("starting_quantities must contain owned inventory")
-        if self.analysis_anchor is not None and self.analysis_anchor not in basket:
-            raise ValueError("analysis_anchor must belong to the admitted basket")
+        execution_bridge = (
+            None if self.execution.mode == "direct" else self.execution.bridge_asset
+        )
+        admitted_run_assets = set(basket)
+        if execution_bridge is not None:
+            admitted_run_assets.add(execution_bridge)
+        if (
+            self.analysis_anchor is not None
+            and self.analysis_anchor not in admitted_run_assets
+        ):
+            raise ValueError("analysis_anchor must belong to the admitted run assets")
 
         instrument_ids = tuple(item.instrument_id for item in self.instruments)
         if not instrument_ids:
@@ -489,10 +533,12 @@ class ExperimentManifest(_FrozenModel):
                     )
                 continue
             if (
-                instrument.base_asset not in basket
-                or instrument.quote_asset not in basket
+                instrument.base_asset not in admitted_run_assets
+                or instrument.quote_asset not in admitted_run_assets
             ):
-                raise ValueError("instrument assets must belong to the admitted basket")
+                raise ValueError(
+                    "instrument assets must belong to the admitted run assets"
+                )
 
         source_ids = tuple(source.dataset_id for source in self.data_sources)
         if not source_ids:
@@ -507,16 +553,33 @@ class ExperimentManifest(_FrozenModel):
                 "data_sources must map exactly one dataset to every instrument"
             )
 
-        if self.execution.execution_instrument_id not in set(instrument_ids):
+        if self.execution.mode == "direct":
+            execution_id = self.execution.execution_instrument_id
+            assert execution_id is not None
+            if execution_id not in set(instrument_ids):
+                raise ValueError(
+                    "execution_instrument_id must reference a declared instrument"
+                )
+            if execution_id in evidence_set:
+                raise ValueError(
+                    "execution instrument cannot be an evidence-only instrument"
+                )
+        else:
+            execution_ids = set(self.execution.execution_instrument_ids)
+            unknown_execution = execution_ids - set(instrument_ids)
+            if unknown_execution:
+                raise ValueError(
+                    "execution_instrument_ids must reference declared instruments; "
+                    f"missing={sorted(unknown_execution)}"
+                )
+            if execution_ids & evidence_set:
+                raise ValueError(
+                    "multi-asset execution instruments cannot be evidence-only"
+                )
+        if self.execution.numeraire_asset not in admitted_run_assets:
             raise ValueError(
-                "execution_instrument_id must reference a declared instrument"
+                "execution numeraire_asset must belong to admitted run assets"
             )
-        if self.execution.execution_instrument_id in evidence_set:
-            raise ValueError(
-                "execution instrument cannot be an evidence-only instrument"
-            )
-        if self.execution.numeraire_asset not in basket:
-            raise ValueError("execution numeraire_asset must belong to basket")
 
         evaluation = self.effective_evaluation_window()
         if (
@@ -590,7 +653,23 @@ class ExperimentManifest(_FrozenModel):
         }
 
     def execution_instrument(self) -> VenueInstrument:
-        return self.instruments_by_id()[self.execution.execution_instrument_id]
+        if self.execution.mode != "direct":
+            raise ValueError("execution_instrument is only available for direct mode")
+        execution_id = self.execution.execution_instrument_id
+        assert execution_id is not None
+        return self.instruments_by_id()[execution_id]
+
+    def execution_instruments(self) -> tuple[VenueInstrument, ...]:
+        instruments = self.instruments_by_id()
+        if self.execution.mode == "direct":
+            return (self.execution_instrument(),)
+        return tuple(
+            instruments[instrument_id]
+            for instrument_id in self.execution.execution_instrument_ids
+        )
+
+    def execution_numeraire(self) -> AssetId:
+        return AssetId(self.execution.numeraire_asset)
 
     def external_inventory_flows(self) -> tuple[ExternalInventoryFlow, ...]:
         return tuple(flow.to_domain() for flow in self.external_flows)

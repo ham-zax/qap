@@ -257,6 +257,7 @@ def _preflight_route(
     reference_prices: Mapping[VenueInstrument, Decimal],
     market_notional_reference_prices: Mapping[VenueInstrument, Decimal],
     market_metadata: Mapping[VenueInstrument, MarketMetadata],
+    require_market_metadata: bool,
     current_state: PortfolioState,
 ) -> RoutedExecutionResult | None:
     for index, leg in enumerate(route.legs):
@@ -273,16 +274,18 @@ def _preflight_route(
             )
         metadata = market_metadata.get(leg.instrument)
         if metadata is None:
-            return RoutedExecutionResult(
-                route=route,
-                fills=(),
-                ending_state=current_state,
-                intermediate_state=None,
-                bridge_residue=Decimal("0"),
-                reason=RoutedExecutionReason.MISSING_MARKET_METADATA,
-                failed_leg_index=index,
-                leg_reason=None,
-            )
+            if require_market_metadata:
+                return RoutedExecutionResult(
+                    route=route,
+                    fills=(),
+                    ending_state=current_state,
+                    intermediate_state=None,
+                    bridge_residue=Decimal("0"),
+                    reason=RoutedExecutionReason.MISSING_MARKET_METADATA,
+                    failed_leg_index=index,
+                    leg_reason=None,
+                )
+            continue
         if metadata.instrument != leg.instrument:
             raise ValueError("market metadata key must match metadata instrument")
         if (
@@ -322,6 +325,7 @@ def execute_routed_conversion(
     market_notional_reference_prices: Mapping[VenueInstrument, Decimal],
     market_metadata: Mapping[VenueInstrument, MarketMetadata],
     cost_model: CostModel,
+    require_market_metadata: bool = True,
 ) -> RoutedExecutionResult:
     """Execute one planned route sequentially after atomic data preflight."""
 
@@ -337,6 +341,7 @@ def execute_routed_conversion(
         reference_prices=reference_prices,
         market_notional_reference_prices=market_notional_reference_prices,
         market_metadata=market_metadata,
+        require_market_metadata=require_market_metadata,
         current_state=current_state,
     )
     if preflight is not None:
@@ -362,7 +367,7 @@ def execute_routed_conversion(
                 leg.instrument
             ),
             cost_model=cost_model,
-            market_metadata=market_metadata[leg.instrument],
+            market_metadata=market_metadata.get(leg.instrument),
         )
         if result.fill is None:
             bridge_residue = Decimal("0")

@@ -192,7 +192,12 @@ def build_event_records(run: ExperimentRun) -> tuple[dict[str, Any], ...]:
                 )
                 sequence += 1
 
-            if step.execution is not None or step.no_fill_reason is not None:
+            if (
+                step.execution is not None
+                or step.multi_asset_execution is not None
+                or step.no_fill_reason is not None
+            ):
+                multi = step.multi_asset_execution
                 records.append(
                     _base_record(
                         run=run,
@@ -202,7 +207,10 @@ def build_event_records(run: ExperimentRun) -> tuple[dict[str, Any], ...]:
                         event_type="execution_outcome",
                         event_time=step.decision_time.isoformat(),
                         payload={
-                            "executed": step.fill is not None,
+                            "execution_mode": (
+                                "multi_asset_bridge" if multi is not None else "direct"
+                            ),
+                            "executed": bool(step.fills),
                             "direct_reason": (
                                 None
                                 if step.execution is None
@@ -224,13 +232,61 @@ def build_event_records(run: ExperimentRun) -> tuple[dict[str, Any], ...]:
                                 if step.execution_reference_price is None
                                 else str(step.execution_reference_price)
                             ),
+                            "reference_prices": {
+                                f"{instrument.venue}:{instrument.venue_symbol}": str(
+                                    price
+                                )
+                                for instrument, price in step.execution_reference_prices
+                            },
+                            "multi_asset_orders": (
+                                None
+                                if multi is None
+                                else [
+                                    {
+                                        "phase": order.phase.value,
+                                        "asset": order.asset.key,
+                                        "route_id": order.route_id,
+                                        "requested_source_quantity": str(
+                                            order.requested_source_quantity
+                                        ),
+                                        "fill_ids": [
+                                            fill.fill_id for fill in order.fills
+                                        ],
+                                        "leg_reason": (
+                                            None
+                                            if order.leg_reason is None
+                                            else order.leg_reason.value
+                                        ),
+                                    }
+                                    for order in multi.orders
+                                ]
+                            ),
+                            "multi_asset_tracking_errors": (
+                                None
+                                if multi is None
+                                else [
+                                    {
+                                        "asset": item.asset.key,
+                                        "target_weight": str(item.target_weight),
+                                        "actual_weight": str(item.actual_weight),
+                                        "weight_error": str(item.weight_error),
+                                        "unfilled_quantity": str(
+                                            item.unfilled_quantity
+                                        ),
+                                        "unfilled_value": str(item.unfilled_value),
+                                    }
+                                    for item in multi.tracking_errors
+                                ]
+                            ),
+                            "bridge_residual": (
+                                None if multi is None else str(multi.bridge_residual)
+                            ),
                         },
                     )
                 )
                 sequence += 1
 
-            fill = step.fill
-            if fill is not None:
+            for fill in step.fills:
                 records.append(
                     _base_record(
                         run=run,
