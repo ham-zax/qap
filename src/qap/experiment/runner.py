@@ -230,6 +230,7 @@ def _run_role(
 ) -> RoleRun:
     manifest = prepared.manifest
     cost_model = cost_model_override or manifest.execution.cost_model()
+    evaluation_window = manifest.evaluation_window
     trace = run_deterministic_replay(
         run_id=f"{prepared.provenance.run_id}:{role}",
         aligned=prepared.loaded.aligned,
@@ -241,6 +242,11 @@ def _run_role(
         min_rebalance_notional=manifest.execution.minimum_rebalance_notional,
         quantization=manifest.execution.quantization(),
         external_flows=flows,
+        evaluation_start=(
+            None if evaluation_window is None else evaluation_window.start
+        ),
+        evaluation_end=None if evaluation_window is None else evaluation_window.end,
+        valuation_assets=tuple(manifest.asset(key) for key in manifest.basket),
     )
     if trace.unapplied_flows:
         raise ExperimentSetupError(f"role {role} left declared flows unapplied")

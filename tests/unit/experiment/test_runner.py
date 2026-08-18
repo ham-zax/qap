@@ -90,6 +90,33 @@ def test_data_loader_rejects_reserved_final_oos_before_reading_dataset(
         load_experiment_data(manifest, data_root=REPOSITORY_ROOT)
 
 
+def test_runner_evaluation_window_starts_every_role_after_warmup() -> None:
+    raw = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    raw["evaluation_window"] = {
+        "start": "2024-01-01T02:00:00Z",
+        "end": "2024-01-01T12:00:00Z",
+    }
+    manifest = ExperimentManifest.model_validate(raw)
+
+    run = execute_experiment(
+        manifest,
+        data_root=REPOSITORY_ROOT,
+        repository_root=REPOSITORY_ROOT,
+        run_timestamp=RUN_AT,
+    )
+
+    expected_start = datetime(2024, 1, 1, 2, tzinfo=UTC)
+    expected_end = datetime(2024, 1, 1, 12, tzinfo=UTC)
+    for role in run.roles:
+        assert role.trace.steps[0].decision_time == expected_start
+        assert role.trace.steps[0].visible_timestamps == (
+            datetime(2024, 1, 1, 0, tzinfo=UTC),
+            datetime(2024, 1, 1, 1, tzinfo=UTC),
+        )
+        assert role.trace.steps[-1].decision_time == expected_end
+        assert role.trace.starting_state == manifest.starting_state()
+
+
 def test_runner_composes_strategy_and_all_declared_controls_on_shared_inputs() -> None:
     manifest = load_manifest(MANIFEST_PATH)
 

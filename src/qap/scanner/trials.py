@@ -32,6 +32,7 @@ class ScannerTrial:
     scan_id: str
     venue: str
     horizon: ScannerHorizon
+    universe_snapshot_id: str
     pair_id: str
     asset_a: AssetId
     asset_b: AssetId
@@ -153,6 +154,7 @@ def _candidate_id(
         "protocol_identity": protocol_identity(protocol),
         "venue": graph.venue,
         "horizon": graph.horizon,
+        "universe_snapshot_id": graph.universe_snapshot_id,
         "pair_id": record.pair_id,
         "orientation": [orientation.base.key, orientation.quote.key],
         "resolution": resolution.label,
@@ -220,6 +222,7 @@ def _trial(
         scan_id=graph.scan_id,
         venue=graph.venue,
         horizon=ScannerHorizon(graph.horizon),
+        universe_snapshot_id=graph.universe_snapshot_id,
         pair_id=record.pair_id,
         asset_a=asset_a,
         asset_b=asset_b,

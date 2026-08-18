@@ -454,6 +454,12 @@ export interface components {
             data_window: components["schemas"]["DataWindowSpec"];
             /** Description */
             description: string;
+            evaluation_window?: components["schemas"]["DataWindowSpec"] | null;
+            /**
+             * Evidence Instrument Ids
+             * @default []
+             */
+            evidence_instrument_ids: string[];
             execution: components["schemas"]["ExecutionSpec"];
             /** Experiment Name */
             experiment_name: string;

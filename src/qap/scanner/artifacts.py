@@ -395,6 +395,22 @@ def _load_attempts(path: Path) -> tuple[ReplayAttemptRecord, ...]:
     )
 
 
+def read_replay_attempt(
+    generation: ScanArtifactGeneration,
+    attempt_id: str,
+) -> ReplayAttemptRecord:
+    """Read exactly one durably persisted replay attempt by deterministic ID."""
+
+    matches = tuple(
+        attempt
+        for attempt in _load_attempts(generation.replay_attempts_path)
+        if attempt.attempt_id == attempt_id
+    )
+    if len(matches) != 1:
+        raise ScanArtifactError(f"unknown replay attempt: {attempt_id}")
+    return matches[0]
+
+
 def _attempt_id(scan_id: str, promotion: PromotionRecord) -> str:
     rank = (
         "manual" if promotion.promotion_rank is None else str(promotion.promotion_rank)
@@ -665,6 +681,7 @@ __all__ = [
     "discover_completed_scans",
     "enumerate_replay_attempt",
     "publish_scan_generation",
+    "read_replay_attempt",
     "start_scan_generation",
     "transition_replay_attempt",
     "write_scan_tables",

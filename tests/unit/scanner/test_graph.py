@@ -131,6 +131,7 @@ def test_neighbor_ties_are_deterministic_and_union_directed_selection() -> None:
     )
 
     assert graph.eligible_asset_count == 4
+    assert graph.universe_snapshot_id == "b" * 64
     assert graph.total_valid_pair_comparisons == 6
     assert len(graph.distance_digest) == 64
     assert tuple(record.pair_id for record in graph.records) == tuple(

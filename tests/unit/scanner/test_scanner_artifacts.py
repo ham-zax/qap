@@ -39,6 +39,7 @@ def _definition(
     return ScanDefinition(
         scanner_protocol_version=SCANNER_V1_SLICE1.protocol_id,
         protocol_identity=protocol_identity(SCANNER_V1_SLICE1),
+        catalog_identity="c" * 64,
         as_of=NOW,
         eligible_information_end=NOW,
         venues=("binance",),
@@ -138,7 +139,7 @@ def _write_required_tables(
     )
 
 
-def test_start_scan_writes_immutable_definition_first_and_partial_is_not_complete(
+def test_scanner_start_writes_immutable_definition_first_and_partial_is_not_complete(
     tmp_path: Path,
 ) -> None:
     definition = _definition()

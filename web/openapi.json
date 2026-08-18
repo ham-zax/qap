@@ -760,6 +760,25 @@
             "title": "Description",
             "type": "string"
           },
+          "evaluation_window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataWindowSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence_instrument_ids": {
+            "default": [],
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Evidence Instrument Ids",
+            "type": "array"
+          },
           "execution": {
             "$ref": "#/components/schemas/ExecutionSpec"
           },

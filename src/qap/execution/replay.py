@@ -147,6 +147,7 @@ def _decision_price_snapshot(
     decision_index: int,
     decision_time: datetime,
     numeraire: AssetId,
+    valuation_assets: frozenset[AssetId] | None = None,
 ) -> PriceSnapshot:
     prices: dict[AssetId, Decimal] = {numeraire: _ONE}
 
@@ -162,6 +163,8 @@ def _decision_price_snapshot(
         else:
             # Cross-market series may supply evidence or an explicit execution
             # reference, but they are never synthesized into valuation prices.
+            continue
+        if valuation_assets is not None and priced_asset not in valuation_assets:
             continue
         if priced_asset in prices:
             raise ValueError(
@@ -182,6 +185,7 @@ def _valuation_price_snapshot(
     decision_index: int,
     decision_time: datetime,
     numeraire: AssetId,
+    valuation_assets: frozenset[AssetId] | None = None,
 ) -> PriceSnapshot:
     """Mark post-decision inventory at the causal execution boundary.
 
@@ -207,6 +211,8 @@ def _valuation_price_snapshot(
             priced_asset = instrument.quote
             price = divide(_ONE, mark)
         else:
+            continue
+        if valuation_assets is not None and priced_asset not in valuation_assets:
             continue
         if priced_asset in prices:
             raise ValueError(
@@ -241,6 +247,9 @@ def run_deterministic_replay(
     quantization: ExecutionQuantization = ExecutionQuantization(),
     external_flows: Iterable[ExternalInventoryFlow] = (),
     evidence_builder: EvidenceBuilder = _empty_evidence,
+    evaluation_start: datetime | None = None,
+    evaluation_end: datetime | None = None,
+    valuation_assets: Iterable[AssetId] | None = None,
 ) -> ReplayTrace:
     """Replay completed-bar decisions with next-open execution references."""
 
@@ -266,6 +275,37 @@ def run_deterministic_replay(
     if not callable(evidence_builder):
         raise TypeError("evidence_builder must be callable")
 
+    decision_times = tuple(
+        timestamp + aligned.interval.duration for timestamp in aligned.timestamps
+    )
+    start_boundary = decision_times[0] if evaluation_start is None else evaluation_start
+    end_boundary = decision_times[-1] if evaluation_end is None else evaluation_end
+    for field, boundary in (
+        ("evaluation_start", start_boundary),
+        ("evaluation_end", end_boundary),
+    ):
+        if (
+            boundary.tzinfo is None
+            or boundary.utcoffset() != decision_times[0].utcoffset()
+        ):
+            raise ValueError(f"{field} must be timezone-aware UTC")
+        if boundary not in decision_times:
+            raise ValueError(f"{field} must be a replay decision boundary")
+    if start_boundary > end_boundary:
+        raise ValueError("evaluation_start must not be after evaluation_end")
+
+    valuation_asset_set: frozenset[AssetId] | None = None
+    if valuation_assets is not None:
+        copied_valuation_assets = tuple(valuation_assets)
+        if any(
+            not isinstance(cast(object, asset), AssetId)
+            for asset in copied_valuation_assets
+        ):
+            raise TypeError("valuation_assets must contain AssetId values")
+        valuation_asset_set = frozenset(copied_valuation_assets)
+        if numeraire not in valuation_asset_set:
+            raise ValueError("valuation_assets must include the numeraire")
+
     try:
         execution_series = aligned.for_instrument(execution_instrument)
     except KeyError as exc:
@@ -281,6 +321,8 @@ def run_deterministic_replay(
 
     for decision_index, candle_open_time in enumerate(aligned.timestamps):
         decision_time = candle_open_time + aligned.interval.duration
+        if decision_time < start_boundary or decision_time > end_boundary:
+            continue
         state_before_flows = ledger.current_state
         applied_flows: list[ExternalInventoryFlow] = []
         while (
@@ -297,12 +339,14 @@ def run_deterministic_replay(
             decision_index=decision_index,
             decision_time=decision_time,
             numeraire=numeraire,
+            valuation_assets=valuation_asset_set,
         )
         valuation_price_snapshot = _valuation_price_snapshot(
             aligned=aligned,
             decision_index=decision_index,
             decision_time=decision_time,
             numeraire=numeraire,
+            valuation_assets=valuation_asset_set,
         )
 
         histories = tuple(

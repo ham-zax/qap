@@ -67,6 +67,7 @@ def _graph() -> SsdGraph:
         scan_id=SCAN_ID,
         venue="binance",
         horizon=ScannerHorizon.SHORT.value,
+        universe_snapshot_id="b" * 64,
         eligible_asset_count=2,
         total_valid_pair_comparisons=1,
         distance_digest="d" * 64,
@@ -122,6 +123,21 @@ def test_fixed_trial_enumeration_has_one_ratio_and_two_residual_orientations() -
     } == {("BTC", "ETH"), ("ETH", "BTC")}
     assert len({trial.candidate_id for trial in trials}) == 18
     assert all(len(trial.candidate_id) == 64 for trial in trials)
+
+
+def test_trial_identity_binds_universe_snapshot() -> None:
+    baseline = enumerate_fixed_trials(_graph(), model_series_by_asset=_model_series())
+    changed_graph = replace(_graph(), universe_snapshot_id="e" * 64)
+    changed = enumerate_fixed_trials(
+        changed_graph,
+        model_series_by_asset=_model_series(),
+    )
+
+    assert {trial.candidate_id for trial in baseline}.isdisjoint(
+        trial.candidate_id for trial in changed
+    )
+    assert all(trial.universe_snapshot_id == "b" * 64 for trial in baseline)
+    assert all(trial.universe_snapshot_id == "e" * 64 for trial in changed)
 
 
 def test_trial_identity_binds_model_resolution_slice_fingerprints() -> None:

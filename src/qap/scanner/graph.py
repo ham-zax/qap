@@ -82,6 +82,7 @@ class SsdGraph:
     scan_id: str
     venue: str
     horizon: str
+    universe_snapshot_id: str
     eligible_asset_count: int
     total_valid_pair_comparisons: int
     distance_digest: str
@@ -273,6 +274,7 @@ def build_ssd_graph(
         scan_id=snapshot.scan_id,
         venue=snapshot.venue,
         horizon=snapshot.horizon.value,
+        universe_snapshot_id=snapshot.universe_snapshot_id,
         eligible_asset_count=len(eligible_assets),
         total_valid_pair_comparisons=len(comparisons),
         distance_digest=_distance_digest(

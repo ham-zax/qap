@@ -58,6 +58,7 @@ class ScanDefinition(_FrozenModel):
     schema_version: Literal["qap.scanner.definition.v1"] = "qap.scanner.definition.v1"
     scanner_protocol_version: str
     protocol_identity: str
+    catalog_identity: str
     as_of: datetime
     eligible_information_end: datetime
     venues: tuple[str, ...]
@@ -71,10 +72,11 @@ class ScanDefinition(_FrozenModel):
     def validate_protocol_version(cls, value: str) -> str:
         return _non_empty(value, field="scanner_protocol_version")
 
-    @field_validator("protocol_identity")
+    @field_validator("protocol_identity", "catalog_identity")
     @classmethod
-    def validate_protocol_identity(cls, value: str) -> str:
-        return _fingerprint(value, field="protocol_identity")
+    def validate_identity_fingerprint(cls, value: str, info: object) -> str:
+        field_name = getattr(info, "field_name", "identity")
+        return _fingerprint(value, field=field_name)
 
     @field_validator("as_of", "eligible_information_end", "created_at")
     @classmethod
@@ -123,6 +125,7 @@ class ScanDefinition(_FrozenModel):
             "schema_version": self.schema_version,
             "scanner_protocol_version": self.scanner_protocol_version,
             "protocol_identity": self.protocol_identity,
+            "catalog_identity": self.catalog_identity,
             "as_of": self.as_of.isoformat(),
             "eligible_information_end": self.eligible_information_end.isoformat(),
             "venues": sorted(self.venues),

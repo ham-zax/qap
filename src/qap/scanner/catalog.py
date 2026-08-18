@@ -1,6 +1,8 @@
 """Scanner-local catalog for admitted immutable market-data artifacts."""
 
+import json
 from dataclasses import dataclass
+from hashlib import sha256
 from pathlib import Path, PurePosixPath
 from typing import Literal, Self, cast
 
@@ -142,6 +144,39 @@ class ScannerCatalog(_FrozenModel):
         raise KeyError(normalized)
 
 
+def catalog_semantic_identity(catalog: ScannerCatalog) -> str:
+    """Hash path-independent catalog semantics, including all source fingerprints."""
+
+    if not isinstance(cast(object, catalog), ScannerCatalog):
+        raise TypeError("catalog must be a ScannerCatalog")
+    payload = {
+        "identity_version": "qap.scanner.catalog-identity.v1",
+        "schema_version": catalog.schema_version,
+        "sources": [
+            {
+                "dataset_id": source.dataset_id,
+                "venue": source.venue,
+                "venue_symbol": source.venue_symbol,
+                "base_asset": source.base_asset,
+                "quote_asset": source.quote_asset,
+                "interval": source.interval,
+                "expected_semantic_fingerprint": (source.expected_semantic_fingerprint),
+                "lifecycle_evidence_ids": sorted(source.lifecycle_evidence_ids),
+                "direct_pair_dataset_ids": sorted(source.direct_pair_dataset_ids),
+            }
+            for source in sorted(catalog.sources, key=lambda item: item.dataset_id)
+        ],
+    }
+    encoded = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    ).encode("utf-8")
+    return sha256(encoded).hexdigest()
+
+
 @dataclass(frozen=True, slots=True)
 class ResolvedCatalogSource:
     spec: ScannerSourceSpec
@@ -237,6 +272,7 @@ __all__ = [
     "ScannerCatalog",
     "ScannerCatalogError",
     "ScannerSourceSpec",
+    "catalog_semantic_identity",
     "load_scanner_catalog",
     "resolve_catalog_source",
 ]

@@ -9,7 +9,7 @@ from qap.execution import ReplayPolicy
 from qap.experiment.data import ExperimentSetupError, LoadedExperimentData
 from qap.experiment.manifest import ExperimentManifest
 from qap.experiment.momentum import slow_log_momentum
-from qap.market import AlignedInstrumentSeries, PriceSnapshot
+from qap.market import AlignedBarSeries, AlignedInstrumentSeries, PriceSnapshot
 from qap.policy import PolicyDecision
 from qap.policy.evidence_tilt import (
     CrossSectionalTiltPolicy,
@@ -32,6 +32,7 @@ from qap.relationship.models import (
     CrossSectionalRelativeStatus,
     cross_sectional_relative_observation,
     rolling_log_ratio_observation,
+    rolling_residual_observation,
 )
 
 _PAIR_TILT_KEYS = frozenset(
@@ -220,6 +221,48 @@ def _source_fingerprints(
     return result
 
 
+def _named_relationship_inputs(
+    manifest: ExperimentManifest,
+    loaded: LoadedExperimentData,
+    config: Mapping[str, object],
+) -> tuple[AlignedBarSeries, dict[AssetId, str]]:
+    raw_ids = config.get("evidence_instrument_ids")
+    if isinstance(raw_ids, (str, bytes)) or not isinstance(raw_ids, (list, tuple)):
+        raise ExperimentSetupError(
+            "relationship.config.evidence_instrument_ids must be a two-item list"
+        )
+    ids = tuple(cast(list[object] | tuple[object, ...], raw_ids))
+    if len(ids) != 2 or any(
+        not isinstance(item, str) or not item.strip() for item in ids
+    ):
+        raise ExperimentSetupError(
+            "relationship.config.evidence_instrument_ids must contain two "
+            "instrument IDs"
+        )
+    normalized = tuple(cast(str, item).strip() for item in ids)
+    if len(set(normalized)) != 2:
+        raise ExperimentSetupError(
+            "relationship.config.evidence_instrument_ids must be unique"
+        )
+    declared = set(manifest.evidence_instrument_ids)
+    if not set(normalized) <= declared:
+        raise ExperimentSetupError(
+            "relationship evidence instruments must be declared evidence-only "
+            "instruments"
+        )
+
+    instruments = manifest.instruments_by_id()
+    fingerprints: dict[AssetId, str] = {}
+    for instrument_id in normalized:
+        asset = instruments[instrument_id].base
+        if asset in fingerprints:
+            raise ExperimentSetupError(
+                "relationship evidence instruments must provide distinct base assets"
+            )
+        fingerprints[asset] = loaded.fingerprint_for_instrument_id(instrument_id)
+    return loaded.aligned_for_instrument_ids(normalized), fingerprints
+
+
 def _decision_evidence_id(
     model_id: str, model_version: str, input_fingerprint: str
 ) -> str:
@@ -290,6 +333,48 @@ class _RollingLogRatioReplayPolicy:
         del price_snapshot, applied_flows, evidence_ids
         observation = rolling_log_ratio_observation(
             self.source,
+            window_bars=self.window_bars,
+            min_observations=self.min_observations,
+            as_of=as_of,
+        )
+        self.observations.append(observation)
+        return self.tilt.decide(
+            as_of=as_of,
+            current_state=current_state,
+            score=observation.values.get("score"),
+            evidence_id=_decision_evidence_id(
+                model_id=observation.model_id,
+                model_version=observation.model_version,
+                input_fingerprint=observation.input_fingerprint,
+            ),
+        )
+
+
+@dataclass(slots=True)
+class _RollingResidualReplayPolicy:
+    policy_id: str
+    source: AlignedBarSeries
+    orientation: PairOrientation
+    source_fingerprints: Mapping[AssetId, str]
+    window_bars: int
+    min_observations: int
+    tilt: EvidenceTiltPolicy
+    observations: list[RelationshipObservation]
+
+    def decide(
+        self,
+        *,
+        as_of: datetime,
+        current_state: PortfolioState,
+        price_snapshot: PriceSnapshot,
+        applied_flows: tuple[ExternalInventoryFlow, ...],
+        evidence_ids: Iterable[str] = (),
+    ) -> PolicyDecision:
+        del price_snapshot, applied_flows, evidence_ids
+        observation = rolling_residual_observation(
+            self.source,
+            orientation=self.orientation,
+            source_fingerprints=self.source_fingerprints,
             window_bars=self.window_bars,
             min_observations=self.min_observations,
             as_of=as_of,
@@ -408,15 +493,16 @@ def _compose_rolling_log_ratio(
         manifest.relationship.config,
         field_name="relationship.config",
     )
-    if set(relationship) != {
+    required = {
         "base_asset",
         "quote_asset",
         "window_bars",
         "min_observations",
-    }:
+    }
+    allowed = {*required, "evidence_instrument_ids"}
+    if not required <= set(relationship) or not set(relationship) <= allowed:
         raise ExperimentSetupError(
-            "rolling_log_ratio_zscore config keys must match the frozen "
-            "Phase-10 contract"
+            "rolling_log_ratio_zscore config keys must match the admitted contract"
         )
     policy_config = _mapping(manifest.policy.config, field_name="policy.config")
     orientation = _orientation_from_config(
@@ -431,15 +517,87 @@ def _compose_rolling_log_ratio(
             "relationship and evidence_tilt orientations must match exactly"
         )
     observations: list[RelationshipObservation] = []
+    if "evidence_instrument_ids" in relationship:
+        aligned, source_fingerprints = _named_relationship_inputs(
+            manifest,
+            loaded,
+            relationship,
+        )
+    else:
+        aligned = loaded.aligned
+        source_fingerprints = _source_fingerprints(manifest, loaded)
     source = build_log_ratio_series(
-        loaded.aligned,
+        aligned,
         orientation=orientation,
-        source_fingerprints=_source_fingerprints(manifest, loaded),
+        source_fingerprints=source_fingerprints,
         as_of=manifest.data_window.end,
     )
     policy = _RollingLogRatioReplayPolicy(
         policy_id=policy_id,
         source=source,
+        window_bars=_positive_int(
+            relationship["window_bars"],
+            field_name="relationship.config.window_bars",
+        ),
+        min_observations=_positive_int(
+            relationship["min_observations"],
+            field_name="relationship.config.min_observations",
+        ),
+        tilt=tilt,
+        observations=observations,
+    )
+    return ModelPolicyComposition(
+        policy_id=policy_id,
+        policy=policy,
+        _relationship_observations=observations,
+    )
+
+
+def _compose_rolling_residual(
+    manifest: ExperimentManifest,
+    loaded: LoadedExperimentData,
+) -> ModelPolicyComposition:
+    relationship = _mapping(
+        manifest.relationship.config,
+        field_name="relationship.config",
+    )
+    required = {
+        "base_asset",
+        "quote_asset",
+        "window_bars",
+        "min_observations",
+        "evidence_instrument_ids",
+    }
+    if set(relationship) != required:
+        raise ExperimentSetupError(
+            "residual_mean_reversion config keys must match the admitted contract"
+        )
+    orientation = _orientation_from_config(
+        manifest,
+        relationship,
+        field_name="relationship.config",
+    )
+    policy_id = "strategy:evidence_tilt"
+    tilt = _pair_policy(
+        manifest,
+        _mapping(manifest.policy.config, field_name="policy.config"),
+        policy_id=policy_id,
+    )
+    if tilt.orientation != orientation:
+        raise ExperimentSetupError(
+            "relationship and evidence_tilt orientations must match exactly"
+        )
+    aligned, source_fingerprints = _named_relationship_inputs(
+        manifest,
+        loaded,
+        relationship,
+    )
+    observations: list[RelationshipObservation] = []
+    policy = _RollingResidualReplayPolicy(
+        policy_id=policy_id,
+        source=aligned,
+        orientation=orientation,
+        source_fingerprints=source_fingerprints,
         window_bars=_positive_int(
             relationship["window_bars"],
             field_name="relationship.config.window_bars",
@@ -508,12 +666,14 @@ def compose_model_strategy_policy(
         return _compose_momentum(manifest, loaded)
     if relationship_id == "rolling_log_ratio_zscore" and policy_id == "evidence_tilt":
         return _compose_rolling_log_ratio(manifest, loaded)
+    if relationship_id == "residual_mean_reversion" and policy_id == "evidence_tilt":
+        return _compose_rolling_residual(manifest, loaded)
     if (
         relationship_id == "cross_sectional_relative_log_return"
         and policy_id == "cross_sectional_tilt"
     ):
         return _compose_cross_sectional(manifest, loaded)
     raise ExperimentSetupError(
-        "unsupported Phase-10 relationship/policy strategy combination: "
+        "unsupported admitted relationship/policy strategy combination: "
         f"{relationship_id}/{policy_id}"
     )

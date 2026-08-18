@@ -225,3 +225,127 @@ def test_manifest_requires_exact_financial_strings_not_json_floats() -> None:
 
     with pytest.raises(ValidationError, match="exact decimal"):
         ExperimentManifest.model_validate(data)
+
+
+def _evidence_only_manifest_data() -> dict[str, object]:
+    data = valid_manifest_data()
+    data["basket"] = ["BTC", "ETH"]
+    data["starting_quantities"] = {"BTC": "0.05", "ETH": "0.5"}
+    data["analysis_anchor"] = "ETH"
+    data["instruments"] = [
+        {
+            "instrument_id": "btc-eth",
+            "venue": "fixture",
+            "venue_symbol": "BTCETH",
+            "base_asset": "BTC",
+            "quote_asset": "ETH",
+        },
+        {
+            "instrument_id": "btc-usdt-evidence",
+            "venue": "fixture",
+            "venue_symbol": "BTCUSDT",
+            "base_asset": "BTC",
+            "quote_asset": "USDT",
+        },
+        {
+            "instrument_id": "eth-usdt-evidence",
+            "venue": "fixture",
+            "venue_symbol": "ETHUSDT",
+            "base_asset": "ETH",
+            "quote_asset": "USDT",
+        },
+    ]
+    data["evidence_instrument_ids"] = [
+        "btc-usdt-evidence",
+        "eth-usdt-evidence",
+    ]
+    data["data_sources"] = [
+        {
+            "dataset_id": "btceth-1h",
+            "instrument_id": "btc-eth",
+            "relative_path": "market/BTCETH_1h.parquet",
+            "expected_semantic_fingerprint": "a" * 64,
+        },
+        {
+            "dataset_id": "btcusdt-1h",
+            "instrument_id": "btc-usdt-evidence",
+            "relative_path": "market/BTCUSDT_1h.parquet",
+            "expected_semantic_fingerprint": "b" * 64,
+        },
+        {
+            "dataset_id": "ethusdt-1h",
+            "instrument_id": "eth-usdt-evidence",
+            "relative_path": "market/ETHUSDT_1h.parquet",
+            "expected_semantic_fingerprint": "c" * 64,
+        },
+    ]
+    execution = deepcopy(data["execution"])
+    assert isinstance(execution, dict)
+    execution["execution_instrument_id"] = "btc-eth"
+    execution["numeraire_asset"] = "ETH"
+    data["execution"] = execution
+    data["external_flows"] = []
+    data["evaluation_window"] = {
+        "start": "2024-01-01T04:00:00Z",
+        "end": "2024-01-01T12:00:00Z",
+    }
+    return data
+
+
+def test_manifest_defaults_evaluation_to_full_data_window() -> None:
+    manifest = ExperimentManifest.model_validate(valid_manifest_data())
+
+    assert manifest.evaluation_window is None
+    assert manifest.effective_evaluation_window() == manifest.data_window
+
+
+def test_manifest_allows_explicit_evidence_only_instruments_outside_basket() -> None:
+    manifest = ExperimentManifest.model_validate(_evidence_only_manifest_data())
+
+    assert manifest.evidence_instrument_ids == (
+        "btc-usdt-evidence",
+        "eth-usdt-evidence",
+    )
+    assert manifest.effective_evaluation_window().start == datetime(
+        2024, 1, 1, 4, tzinfo=UTC
+    )
+    assert manifest.execution.execution_instrument_id == "btc-eth"
+
+
+def test_manifest_rejects_evidence_execution_or_unlabeled_third_asset() -> None:
+    execution_evidence = _evidence_only_manifest_data()
+    execution = deepcopy(execution_evidence["execution"])
+    assert isinstance(execution, dict)
+    execution["execution_instrument_id"] = "btc-usdt-evidence"
+    execution_evidence["execution"] = execution
+    with pytest.raises(ValidationError, match="evidence-only instrument"):
+        ExperimentManifest.model_validate(execution_evidence)
+
+    unlabeled = _evidence_only_manifest_data()
+    unlabeled["evidence_instrument_ids"] = ["eth-usdt-evidence"]
+    with pytest.raises(ValidationError, match="instrument assets must belong"):
+        ExperimentManifest.model_validate(unlabeled)
+
+
+def test_manifest_rejects_evaluation_window_outside_data_or_pre_evaluation_flow() -> (
+    None
+):
+    outside = _evidence_only_manifest_data()
+    outside["evaluation_window"] = {
+        "start": "2023-12-31T23:00:00Z",
+        "end": "2024-01-01T12:00:00Z",
+    }
+    with pytest.raises(ValidationError, match="evaluation_window"):
+        ExperimentManifest.model_validate(outside)
+
+    flow = _evidence_only_manifest_data()
+    flow["external_flows"] = [
+        {
+            "flow_id": "warmup-deposit",
+            "effective_time": "2024-01-01T03:00:00Z",
+            "asset": "ETH",
+            "quantity_delta": "1",
+        }
+    ]
+    with pytest.raises(ValidationError, match="evaluation_window"):
+        ExperimentManifest.model_validate(flow)

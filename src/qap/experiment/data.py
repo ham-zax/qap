@@ -1,7 +1,9 @@
 """Experiment dataset resolution, fingerprint admission, and exact windowing."""
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 from typing import cast
 
 from qap.experiment.dataset_seals import validate_dataset_seals
@@ -32,6 +34,47 @@ class DatasetFingerprintMismatchError(ExperimentSetupError):
 class LoadedExperimentData:
     aligned: AlignedBarSeries
     data_fingerprints: tuple[DatasetFingerprint, ...]
+    series_by_instrument_id: Mapping[str, ValidatedBarSeries]
+    fingerprint_by_instrument_id: Mapping[str, str]
+
+    def __post_init__(self) -> None:
+        series = dict(self.series_by_instrument_id)
+        fingerprints = dict(self.fingerprint_by_instrument_id)
+        if set(series) != set(fingerprints):
+            raise ValueError(
+                "loaded experiment instrument series/fingerprint keys must match"
+            )
+        object.__setattr__(self, "series_by_instrument_id", MappingProxyType(series))
+        object.__setattr__(
+            self,
+            "fingerprint_by_instrument_id",
+            MappingProxyType(fingerprints),
+        )
+
+    def aligned_for_instrument_ids(
+        self,
+        instrument_ids: Sequence[str],
+    ) -> AlignedBarSeries:
+        copied = tuple(instrument_ids)
+        if not copied or len(set(copied)) != len(copied):
+            raise ExperimentSetupError(
+                "evidence instrument IDs must be non-empty and unique"
+            )
+        try:
+            series = tuple(self.series_by_instrument_id[item] for item in copied)
+        except KeyError as exc:
+            raise ExperimentSetupError(
+                f"unknown loaded instrument ID: {exc.args[0]}"
+            ) from exc
+        return align_bar_series(series)
+
+    def fingerprint_for_instrument_id(self, instrument_id: str) -> str:
+        try:
+            return self.fingerprint_by_instrument_id[instrument_id]
+        except KeyError as exc:
+            raise ExperimentSetupError(
+                f"unknown loaded instrument ID: {instrument_id}"
+            ) from exc
 
 
 def _safe_dataset_path(data_root: Path, relative_path: str) -> Path:
@@ -130,6 +173,8 @@ def load_experiment_data(
     interval = manifest.interval_domain()
     series: list[ValidatedBarSeries] = []
     fingerprints: list[DatasetFingerprint] = []
+    series_by_instrument_id: dict[str, ValidatedBarSeries] = {}
+    fingerprint_by_instrument_id: dict[str, str] = {}
     for source in manifest.data_sources:
         loaded = _load_dataset(
             source=source,
@@ -144,16 +189,19 @@ def load_experiment_data(
                 fingerprint=actual,
             )
         )
-        series.append(
-            _slice_exact_window(
-                loaded,
-                manifest=manifest,
-                dataset_id=source.dataset_id,
-            )
+        windowed = _slice_exact_window(
+            loaded,
+            manifest=manifest,
+            dataset_id=source.dataset_id,
         )
+        series.append(windowed)
+        series_by_instrument_id[source.instrument_id] = windowed
+        fingerprint_by_instrument_id[source.instrument_id] = actual
     return LoadedExperimentData(
         aligned=align_bar_series(series),
         data_fingerprints=tuple(fingerprints),
+        series_by_instrument_id=series_by_instrument_id,
+        fingerprint_by_instrument_id=fingerprint_by_instrument_id,
     )
 
 

@@ -21,6 +21,7 @@ def _trial() -> ScannerTrial:
         scan_id="a" * 64,
         venue="binance",
         horizon=ScannerHorizon.SHORT,
+        universe_snapshot_id="b" * 64,
         pair_id="BTC/ETH",
         asset_a=BTC,
         asset_b=ETH,

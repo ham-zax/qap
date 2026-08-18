@@ -368,8 +368,10 @@ class ExperimentManifest(_FrozenModel):
     universe_mode: UniverseMode
     analysis_anchor: str | None = None
     instruments: tuple[InstrumentSpec, ...]
+    evidence_instrument_ids: tuple[Identifier, ...] = ()
     interval: Identifier
     data_window: DataWindowSpec
+    evaluation_window: DataWindowSpec | None = None
     data_sources: tuple[DataSourceSpec, ...]
     relationship: ComponentSpec
     policy: ComponentSpec
@@ -462,10 +464,30 @@ class ExperimentManifest(_FrozenModel):
             raise ValueError("at least one instrument is required")
         if len(set(instrument_ids)) != len(instrument_ids):
             raise ValueError("instrument_id values must be unique")
+        evidence_ids = tuple(self.evidence_instrument_ids)
+        if len(set(evidence_ids)) != len(evidence_ids):
+            raise ValueError("evidence_instrument_ids must be unique")
+        unknown_evidence = set(evidence_ids) - set(instrument_ids)
+        if unknown_evidence:
+            raise ValueError(
+                "evidence_instrument_ids must reference declared instruments; "
+                f"missing={sorted(unknown_evidence)}"
+            )
         symbols = tuple((item.venue, item.venue_symbol) for item in self.instruments)
         if len(set(symbols)) != len(symbols):
             raise ValueError("venue/instrument symbols must be unique")
+        evidence_set = set(evidence_ids)
         for instrument in self.instruments:
+            if instrument.instrument_id in evidence_set:
+                if (
+                    instrument.base_asset not in basket
+                    and instrument.quote_asset not in basket
+                ):
+                    raise ValueError(
+                        "evidence-only instrument must reference at least one "
+                        "basket asset"
+                    )
+                continue
             if (
                 instrument.base_asset not in basket
                 or instrument.quote_asset not in basket
@@ -489,8 +511,21 @@ class ExperimentManifest(_FrozenModel):
             raise ValueError(
                 "execution_instrument_id must reference a declared instrument"
             )
+        if self.execution.execution_instrument_id in evidence_set:
+            raise ValueError(
+                "execution instrument cannot be an evidence-only instrument"
+            )
         if self.execution.numeraire_asset not in basket:
             raise ValueError("execution numeraire_asset must belong to basket")
+
+        evaluation = self.effective_evaluation_window()
+        if (
+            evaluation.start < self.data_window.start
+            or evaluation.end > self.data_window.end
+        ):
+            raise ValueError("evaluation_window must be contained in data_window")
+        if self.evaluation_window is not None and evaluation == self.data_window:
+            raise ValueError("explicit evaluation_window must be a strict subwindow")
 
         flow_ids = tuple(flow.flow_id for flow in self.external_flows)
         if len(set(flow_ids)) != len(flow_ids):
@@ -503,6 +538,8 @@ class ExperimentManifest(_FrozenModel):
                 self.data_window.start <= flow.effective_time <= self.data_window.end
             ):
                 raise ValueError("external flow must fall within the data window")
+            if not (evaluation.start <= flow.effective_time <= evaluation.end):
+                raise ValueError("external flow must fall within the evaluation_window")
             if previous_time is not None and flow.effective_time < previous_time:
                 raise ValueError("external_flows must be ordered by effective_time")
             previous_time = flow.effective_time
@@ -542,6 +579,9 @@ class ExperimentManifest(_FrozenModel):
 
     def interval_domain(self) -> BarInterval:
         return BarInterval(self.interval)
+
+    def effective_evaluation_window(self) -> DataWindowSpec:
+        return self.evaluation_window or self.data_window
 
     def instruments_by_id(self) -> dict[str, VenueInstrument]:
         return {

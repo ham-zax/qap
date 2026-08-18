@@ -177,6 +177,49 @@ def test_replay_is_causal_deterministic_and_applies_due_flow_before_policy() -> 
     assert first.ending_state.holdings == {BTC: D("2.5"), USDT: D("50")}
 
 
+def test_replay_eval_window_keeps_warmup_without_warmup_steps() -> None:
+    aligned = _aligned()
+    evaluation_start = START + 2 * INTERVAL.duration
+    policy = ScheduledTargetPolicy(policy_id="hodl-like", schedule={})
+    observed: list[tuple[datetime, ...]] = []
+
+    def evidence_ids(
+        histories: tuple[CompletedBarHistory, ...],
+    ) -> tuple[str, ...]:
+        observed.append(histories[0].timestamps)
+        return ()
+
+    trace = run_deterministic_replay(
+        run_id="evaluation-window",
+        aligned=aligned,
+        ledger=PortfolioLedger(
+            PortfolioState.from_holdings({BTC: D("1"), USDT: D("10")})
+        ),
+        policy=policy,
+        execution_instrument=BTC_USDT,
+        numeraire=USDT,
+        cost_model=CostModel.zero(),
+        min_rebalance_notional=D("0"),
+        evidence_builder=evidence_ids,
+        evaluation_start=evaluation_start,
+        evaluation_end=START + 3 * INTERVAL.duration,
+        valuation_assets=(BTC, USDT),
+    )
+
+    assert tuple(step.decision_time for step in trace.steps) == (
+        evaluation_start,
+        START + 3 * INTERVAL.duration,
+    )
+    assert trace.steps[0].visible_timestamps == (
+        START,
+        START + INTERVAL.duration,
+    )
+    assert observed[0] == trace.steps[0].visible_timestamps
+    assert trace.starting_state == PortfolioState.from_holdings(
+        {BTC: D("1"), USDT: D("10")}
+    )
+
+
 @given(
     starting_quote=st.integers(min_value=1, max_value=10**9),
     decision_close=st.integers(min_value=1, max_value=10**6),

@@ -14,7 +14,10 @@ from qap.market import (
 )
 from qap.portfolio import AssetId
 from qap.scanner.catalog import (
+    ScannerCatalog,
     ScannerCatalogError,
+    ScannerSourceSpec,
+    catalog_semantic_identity,
     load_scanner_catalog,
     resolve_catalog_source,
 )
@@ -206,7 +209,56 @@ def test_catalog_rejects_path_escape_and_fingerprint_mismatch(tmp_path: Path) ->
         resolve_catalog_source(catalog, dataset_id="btc", data_root=tmp_path)
 
 
-def test_scan_id_excludes_creation_time_but_binds_input_slice_identity() -> None:
+def test_catalog_semantic_identity_binds_sources_but_excludes_paths_and_order() -> None:
+    first = ScannerSourceSpec(
+        dataset_id="btc-usdt",
+        relative_path="market/a.parquet",
+        venue="binance",
+        venue_symbol="BTCUSDT",
+        base_asset="BTC",
+        quote_asset="USDT",
+        interval="1h",
+        expected_semantic_fingerprint="a" * 64,
+        lifecycle_evidence_ids=("btc-listing",),
+        direct_pair_dataset_ids=("btc-eth",),
+    )
+    second = ScannerSourceSpec(
+        dataset_id="btc-eth",
+        relative_path="market/b.parquet",
+        venue="binance",
+        venue_symbol="BTCETH",
+        base_asset="BTC",
+        quote_asset="ETH",
+        interval="1h",
+        expected_semantic_fingerprint="b" * 64,
+    )
+    baseline = ScannerCatalog(
+        schema_version="qap.scanner.catalog.v1",
+        lifecycle_evidence_relative_path="lifecycle/a.jsonl",
+        sources=(first, second),
+    )
+    moved = ScannerCatalog(
+        schema_version="qap.scanner.catalog.v1",
+        lifecycle_evidence_relative_path="elsewhere/lifecycle.jsonl",
+        sources=(
+            second.model_copy(update={"relative_path": "moved/direct.parquet"}),
+            first.model_copy(update={"relative_path": "moved/evidence.parquet"}),
+        ),
+    )
+    changed = baseline.model_copy(
+        update={
+            "sources": (
+                first,
+                second.model_copy(update={"expected_semantic_fingerprint": "f" * 64}),
+            )
+        }
+    )
+
+    assert catalog_semantic_identity(baseline) == catalog_semantic_identity(moved)
+    assert catalog_semantic_identity(baseline) != catalog_semantic_identity(changed)
+
+
+def test_scan_id_binds_slice_and_catalog_but_not_creation_time() -> None:
     evaluated = evaluate_series(
         _series(4),
         dataset_id="btc",
@@ -221,6 +273,7 @@ def test_scan_id_excludes_creation_time_but_binds_input_slice_identity() -> None
     definition = ScanDefinition(
         scanner_protocol_version=SCANNER_V1_SLICE1.protocol_id,
         protocol_identity=protocol_identity(SCANNER_V1_SLICE1),
+        catalog_identity="c" * 64,
         as_of=START + timedelta(hours=4),
         eligible_information_end=START + timedelta(hours=4),
         venues=("binance",),
@@ -230,6 +283,7 @@ def test_scan_id_excludes_creation_time_but_binds_input_slice_identity() -> None
         created_at=START + timedelta(days=1),
     )
     later = definition.model_copy(update={"created_at": START + timedelta(days=2)})
+    changed_catalog = definition.model_copy(update={"catalog_identity": "d" * 64})
     changed_slice = definition.model_copy(
         update={
             "input_slices": (
@@ -241,4 +295,5 @@ def test_scan_id_excludes_creation_time_but_binds_input_slice_identity() -> None
     )
 
     assert definition.scan_id == later.scan_id
+    assert definition.scan_id != changed_catalog.scan_id
     assert definition.scan_id != changed_slice.scan_id
