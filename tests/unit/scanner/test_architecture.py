@@ -56,7 +56,11 @@ def test_experiment_scanner_dependency_is_limited_to_scanner_adapter() -> None:
     for path in sorted((SOURCE_ROOT / "experiment").rglob("*.py")):
         if any(imported.startswith("qap.scanner") for imported in _imports(path)):
             consumers.add(path.name)
-    assert consumers == {"scanner_adapter.py", "prospective_scanner_adapter.py"}
+    assert consumers == {
+        "scanner_adapter.py",
+        "prospective_scanner_adapter.py",
+        "basket_scanner_adapter.py",
+    }
 
 
 def test_scanner_entry_is_the_outer_composition_root() -> None:
