@@ -1,4 +1,4 @@
-# Phase 15 — Research Scanner and Candidate Workbench Plan
+# Phase 15 — Research Scanner and Basket Backend Plan
 
 **Goal:** Add a bounded active-research workflow above the existing QAP economic kernel: point-in-time discovery, fixed-budget authoritative replay, prospective evidence, liquidity qualification, and later manual basket analysis.
 
@@ -13,7 +13,11 @@
 > **Implementation status — 2026-08-18**
 > **Slice 1:** complete and remediation-verified; results in `docs/research/2026-08-18-qap-scanner-slice1-results.md`.
 > **Slice 2:** complete and repository-verified at tested commit `809431c`; results in `docs/research/2026-08-18-qap-scanner-slice2-results.md`.
-> **Slice 3:** detailed design and implementation plan are now present in the repository; implementation remains a hard separate user-approval gate and is not authorized merely by Slice-1/Slice-2 completion or by the existence of those documents.
+> **Slice 3:** explicitly approved and implemented through Milestone 6 at `46ef407`. Milestone 7 remains the final backend vertical; the former Milestone-8 Candidate Workbench is superseded by Slice 4, and Milestone 9 closes the Slice-3 backend/Phase-15 research kernel.
+
+> **Product-boundary amendment — 2026-08-19**
+> The standalone Slice-3 read-only Candidate Workbench is intentionally not implemented. One unified Slice-4 QAP application/workbench will expose the completed Slice-1 discovery, Slice-2 prospective/actionability, and Slice-3 basket-research operations instead of duplicating API DTOs, route hierarchies, navigation, and frontend evidence views across two consecutive workbenches.
+> **Slice-4 plan:** `docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md`.
 
 ## 1. Authoritative slice map
 
@@ -29,9 +33,12 @@ Slice 2 — prospective evidence + liquidity qualification
 Slice 3 — broad asset-native momentum + manual basket workbench
   docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-design.md
   docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md
+
+Slice 4 — unified human-operated QAP application
+  docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md
 ```
 
-Do not implement Slice 3 merely because this umbrella plan or the new detailed documents exist. Begin implementation only after the user explicitly approves the Slice-3 design and implementation plan.
+Slice 4 is not part of the Phase-15 research-kernel completion gate. Phase 15 closes after the Slice-3 backend vertical and repository evidence are complete; Slice 4 then productizes the completed Slices 1–3 through one application boundary.
 
 ## 2. Global constraints
 
@@ -133,7 +140,7 @@ The frozen Scanner-V1 boundary is now:
 - one authoritative QAP portfolio replay through the existing Phase-11 multi-asset executor;
 - matched HODL, the frozen mechanical band control, and a pair-blind relative-momentum control under the same timing/cost path;
 - pair-level Slice-2 evidence visible beside basket edges but never algebraically converted into basket capacity or prospective status;
-- read-only scanner API/Candidate Workbench projections only after backend contracts are proven.
+- no standalone Slice-3 scanner API/Candidate Workbench; those read models and human workflows move to the unified Slice-4 application after backend contracts are proven.
 
 Do not implement automatic graph-to-basket discovery, a portfolio optimizer, learned reliability weights, momentum/reversal routing, cross-horizon authority weighting, cross-venue shared inventory, or basket-level `tradable_now` in Scanner V1.
 
@@ -196,32 +203,20 @@ Formal SPA/Reality Check/Romano-Wolf/DSR/PBO methods may be used later at resear
 
 ## 9. API and workbench boundary
 
-No scanner web UI is required by Slices 1–2.
+Phase 15 no longer implements a scanner-specific browser/API surface. Its job is to leave Slices 1–3 with stable Python application operations, immutable evidence, and authoritative QAP result references.
 
-After the backend contracts are proven, Slice 3 may add a dedicated scanner route. The UI should present the frozen ScannerProtocol rather than expose a generic “choose any generator/model/grid” builder.
+Slice 4 owns the unified human-operated application. Its bounded command vocabulary may initiate admitted discovery, prospective, capture/qualification, and basket-research operations, while its query/read models expose the resulting immutable evidence.
 
-Expected user actions are bounded:
+The Slice-4 browser still does not:
 
-```text
-inspect protocol / PIT universe
-run or inspect canonical scan
-pin a pair explicitly
-inspect candidates and authoritative replay
-inspect forward/liquidity evidence
-select 3–6 assets for basket analysis
-inspect one combined QAP replay
-```
+- fit models or supply hidden model/protocol constants;
+- compute resolver targets, fills, accounting, costs, capacity, or wealth;
+- mutate completed scan/freeze/checkpoint/basket/run evidence;
+- reveal or consume reserved final OOS;
+- launch an unbounded search or generic strategy DSL;
+- provide private-exchange/live-capital/deployment authority.
 
-The browser does not:
-
-- fit models;
-- compute fills/accounting/wealth;
-- mutate frozen scan definitions;
-- reveal reserved final OOS;
-- launch unbounded search;
-- provide a live/deploy button.
-
-Phase-14 Research Runs remains the completed-run evidence archive. Scanner views link to immutable run details rather than copying their financial truth.
+Phase-14 Research Runs remains the completed-run evidence archive. Slice-4 scanner/prospective/basket views link to immutable experiment/portfolio/pair evidence rather than copying their financial truth.
 
 ## 10. Reproducibility and recovery
 
@@ -250,7 +245,7 @@ Backend coverage across the slices must prove:
 - incomplete microstructure cannot graduate a candidate from `research_only`;
 - basket combination eventually goes through one QAP target/inventory.
 
-Frontend/E2E coverage is deferred until a scanner workbench is actually admitted in Slice 3.
+Frontend/E2E coverage is deferred to Slice 4, where one unified workbench is admitted over the completed Slice-1/2/3 backend operations.
 
 ## 12. Exit criteria
 

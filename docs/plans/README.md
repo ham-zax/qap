@@ -4,7 +4,7 @@
 
 ## Current wave
 
-Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is implemented and its integrated rendered acceptance is green. **Phase 15 — Research Scanner and Candidate Workbench** is the active next product wave; Scanner V1 Slices 1 and 2 are complete and repository-verified, while the Slice-3 detailed design/implementation plan are now present but implementation remains a separate explicit user-approval gate. Later dependent slices still begin only after their predecessor exit criteria are green or the user explicitly approves a documented exception.
+Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is implemented and its integrated rendered acceptance is green. **Phase 15 — Research Scanner and Basket Backend** is the active research-kernel wave: Scanner V1 Slices 1 and 2 are complete and repository-verified, and Slice 3 is implemented through Milestone 6 at `46ef407`; Milestone 7 plus backend closure remain. The former Slice-3 Candidate Workbench milestone is explicitly superseded by the post-Phase-15 **Slice 4 Unified QAP Workbench** plan. Later dependent work still begins only after predecessor exit criteria are green or the user explicitly approves a documented exception.
 
 ## Implementation waves
 
@@ -18,7 +18,8 @@ Phases 00–13 produced the financial/research core, paper hardening, readiness 
 | 6 | Decide live readiness | 12 | Separate go/no-go review; no live trading authority is implied by earlier phases |
 | 7 | Automate development safely | 13 | Approved-plan execution can continue autonomously without becoming part of financial runtime |
 | 8 | Make evidence understandable | 14 | Workbench is verdict/visual-first, preserves exact audit truth, and passes integrated desktop/mobile/browser acceptance |
-| 9 | Make research generation explicit | 15 | A bounded scanner/candidate workflow can enumerate, evaluate, rank, combine, and freeze research candidates without bypassing QAP economics or holdout discipline |
+| 9 | Make research generation explicit | 15 | A bounded scanner/candidate/basket backend can enumerate, evaluate, rank, combine, freeze, and replay research candidates without bypassing QAP economics or holdout discipline |
+| 10 | Make QAP human-operable | Slice 4 | One local web application can initiate and inspect the admitted Slice-1/2/3 workflows while immutable QAP/scanner artifacts remain authoritative |
 
 ## Phase plans
 
@@ -37,7 +38,8 @@ Phases 00–13 produced the financial/research core, paper hardening, readiness 
 13. `12-live-readiness-gate.md`
 14. `13-autonomous-development-harness.md`
 15. `14-analytical-workbench-ux-redesign.md` (overview; detailed route/design plans are under `docs/plans/14/`)
-16. `15-research-scanner-and-candidate-workbench.md`
+16. `15-research-scanner-and-candidate-workbench.md` (historical filename; Phase 15 now closes the scanner/basket backend and its former Candidate Workbench is superseded)
+17. Slice 4: `docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md`
 
 The cross-phase master implementation plan is at `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md`.
 

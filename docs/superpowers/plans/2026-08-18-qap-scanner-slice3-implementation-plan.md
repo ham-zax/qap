@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-18
 
-**Status:** implementation plan complete for review; do not execute until the user explicitly approves the Slice-3 design and this plan.
+**Status:** amended 2026-08-19 after Milestone 6 completion at `46ef407`. Milestone 7 remains the final Slice-3 backend vertical. Milestone 8 is explicitly superseded by Slice 4's unified QAP Workbench. Milestone 9 closes the Slice-3 backend only.
 
 **Goal:** implement the approved Slice-3 asset-native momentum surface and manual 3–6 asset one-inventory basket workflow without creating a second backtester, optimizer, cross-venue wallet, or live-capital path.
 
@@ -48,9 +48,9 @@ src/qap/policy/
 
 src/qap/experiment/
   basket_policy.py
-  relative_momentum_control.py        # only if extracting the existing
-                                      # cross-sectional composition is the
-                                      # smallest reusable second-use path
+  basket_manifest.py
+  control_specs.py
+  cross_sectional_policy.py
   basket_scanner_adapter.py
 ```
 
@@ -69,15 +69,7 @@ src/qap/scanner_entry.py
 .importlinter
 ```
 
-Read-only API/workbench comes only after the backend vertical is proven:
-
-```text
-src/qap/api/* scanner/basket DTOs, reader/views, routes
-web/src/features/scanner/*
-web/src/routes/scanner*
-```
-
-Do not pre-create modules that are not needed by the milestone being implemented.
+The scanner/basket web workbench is no longer a Slice-3 deliverable. The unified application/API/workbench is owned by Slice 4. Do not pre-create Slice-4 routes, DTOs, operation resources, or frontend feature trees while finishing the Slice-3 backend.
 
 ---
 
@@ -561,83 +553,27 @@ One manual basket reaches one authoritative QAP portfolio result end-to-end with
 
 ---
 
-## 11. Milestone 8 — read-only scanner API and Candidate Workbench
+## 11. Milestone 8 — superseded by Slice 4 unified QAP Workbench
 
-**Design contracts:** `UI-*`, `CAP-*`.
+**Status:** superseded by explicit product-boundary decision on 2026-08-19.
 
-Do not begin this milestone until the backend basket vertical is green and artifact schemas are stable.
+Do not implement the former standalone read-only Scanner API/Candidate Workbench in Slice 3.
 
-### Backend files
+The original M8 responsibilities now belong to:
 
-Prefer focused additions such as:
+`docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md`
 
-```text
-src/qap/api/scanner_schemas.py
-src/qap/api/scanner_views.py
-src/qap/api/routes/scanner.py
-```
+That plan owns one unified application surface over Slices 1–3 rather than duplicating scanner DTOs, routes, navigation, evidence components, and frontend state immediately before a broader workbench would replace them.
 
-plus app/settings/reader wiring as needed.
-
-### API scope
-
-Read-only endpoints may expose:
-
-- Scanner-V1 protocol projection;
-- completed scan summaries/candidates;
-- matching Slice-2 forward/qualification evidence;
-- asset-momentum generations/tables;
-- basket definitions/attempt status;
-- basket edge/resolver audit;
-- authoritative QAP run link.
-
-Do not expose a browser mutation/run endpoint in Scanner V1.
-
-Do not return a basket capacity or `tradable_now` label.
-
-### Frontend files
-
-Use the existing generated OpenAPI contract and a narrow feature tree:
-
-```text
-web/src/features/scanner/
-web/src/routes/scanner*.tsx
-```
-
-Expected workbench sections:
-
-1. venue/horizon/scan context;
-2. asset-native momentum rank table;
-3. candidate/evidence table for selected 3–6 assets;
-4. persisted basket definitions;
-5. edge opinion graph/table;
-6. resolver audit:
-   - raw pressure;
-   - declared degree;
-   - normalized pressure;
-   - component-centered pressure;
-   - final target;
-7. links to existing Portfolio/Experiment/Pair workbenches.
-
-React must not recompute resolver, accounting, costs, or wealth.
-
-Reuse existing responsive/accessibility/table/chart primitives. Do not add a new visualization library solely for Slice 3.
-
-### Required evidence
-
-- OpenAPI generation is deterministic/no drift;
-- read-only route DTOs expose negative/invalid evidence rather than filtering it;
-- frontend uses backend target/audit values verbatim;
-- no POST/live execution controls appear;
-- portfolio economics navigation reuses the existing Portfolio route.
+Slice 3 may expose only the Python application/adapter operations needed by Milestone 7. It must not add FastAPI scanner routes, browser mutation endpoints, or React scanner/basket features.
 
 ### Exit
 
-The active scanner/basket research workflow is inspectable without moving financial truth into the browser.
+No Slice-3 web/API work is implemented; the completed Slice-3 backend presents stable application operations and immutable evidence for Slice 4 to consume.
 
 ---
 
-## 12. Milestone 9 — integrated Phase-15 closure
+## 12. Milestone 9 — Slice-3 backend / Phase-15 research-kernel closure
 
 ### Results/status files
 
@@ -662,11 +598,11 @@ implementation_prompt.md
 - multiple fills per decision with exact reconciliation;
 - negative basket vs one or more controls;
 - no basket capacity/actionability claim;
-- read-only Candidate Workbench navigation to authoritative QAP portfolio result.
+- completed `BasketDefinition -> ordinary QAP` adapter result references authoritative experiment/portfolio artifacts without duplicating economics in scanner artifacts.
 
 ### Repository completion gate
 
-The implementation plan makes the existing repository completion checks mandatory before declaring Slice 3/Phase 15 complete:
+The implementation plan makes the existing repository completion checks mandatory before declaring the Slice-3 backend complete:
 
 ```text
 uv run pytest -q
@@ -678,7 +614,7 @@ uv run lint-imports
 git diff --check
 ```
 
-When frontend/API files changed, also run the existing deterministic OpenAPI/client/frontend gates defined by the repository's Phase-14/Phase-15 contracts.
+No frontend/OpenAPI gate is added solely for Slice 3 because the former M8 web/API milestone is moved to Slice 4.
 
 Do not add a new framework or generic benchmark service merely to run these checks.
 
@@ -693,10 +629,10 @@ Slice 3 is complete only when:
 - ordinary QAP replay owns multi-asset fills/economics;
 - HODL + band + pair-blind momentum comparisons are present;
 - negative/failed basket siblings remain visible;
-- Candidate Workbench is read-only and backend-authoritative;
+- the former Candidate Workbench milestone is explicitly superseded by the Slice-4 unified workbench plan;
 - pair qualifications are not misrepresented as basket capacity;
 - reserved final OOS/live authority remain untouched;
-- all mandatory completion gates are green.
+- all mandatory backend completion gates are green.
 
 ---
 
