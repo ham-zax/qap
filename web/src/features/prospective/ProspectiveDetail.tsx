@@ -9,6 +9,7 @@ import type {
 } from '../../api/types'
 import { Badge } from '../../components/ui/Badge'
 import { formatResearchTimestamp } from '../../lib/format'
+import { LineageTrail } from '../lineage/LineageTrail'
 
 interface ProspectiveDetailProps {
   apiClient: QapApiClient
@@ -97,6 +98,19 @@ export function ProspectiveDetail({ apiClient, data }: ProspectiveDetailProps) {
           </p>
         ) : null}
       </header>
+
+      {firstFreeze ? (
+        <LineageTrail
+          items={[
+            {
+              label: 'scan',
+              value: firstFreeze.source_scan_id,
+              href: `/scanner/${firstFreeze.source_scan_id}`,
+            },
+            { label: 'cohort', value: data.summary.cohort_id },
+          ]}
+        />
+      ) : null}
 
       {lastOperation ? (
         <p className="mb-6 rounded-md border border-positive/40 bg-subtle p-3 text-sm text-secondary">

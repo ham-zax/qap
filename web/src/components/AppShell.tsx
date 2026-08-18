@@ -36,6 +36,9 @@ export function AppShell({ children }: AppShellProps) {
           <Link className={navLinkClass} to="/experiments">
             Research runs
           </Link>
+          <Link className={navLinkClass} to="/operations">
+            Operations
+          </Link>
           <Link className={navLinkClass} to="/paper-operations">
             Paper operations
           </Link>

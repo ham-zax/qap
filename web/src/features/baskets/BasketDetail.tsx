@@ -4,6 +4,7 @@ import type {
   PortfolioSnapshotDto,
 } from '../../api/types'
 import { Badge } from '../../components/ui/Badge'
+import { LineageTrail } from '../lineage/LineageTrail'
 import { BasketGraph } from './BasketGraph'
 
 interface BasketDetailProps {
@@ -60,7 +61,31 @@ export function BasketDetail({ basket, experiment, portfolio }: BasketDetailProp
         </p>
       </header>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(20rem,0.8fr)_minmax(0,1.2fr)]">
+      <LineageTrail
+        items={[
+          ...(summary.source_scan_id
+            ? [
+                {
+                  label: 'scan',
+                  value: summary.source_scan_id,
+                  href: `/scanner/${summary.source_scan_id}`,
+                },
+              ]
+            : []),
+          { label: 'basket', value: summary.basket_id },
+          ...(summary.qap_run_id
+            ? [
+                {
+                  label: 'QAP',
+                  value: summary.qap_run_id,
+                  href: `/experiments/${summary.qap_run_id}`,
+                },
+              ]
+            : []),
+        ]}
+      />
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(20rem,0.8fr)_minmax(0,1.2fr)]">
         <article className="rounded-lg border border-border bg-panel p-5">
           <h2 className="mt-0 text-lg font-semibold text-foreground">Relationship graph</h2>
           <BasketGraph assets={[...summary.economic_assets]} edges={edges} />

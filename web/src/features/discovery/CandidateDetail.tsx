@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { QapApiClient } from '../../api/client'
 import type { CandidateDetailDto, OperationRefDto } from '../../api/types'
 import { Badge } from '../../components/ui/Badge'
+import { LineageTrail } from '../lineage/LineageTrail'
 
 interface CandidateDetailProps {
   apiClient: QapApiClient
@@ -62,7 +63,23 @@ export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
         </p>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <LineageTrail
+        items={[
+          { label: 'scan', value: candidate.scan_id, href: `/scanner/${candidate.scan_id}` },
+          { label: 'candidate', value: candidate.candidate_id },
+          ...(candidate.deep_replay_run_id
+            ? [
+                {
+                  label: 'historical QAP',
+                  value: candidate.deep_replay_run_id,
+                  href: `/experiments/${candidate.deep_replay_run_id}`,
+                },
+              ]
+            : []),
+        ]}
+      />
+
+      <div className="mt-6 grid gap-5 lg:grid-cols-2">
         <article className="rounded-lg border border-border bg-panel p-5">
           <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
             Why this rule exists
