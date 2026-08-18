@@ -419,7 +419,7 @@ For promoted/pinned instruments needing qualification:
 
 ```text
 L1/book ticker snapshot: nominal every 60 seconds
-shallow depth snapshot: nominal every 5 minutes
+shallow depth snapshot: top 20 bid/ask levels, nominal every 5 minutes
 minimum qualification window: 14 calendar days
 overall scheduled coverage: >=95%
 each UTC day scheduled coverage: >=90%

@@ -46,6 +46,22 @@ def _positive_finite(value: object, *, field: str) -> float:
     return numeric
 
 
+def public_payload_fingerprint(payload: object) -> str:
+    """Return the canonical fingerprint for one public JSON payload."""
+
+    try:
+        encoded = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise ValueError("public payload must be canonical JSON data") from exc
+    return sha256(encoded).hexdigest()
+
+
 @dataclass(frozen=True, slots=True)
 class BookLevel:
     """One immutable public-book price level."""
@@ -138,4 +154,61 @@ class PublicBookSnapshot:
         return sha256(encoded).hexdigest()
 
 
-__all__ = ["BookLevel", "PublicBookSnapshot"]
+def _book_number(value: object, *, field: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        raise TypeError(f"{field} must be a JSON number or decimal string")
+    try:
+        return float(value)
+    except ValueError as exc:
+        raise ValueError(f"{field} must be numeric") from exc
+
+
+def _book_levels(value: object, *, side: str) -> tuple[BookLevel, ...]:
+    if not isinstance(value, list):
+        raise TypeError(f"{side} must be a JSON list")
+    rows = cast(list[object], value)
+    levels: list[BookLevel] = []
+    for position, raw_level in enumerate(rows):
+        if not isinstance(raw_level, list):
+            raise ValueError(f"{side} level {position} must contain price and quantity")
+        items = cast(list[object], raw_level)
+        if len(items) != 2:
+            raise ValueError(f"{side} level {position} must contain price and quantity")
+        levels.append(
+            BookLevel(
+                price=_book_number(items[0], field=f"{side}[{position}].price"),
+                quantity=_book_number(
+                    items[1], field=f"{side}[{position}].quantity"
+                ),
+            )
+        )
+    return tuple(levels)
+
+
+def public_book_snapshot_from_rows(
+    *,
+    instrument: VenueInstrument,
+    observed_at: datetime,
+    source_id: str,
+    source_payload: object,
+    bids: object,
+    asks: object,
+) -> PublicBookSnapshot:
+    """Normalize exact public bid/ask rows into immutable QAP evidence."""
+
+    return PublicBookSnapshot(
+        instrument=instrument,
+        observed_at=observed_at,
+        source_id=source_id,
+        source_fingerprint=public_payload_fingerprint(source_payload),
+        bids=_book_levels(bids, side="bids"),
+        asks=_book_levels(asks, side="asks"),
+    )
+
+
+__all__ = [
+    "BookLevel",
+    "PublicBookSnapshot",
+    "public_book_snapshot_from_rows",
+    "public_payload_fingerprint",
+]

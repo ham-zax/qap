@@ -9,7 +9,7 @@ from typing import cast
 import httpx
 import pytest
 
-from qap.market import BarInterval
+from qap.market import BarInterval, VenueInstrument
 from qap.market.adapters.binance_public import (
     BinancePublicAdapter,
     BinancePublicDataError,
@@ -521,6 +521,90 @@ def test_kline_parser_rejects_a_bar_not_completed_by_the_requested_end() -> None
             start=datetime(2024, 1, 1, tzinfo=UTC),
             end_exclusive=datetime(2024, 1, 1, tzinfo=UTC) + timedelta(minutes=30),
         )
+
+
+def test_public_l1_and_depth_capture_use_market_data_only_endpoints() -> None:
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if request.url.path == "/api/v3/ticker/bookTicker":
+            return httpx.Response(
+                200,
+                json={
+                    "symbol": "BTCUSDT",
+                    "bidPrice": "100.0",
+                    "bidQty": "2.0",
+                    "askPrice": "101.0",
+                    "askQty": "3.0",
+                },
+            )
+        if request.url.path == "/api/v3/depth":
+            return httpx.Response(
+                200,
+                json={
+                    "lastUpdateId": 10,
+                    "bids": [["100.0", "2.0"], ["99.0", "4.0"]],
+                    "asks": [["101.0", "3.0"], ["102.0", "5.0"]],
+                },
+            )
+        raise AssertionError(f"unexpected path: {request.url.path}")
+
+    instrument = VenueInstrument(
+        venue="binance",
+        venue_symbol="BTCUSDT",
+        base=AssetId("BTC"),
+        quote=AssetId("USDT"),
+    )
+    observed = datetime(2026, 8, 18, tzinfo=UTC)
+    with BinancePublicAdapter(transport=_transport(handler)) as adapter:
+        l1 = adapter.fetch_l1_book(instrument=instrument, observed_at=observed)
+        depth = adapter.fetch_shallow_depth(
+            instrument=instrument,
+            limit=20,
+            observed_at=observed,
+        )
+
+    assert len(l1.bids) == len(l1.asks) == 1
+    assert l1.best_bid == 100.0
+    assert l1.best_ask == 101.0
+    assert tuple(level.price for level in depth.bids) == (100.0, 99.0)
+    assert tuple(level.price for level in depth.asks) == (101.0, 102.0)
+    assert [request.url.path for request in requests] == [
+        "/api/v3/ticker/bookTicker",
+        "/api/v3/depth",
+    ]
+    assert requests[1].url.params["limit"] == "20"
+    assert all(request.url.host == "data-api.binance.vision" for request in requests)
+    assert all("X-MBX-APIKEY" not in request.headers for request in requests)
+
+
+def test_market_metadata_can_preserve_non_trading_current_state() -> None:
+    payload = _recorded_exchange_info()
+    symbols = cast(list[object], payload["symbols"])
+    symbol = cast(dict[str, object], symbols[0])
+    symbol["status"] = "BREAK"
+
+    with pytest.raises(BinancePublicDataError, match="not currently TRADING"):
+        BinancePublicAdapter.market_metadata_from_payload(
+            payload,
+            venue_symbol="BTCUSDT",
+            base=AssetId("BTC"),
+            quote=AssetId("USDT"),
+            venue_base_asset="BTC",
+            venue_quote_asset="USDT",
+        )
+
+    metadata = BinancePublicAdapter.market_metadata_from_payload(
+        payload,
+        venue_symbol="BTCUSDT",
+        base=AssetId("BTC"),
+        quote=AssetId("USDT"),
+        venue_base_asset="BTC",
+        venue_quote_asset="USDT",
+        require_trading=False,
+    )
+    assert metadata.status == "BREAK"
 
 
 @pytest.mark.live_network

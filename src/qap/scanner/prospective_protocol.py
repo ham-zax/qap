@@ -28,6 +28,7 @@ class ProspectiveProtocol:
     swing_forward_window: timedelta = timedelta(days=28)
     l1_cadence: timedelta = timedelta(seconds=60)
     depth_cadence: timedelta = timedelta(minutes=5)
+    shallow_depth_levels: int = 20
     minimum_qualification_window: timedelta = timedelta(days=14)
     overall_coverage_minimum: Decimal = Decimal("0.95")
     daily_coverage_minimum: Decimal = Decimal("0.90")
@@ -68,6 +69,7 @@ def _payload(protocol: ProspectiveProtocol) -> dict[str, object]:
         "capture": {
             "l1_cadence_seconds": int(protocol.l1_cadence.total_seconds()),
             "depth_cadence_seconds": int(protocol.depth_cadence.total_seconds()),
+            "shallow_depth_levels": protocol.shallow_depth_levels,
             "minimum_qualification_window_seconds": int(
                 protocol.minimum_qualification_window.total_seconds()
             ),

@@ -17,6 +17,7 @@ import httpx
 from qap.market.bars import BarInterval, MarketBar
 from qap.market.instruments import VenueInstrument
 from qap.market.metadata import MarketMetadata
+from qap.market.microstructure import PublicBookSnapshot, public_book_snapshot_from_rows
 from qap.market.validation import ValidatedBarSeries, validate_bar_series
 from qap.portfolio import AssetId
 
@@ -264,6 +265,7 @@ class BinancePublicAdapter:
         quote: AssetId,
         venue_base_asset: str,
         venue_quote_asset: str,
+        require_trading: bool = True,
     ) -> MarketMetadata:
         """Fetch normalized public Spot precision/filter metadata for one symbol."""
 
@@ -279,6 +281,70 @@ class BinancePublicAdapter:
             quote=quote,
             venue_base_asset=venue_base_asset,
             venue_quote_asset=venue_quote_asset,
+            require_trading=require_trading,
+        )
+
+    def fetch_l1_book(
+        self,
+        *,
+        instrument: VenueInstrument,
+        observed_at: datetime | None = None,
+    ) -> PublicBookSnapshot:
+        """Capture one public best-bid/ask observation with quantities."""
+
+        if instrument.venue != "binance":
+            raise ValueError("Binance adapter requires a binance VenueInstrument")
+        payload = self._get_json(
+            "/api/v3/ticker/bookTicker",
+            params={"symbol": instrument.venue_symbol},
+        )
+        item = _as_mapping(payload, field="bookTicker response")
+        if _normalized_symbol(item.get("symbol")) != instrument.venue_symbol.upper():
+            raise BinancePublicDataError("bookTicker symbol does not match instrument")
+        timestamp = (
+            datetime.now(UTC)
+            if observed_at is None
+            else _validated_utc(observed_at, field="observed_at")
+        )
+        return public_book_snapshot_from_rows(
+            instrument=instrument,
+            observed_at=timestamp,
+            source_id="binance:/api/v3/ticker/bookTicker",
+            source_payload=payload,
+            bids=[[item.get("bidPrice"), item.get("bidQty")]],
+            asks=[[item.get("askPrice"), item.get("askQty")]],
+        )
+
+    def fetch_shallow_depth(
+        self,
+        *,
+        instrument: VenueInstrument,
+        limit: int,
+        observed_at: datetime | None = None,
+    ) -> PublicBookSnapshot:
+        """Capture one bounded public depth snapshot."""
+
+        if instrument.venue != "binance":
+            raise ValueError("Binance adapter requires a binance VenueInstrument")
+        if isinstance(limit, bool) or not 1 <= limit <= 5000:
+            raise ValueError("depth limit must be an integer between 1 and 5000")
+        payload = self._get_json(
+            "/api/v3/depth",
+            params={"symbol": instrument.venue_symbol, "limit": limit},
+        )
+        item = _as_mapping(payload, field="depth response")
+        timestamp = (
+            datetime.now(UTC)
+            if observed_at is None
+            else _validated_utc(observed_at, field="observed_at")
+        )
+        return public_book_snapshot_from_rows(
+            instrument=instrument,
+            observed_at=timestamp,
+            source_id=f"binance:/api/v3/depth?limit={limit}",
+            source_payload=payload,
+            bids=_as_list(item.get("bids"), field="depth bids"),
+            asks=_as_list(item.get("asks"), field="depth asks"),
         )
 
     @staticmethod
@@ -290,6 +356,7 @@ class BinancePublicAdapter:
         quote: AssetId,
         venue_base_asset: str,
         venue_quote_asset: str,
+        require_trading: bool = True,
     ) -> VenueInstrument:
         """Map recorded exchange-info JSON without guessing inverses or history."""
 
@@ -307,13 +374,14 @@ class BinancePublicAdapter:
             )
 
         item = matches[0]
-        if _as_string(item.get("status"), field="symbol status") != "TRADING":
-            raise BinancePublicDataError(f"{symbol} is not currently TRADING")
-        if not _as_bool(
-            item.get("isSpotTradingAllowed"),
-            field="isSpotTradingAllowed",
-        ):
-            raise BinancePublicDataError(f"{symbol} does not allow Spot trading")
+        if require_trading:
+            if _as_string(item.get("status"), field="symbol status") != "TRADING":
+                raise BinancePublicDataError(f"{symbol} is not currently TRADING")
+            if not _as_bool(
+                item.get("isSpotTradingAllowed"),
+                field="isSpotTradingAllowed",
+            ):
+                raise BinancePublicDataError(f"{symbol} does not allow Spot trading")
 
         expected_venue_base = _normalized_symbol(venue_base_asset)
         expected_venue_quote = _normalized_symbol(venue_quote_asset)
@@ -348,6 +416,7 @@ class BinancePublicAdapter:
         quote: AssetId,
         venue_base_asset: str,
         venue_quote_asset: str,
+        require_trading: bool = True,
     ) -> MarketMetadata:
         """Normalize the precision/notional filters required by paper execution."""
 
@@ -358,6 +427,7 @@ class BinancePublicAdapter:
             quote=quote,
             venue_base_asset=venue_base_asset,
             venue_quote_asset=venue_quote_asset,
+            require_trading=require_trading,
         )
         document = _as_mapping(payload, field="exchangeInfo response")
         symbols = _as_list(document.get("symbols"), field="exchangeInfo symbols")
