@@ -250,6 +250,7 @@ def enumerate_fixed_trials(
     graph: SsdGraph,
     *,
     model_series_by_asset: Mapping[tuple[str, str], EvaluatedSeries],
+    model_resolutions: tuple[BarInterval, ...] | None = None,
     protocol: ScannerProtocol = SCANNER_V1_SLICE1,
 ) -> tuple[ScannerTrial, ...]:
     """Enumerate the frozen ratio/residual template family for every retained pair."""
@@ -260,6 +261,15 @@ def enumerate_fixed_trials(
         raise TypeError("model_series_by_asset must be a mapping")
     horizon = ScannerHorizon(graph.horizon)
     horizon_protocol = protocol.horizon(horizon)
+    resolutions = (
+        horizon_protocol.model_resolutions
+        if model_resolutions is None
+        else tuple(model_resolutions)
+    )
+    if not resolutions or len(set(resolutions)) != len(resolutions):
+        raise ValueError("model_resolutions must be non-empty and unique")
+    if not set(resolutions) <= set(horizon_protocol.model_resolutions):
+        raise ValueError("model_resolutions must belong to the horizon protocol")
 
     trials: list[ScannerTrial] = []
     for record in sorted(graph.records, key=lambda item: item.pair_id):
@@ -274,7 +284,7 @@ def enumerate_fixed_trials(
         canonical_orientation = PairOrientation(base=asset_a, quote=asset_b)
         reverse_orientation = canonical_orientation.inverted()
 
-        for resolution in horizon_protocol.model_resolutions:
+        for resolution in resolutions:
             left, right = _validated_model_pair(
                 graph=graph,
                 asset_a=asset_a,

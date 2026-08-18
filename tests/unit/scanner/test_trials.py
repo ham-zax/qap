@@ -178,6 +178,21 @@ def test_trial_identity_binds_model_resolution_slice_fingerprints() -> None:
     )
 
 
+def test_trial_enumeration_can_scope_one_model_resolution() -> None:
+    model_series = {
+        key: value for key, value in _model_series().items() if key[1] == "1h"
+    }
+
+    trials = enumerate_fixed_trials(
+        _graph(),
+        model_series_by_asset=model_series,
+        model_resolutions=(BarInterval("1h"),),
+    )
+
+    assert len(trials) == 9
+    assert {trial.resolution for trial in trials} == {BarInterval("1h")}
+
+
 def test_trial_enumeration_rejects_insufficient_model_slice_quality() -> None:
     model_series = _model_series()
     model_series[("ETH", "15m")] = replace(

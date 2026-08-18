@@ -16,6 +16,14 @@ from typing import Any, cast
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+from qap.scanner.artifact_schemas import (
+    ELIGIBLE_SCHEMA,
+    NEIGHBOR_SCHEMA,
+    PROMOTION_SCHEMA,
+    REPLAY_SCHEMA,
+    SCOUT_SCHEMA,
+    TABLE_SCHEMAS,
+)
 from qap.scanner.graph import NeighborRecord
 from qap.scanner.models import ScanDefinition
 from qap.scanner.promotion import PromotionRecord
@@ -61,97 +69,6 @@ class ScanArtifactGeneration:
     @property
     def replay_attempts_path(self) -> Path:
         return self.staging_directory / "replay_attempts.parquet"
-
-
-_ELIGIBLE_SCHEMA = pa.schema(
-    [
-        ("scan_id", pa.string()),
-        ("venue", pa.string()),
-        ("horizon", pa.string()),
-        ("asset_id", pa.string()),
-        ("venue_symbol", pa.string()),
-        ("eligibility_state", pa.string()),
-        ("eligibility_reason", pa.string()),
-        ("lifecycle_evidence_refs", pa.list_(pa.string())),
-        ("source_artifact_fingerprint", pa.string()),
-        ("selection_slice_fingerprint", pa.string()),
-        ("bar_coverage", pa.float64()),
-        ("longest_missing_run", pa.int64()),
-        ("automatic_eligible", pa.bool_()),
-        ("forensic_research_allowed", pa.bool_()),
-    ]
-)
-_NEIGHBOR_SCHEMA = pa.schema(
-    [
-        ("scan_id", pa.string()),
-        ("venue", pa.string()),
-        ("horizon", pa.string()),
-        ("pair_id", pa.string()),
-        ("asset_a", pa.string()),
-        ("asset_b", pa.string()),
-        ("ssd_distance", pa.float64()),
-        ("rank_from_a", pa.int64()),
-        ("rank_from_b", pa.int64()),
-        ("selected_by_a", pa.bool_()),
-        ("selected_by_b", pa.bool_()),
-        ("automatic_neighbor_selected", pa.bool_()),
-        ("manual_pinned", pa.bool_()),
-    ]
-)
-_SCOUT_SCHEMA = pa.schema(
-    [
-        ("candidate_id", pa.string()),
-        ("scan_id", pa.string()),
-        ("venue", pa.string()),
-        ("horizon", pa.string()),
-        ("pair_id", pa.string()),
-        ("orientation", pa.string()),
-        ("resolution", pa.string()),
-        ("model_family", pa.string()),
-        ("template_id", pa.string()),
-        ("trial_status", pa.string()),
-        ("failure_reason", pa.string()),
-        ("scout_relative_wealth_proxy", pa.float64()),
-        ("scout_turnover_proxy", pa.float64()),
-        ("signal_count", pa.int64()),
-        ("automatic_neighbor_selected", pa.bool_()),
-        ("manual_pinned", pa.bool_()),
-    ]
-)
-_PROMOTION_SCHEMA = pa.schema(
-    [
-        ("candidate_id", pa.string()),
-        ("promotion_rank", pa.int64()),
-        ("promotion_status", pa.string()),
-        ("budget_reason", pa.string()),
-        ("automatic_selected", pa.bool_()),
-        ("manual_selected", pa.bool_()),
-        ("selected_for_replay", pa.bool_()),
-        ("direct_execution_instrument_id", pa.string()),
-        ("deep_replay_run_id", pa.string()),
-        ("deep_replay_status", pa.string()),
-        ("economic_gate_status", pa.string()),
-    ]
-)
-_REPLAY_SCHEMA = pa.schema(
-    [
-        ("attempt_id", pa.string()),
-        ("scan_id", pa.string()),
-        ("candidate_id", pa.string()),
-        ("promotion_rank", pa.int64()),
-        ("attempt_status", pa.string()),
-        ("failure_stage", pa.string()),
-        ("failure_reason", pa.string()),
-        ("deep_replay_run_id", pa.string()),
-    ]
-)
-_TABLE_SCHEMAS: dict[str, Any] = {
-    "eligible_assets.parquet": _ELIGIBLE_SCHEMA,
-    "neighbors.parquet": _NEIGHBOR_SCHEMA,
-    "scout_trials.parquet": _SCOUT_SCHEMA,
-    "promotions.parquet": _PROMOTION_SCHEMA,
-    "replay_attempts.parquet": _REPLAY_SCHEMA,
-}
 
 
 def _canonical_json_bytes(payload: object) -> bytes:
@@ -250,7 +167,7 @@ def _eligible_table(records: tuple[EligibleAssetRecord, ...]) -> Any:
             key=lambda value: (value.venue, value.horizon.value, value.asset_id),
         )
     ]
-    return pa.Table.from_pylist(rows, schema=_ELIGIBLE_SCHEMA)
+    return pa.Table.from_pylist(rows, schema=ELIGIBLE_SCHEMA)
 
 
 def _neighbor_table(records: tuple[NeighborRecord, ...]) -> Any:
@@ -274,7 +191,7 @@ def _neighbor_table(records: tuple[NeighborRecord, ...]) -> Any:
             records, key=lambda value: (value.venue, value.horizon, value.pair_id)
         )
     ]
-    return pa.Table.from_pylist(rows, schema=_NEIGHBOR_SCHEMA)
+    return pa.Table.from_pylist(rows, schema=NEIGHBOR_SCHEMA)
 
 
 def _scout_table(records: tuple[ScoutTrialRecord, ...]) -> Any:
@@ -299,7 +216,7 @@ def _scout_table(records: tuple[ScoutTrialRecord, ...]) -> Any:
         }
         for item in sorted(records, key=lambda value: value.candidate_id)
     ]
-    return pa.Table.from_pylist(rows, schema=_SCOUT_SCHEMA)
+    return pa.Table.from_pylist(rows, schema=SCOUT_SCHEMA)
 
 
 def _promotion_table(records: tuple[PromotionRecord, ...]) -> Any:
@@ -312,14 +229,14 @@ def _promotion_table(records: tuple[PromotionRecord, ...]) -> Any:
             "automatic_selected": item.automatic_selected,
             "manual_selected": item.manual_selected,
             "selected_for_replay": item.selected_for_replay,
-            "direct_execution_instrument_id": None,
-            "deep_replay_run_id": None,
-            "deep_replay_status": None,
-            "economic_gate_status": None,
+            "direct_execution_instrument_id": item.direct_execution_instrument_id,
+            "deep_replay_run_id": item.deep_replay_run_id,
+            "deep_replay_status": item.deep_replay_status,
+            "economic_gate_status": item.economic_gate_status,
         }
         for item in sorted(records, key=lambda value: value.candidate_id)
     ]
-    return pa.Table.from_pylist(rows, schema=_PROMOTION_SCHEMA)
+    return pa.Table.from_pylist(rows, schema=PROMOTION_SCHEMA)
 
 
 def _attempt_table(records: tuple[ReplayAttemptRecord, ...]) -> Any:
@@ -336,7 +253,7 @@ def _attempt_table(records: tuple[ReplayAttemptRecord, ...]) -> Any:
         }
         for item in sorted(records, key=lambda value: value.attempt_id)
     ]
-    return pa.Table.from_pylist(rows, schema=_REPLAY_SCHEMA)
+    return pa.Table.from_pylist(rows, schema=REPLAY_SCHEMA)
 
 
 def write_scan_tables(
@@ -378,7 +295,7 @@ def _load_attempts(path: Path) -> tuple[ReplayAttemptRecord, ...]:
     if not path.is_file():
         raise ScanArtifactError("replay_attempts.parquet is missing")
     table = pq.read_table(path)
-    if not table.schema.equals(_REPLAY_SCHEMA):
+    if not table.schema.equals(REPLAY_SCHEMA):
         raise ScanArtifactError("replay attempt schema mismatch")
     return tuple(
         ReplayAttemptRecord(
@@ -433,7 +350,7 @@ def enumerate_replay_attempt(
     if not promotion_path.is_file():
         raise ScanArtifactError("persisted selected promotion is missing")
     promotion_table = pq.read_table(promotion_path)
-    if not promotion_table.schema.equals(_PROMOTION_SCHEMA):
+    if not promotion_table.schema.equals(PROMOTION_SCHEMA):
         raise ScanArtifactError("promotion table schema mismatch")
     persisted = [
         row
@@ -543,7 +460,7 @@ def _table_hash(table: Any) -> str:
 
 def _read_required_tables(generation: ScanArtifactGeneration) -> dict[str, Any]:
     tables: dict[str, Any] = {}
-    for name, schema in _TABLE_SCHEMAS.items():
+    for name, schema in TABLE_SCHEMAS.items():
         path = generation.staging_directory / name
         if not path.is_file():
             raise ScanArtifactError(f"required scanner table is missing: {name}")
@@ -595,6 +512,30 @@ def _reconcile(tables: dict[str, Any]) -> Counter[str]:
         raise ScanArtifactError("replay attempt candidate IDs must be unique")
     if set(selected_ids) != set(attempt_ids):
         raise ScanArtifactError("selected promotion lacks exactly one replay attempt")
+    attempts_by_candidate = {row["candidate_id"]: row for row in attempts}
+    for promotion in promotions:
+        outcome_fields = (
+            promotion["direct_execution_instrument_id"],
+            promotion["deep_replay_run_id"],
+            promotion["deep_replay_status"],
+            promotion["economic_gate_status"],
+        )
+        if not promotion["selected_for_replay"]:
+            if any(value is not None for value in outcome_fields):
+                raise ScanArtifactError("unselected promotion has replay outcome")
+            continue
+        attempt = attempts_by_candidate[promotion["candidate_id"]]
+        status = attempt["attempt_status"]
+        if (
+            promotion["deep_replay_status"] != status
+            or promotion["deep_replay_run_id"] != attempt["deep_replay_run_id"]
+        ):
+            raise ScanArtifactError("promotion replay outcome does not match attempt")
+        completed = status == ReplayAttemptStatus.COMPLETED.value
+        if completed != bool(promotion["economic_gate_status"]):
+            raise ScanArtifactError("promotion economic gate does not match attempt")
+        if completed and not promotion["direct_execution_instrument_id"]:
+            raise ScanArtifactError("completed promotion lacks direct instrument")
     statuses = Counter(str(row["attempt_status"]) for row in attempts)
     if statuses[ReplayAttemptStatus.ENUMERATED.value]:
         raise ScanArtifactError("enumerated replay attempt is not terminal")

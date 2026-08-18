@@ -24,6 +24,10 @@ class PromotionRecord:
     automatic_selected: bool
     manual_selected: bool
     selected_for_replay: bool
+    direct_execution_instrument_id: str | None = None
+    deep_replay_run_id: str | None = None
+    deep_replay_status: str | None = None
+    economic_gate_status: str | None = None
 
 
 def _canonical_rank_key(record: ScoutTrialRecord) -> tuple[object, ...]:

@@ -258,6 +258,53 @@ def test_catalog_semantic_identity_binds_sources_but_excludes_paths_and_order() 
     assert catalog_semantic_identity(baseline) != catalog_semantic_identity(changed)
 
 
+def test_scan_definition_allows_distinct_slices_from_same_dataset() -> None:
+    definition = ScanDefinition(
+        scanner_protocol_version=SCANNER_V1_SLICE1.protocol_id,
+        protocol_identity=protocol_identity(SCANNER_V1_SLICE1),
+        catalog_identity="c" * 64,
+        as_of=START + timedelta(hours=4),
+        eligible_information_end=START + timedelta(hours=4),
+        venues=("binance",),
+        horizons=(ScannerHorizon.SHORT,),
+        input_slices=(
+            ScanInputIdentity(
+                dataset_id="btc-1h",
+                source_artifact_fingerprint="a" * 64,
+                selection_slice_fingerprint="1" * 64,
+            ),
+            ScanInputIdentity(
+                dataset_id="btc-1h",
+                source_artifact_fingerprint="a" * 64,
+                selection_slice_fingerprint="2" * 64,
+            ),
+        ),
+        created_at=START,
+    )
+
+    assert len(definition.input_slices) == 2
+
+
+def test_scan_definition_rejects_duplicate_slice_identity() -> None:
+    duplicate = ScanInputIdentity(
+        dataset_id="btc-1h",
+        source_artifact_fingerprint="a" * 64,
+        selection_slice_fingerprint="1" * 64,
+    )
+    with pytest.raises(ValueError, match="input_slices must be unique"):
+        ScanDefinition(
+            scanner_protocol_version=SCANNER_V1_SLICE1.protocol_id,
+            protocol_identity=protocol_identity(SCANNER_V1_SLICE1),
+            catalog_identity="c" * 64,
+            as_of=START + timedelta(hours=4),
+            eligible_information_end=START + timedelta(hours=4),
+            venues=("binance",),
+            horizons=(ScannerHorizon.SHORT,),
+            input_slices=(duplicate, duplicate),
+            created_at=START,
+        )
+
+
 def test_scan_id_binds_slice_and_catalog_but_not_creation_time() -> None:
     evaluated = evaluate_series(
         _series(4),

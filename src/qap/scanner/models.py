@@ -8,7 +8,8 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
-from qap.scanner.protocol import ScannerHorizon
+from qap.portfolio import AssetId
+from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon
 
 _FINGERPRINT = re.compile(r"^[0-9a-f]{64}$")
 
@@ -35,6 +36,75 @@ def _utc(value: datetime, *, field: str) -> datetime:
 
 class _FrozenModel(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+
+class ScannerPinSpec(_FrozenModel):
+    venue: str
+    asset_a: str
+    asset_b: str
+    horizons: tuple[ScannerHorizon, ...]
+    forensic: bool
+
+    @field_validator("venue")
+    @classmethod
+    def validate_venue(cls, value: str) -> str:
+        normalized = _non_empty(value, field="venue").lower()
+        if normalized not in SCANNER_V1_SLICE1.venues:
+            raise ValueError("venue is not admitted by scanner-v1-s1")
+        return normalized
+
+    @field_validator("asset_a", "asset_b")
+    @classmethod
+    def validate_asset(cls, value: str) -> str:
+        return AssetId(value).key
+
+    @field_validator("horizons")
+    @classmethod
+    def validate_pin_horizons(
+        cls, values: tuple[ScannerHorizon, ...]
+    ) -> tuple[ScannerHorizon, ...]:
+        if not values:
+            raise ValueError("horizons must not be empty")
+        if len(set(values)) != len(values):
+            raise ValueError("horizons must not contain duplicates")
+        order = {
+            ScannerHorizon.SHORT: 0,
+            ScannerHorizon.MEDIUM: 1,
+            ScannerHorizon.SWING: 2,
+        }
+        return tuple(sorted(values, key=order.__getitem__))
+
+    @model_validator(mode="after")
+    def canonicalize_pair(self) -> Self:
+        if self.asset_a == self.asset_b:
+            raise ValueError("pin assets must be distinct")
+        first, second = sorted((self.asset_a, self.asset_b))
+        object.__setattr__(self, "asset_a", first)
+        object.__setattr__(self, "asset_b", second)
+        return self
+
+    def semantic_tokens(self) -> tuple[str, ...]:
+        mode = "forensic" if self.forensic else "official"
+        return tuple(
+            f"{self.venue}:{self.asset_a}/{self.asset_b}:{horizon.value}:{mode}"
+            for horizon in self.horizons
+        )
+
+
+class ScannerPinsFile(_FrozenModel):
+    schema_version: Literal["qap.scanner.pins.v1"]
+    pins: tuple[ScannerPinSpec, ...]
+
+    @model_validator(mode="after")
+    def validate_duplicates(self) -> Self:
+        seen: set[tuple[str, str, str, ScannerHorizon]] = set()
+        for pin in self.pins:
+            for horizon in pin.horizons:
+                identity = (pin.venue, pin.asset_a, pin.asset_b, horizon)
+                if identity in seen:
+                    raise ValueError("duplicate normalized pin for venue/pair/horizon")
+                seen.add(identity)
+        return self
 
 
 class ScanInputIdentity(_FrozenModel):
@@ -114,9 +184,16 @@ class ScanDefinition(_FrozenModel):
     def validate_cutoff(self) -> Self:
         if self.eligible_information_end > self.as_of:
             raise ValueError("eligible_information_end must not exceed as_of")
-        dataset_ids = tuple(item.dataset_id for item in self.input_slices)
-        if len(set(dataset_ids)) != len(dataset_ids):
-            raise ValueError("input_slices dataset_id values must be unique")
+        slice_identities = tuple(
+            (
+                item.dataset_id,
+                item.source_artifact_fingerprint,
+                item.selection_slice_fingerprint,
+            )
+            for item in self.input_slices
+        )
+        if len(set(slice_identities)) != len(slice_identities):
+            raise ValueError("input_slices must be unique exact slice identities")
         return self
 
     @property
@@ -133,7 +210,12 @@ class ScanDefinition(_FrozenModel):
             "input_slices": [
                 item.model_dump(mode="json")
                 for item in sorted(
-                    self.input_slices, key=lambda value: value.dataset_id
+                    self.input_slices,
+                    key=lambda value: (
+                        value.dataset_id,
+                        value.source_artifact_fingerprint,
+                        value.selection_slice_fingerprint,
+                    ),
                 )
             ],
             "manual_inputs": sorted(self.manual_inputs),
@@ -148,4 +230,9 @@ class ScanDefinition(_FrozenModel):
         return sha256(encoded).hexdigest()
 
 
-__all__ = ["ScanDefinition", "ScanInputIdentity"]
+__all__ = [
+    "ScanDefinition",
+    "ScanInputIdentity",
+    "ScannerPinSpec",
+    "ScannerPinsFile",
+]

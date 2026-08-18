@@ -236,6 +236,71 @@ def test_replay_attempt_is_durable_before_transition_and_updates_same_row(
     assert second[0]["failure_reason"] == "unsupported_direct_market"
 
 
+def test_publish_reconciles_completed_promotion_outcome_with_attempt(
+    tmp_path: Path,
+) -> None:
+    definition = _definition()
+    generation = start_scan_generation(tmp_path, definition)
+    promotion = replace(
+        _promotion(),
+        direct_execution_instrument_id="btc-eth-1h",
+        deep_replay_run_id="run-123",
+        deep_replay_status="completed",
+        economic_gate_status="deep_replay_rejected",
+    )
+    write_scan_tables(
+        generation,
+        eligible_assets=(_eligible(definition),),
+        neighbors=(_neighbor(definition),),
+        scout_trials=(_scout(definition),),
+        promotions=(promotion,),
+    )
+    attempt = enumerate_replay_attempt(generation, promotion)
+    transition_replay_attempt(
+        generation,
+        attempt.attempt_id,
+        status=ReplayAttemptStatus.COMPLETED,
+        deep_replay_run_id="run-123",
+    )
+
+    final_directory = publish_scan_generation(generation)
+
+    row = pq.read_table(final_directory / "promotions.parquet").to_pylist()[0]
+    assert row["direct_execution_instrument_id"] == "btc-eth-1h"
+    assert row["deep_replay_run_id"] == "run-123"
+    assert row["deep_replay_status"] == "completed"
+    assert row["economic_gate_status"] == "deep_replay_rejected"
+
+
+def test_publish_rejects_promotion_attempt_run_id_mismatch(tmp_path: Path) -> None:
+    definition = _definition()
+    generation = start_scan_generation(tmp_path, definition)
+    promotion = replace(
+        _promotion(),
+        direct_execution_instrument_id="btc-eth-1h",
+        deep_replay_run_id="promotion-run",
+        deep_replay_status="completed",
+        economic_gate_status="deep_replay_survivor",
+    )
+    write_scan_tables(
+        generation,
+        eligible_assets=(_eligible(definition),),
+        neighbors=(_neighbor(definition),),
+        scout_trials=(_scout(definition),),
+        promotions=(promotion,),
+    )
+    attempt = enumerate_replay_attempt(generation, promotion)
+    transition_replay_attempt(
+        generation,
+        attempt.attempt_id,
+        status=ReplayAttemptStatus.COMPLETED,
+        deep_replay_run_id="attempt-run",
+    )
+
+    with pytest.raises(ScanArtifactError, match="promotion replay outcome"):
+        publish_scan_generation(generation)
+
+
 def test_publish_rejects_frozen_source_or_slice_identity_not_bound_in_definition(
     tmp_path: Path,
 ) -> None:
@@ -274,6 +339,13 @@ def test_publish_reconciles_promotions_against_attempts_before_atomic_rename(
         status=ReplayAttemptStatus.SETUP_FAILED,
         failure_stage="direct_market_resolution",
         failure_reason="unsupported_direct_market",
+    )
+    write_scan_tables(
+        generation,
+        eligible_assets=(_eligible(definition),),
+        neighbors=(_neighbor(definition),),
+        scout_trials=(_scout(definition),),
+        promotions=(replace(_promotion(), deep_replay_status="setup_failed"),),
     )
     final_directory = publish_scan_generation(generation)
 
@@ -319,6 +391,19 @@ def test_completed_scan_is_immutable_and_duplicate_publication_is_rejected(
         status=ReplayAttemptStatus.REPLAY_FAILED,
         failure_stage="authoritative_replay",
         failure_reason="fixture_failure",
+    )
+    write_scan_tables(
+        generation,
+        eligible_assets=(_eligible(definition),),
+        neighbors=(_neighbor(definition),),
+        scout_trials=(_scout(definition),),
+        promotions=(
+            replace(
+                _promotion(),
+                direct_execution_instrument_id="btc-eth-1h",
+                deep_replay_status="replay_failed",
+            ),
+        ),
     )
     final_directory = publish_scan_generation(generation)
 
