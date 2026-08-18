@@ -13,7 +13,7 @@
 > **Implementation status — 2026-08-18**
 > **Slice 1:** complete and remediation-verified; results in `docs/research/2026-08-18-qap-scanner-slice1-results.md`.
 > **Slice 2:** complete and repository-verified at tested commit `dbc968a`; results in `docs/research/2026-08-18-qap-scanner-slice2-results.md`.
-> **Slice 3:** not started. It remains a hard separate design/approval gate and is not authorized by Slice-1/Slice-2 completion.
+> **Slice 3:** detailed design and implementation plan are now present in the repository; implementation remains a hard separate user-approval gate and is not authorized merely by Slice-1/Slice-2 completion or by the existence of those documents.
 
 ## 1. Authoritative slice map
 
@@ -27,10 +27,11 @@ Slice 2 — prospective evidence + liquidity qualification
   docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md
 
 Slice 3 — broad asset-native momentum + manual basket workbench
-  future design spec after Slice 2 review/implementation evidence
+  docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-design.md
+  docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md
 ```
 
-Do not implement Slice 3 merely because this umbrella plan describes its intended boundary.
+Do not implement Slice 3 merely because this umbrella plan or the new detailed documents exist. Begin implementation only after the user explicitly approves the Slice-3 design and implementation plan.
 
 ## 2. Global constraints
 
@@ -115,21 +116,26 @@ The Slice-2 spec owns:
 
 Prospective evidence does not grant live authority.
 
-## 6. Slice 3 — future basket and broader discovery surface
+## 6. Slice 3 — designed basket and broader discovery surface
 
-Slice 3 requires a separate approved design after Slice-2 evidence. Its intended boundary is:
+The detailed Slice-3 design is now `docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-design.md`, with its file/task plan at `docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md`. Those documents are the detailed authority if this umbrella summary is less specific. Implementation still requires explicit user approval.
 
-- broad **asset-native** relative momentum/trend discovery, computed per asset rather than converted into pairwise NxM work;
-- manual 3–6 asset basket construction from scanner/pinned assets;
-- one active opinion per unordered pair/horizon;
-- ternary `{-1, 0, +1}` pair preferences initially;
-- fixed/equal edge contribution rather than learned historical-quality weights;
-- degree-normalized/component-neutral deterministic aggregation;
-- one feasible long-only target vector;
-- one authoritative QAP portfolio replay;
-- scanner API and Candidate Workbench projections only after backend contracts are proven.
+The frozen Scanner-V1 boundary is now:
 
-Do not implement automatic graph-to-basket discovery, a portfolio optimizer, learned reliability weights, or cross-horizon authority weighting in Scanner V1.
+- broad **asset-native** relative momentum using one O(N) formation rule per horizon, never pairwise NxM momentum search;
+- manual same-venue 3–6 asset baskets only;
+- one source scan, one horizon, and one decision resolution per basket;
+- at most one explicitly selected `candidate_id` per unordered pair;
+- stateful ternary `{-1, 0, +1}` pair preferences that preserve the existing Slice-1 neutral/hold/entry hysteresis;
+- equal edge contribution with exact incidence-pressure -> declared-degree normalization -> component centering -> fixed ±10pp asset-tilt resolution;
+- equal-weight neutral economic allocation and USDT as execution-only bridge;
+- one feasible long-only target vector owned by `qap.policy`;
+- one authoritative QAP portfolio replay through the existing Phase-11 multi-asset executor;
+- matched HODL, the frozen mechanical band control, and a pair-blind relative-momentum control under the same timing/cost path;
+- pair-level Slice-2 evidence visible beside basket edges but never algebraically converted into basket capacity or prospective status;
+- read-only scanner API/Candidate Workbench projections only after backend contracts are proven.
+
+Do not implement automatic graph-to-basket discovery, a portfolio optimizer, learned reliability weights, momentum/reversal routing, cross-horizon authority weighting, cross-venue shared inventory, or basket-level `tradable_now` in Scanner V1.
 
 ## 7. Core artifact families
 
@@ -250,17 +256,17 @@ Frontend/E2E coverage is deferred until a scanner workbench is actually admitted
 
 Phase 15 is complete only when all approved scanner slices have reached their own exit criteria. At minimum the completed program must demonstrate:
 
-- [ ] bounded deterministic pair discovery with exact provenance;
-- [ ] fixed automatic deep-replay budget independent of universe size;
-- [ ] existing QAP remains sole financial authority;
-- [ ] historical search cannot be mislabeled prospective or final OOS;
-- [ ] forward candidate evidence is frozen before outcomes arrive;
-- [ ] liquidity/capacity claims are backed by captured market evidence or fail closed;
-- [ ] historical missing depth is not retroactively fabricated;
-- [ ] broad momentum, if admitted, is asset-native rather than pairwise NxM;
-- [ ] user-selected basket research produces one long-only QAP target/inventory;
-- [ ] negative/no-survivor research generations remain valid outcomes;
-- [ ] no live/deployment authority is introduced.
+- [x] bounded deterministic pair discovery with exact provenance;
+- [x] fixed automatic deep-replay budget independent of universe size;
+- [x] existing QAP remains sole financial authority through Slices 1–2;
+- [x] historical search cannot be mislabeled prospective or final OOS;
+- [x] forward candidate evidence is frozen before outcomes arrive;
+- [x] liquidity/capacity claims are backed by captured market evidence or fail closed;
+- [x] historical missing depth is not retroactively fabricated;
+- [ ] broad momentum is implemented asset-native rather than pairwise NxM;
+- [ ] user-selected basket research produces one long-only QAP target/inventory through the approved Slice-3 resolver;
+- [x] negative/no-survivor research generations remain valid outcomes;
+- [x] no live/deployment authority has been introduced through Slices 1–2.
 
 ## 13. Stop conditions
 

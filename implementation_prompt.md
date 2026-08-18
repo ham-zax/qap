@@ -15,12 +15,15 @@ Trigger: user approval of the bounded Scanner-V1 architecture, Slice 1 correctio
 Slice 2 prospective/liquidity design, and Phase-15 reconciliation.
 Purpose: authorize the implementation mission to execute the new scanner slices in
 dependency order without reverting to the earlier generic NxM scanner concept.
-Impact: Phases 14 and 15 are now explicit mission scope. Slice 1 and Slice 2 are
-approved for implementation. Slice 3 remains a separate design gate and must not be
-invented from the umbrella plan.
+Impact: Phases 14 and 15 are explicit mission scope. Slice 1 and Slice 2 are now
+complete. Slice 3 has a detailed design and implementation plan in the repository,
+but implementation remains separately gated until the user explicitly approves
+those documents; do not treat documentation existence as implementation authority.
 Evidence: docs/plans/15-research-scanner-and-candidate-workbench.md;
 docs/superpowers/specs/2026-08-18-qap-scanner-slice1-design.md;
-docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md.
+docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md;
+docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-design.md;
+docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md.
 
 Steering override — 2026-08-18: this mission uses no delegated/external coding or
 review model. Do not invoke Codex, subagents, reviewer agents, second-opinion models,
@@ -215,8 +218,8 @@ Start with a bounded orientation pass:
    - `docs/plans/15-research-scanner-and-candidate-workbench.md`;
    - `docs/superpowers/specs/2026-08-18-qap-scanner-slice1-design.md`;
    - `docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md`;
-   - any later user-approved Slice-3 design/implementation plan actually present in
-     the repository.
+   - `docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-design.md` when Slice 3 is in scope;
+   - `docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md` when Slice 3 is in scope, while separately verifying that explicit user approval exists before implementation.
 8. Cross-phase decision/research/OSS records referenced by that phase.
 9. Existing implementation/tests/artifacts produced by previous work.
 
@@ -288,16 +291,19 @@ Phase 15 is implemented as approved slices above the existing QAP economic kerne
 The scanner is candidate-production/research orchestration. It is never a second
 backtester, ledger, execution authority, HODL calculator, or portfolio owner.
 
-The currently approved execution sequence is:
+The current Phase-15 sequence is:
 
     Phase 14 exit green
-      -> Slice 1 implementation plan if absent
       -> Slice 1 implementation + verification
-      -> Slice 2 implementation plan if absent
       -> Slice 2 implementation + verification
-      -> Slice 3 design gate
-      -> Slice 3 implementation only after a user-approved design/plan exists
+      -> Slice 3 detailed design + implementation-plan review
+      -> explicit user approval of those Slice-3 documents
+      -> Slice 3 implementation + verification
       -> integrated Phase-15 exit verification
+
+Slices 1 and 2 are already complete in the current repository history. The presence
+of the Slice-3 design/plan satisfies the documentation prerequisite only; it does
+not satisfy the explicit approval step.
 
 The user's 2026-08-18 instruction explicitly authorizes implementation of the
 approved Slice-1 and Slice-2 designs. Their earlier header text saying that
@@ -401,19 +407,22 @@ Slice 3 / Phase-15 completion gate
 ------------------------------
 
 Slice 3 is intentionally NOT authorized from the Phase-15 umbrella description
-alone. Its current intended future boundary is asset-native momentum plus manual
-3-6 asset basket research with one deterministic long-only combined target and one
-QAP inventory.
+or from document existence alone. The detailed authority is now present at:
 
-Before implementing Slice 3, require a user-approved detailed design/implementation
-plan actually present in the repository. Do not infer missing mathematical,
-portfolio-resolution, API, or UI semantics from the umbrella plan. If Phase 15
-reaches this point before that approval exists, checkpoint completed Slice-1/2 work
-and stop for the smallest missing design authorization.
+- docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-design.md
+- docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md
 
-Once an approved Slice-3 spec exists, implement it in the same mission and then run
-the integrated Phase-15 exit criteria. A negative/no-survivor scanner result is a
-valid research outcome; never loosen rules to force a candidate.
+Those documents freeze the O(N) asset-native momentum stream, manual same-venue
+3-6 asset BasketDefinition, exact ternary graph resolver, pair-blind momentum
+control, ordinary-QAP multi-fill/multi-asset replay integration, and read-only
+Candidate Workbench boundaries. They also explicitly defer automatic basket
+discovery, learned weights, cross-venue inventory, basket capacity, and live action.
+
+Before implementing Slice 3, require explicit user approval of the detailed design
+and implementation plan. Do not infer authorization merely because both files are
+present. Once that approval exists, implement the plan in the same mission and then
+run the integrated Phase-15 exit criteria. A negative/no-survivor scanner or basket
+result is valid research evidence; never loosen rules to force a candidate.
 
 
 ======================================================================
@@ -1385,8 +1394,9 @@ The mission is complete only when ALL of the following are true:
 7. Planned backend/frontend integration works locally, including the Phase-14
    critical workbench flows and the Phase-15 bounded scanner/candidate workflow.
    Phase 15 must include verified Slice-1 bounded discovery and Slice-2 prospective/
-   liquidity behavior, plus Slice 3 only after its separately approved design is
-   present and implemented.
+   liquidity behavior. Slice 3 may be implemented only after the user explicitly
+   approves the now-present detailed design and implementation plan; Phase 15 closes
+   only after that approved Slice-3 implementation is verified.
 
 8. Agent-browser product inspection has been performed when applicable and material
    UI/integration defects found there have been addressed or documented.
