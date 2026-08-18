@@ -6,7 +6,7 @@ from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from pathlib import Path
-from typing import Protocol, cast
+from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
@@ -358,7 +358,6 @@ def _prepare_inputs(
                 dataset_id=source.dataset_id,
                 eligible_information_end=as_of,
                 lookback=lookback,
-                source_artifact_fingerprint=admitted.source_artifact_fingerprint,
             )
             evaluated_cache[key] = item
         return item
