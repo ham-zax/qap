@@ -19,6 +19,7 @@ from qap.artifact_integrity import (
     INTEGRITY_FILE,
     ArtifactIntegrity,
     build_integrity_record,
+    read_and_validate_integrity,
 )
 from qap.scanner.prospective import ForwardCheckpoint, ForwardCohort, ForwardOutcome
 from qap.scanner.prospective_artifact_schemas import (
@@ -27,6 +28,7 @@ from qap.scanner.prospective_artifact_schemas import (
     CHECKPOINT_SCHEMA,
     CHECKPOINT_TABLE,
     CHECKPOINTS_INDEX,
+    COHORT_AUTHORITATIVE_FILES,
     COHORT_DEFINITION,
     FREEZE_SCHEMA,
     FREEZES_TABLE,
@@ -178,11 +180,34 @@ def _freeze_table(cohort: ForwardCohort) -> Any:
     return pa.Table.from_pylist(rows, schema=FREEZE_SCHEMA)
 
 
+def _write_cohort_integrity(root: Path, *, cohort_id: str) -> ArtifactIntegrity:
+    record = build_integrity_record(
+        root,
+        artifact_id=cohort_id,
+        file_names=tuple(sorted(COHORT_AUTHORITATIVE_FILES)),
+    )
+    _atomic_write_bytes(
+        root / INTEGRITY_FILE,
+        (record.model_dump_json(indent=2) + "\n").encode("utf-8"),
+    )
+    return record
+
+
 def _verify_cohort_root(root: Path, cohort: ForwardCohort) -> None:
+    valid_names = {cohort.cohort_id, f"{cohort.cohort_id}.partial"}
+    if root.name not in valid_names:
+        raise ProspectiveArtifactError("cohort directory identity mismatch")
+    try:
+        read_and_validate_integrity(
+            root,
+            artifact_id=cohort.cohort_id,
+            required_files=COHORT_AUTHORITATIVE_FILES,
+            allowed_files=COHORT_AUTHORITATIVE_FILES,
+        )
+    except ValueError as exc:
+        raise ProspectiveArtifactError(str(exc)) from exc
     definition = root / COHORT_DEFINITION
     freezes = root / FREEZES_TABLE
-    if not definition.is_file() or not freezes.is_file():
-        raise ProspectiveArtifactError("cohort definition is incomplete")
     if definition.read_bytes() != _json_bytes(_cohort_payload(cohort)):
         raise ProspectiveArtifactError(
             "cohort definition does not match frozen identity"
@@ -191,6 +216,8 @@ def _verify_cohort_root(root: Path, cohort: ForwardCohort) -> None:
         raise ProspectiveArtifactError(
             "cohort freeze table does not match frozen identity"
         )
+    _read_table(root / CHECKPOINTS_INDEX, CHECKPOINT_SCHEMA)
+    _read_table(root / OUTCOMES_INDEX, OUTCOME_INDEX_SCHEMA)
 
 
 def start_forward_cohort(
@@ -223,7 +250,18 @@ def start_forward_cohort(
             _json_bytes(_cohort_payload(cohort)),
         )
         _write_table(staging / FREEZES_TABLE, _freeze_table(cohort))
+        _write_table(
+            staging / CHECKPOINTS_INDEX,
+            pa.Table.from_pylist([], schema=CHECKPOINT_SCHEMA),
+        )
+        _write_table(
+            staging / OUTCOMES_INDEX,
+            pa.Table.from_pylist([], schema=OUTCOME_INDEX_SCHEMA),
+        )
+        _write_cohort_integrity(staging, cohort_id=cohort.cohort_id)
+        _verify_cohort_root(staging, cohort)
         os.replace(staging, final)
+        _verify_cohort_root(final, cohort)
     except BaseException:
         if staging.exists():
             for path in staging.iterdir():
@@ -242,6 +280,30 @@ def _load_cohort_payload(root: Path) -> dict[str, object]:
     if not isinstance(payload, dict):
         raise ProspectiveArtifactError("cohort definition is malformed")
     return payload
+
+
+def read_forward_cohort(cohort_root: str | Path) -> ForwardCohort:
+    """Read and reconcile one completed immutable forward cohort definition."""
+
+    root = Path(cohort_root).resolve()
+    payload = dict(_load_cohort_payload(root))
+    declared_id = payload.pop("cohort_id", None)
+    declared_candidates = payload.pop("candidate_ids", None)
+    declared_freezes = payload.pop("checkpoint_freeze_ids", None)
+    try:
+        cohort = ForwardCohort.model_validate_json(
+            json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        )
+    except ValueError as exc:
+        raise ProspectiveArtifactError("cohort definition is malformed") from exc
+    if (
+        declared_id != cohort.cohort_id
+        or declared_candidates != list(cohort.candidate_ids)
+        or declared_freezes != list(cohort.candidate_freeze_ids)
+    ):
+        raise ProspectiveArtifactError("cohort derived identity does not reconcile")
+    _verify_cohort_root(root, cohort)
+    return cohort
 
 
 def _checkpoint_row(checkpoint: ForwardCheckpoint) -> dict[str, object]:
@@ -275,18 +337,20 @@ def start_checkpoint(
     """Create or resume one immutable checkpoint staging generation."""
 
     root = Path(cohort_root).resolve()
-    payload = _load_cohort_payload(root)
-    if payload.get("cohort_id") != checkpoint.cohort_id:
+    cohort = read_forward_cohort(root)
+    if cohort.cohort_id != checkpoint.cohort_id:
         raise ProspectiveArtifactError("checkpoint cohort identity mismatch")
-    freeze_ids = payload.get("checkpoint_freeze_ids")
-    if not isinstance(freeze_ids, list) or checkpoint.freeze_id not in freeze_ids:
-        raise ProspectiveArtifactError("checkpoint freeze is not owned by cohort")
-    freeze_rows = _read_table(root / FREEZES_TABLE, FREEZE_SCHEMA).to_pylist()
-    freeze_row = next(
-        (row for row in freeze_rows if row["freeze_id"] == checkpoint.freeze_id),
+    freeze = next(
+        (
+            item
+            for item in cohort.candidate_freezes
+            if item.freeze_id == checkpoint.freeze_id
+        ),
         None,
     )
-    if freeze_row is None or freeze_row["candidate_id"] != checkpoint.candidate_id:
+    if freeze is None:
+        raise ProspectiveArtifactError("checkpoint freeze is not owned by cohort")
+    if freeze.candidate_id != checkpoint.candidate_id:
         raise ProspectiveArtifactError("checkpoint candidate/freeze lineage mismatch")
     completed_indices = [
         manifest["checkpoint_index"]
@@ -441,6 +505,7 @@ def _write_integrity(directory: Path, *, checkpoint_id: str) -> ArtifactIntegrit
 
 
 def _rebuild_indices(cohort_root: Path) -> None:
+    cohort = read_forward_cohort(cohort_root)
     checkpoint_rows: list[dict[str, object]] = []
     outcome_rows: list[dict[str, object]] = []
     for directory in completed_generation_dirs(cohort_root):
@@ -479,6 +544,8 @@ def _rebuild_indices(cohort_root: Path) -> None:
         cohort_root / OUTCOMES_INDEX,
         pa.Table.from_pylist(outcome_rows, schema=OUTCOME_INDEX_SCHEMA),
     )
+    _write_cohort_integrity(cohort_root, cohort_id=cohort.cohort_id)
+    _verify_cohort_root(cohort_root, cohort)
 
 
 def publish_checkpoint(generation: ForwardCheckpointGeneration) -> Path:
@@ -535,6 +602,7 @@ __all__ = [
     "ForwardCheckpointGeneration",
     "publish_checkpoint",
     "read_completed_checkpoints",
+    "read_forward_cohort",
     "start_checkpoint",
     "start_forward_cohort",
     "write_checkpoint_evidence",

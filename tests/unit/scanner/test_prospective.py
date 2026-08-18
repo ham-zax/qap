@@ -214,7 +214,22 @@ def test_checkpoint_is_strictly_forward_and_binds_exact_boundaries() -> None:
         }
     )
 
+    changed_source = checkpoint.model_copy(
+        update={
+            "forward_slices": (
+                checkpoint.forward_slices[0].model_copy(
+                    update={"source_artifact_fingerprint": "9" * 64}
+                ),
+            )
+        }
+    )
+    changed_selection = checkpoint.model_copy(
+        update={"forward_slices": (_slice("8" * 64),)}
+    )
+
     assert checkpoint.checkpoint_id == later_created.checkpoint_id
+    assert checkpoint.checkpoint_id == changed_source.checkpoint_id
+    assert checkpoint.checkpoint_id != changed_selection.checkpoint_id
     assert checkpoint.checkpoint_id != changed_start.checkpoint_id
 
     with pytest.raises(ValueError, match="strictly after freeze_at"):

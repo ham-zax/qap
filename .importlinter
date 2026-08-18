@@ -54,6 +54,7 @@ forbidden_modules =
     qap.experiment
 ignore_imports =
     qap.scanner.cli -> qap.scanner_entry
+    qap.scanner.forward_cli -> qap.scanner_entry
 
 [importlinter:qap_financial_core_no_scanner]
 name = Financial core never depends on scanner
@@ -77,3 +78,4 @@ forbidden_modules =
     qap.scanner
 ignore_imports =
     qap.experiment.scanner_adapter -> qap.scanner.**
+    qap.experiment.prospective_scanner_adapter -> qap.scanner.**

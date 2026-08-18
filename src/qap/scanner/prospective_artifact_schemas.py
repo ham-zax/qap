@@ -13,6 +13,14 @@ LIQUIDITY_TABLE = "liquidity.parquet"
 OUTCOME_FILE = "outcome.json"
 MANIFEST = "manifest.json"
 CHECKPOINT_DIRECTORY = "checkpoint-generations"
+COHORT_AUTHORITATIVE_FILES = frozenset(
+    {
+        COHORT_DEFINITION,
+        FREEZES_TABLE,
+        CHECKPOINTS_INDEX,
+        OUTCOMES_INDEX,
+    }
+)
 CHECKPOINT_AUTHORITATIVE_FILES = frozenset(
     {
         CHECKPOINT_TABLE,
@@ -111,6 +119,7 @@ OUTCOME_INDEX_SCHEMA = pa.schema(
 
 __all__ = [
     "CHECKPOINT_AUTHORITATIVE_FILES",
+    "COHORT_AUTHORITATIVE_FILES",
     "CHECKPOINT_DIRECTORY",
     "CHECKPOINT_SCHEMA",
     "CHECKPOINT_TABLE",

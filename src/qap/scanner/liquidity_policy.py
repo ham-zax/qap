@@ -275,16 +275,38 @@ def _evaluate_snapshot_set(
     *,
     side: BookSide,
     quote_notional: Decimal,
+    maximum_base_quantity: Decimal | None,
 ) -> DirectionalC95Result:
     fee_bps = SCANNER_V1_SLICE1.cost_policy.adverse_fee_bps
-    evidence = tuple(
-        friction_evidence(
-            walk_quote_notional(snapshot, side=side, quote_notional=quote_notional),
-            fee_bps=fee_bps,
+    rows: list[FrictionEvidence] = []
+    for snapshot in snapshots:
+        walk = walk_quote_notional(
+            snapshot,
+            side=side,
+            quote_notional=quote_notional,
         )
-        for snapshot in snapshots
+        if (
+            maximum_base_quantity is not None
+            and walk.base_quantity > maximum_base_quantity
+        ):
+            rows.append(
+                FrictionEvidence(
+                    snapshot_id=walk.snapshot_id,
+                    side=side,
+                    quote_notional_requested=quote_notional,
+                    fillable=False,
+                    fee_bps=fee_bps,
+                    book_price_impact_bps=None,
+                    total_friction_bps=None,
+                )
+            )
+            continue
+        rows.append(friction_evidence(walk, fee_bps=fee_bps))
+    return evaluate_directional_c95(
+        tuple(rows),
+        side=side,
+        quote_notional=quote_notional,
     )
-    return evaluate_directional_c95(evidence, side=side, quote_notional=quote_notional)
 
 
 def find_directional_safe_size(
@@ -313,8 +335,8 @@ def find_directional_safe_size(
         )
         if value is not None
     )
-    if quantity_limits:
-        maximum_quantity = min(quantity_limits)
+    maximum_quantity = min(quantity_limits) if quantity_limits else None
+    if maximum_quantity is not None:
         upper = min(
             upper,
             *(exact_multiply(book_mid_price(item), maximum_quantity) for item in books),
@@ -330,7 +352,12 @@ def find_directional_safe_size(
     evaluations: list[DirectionalC95Result] = []
 
     def evaluate(size: Decimal) -> DirectionalC95Result:
-        result = _evaluate_snapshot_set(books, side=side, quote_notional=size)
+        result = _evaluate_snapshot_set(
+            books,
+            side=side,
+            quote_notional=size,
+            maximum_base_quantity=maximum_quantity,
+        )
         evaluations.append(result)
         return result
 

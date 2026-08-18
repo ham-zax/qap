@@ -8,6 +8,10 @@ from pathlib import Path
 from qap.experiment.artifacts import read_run_artifacts
 from qap.experiment.dataset_seals import validate_expected_fingerprints_for_role
 from qap.experiment.manifest import DataRole
+from qap.experiment.prospective_scanner_adapter import (
+    run_prospective_checkpoint,
+    run_prospective_qualification,
+)
 from qap.experiment.scanner_adapter import run_scanner_candidate_replay
 from qap.scanner.artifacts import (
     ReplayAttemptRecord,
@@ -16,7 +20,17 @@ from qap.scanner.artifacts import (
 )
 from qap.scanner.catalog import ScannerCatalog
 from qap.scanner.models import ScannerPinSpec
+from qap.scanner.prospective import CandidateFreeze, ForwardCheckpoint
+from qap.scanner.prospective_run import (
+    HistoricalReplayTemplate,
+    advance_forward_cohort,
+    freeze_completed_scan,
+)
 from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon, ScannerProtocol
+from qap.scanner.qualification_run import (
+    ForwardQapState,
+    qualify_forward_checkpoint,
+)
 from qap.scanner.run import ReplayReference, ScanRunResult, run_scan
 from qap.scanner.trials import ScannerTrial
 
@@ -127,6 +141,203 @@ class _QapReplayService:
         )
 
 
+def _historical_replay_template(
+    deep_replay_run_id: str,
+    run_root: Path,
+) -> HistoricalReplayTemplate:
+    loaded = read_run_artifacts(run_root / deep_replay_run_id)
+    manifest = loaded.manifest
+    evidence_ids = set(manifest.evidence_instrument_ids)
+    evidence_sources = tuple(
+        sorted(
+            (
+                source.dataset_id,
+                source.expected_semantic_fingerprint,
+            )
+            for source in manifest.data_sources
+            if source.instrument_id in evidence_ids
+        )
+    )
+    if len(evidence_sources) != 2:
+        raise RuntimeError("historical survivor must have exactly two evidence legs")
+    config = manifest.relationship.config
+    window_bars = config.get("window_bars")
+    minimum_observations = config.get("min_observations")
+    if not isinstance(window_bars, int) or not isinstance(minimum_observations, int):
+        raise RuntimeError("historical survivor model parameters are incomplete")
+    return HistoricalReplayTemplate(
+        evidence_sources=evidence_sources,
+        data_source_dataset_ids=tuple(
+            source.dataset_id for source in manifest.data_sources
+        ),
+        model_parameters=(
+            ("min_observations", str(minimum_observations)),
+            ("window_bars", str(window_bars)),
+        ),
+    )
+
+
+def _forward_qap_state(run_id: str, run_root: Path) -> ForwardQapState:
+    loaded = read_run_artifacts(run_root / run_id)
+    direct_id = loaded.manifest.execution.execution_instrument_id
+    instrument = next(
+        (
+            item
+            for item in loaded.manifest.instruments
+            if item.instrument_id == direct_id
+        ),
+        None,
+    )
+    source = next(
+        (
+            item
+            for item in loaded.manifest.data_sources
+            if item.instrument_id == direct_id
+        ),
+        None,
+    )
+    if instrument is None or source is None:
+        raise RuntimeError("forward QAP direct-market lineage is incomplete")
+    strategy = loaded.result.role("strategy")
+    try:
+        base_quantity = strategy.terminal_quantities[instrument.base_asset]
+        quote_quantity = strategy.terminal_quantities[instrument.quote_asset]
+    except KeyError as exc:
+        raise RuntimeError("forward QAP terminal holdings are incomplete") from exc
+    return ForwardQapState(
+        direct_dataset_id=source.dataset_id,
+        instrument=instrument.to_domain(),
+        base_quantity=base_quantity,
+        quote_quantity=quote_quantity,
+    )
+
+
+def freeze_scan_with_qap(
+    *,
+    run_root: str | Path,
+    data_root: str | Path,
+    prospective_root: str | Path,
+    scan_id: str,
+    horizon: ScannerHorizon,
+    freeze_at: datetime,
+) -> Path:
+    """Freeze completed scanner survivors while reading QAP lineage externally."""
+
+    return freeze_completed_scan(
+        run_root=run_root,
+        data_root=data_root,
+        prospective_root=prospective_root,
+        scan_id=scan_id,
+        horizon=horizon,
+        freeze_at=freeze_at,
+        load_historical_template=_historical_replay_template,
+    )
+
+
+def advance_forward_with_qap(
+    *,
+    cohort_root: str | Path,
+    catalog: ScannerCatalog,
+    data_root: str | Path,
+    run_root: str | Path,
+    through: datetime,
+    repository_root: str | Path | None = None,
+    run_timestamp: datetime | None = None,
+) -> tuple[Path, ...]:
+    """Advance one scanner cohort through the ordinary QAP prospective adapter."""
+
+    repository = (
+        Path.cwd().resolve()
+        if repository_root is None
+        else Path(repository_root).resolve()
+    )
+
+    def run_checkpoint(
+        freeze: CandidateFreeze,
+        checkpoint: ForwardCheckpoint,
+        current_catalog: ScannerCatalog,
+        current_data_root: Path,
+        current_run_root: Path,
+        timestamp: datetime | None,
+    ):
+        return run_prospective_checkpoint(
+            freeze,
+            checkpoint,
+            data_root=current_data_root,
+            repository_root=repository,
+            run_root=current_run_root,
+            catalog=current_catalog,
+            run_timestamp=timestamp,
+        )
+
+    return advance_forward_cohort(
+        cohort_root=cohort_root,
+        catalog=catalog,
+        data_root=data_root,
+        run_root=run_root,
+        through=through,
+        load_historical_template=_historical_replay_template,
+        run_checkpoint=run_checkpoint,
+        run_timestamp=run_timestamp,
+    )
+
+
+def qualify_forward_with_qap(
+    *,
+    cohort_root: str | Path,
+    checkpoint_id: str,
+    requested_capital: Decimal,
+    catalog: ScannerCatalog,
+    data_root: str | Path,
+    capture_root: str | Path,
+    run_root: str | Path,
+    repository_root: str | Path | None = None,
+    run_timestamp: datetime | None = None,
+) -> Path:
+    """Qualify explicit capital while delegating economics to ordinary QAP."""
+
+    repository = (
+        Path.cwd().resolve()
+        if repository_root is None
+        else Path(repository_root).resolve()
+    )
+
+    def run_qualification(
+        freeze: CandidateFreeze,
+        checkpoint: ForwardCheckpoint,
+        capital: Decimal,
+        slippage_bps: Decimal,
+        current_catalog: ScannerCatalog,
+        current_data_root: Path,
+        current_run_root: Path,
+        timestamp: datetime | None,
+    ) -> tuple[str, bool, bool]:
+        return run_prospective_qualification(
+            freeze,
+            checkpoint,
+            requested_capital=capital,
+            empirical_slippage_bps=slippage_bps,
+            data_root=current_data_root,
+            repository_root=repository,
+            run_root=current_run_root,
+            catalog=current_catalog,
+            run_timestamp=timestamp,
+        )
+
+    return qualify_forward_checkpoint(
+        cohort_root=cohort_root,
+        checkpoint_id=checkpoint_id,
+        requested_capital=requested_capital,
+        catalog=catalog,
+        data_root=data_root,
+        capture_root=capture_root,
+        run_root=run_root,
+        load_qap_state=_forward_qap_state,
+        run_qualification=run_qualification,
+        run_timestamp=run_timestamp,
+    )
+
+
 def run_scan_with_qap(
     *,
     as_of: datetime,
@@ -158,4 +369,9 @@ def run_scan_with_qap(
     )
 
 
-__all__ = ["run_scan_with_qap"]
+__all__ = [
+    "advance_forward_with_qap",
+    "freeze_scan_with_qap",
+    "qualify_forward_with_qap",
+    "run_scan_with_qap",
+]

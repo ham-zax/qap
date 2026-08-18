@@ -76,7 +76,7 @@ class QualificationRequest:
     prospective_protocol_version: str
     prospective_protocol_identity: str
     capture_snapshot_ids: tuple[str, ...]
-    market_metadata_fingerprint: str
+    market_metadata_fingerprint: str | None
     eligibility_resolved: bool
     capture_contract_satisfied: bool
     current_two_way_trading: bool
@@ -118,12 +118,18 @@ class QualificationRequest:
                 field="prospective_protocol_identity",
             ),
         )
+        metadata_fingerprint = (
+            None
+            if self.market_metadata_fingerprint is None
+            else _identity(
+                self.market_metadata_fingerprint,
+                field="market_metadata_fingerprint",
+            )
+        )
         object.__setattr__(
             self,
             "market_metadata_fingerprint",
-            _identity(
-                self.market_metadata_fingerprint, field="market_metadata_fingerprint"
-            ),
+            metadata_fingerprint,
         )
         snapshots = tuple(
             _identity(item, field="capture_snapshot_id")
@@ -131,9 +137,11 @@ class QualificationRequest:
         )
         if len(set(snapshots)) != len(snapshots):
             raise ValueError("capture_snapshot_ids must be unique")
-        if self.capture_contract_satisfied and not snapshots:
+        if self.capture_contract_satisfied and (
+            not snapshots or metadata_fingerprint is None
+        ):
             raise ValueError(
-                "satisfied capture contract requires captured snapshot evidence"
+                "satisfied capture contract requires snapshot and metadata evidence"
             )
         object.__setattr__(self, "capture_snapshot_ids", snapshots)
         ceiling = (

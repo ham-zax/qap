@@ -549,7 +549,7 @@ class ForwardCheckpoint(_FrozenModel):
     @property
     def checkpoint_id(self) -> str:
         payload = {
-            "identity_version": "qap.scanner.forward-checkpoint-identity.v1",
+            "identity_version": "qap.scanner.forward-checkpoint-identity.v2",
             "cohort_id": self.cohort_id,
             "candidate_id": self.candidate_id,
             "freeze_id": self.freeze_id,
@@ -562,7 +562,17 @@ class ForwardCheckpoint(_FrozenModel):
             "evidence_window_end": self.evidence_window_end.isoformat(),
             "information_end": self.information_end.isoformat(),
             "forward_slices": [
-                item.model_dump(mode="json") for item in self.forward_slices
+                {
+                    "dataset_id": item.dataset_id,
+                    "selection_slice_fingerprint": item.selection_slice_fingerprint,
+                }
+                for item in sorted(
+                    self.forward_slices,
+                    key=lambda value: (
+                        value.dataset_id,
+                        value.selection_slice_fingerprint,
+                    ),
+                )
             ],
             "evidence_role": self.evidence_role,
             "prospective_protocol_version": self.prospective_protocol_version,

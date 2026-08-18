@@ -443,6 +443,12 @@ class BinancePublicAdapter:
             )
         item = matches[0]
         filters = _as_list(item.get("filters"), field="symbol filters")
+        status = _as_string(item.get("status"), field="symbol status")
+        if not _as_bool(
+            item.get("isSpotTradingAllowed"),
+            field="isSpotTradingAllowed",
+        ):
+            status = f"{status}_SPOT_DISABLED"
         price_filter = _filter(filters, filter_type="PRICE_FILTER", required=True)
         lot_filter = _filter(filters, filter_type="LOT_SIZE", required=True)
         market_lot_filter = _filter(
@@ -502,7 +508,7 @@ class BinancePublicAdapter:
         try:
             return MarketMetadata(
                 instrument=instrument,
-                status=_as_string(item.get("status"), field="symbol status"),
+                status=status,
                 price_tick=_positive_decimal(
                     price_filter.get("tickSize"),
                     field="PRICE_FILTER tickSize",

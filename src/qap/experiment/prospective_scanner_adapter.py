@@ -3,8 +3,10 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import cast
 
 from qap.experiment.artifacts import read_run_artifacts, run_experiment_to_artifacts
+from qap.experiment.data import DatasetFingerprintMismatchError, ExperimentSetupError
 from qap.experiment.dataset_seals import validate_expected_fingerprints_for_role
 from qap.experiment.manifest import DataRole, ExperimentManifest
 from qap.market import fingerprint_bar_series, read_parquet_bar_series
@@ -265,6 +267,93 @@ def _economic_gates(result: object) -> tuple[bool, bool, Decimal, Decimal]:
     return baseline, adverse, result.strategy_vs_hodl, primary
 
 
+def prepare_prospective_qualification_manifest(
+    freeze: CandidateFreeze,
+    checkpoint: ForwardCheckpoint,
+    *,
+    requested_capital: Decimal,
+    empirical_slippage_bps: Decimal,
+    data_root: str | Path,
+    run_root: str | Path,
+    catalog: ScannerCatalog,
+) -> ExperimentManifest:
+    """Scale the frozen replay and apply measured baseline book impact."""
+
+    if not requested_capital.is_finite() or requested_capital <= 0:
+        raise ProspectiveReplayError("requested capital must be positive finite")
+    costs = SCANNER_V1_SLICE1.cost_policy
+    if (
+        not empirical_slippage_bps.is_finite()
+        or empirical_slippage_bps < 0
+        or empirical_slippage_bps > costs.adverse_slippage_bps
+    ):
+        raise ProspectiveReplayError(
+            "empirical slippage must fit the frozen adverse slippage budget"
+        )
+    base = prepare_prospective_manifest(
+        freeze,
+        checkpoint,
+        data_root=data_root,
+        run_root=run_root,
+        catalog=catalog,
+    )
+    payload = base.model_dump(mode="json")
+    payload["experiment_name"] = (
+        f"qualification-{freeze.freeze_id[:12]}-{checkpoint.checkpoint_index}"
+    )
+    payload["description"] = (
+        "Frozen scanner explicit-capital qualification replay; "
+        f"freeze={freeze.freeze_id}; checkpoint={checkpoint.checkpoint_id}; "
+        f"capital={requested_capital}."
+    )
+    payload["research_family_id"] = f"scanner-qualification-{freeze.freeze_id}"
+    starting = cast(dict[str, object], payload["starting_quantities"])
+    payload["starting_quantities"] = {
+        asset: str(Decimal(str(quantity)) * requested_capital)
+        for asset, quantity in starting.items()
+    }
+    execution = cast(dict[str, object], payload["execution"])
+    execution["fee_bps"] = str(costs.adverse_fee_bps)
+    execution["slippage_bps"] = str(empirical_slippage_bps)
+    payload["execution"] = execution
+    return ExperimentManifest.model_validate(payload)
+
+
+def run_prospective_qualification(
+    freeze: CandidateFreeze,
+    checkpoint: ForwardCheckpoint,
+    *,
+    requested_capital: Decimal,
+    empirical_slippage_bps: Decimal,
+    data_root: str | Path,
+    repository_root: str | Path,
+    run_root: str | Path,
+    catalog: ScannerCatalog,
+    run_timestamp: datetime | None = None,
+) -> tuple[str, bool, bool]:
+    """Run one explicit-capital qualification through ordinary QAP artifacts."""
+
+    manifest = prepare_prospective_qualification_manifest(
+        freeze,
+        checkpoint,
+        requested_capital=requested_capital,
+        empirical_slippage_bps=empirical_slippage_bps,
+        data_root=data_root,
+        run_root=run_root,
+        catalog=catalog,
+    )
+    paths = run_experiment_to_artifacts(
+        manifest,
+        data_root=data_root,
+        repository_root=repository_root,
+        run_root=run_root,
+        run_timestamp=datetime.now(UTC) if run_timestamp is None else run_timestamp,
+    )
+    loaded = read_run_artifacts(paths.run_directory)
+    baseline, adverse, _vs_hodl, _vs_primary = _economic_gates(loaded.result)
+    return paths.run_id, baseline, adverse
+
+
 def run_prospective_checkpoint(
     freeze: CandidateFreeze,
     checkpoint: ForwardCheckpoint,
@@ -277,14 +366,14 @@ def run_prospective_checkpoint(
 ) -> ForwardOutcome:
     """Run one prospective checkpoint through ordinary immutable QAP artifacts."""
 
+    manifest = prepare_prospective_manifest(
+        freeze,
+        checkpoint,
+        data_root=data_root,
+        run_root=run_root,
+        catalog=catalog,
+    )
     try:
-        manifest = prepare_prospective_manifest(
-            freeze,
-            checkpoint,
-            data_root=data_root,
-            run_root=run_root,
-            catalog=catalog,
-        )
         paths = run_experiment_to_artifacts(
             manifest,
             data_root=data_root,
@@ -292,9 +381,9 @@ def run_prospective_checkpoint(
             run_root=run_root,
             run_timestamp=datetime.now(UTC) if run_timestamp is None else run_timestamp,
         )
-        loaded = read_run_artifacts(paths.run_directory)
-        baseline, adverse, vs_hodl, vs_primary = _economic_gates(loaded.result)
-    except Exception as exc:
+    except DatasetFingerprintMismatchError:
+        raise
+    except ExperimentSetupError as exc:
         return ForwardOutcome(
             freeze_id=freeze.freeze_id,
             candidate_id=freeze.candidate_id,
@@ -305,8 +394,10 @@ def run_prospective_checkpoint(
             through=checkpoint.information_end,
             primary_control_reference=freeze.primary_control_reference,
             cost_policy_reference=freeze.cost_policy_reference,
-            failure_reason=type(exc).__name__,
+            failure_reason=f"{type(exc).__name__}: {exc}",
         )
+    loaded = read_run_artifacts(paths.run_directory)
+    baseline, adverse, vs_hodl, vs_primary = _economic_gates(loaded.result)
 
     matured = checkpoint.information_end == freeze.forward_end
     return ForwardOutcome(
@@ -333,5 +424,7 @@ def run_prospective_checkpoint(
 __all__ = [
     "ProspectiveReplayError",
     "prepare_prospective_manifest",
+    "prepare_prospective_qualification_manifest",
     "run_prospective_checkpoint",
+    "run_prospective_qualification",
 ]

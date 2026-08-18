@@ -6,6 +6,7 @@ from qap.portfolio import AssetId
 from qap.scanner.liquidity import (
     BookSide,
     FrictionEvidence,
+    walk_quote_notional,
 )
 from qap.scanner.liquidity_policy import (
     candidate_capital_ceiling,
@@ -37,7 +38,7 @@ INSTRUMENT = VenueInstrument(
 AS_OF = datetime(2026, 8, 18, 0, 0, tzinfo=UTC)
 
 
-def _metadata() -> MarketMetadata:
+def _metadata(*, market_maximum_quantity: Decimal | None = None) -> MarketMetadata:
     return MarketMetadata(
         instrument=INSTRUMENT,
         status="TRADING",
@@ -54,7 +55,7 @@ def _metadata() -> MarketMetadata:
         notional_average_price_minutes=0,
         market_quantity_step=Decimal("0.001"),
         market_minimum_quantity=None,
-        market_maximum_quantity=None,
+        market_maximum_quantity=market_maximum_quantity,
     )
 
 
@@ -173,6 +174,32 @@ def test_directional_safe_size_bisects_recorded_depth_and_applies_half_haircut()
     assert result.adverse_slippage_budget_bps == Decimal("10")
     assert result.evaluations
     assert all(item.side is BookSide.BUY_BASE for item in result.evaluations)
+
+
+def test_sell_safe_size_respects_market_maximum_base_quantity() -> None:
+    snapshot = PublicBookSnapshot(
+        instrument=INSTRUMENT,
+        observed_at=AS_OF,
+        source_id="tight",
+        source_fingerprint="b" * 64,
+        bids=(BookLevel(price=99.99, quantity=10.0),),
+        asks=(BookLevel(price=100.01, quantity=10.0),),
+    )
+
+    result = find_directional_safe_size(
+        (snapshot,),
+        side=BookSide.SELL_BASE,
+        market_metadata=_metadata(market_maximum_quantity=Decimal("1")),
+    )
+
+    assert result.q_star is not None
+    walk = walk_quote_notional(
+        snapshot,
+        side=BookSide.SELL_BASE,
+        quote_notional=result.q_star,
+    )
+    assert walk.base_quantity <= Decimal("1")
+    assert result.q_star <= Decimal("99.99")
 
 
 def test_capture_contract_requires_14d_95pct_overall_and_90pct_each_utc_day() -> None:

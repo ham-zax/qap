@@ -7,10 +7,12 @@ from decimal import Decimal
 from pathlib import Path
 
 import pyarrow.parquet as pq
+import pytest
 
 from qap.experiment.artifacts import read_run_artifacts
 from qap.experiment.manifest import DataRole, PrimaryMetric
 from qap.experiment.prospective_scanner_adapter import (
+    ProspectiveReplayError,
     prepare_prospective_manifest,
     run_prospective_checkpoint,
 )
@@ -595,6 +597,20 @@ def test_frozen_candidate_runs_strictly_forward_through_ordinary_qap(
     assert manifest.effective_evaluation_window().end == information_end
     assert manifest.benchmarks.primary_incremental_benchmark == "band-5pct-half"
 
+    bad_protocol = checkpoint.model_copy(
+        update={"prospective_protocol_identity": "0" * 64}
+    )
+    with pytest.raises(ProspectiveReplayError, match="prospective protocol mismatch"):
+        run_prospective_checkpoint(
+            freeze,
+            bad_protocol,
+            data_root=data_root,
+            repository_root=REPOSITORY_ROOT,
+            run_root=experiment_root,
+            catalog=forward_catalog,
+            run_timestamp=datetime(2026, 8, 18, 0, 30, tzinfo=UTC),
+        )
+
     outcome = run_prospective_checkpoint(
         freeze,
         checkpoint,
@@ -609,3 +625,25 @@ def test_frozen_candidate_runs_strictly_forward_through_ordinary_qap(
     loaded = read_run_artifacts(experiment_root / outcome.qap_run_id)
     assert loaded.result.data_role is DataRole.DEVELOPMENT
     assert loaded.result.start_timestamp == forward_start
+
+    gap_end = forward_start + timedelta(hours=10)
+    gap_checkpoint = checkpoint.model_copy(
+        update={
+            "evidence_window_end": gap_end,
+            "information_end": gap_end,
+            "created_at": gap_end + timedelta(seconds=1),
+        }
+    )
+    invalid = run_prospective_checkpoint(
+        freeze,
+        gap_checkpoint,
+        data_root=data_root,
+        repository_root=REPOSITORY_ROOT,
+        run_root=experiment_root,
+        catalog=forward_catalog,
+        run_timestamp=datetime(2026, 8, 18, 1, 30, tzinfo=UTC),
+    )
+    assert invalid.status is ForwardOutcomeStatus.INVALID
+    assert invalid.qap_run_id is None
+    assert invalid.failure_reason is not None
+    assert invalid.failure_reason.startswith("ExperimentSetupError:")

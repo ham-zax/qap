@@ -164,11 +164,14 @@ def test_cohort_freeze_precedes_partial_checkpoint(tmp_path: Path) -> None:
     assert read_completed_checkpoints(root) == ()
 
 
-def test_completed_checkpoint_has_integrity_and_repairs_indices(tmp_path: Path) -> None:
+def test_completed_checkpoint_and_cohort_root_are_integrity_sealed(
+    tmp_path: Path,
+) -> None:
     root = start_forward_cohort(tmp_path, _cohort())
     checkpoint = _checkpoint(1)
     final = _publish(root, checkpoint)
 
+    assert (root / INTEGRITY_FILE).is_file()
     assert (final / INTEGRITY_FILE).is_file()
     assert read_completed_checkpoints(root) == (final,)
     assert pq.read_table(root / CHECKPOINTS_INDEX).num_rows == 1
@@ -176,10 +179,24 @@ def test_completed_checkpoint_has_integrity_and_repairs_indices(tmp_path: Path) 
     assert pq.read_table(final / LIQUIDITY_TABLE).to_pylist()[0]["fillable"] is False
 
     (root / CHECKPOINTS_INDEX).unlink()
-    (root / OUTCOMES_INDEX).unlink()
-    assert start_forward_cohort(tmp_path, _cohort()) == root
-    assert pq.read_table(root / CHECKPOINTS_INDEX).num_rows == 1
-    assert pq.read_table(root / OUTCOMES_INDEX).num_rows == 1
+    with pytest.raises(ProspectiveArtifactError, match="file set mismatch"):
+        start_forward_cohort(tmp_path, _cohort())
+
+
+def test_cohort_freeze_tamper_fails_before_checkpoint_start(tmp_path: Path) -> None:
+    root = start_forward_cohort(tmp_path, _cohort())
+    table = pq.read_table(root / FREEZES_TABLE).to_pylist()
+    table[0]["freeze_id"] = "8" * 64
+    pq.write_table(
+        pq.read_table(root / FREEZES_TABLE).from_pylist(
+            table, schema=pq.read_table(root / FREEZES_TABLE).schema
+        ),
+        root / FREEZES_TABLE,
+    )
+
+    forged = _checkpoint(1).model_copy(update={"freeze_id": "8" * 64})
+    with pytest.raises(ProspectiveArtifactError, match="digest mismatch"):
+        start_checkpoint(root, forged)
 
 
 def test_completed_checkpoint_tamper_fails_before_reindex(tmp_path: Path) -> None:

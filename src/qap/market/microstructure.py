@@ -9,6 +9,7 @@ from hashlib import sha256
 from typing import cast
 
 from qap.market.instruments import VenueInstrument
+from qap.market.metadata import MarketMetadata
 
 
 def _validated_utc(value: object, *, field: str) -> datetime:
@@ -60,6 +61,38 @@ def public_payload_fingerprint(payload: object) -> str:
     except (TypeError, ValueError) as exc:
         raise ValueError("public payload must be canonical JSON data") from exc
     return sha256(encoded).hexdigest()
+
+
+def _decimal_text(value: object) -> str | None:
+    return None if value is None else str(value)
+
+
+def _metadata_payload(metadata: MarketMetadata) -> dict[str, object]:
+    return {
+        "venue": metadata.instrument.venue,
+        "venue_symbol": metadata.instrument.venue_symbol,
+        "base_asset": metadata.instrument.base.key,
+        "quote_asset": metadata.instrument.quote.key,
+        "status": metadata.status,
+        "price_tick": str(metadata.price_tick),
+        "minimum_price": _decimal_text(metadata.minimum_price),
+        "maximum_price": _decimal_text(metadata.maximum_price),
+        "quantity_step": str(metadata.quantity_step),
+        "minimum_quantity": _decimal_text(metadata.minimum_quantity),
+        "maximum_quantity": _decimal_text(metadata.maximum_quantity),
+        "minimum_notional": _decimal_text(metadata.minimum_notional),
+        "maximum_notional": _decimal_text(metadata.maximum_notional),
+        "minimum_notional_applies_to_market": (
+            metadata.minimum_notional_applies_to_market
+        ),
+        "maximum_notional_applies_to_market": (
+            metadata.maximum_notional_applies_to_market
+        ),
+        "notional_average_price_minutes": metadata.notional_average_price_minutes,
+        "market_quantity_step": _decimal_text(metadata.market_quantity_step),
+        "market_minimum_quantity": _decimal_text(metadata.market_minimum_quantity),
+        "market_maximum_quantity": _decimal_text(metadata.market_maximum_quantity),
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +187,75 @@ class PublicBookSnapshot:
         return sha256(encoded).hexdigest()
 
 
+@dataclass(frozen=True, slots=True)
+class PublicMarketMetadataSnapshot:
+    """One observed public instrument-state/constraint record."""
+
+    metadata: MarketMetadata
+    observed_at: datetime
+    source_id: str
+    source_fingerprint: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(cast(object, self.metadata), MarketMetadata):
+            raise TypeError("metadata must be MarketMetadata")
+        object.__setattr__(
+            self,
+            "observed_at",
+            _validated_utc(self.observed_at, field="observed_at"),
+        )
+        object.__setattr__(self, "source_id", _text(self.source_id, field="source_id"))
+        object.__setattr__(
+            self,
+            "source_fingerprint",
+            _fingerprint(self.source_fingerprint, field="source_fingerprint"),
+        )
+
+    @property
+    def snapshot_id(self) -> str:
+        payload = {
+            "identity_version": "qap.market.public-metadata-snapshot.v1",
+            "observed_at": self.observed_at.isoformat(),
+            "source_id": self.source_id,
+            "source_fingerprint": self.source_fingerprint,
+            **_metadata_payload(self.metadata),
+        }
+        return public_payload_fingerprint(payload)
+
+
+def public_market_metadata_snapshot(
+    *,
+    metadata: MarketMetadata,
+    observed_at: datetime,
+    source_id: str,
+    source_payload: object,
+) -> PublicMarketMetadataSnapshot:
+    """Bind normalized public constraints to exact observation provenance."""
+
+    return PublicMarketMetadataSnapshot(
+        metadata=metadata,
+        observed_at=observed_at,
+        source_id=source_id,
+        source_fingerprint=public_payload_fingerprint(source_payload),
+    )
+
+
+def public_market_metadata_snapshot_from_metadata(
+    *,
+    metadata: MarketMetadata,
+    observed_at: datetime,
+    source_id: str,
+) -> PublicMarketMetadataSnapshot:
+    """Bind normalized public constraints to an immutable observation."""
+
+    return PublicMarketMetadataSnapshot(
+        metadata=metadata,
+        observed_at=observed_at,
+        source_id=source_id,
+        source_fingerprint=public_payload_fingerprint(_metadata_payload(metadata)),
+    )
+
+
 def _book_number(value: object, *, field: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (str, int, float)):
         raise TypeError(f"{field} must be a JSON number or decimal string")
@@ -177,9 +279,7 @@ def _book_levels(value: object, *, side: str) -> tuple[BookLevel, ...]:
         levels.append(
             BookLevel(
                 price=_book_number(items[0], field=f"{side}[{position}].price"),
-                quantity=_book_number(
-                    items[1], field=f"{side}[{position}].quantity"
-                ),
+                quantity=_book_number(items[1], field=f"{side}[{position}].quantity"),
             )
         )
     return tuple(levels)
@@ -209,6 +309,9 @@ def public_book_snapshot_from_rows(
 __all__ = [
     "BookLevel",
     "PublicBookSnapshot",
+    "PublicMarketMetadataSnapshot",
     "public_book_snapshot_from_rows",
+    "public_market_metadata_snapshot",
+    "public_market_metadata_snapshot_from_metadata",
     "public_payload_fingerprint",
 ]
