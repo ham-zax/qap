@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 from qap.market import (
@@ -244,6 +245,42 @@ def test_venue_horizon_universe_preserves_venue_identity_and_snapshot_id() -> No
     assert binance.records[0].venue == "binance"
     assert gate.records[0].venue == "gate"
     assert binance.universe_snapshot_id != gate.universe_snapshot_id
+
+
+def test_future_source_extent_does_not_change_causal_universe_identity() -> None:
+    baseline_input = _asset_input(venue="binance")
+    changed_fingerprint = "f" * 64
+    changed_input = UniverseAssetInput(
+        source=baseline_input.source.model_copy(
+            update={"expected_semantic_fingerprint": changed_fingerprint}
+        ),
+        evaluated=replace(
+            baseline_input.evaluated,
+            source_artifact_fingerprint=changed_fingerprint,
+        ),
+        lifecycle=baseline_input.lifecycle,
+    )
+
+    baseline = build_venue_horizon_universe(
+        scan_id="a" * 64,
+        venue="binance",
+        horizon=ScannerHorizon.SHORT,
+        inputs=(baseline_input,),
+    )
+    changed = build_venue_horizon_universe(
+        scan_id="b" * 64,
+        venue="binance",
+        horizon=ScannerHorizon.SHORT,
+        inputs=(changed_input,),
+    )
+
+    assert baseline.records[0].source_artifact_fingerprint != (
+        changed.records[0].source_artifact_fingerprint
+    )
+    assert baseline.records[0].selection_slice_fingerprint == (
+        changed.records[0].selection_slice_fingerprint
+    )
+    assert baseline.universe_snapshot_id == changed.universe_snapshot_id
 
 
 def test_insufficient_bar_coverage_excludes_without_rewriting_lifecycle_state() -> None:

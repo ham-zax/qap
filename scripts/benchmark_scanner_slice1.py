@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import math
+import resource
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -35,6 +36,7 @@ class BenchmarkResult:
     scout_sample_seconds: float
     projected_full_scout_seconds: float
     automatic_replay_ceiling_all_horizons: int
+    peak_rss_kib: int
     digest: str
 
     def payload(self) -> dict[str, object]:
@@ -53,6 +55,7 @@ class BenchmarkResult:
             "automatic_replay_ceiling_all_horizons": (
                 self.automatic_replay_ceiling_all_horizons
             ),
+            "peak_rss_kib": self.peak_rss_kib,
             "digest": self.digest,
         }
 
@@ -174,7 +177,7 @@ def benchmark_one(
     ssd_started = time.perf_counter()
     pair_count, edge_count, digest = _top_k_graph(
         selected,
-        k=SCANNER_V1_SLICE1.nearest_neighbors,
+        k=SCANNER_V1_SLICE1.neighbors_per_asset,
     )
     ssd_seconds = time.perf_counter() - ssd_started
 
@@ -188,7 +191,7 @@ def benchmark_one(
     sample_count = min(max(1, scout_sample), len(trials))
     scout_seconds = _measure_scout(sample_count)
     projected = scout_seconds * len(trials) / sample_count
-    replay_ceiling = SCANNER_V1_SLICE1.max_automatic_replays_per_horizon * len(
+    replay_ceiling = SCANNER_V1_SLICE1.automatic_replay_cap_per_horizon * len(
         tuple(ScannerHorizon)
     )
     if replay_ceiling != 30:
@@ -206,6 +209,7 @@ def benchmark_one(
         scout_sample_seconds=scout_seconds,
         projected_full_scout_seconds=projected,
         automatic_replay_ceiling_all_horizons=replay_ceiling,
+        peak_rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         digest=digest,
     )
 

@@ -260,14 +260,12 @@ def classify_historical_eligibility(
 
 def _snapshot_id(
     *,
-    scan_id: str,
     venue: str,
     horizon: ScannerHorizon,
     records: tuple[EligibleAssetRecord, ...],
 ) -> str:
     payload = {
-        "schema": "qap.scanner.universe-snapshot.v1",
-        "scan_id": scan_id,
+        "schema": "qap.scanner.universe-snapshot.v2",
         "venue": venue,
         "horizon": horizon.value,
         "records": [
@@ -277,7 +275,6 @@ def _snapshot_id(
                 "eligibility_state": record.eligibility_state.value,
                 "eligibility_reason": record.eligibility_reason,
                 "lifecycle_evidence_refs": list(record.lifecycle_evidence_refs),
-                "source_artifact_fingerprint": record.source_artifact_fingerprint,
                 "selection_slice_fingerprint": record.selection_slice_fingerprint,
                 "bar_coverage": record.bar_coverage.hex(),
                 "longest_missing_run": record.longest_missing_run,
@@ -390,7 +387,6 @@ def build_venue_horizon_universe(
         horizon=horizon,
         records=ordered,
         universe_snapshot_id=_snapshot_id(
-            scan_id=scan_id,
             venue=normalized_venue,
             horizon=horizon,
             records=ordered,

@@ -140,6 +140,45 @@ def test_trial_identity_binds_universe_snapshot() -> None:
     assert all(trial.universe_snapshot_id == "e" * 64 for trial in changed)
 
 
+def test_trial_identity_ignores_generation_and_whole_source_extent() -> None:
+    model_series = _model_series()
+    baseline = enumerate_fixed_trials(_graph(), model_series_by_asset=model_series)
+    changed_series = dict(model_series)
+    changed_series[("BTC", "15m")] = replace(
+        changed_series[("BTC", "15m")],
+        source_artifact_fingerprint="f" * 64,
+    )
+    changed_graph = replace(
+        _graph(),
+        scan_id="c" * 64,
+        records=tuple(replace(record, scan_id="c" * 64) for record in _graph().records),
+    )
+    changed = enumerate_fixed_trials(
+        changed_graph,
+        model_series_by_asset=changed_series,
+    )
+
+    baseline_ids = {
+        (
+            trial.resolution.label,
+            trial.model_family.value,
+            trial.template_id.value,
+            trial.orientation.base.key,
+        ): trial.candidate_id
+        for trial in baseline
+    }
+    changed_ids = {
+        (
+            trial.resolution.label,
+            trial.model_family.value,
+            trial.template_id.value,
+            trial.orientation.base.key,
+        ): trial.candidate_id
+        for trial in changed
+    }
+    assert changed_ids == baseline_ids
+
+
 def test_trial_identity_binds_model_resolution_slice_fingerprints() -> None:
     model_series = _model_series()
     baseline = enumerate_fixed_trials(_graph(), model_series_by_asset=model_series)

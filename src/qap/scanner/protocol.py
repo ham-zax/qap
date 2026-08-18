@@ -11,12 +11,6 @@ from typing import cast
 from qap.market import BarInterval
 
 
-UNIVERSE_POLICY_VERSION = "scanner-v1-pit-usdt-v1"
-CANDIDATE_GENERATOR_VERSION = "scanner-v1-normalized-log-ssd-k8-v1"
-TEMPLATE_SET_VERSION = "scanner-v1-mr-template-set-v1"
-PROMOTION_POLICY_VERSION = "scanner-v1-promotion-v1"
-
-
 class ScannerHorizon(StrEnum):
     SHORT = "short"
     MEDIUM = "medium"

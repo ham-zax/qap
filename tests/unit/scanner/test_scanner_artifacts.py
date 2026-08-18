@@ -20,7 +20,7 @@ from qap.scanner.artifacts import (
     transition_replay_attempt,
     write_scan_tables,
 )
-from qap.scanner.graph import NeighborRecord
+from qap.scanner.graph import GraphMetadataRecord, NeighborRecord
 from qap.scanner.models import ScanDefinition, ScanInputIdentity
 from qap.scanner.promotion import PromotionRecord, PromotionStatus
 from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon, protocol_identity
@@ -40,6 +40,11 @@ def _definition(
         scanner_protocol_version=SCANNER_V1_SLICE1.protocol_id,
         protocol_identity=protocol_identity(SCANNER_V1_SLICE1),
         catalog_identity="c" * 64,
+        universe_policy_version=SCANNER_V1_SLICE1.universe_policy_version,
+        candidate_generator_version=SCANNER_V1_SLICE1.candidate_generator_version,
+        template_set_version=SCANNER_V1_SLICE1.template_set_version,
+        promotion_policy_version=SCANNER_V1_SLICE1.promotion_policy_version,
+        cost_policy_reference=SCANNER_V1_SLICE1.cost_policy.policy_id,
         as_of=NOW,
         eligible_information_end=NOW,
         venues=("binance",),
@@ -71,6 +76,28 @@ def _eligible(definition: ScanDefinition) -> EligibleAssetRecord:
         longest_missing_run=0,
         automatic_eligible=True,
         forensic_research_allowed=False,
+    )
+
+
+def _graph_metadata(definition: ScanDefinition) -> GraphMetadataRecord:
+    horizon = SCANNER_V1_SLICE1.horizon(ScannerHorizon.SHORT)
+    return GraphMetadataRecord(
+        scan_id=definition.scan_id,
+        venue="binance",
+        horizon="short",
+        universe_snapshot_id="b" * 64,
+        generator_version=definition.candidate_generator_version,
+        graph_interval=horizon.graph_interval.label,
+        graph_window_seconds=int(horizon.graph_window.total_seconds()),
+        neighbors_per_asset=SCANNER_V1_SLICE1.neighbors_per_asset,
+        minimum_pair_coverage=SCANNER_V1_SLICE1.minimum_pair_coverage,
+        maximum_missing_generator_bars=(
+            SCANNER_V1_SLICE1.maximum_missing_generator_bars
+        ),
+        eligible_asset_count=1,
+        total_valid_pair_comparisons=0,
+        input_selection_slice_fingerprints=("2" * 64,),
+        distance_digest="d" * 64,
     )
 
 
@@ -133,6 +160,7 @@ def _write_required_tables(
     write_scan_tables(
         generation,
         eligible_assets=(_eligible(definition),),
+        graph_metadata=(_graph_metadata(definition),),
         neighbors=(_neighbor(definition),),
         scout_trials=(_scout(definition),),
         promotions=(_promotion(),),
@@ -162,6 +190,7 @@ def test_scan_tables_use_explicit_schemas_and_replay_attempts_starts_empty(
 
     expected = {
         "eligible_assets.parquet",
+        "graph_metadata.parquet",
         "neighbors.parquet",
         "scout_trials.parquet",
         "promotions.parquet",
@@ -190,6 +219,7 @@ def test_replay_attempt_requires_persisted_selected_promotion(tmp_path: Path) ->
     write_scan_tables(
         generation,
         eligible_assets=(_eligible(definition),),
+        graph_metadata=(_graph_metadata(definition),),
         neighbors=(_neighbor(definition),),
         scout_trials=(_scout(definition),),
         promotions=(),
@@ -251,6 +281,7 @@ def test_publish_reconciles_completed_promotion_outcome_with_attempt(
     write_scan_tables(
         generation,
         eligible_assets=(_eligible(definition),),
+        graph_metadata=(_graph_metadata(definition),),
         neighbors=(_neighbor(definition),),
         scout_trials=(_scout(definition),),
         promotions=(promotion,),
@@ -285,6 +316,7 @@ def test_publish_rejects_promotion_attempt_run_id_mismatch(tmp_path: Path) -> No
     write_scan_tables(
         generation,
         eligible_assets=(_eligible(definition),),
+        graph_metadata=(_graph_metadata(definition),),
         neighbors=(_neighbor(definition),),
         scout_trials=(_scout(definition),),
         promotions=(promotion,),
@@ -313,6 +345,7 @@ def test_publish_rejects_frozen_source_or_slice_identity_not_bound_in_definition
     write_scan_tables(
         generation,
         eligible_assets=(mismatched,),
+        graph_metadata=(_graph_metadata(definition),),
         neighbors=(_neighbor(definition),),
         scout_trials=(_scout(definition),),
         promotions=(),
@@ -343,6 +376,7 @@ def test_publish_reconciles_promotions_against_attempts_before_atomic_rename(
     write_scan_tables(
         generation,
         eligible_assets=(_eligible(definition),),
+        graph_metadata=(_graph_metadata(definition),),
         neighbors=(_neighbor(definition),),
         scout_trials=(_scout(definition),),
         promotions=(replace(_promotion(), deep_replay_status="setup_failed"),),
@@ -395,6 +429,7 @@ def test_completed_scan_is_immutable_and_duplicate_publication_is_rejected(
     write_scan_tables(
         generation,
         eligible_assets=(_eligible(definition),),
+        graph_metadata=(_graph_metadata(definition),),
         neighbors=(_neighbor(definition),),
         scout_trials=(_scout(definition),),
         promotions=(
@@ -410,3 +445,50 @@ def test_completed_scan_is_immutable_and_duplicate_publication_is_rejected(
     with pytest.raises(ScanArtifactError, match="completed scan already exists"):
         start_scan_generation(tmp_path, definition)
     assert final_directory.is_dir()
+
+
+def test_publish_rejects_undeclared_physical_artifact(tmp_path: Path) -> None:
+    definition = _definition()
+    generation = start_scan_generation(tmp_path, definition)
+    write_scan_tables(
+        generation,
+        eligible_assets=(_eligible(definition),),
+        graph_metadata=(_graph_metadata(definition),),
+        neighbors=(_neighbor(definition),),
+        scout_trials=(_scout(definition),),
+        promotions=(),
+    )
+    (generation.staging_directory / "undeclared-authoritative.parquet").write_bytes(
+        b"not-authoritative"
+    )
+
+    with pytest.raises(ScanArtifactError, match="file set"):
+        publish_scan_generation(generation)
+
+
+def test_completed_scan_discovery_rejects_missing_or_tampered_files(
+    tmp_path: Path,
+) -> None:
+    definition = _definition()
+    generation = start_scan_generation(tmp_path, definition)
+    write_scan_tables(
+        generation,
+        eligible_assets=(_eligible(definition),),
+        graph_metadata=(_graph_metadata(definition),),
+        neighbors=(_neighbor(definition),),
+        scout_trials=(_scout(definition),),
+        promotions=(),
+    )
+    final_directory = publish_scan_generation(generation)
+    assert (final_directory / "integrity.json").is_file()
+
+    scout_path = final_directory / "scout_trials.parquet"
+    original = scout_path.read_bytes()
+    scout_path.write_bytes(original + b"tamper")
+    with pytest.raises(ScanArtifactError, match="digest"):
+        discover_completed_scans(tmp_path)
+
+    scout_path.write_bytes(original)
+    scout_path.unlink()
+    with pytest.raises(ScanArtifactError, match="file set"):
+        discover_completed_scans(tmp_path)

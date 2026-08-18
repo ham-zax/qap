@@ -7,7 +7,11 @@ from hashlib import sha256
 from typing import cast
 
 from qap.portfolio import AssetId, PairId
-from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerProtocol
+from qap.scanner.protocol import (
+    SCANNER_V1_SLICE1,
+    ScannerHorizon,
+    ScannerProtocol,
+)
 from qap.scanner.slices import EvaluatedSeries
 from qap.scanner.universe import UniverseSnapshot
 
@@ -87,6 +91,24 @@ class SsdGraph:
     total_valid_pair_comparisons: int
     distance_digest: str
     records: tuple[NeighborRecord, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class GraphMetadataRecord:
+    scan_id: str
+    venue: str
+    horizon: str
+    universe_snapshot_id: str
+    generator_version: str
+    graph_interval: str
+    graph_window_seconds: int
+    neighbors_per_asset: int
+    minimum_pair_coverage: float
+    maximum_missing_generator_bars: int
+    eligible_asset_count: int
+    total_valid_pair_comparisons: int
+    input_selection_slice_fingerprints: tuple[str, ...]
+    distance_digest: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -286,10 +308,52 @@ def build_ssd_graph(
     )
 
 
+def graph_metadata_record(
+    graph: SsdGraph,
+    *,
+    series_by_asset: Mapping[str, EvaluatedSeries],
+    protocol: ScannerProtocol = SCANNER_V1_SLICE1,
+) -> GraphMetadataRecord:
+    """Freeze the reconstructible pre-neighbor SSD denominator for publication."""
+
+    if not isinstance(cast(object, graph), SsdGraph):
+        raise TypeError("graph must be an SsdGraph")
+    if len(series_by_asset) != graph.eligible_asset_count:
+        raise ValueError("graph metadata series must match eligible asset count")
+    horizon = protocol.horizon(ScannerHorizon(graph.horizon))
+    fingerprints: list[str] = []
+    for asset, evaluated in sorted(series_by_asset.items()):
+        if not isinstance(cast(object, evaluated), EvaluatedSeries):
+            raise TypeError("graph metadata values must be EvaluatedSeries")
+        if evaluated.instrument.venue != graph.venue:
+            raise ValueError(f"graph metadata series venue mismatch: {asset}")
+        if evaluated.interval != horizon.graph_interval:
+            raise ValueError(f"graph metadata series interval mismatch: {asset}")
+        fingerprints.append(evaluated.selection_slice_fingerprint)
+    return GraphMetadataRecord(
+        scan_id=graph.scan_id,
+        venue=graph.venue,
+        horizon=graph.horizon,
+        universe_snapshot_id=graph.universe_snapshot_id,
+        generator_version=protocol.candidate_generator_version,
+        graph_interval=horizon.graph_interval.label,
+        graph_window_seconds=int(horizon.graph_window.total_seconds()),
+        neighbors_per_asset=protocol.neighbors_per_asset,
+        minimum_pair_coverage=protocol.minimum_pair_coverage,
+        maximum_missing_generator_bars=protocol.maximum_missing_generator_bars,
+        eligible_asset_count=graph.eligible_asset_count,
+        total_valid_pair_comparisons=graph.total_valid_pair_comparisons,
+        input_selection_slice_fingerprints=tuple(sorted(fingerprints)),
+        distance_digest=graph.distance_digest,
+    )
+
+
 __all__ = [
+    "GraphMetadataRecord",
     "ManualPairPin",
     "NeighborRecord",
     "SsdGraph",
     "build_ssd_graph",
+    "graph_metadata_record",
     "normalized_log_ssd",
 ]

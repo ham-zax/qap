@@ -1,23 +1,15 @@
 """Sequential deterministic Scanner-V1 Slice-1 orchestration core."""
 
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 from typing import Protocol
 
-from pydantic import BaseModel, ConfigDict, ValidationError
-
 from qap.market import (
-    AssetIdentityContinuity,
     BarInterval,
-    InstrumentLifecycleEvent,
-    InstrumentLifecycleEvidence,
-    LifecycleConfidence,
-    LifecycleEventType,
-    LifecycleSourceType,
     align_bar_series,
     validate_bar_series,
 )
@@ -38,17 +30,22 @@ from qap.scanner.artifacts import (
     write_scan_tables,
 )
 from qap.scanner.catalog import (
-    ResolvedCatalogSource,
     ScannerCatalog,
-    ScannerCatalogError,
-    ScannerSourceSpec,
-    catalog_semantic_identity,
-    load_scanner_catalog,
-    resolve_catalog_source,
 )
 from qap.scanner.forensic_graph import ScopedManualPin, build_scanner_graph
-from qap.scanner.graph import NeighborRecord, SsdGraph
-from qap.scanner.models import ScanDefinition, ScanInputIdentity, ScannerPinSpec
+from qap.scanner.graph import (
+    GraphMetadataRecord,
+    NeighborRecord,
+    SsdGraph,
+    graph_metadata_record,
+)
+from qap.scanner.models import ScannerPinSpec
+from qap.scanner.preparation import (
+    ScannerRunError,
+    _evidence_for_source,
+    _prepare_inputs,
+    _PreparedInputs,
+)
 from qap.scanner.promotion import PromotionRecord, apply_promotion_policy
 from qap.scanner.protocol import (
     SCANNER_V1_SLICE1,
@@ -58,7 +55,7 @@ from qap.scanner.protocol import (
     protocol_identity,
 )
 from qap.scanner.scout import ScoutTrialRecord, ScoutTrialStatus, run_scout_trial
-from qap.scanner.slices import EvaluatedSeries, evaluate_series
+from qap.scanner.slices import EvaluatedSeries
 from qap.scanner.trials import (
     ScannerModelFamily,
     ScannerTrial,
@@ -66,15 +63,9 @@ from qap.scanner.trials import (
 )
 from qap.scanner.universe import (
     EligibleAssetRecord,
-    HistoricalEligibilityState,
     UniverseAssetInput,
     build_venue_horizon_universe,
-    classify_historical_eligibility,
 )
-
-
-class ScannerRunError(RuntimeError):
-    """Generation-level scanner failure that must abort publication."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -141,350 +132,6 @@ class ScanRunResult:
             "replay_survivors": self.replay_survivor_count,
             "replay_failures": self.replay_failure_count,
         }
-
-
-class _ContinuityDocument(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    from_asset_identity_version: str
-    to_asset_identity_version: str
-    source_id: str
-
-
-class _LifecycleEventDocument(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    schema_version: str
-    canonical_asset_id: str
-    asset_identity_version: str
-    venue: str
-    venue_symbol: str
-    quote_asset: str
-    event_type: LifecycleEventType
-    effective_at: datetime
-    observed_at: datetime
-    source_type: LifecycleSourceType
-    source_id: str
-    confidence: LifecycleConfidence
-    continuity: _ContinuityDocument | None = None
-
-    def to_domain(self) -> InstrumentLifecycleEvent:
-        if self.schema_version != "qap.market.lifecycle-event.v1":
-            raise ValueError("unsupported lifecycle event schema_version")
-        continuity = (
-            None
-            if self.continuity is None
-            else AssetIdentityContinuity(
-                from_asset_identity_version=(
-                    self.continuity.from_asset_identity_version
-                ),
-                to_asset_identity_version=self.continuity.to_asset_identity_version,
-                source_id=self.continuity.source_id,
-            )
-        )
-        return InstrumentLifecycleEvent(
-            canonical_asset_id=AssetId(self.canonical_asset_id),
-            asset_identity_version=self.asset_identity_version,
-            venue=self.venue,
-            venue_symbol=self.venue_symbol,
-            quote_asset=AssetId(self.quote_asset),
-            event_type=self.event_type,
-            effective_at=self.effective_at,
-            observed_at=self.observed_at,
-            source_type=self.source_type,
-            source_id=self.source_id,
-            confidence=self.confidence,
-            continuity=continuity,
-        )
-
-
-@dataclass(frozen=True, slots=True)
-class _PreparedInputs:
-    catalog: ScannerCatalog
-    definition: ScanDefinition
-    graph_sources: Mapping[tuple[str, ScannerHorizon], tuple[ScannerSourceSpec, ...]]
-    graph_series: Mapping[tuple[str, ScannerHorizon], Mapping[str, EvaluatedSeries]]
-    model_series: Mapping[
-        tuple[str, ScannerHorizon], Mapping[tuple[str, str], EvaluatedSeries]
-    ]
-    model_failure_reasons: Mapping[
-        tuple[str, ScannerHorizon], Mapping[tuple[str, str], str]
-    ]
-    lifecycle_events: Mapping[str, InstrumentLifecycleEvent]
-
-
-def _safe_input_path(root: Path, relative: str) -> Path:
-    base = root.resolve()
-    try:
-        path = (base / relative).resolve(strict=True)
-        path.relative_to(base)
-    except (OSError, ValueError) as exc:
-        raise ScannerRunError(
-            "scanner input path escapes data root or is missing"
-        ) from exc
-    if not path.is_file():
-        raise ScannerRunError("scanner input path must be a regular file")
-    return path
-
-
-def _load_lifecycle_events(
-    data_root: Path,
-    catalog: ScannerCatalog,
-) -> dict[str, InstrumentLifecycleEvent]:
-    path = _safe_input_path(data_root, catalog.lifecycle_evidence_relative_path)
-    events: dict[str, InstrumentLifecycleEvent] = {}
-    for line_number, line in enumerate(
-        path.read_text(encoding="utf-8").splitlines(), 1
-    ):
-        if not line.strip():
-            continue
-        try:
-            event = _LifecycleEventDocument.model_validate_json(line).to_domain()
-        except (ValidationError, TypeError, ValueError) as exc:
-            raise ScannerRunError(
-                f"invalid lifecycle event at line {line_number}: {exc}"
-            ) from exc
-        if event.event_id in events:
-            raise ScannerRunError("duplicate lifecycle event identity")
-        events[event.event_id] = event
-    return events
-
-
-def _evidence_for_source(
-    source: ScannerSourceSpec,
-    events: Mapping[str, InstrumentLifecycleEvent],
-) -> InstrumentLifecycleEvidence:
-    asset = AssetId(source.base_asset)
-    quote = AssetId(source.quote_asset)
-    if not source.lifecycle_evidence_ids:
-        return InstrumentLifecycleEvidence.empty(
-            canonical_asset_id=asset,
-            venue=source.venue,
-            quote_asset=quote,
-        )
-    try:
-        selected = tuple(events[event_id] for event_id in source.lifecycle_evidence_ids)
-    except KeyError as exc:
-        raise ScannerRunError(
-            f"catalog references unknown lifecycle event {exc.args[0]}"
-        ) from exc
-    try:
-        evidence = InstrumentLifecycleEvidence.from_events(selected)
-    except (TypeError, ValueError) as exc:
-        raise ScannerRunError("lifecycle evidence bundle is inconsistent") from exc
-    if (
-        evidence.canonical_asset_id != asset
-        or evidence.venue != source.venue
-        or evidence.quote_asset != quote
-    ):
-        raise ScannerRunError(
-            "lifecycle evidence does not match catalog source identity"
-        )
-    return evidence
-
-
-def _sources_by_base(
-    catalog: ScannerCatalog,
-    *,
-    venue: str,
-    interval: BarInterval,
-    quote_asset: str,
-) -> dict[str, ScannerSourceSpec]:
-    result: dict[str, ScannerSourceSpec] = {}
-    for source in catalog.sources:
-        if (
-            source.venue != venue
-            or source.interval != interval.label
-            or source.quote_asset != quote_asset
-            or source.base_asset == quote_asset
-        ):
-            continue
-        if source.base_asset in result:
-            raise ScannerRunError(
-                "ambiguous scanner source for venue/base/quote/interval"
-            )
-        result[source.base_asset] = source
-    return result
-
-
-def _prepare_inputs(
-    *,
-    as_of: datetime,
-    horizons: tuple[ScannerHorizon, ...],
-    data_root: Path,
-    pins: tuple[ScannerPinSpec, ...],
-    protocol: ScannerProtocol,
-) -> _PreparedInputs:
-    if as_of.tzinfo is None or as_of.utcoffset() != timedelta(0):
-        raise ValueError("as_of must be timezone-aware UTC")
-    as_of = as_of.astimezone(UTC)
-    if not horizons or len(set(horizons)) != len(horizons):
-        raise ValueError("horizons must be non-empty and unique")
-    if not set(horizons) <= set(ScannerHorizon):
-        raise ValueError("unsupported scanner horizon")
-    requested = set(horizons)
-    for pin in pins:
-        if not set(pin.horizons) <= requested:
-            raise ValueError("pin horizon must be included in requested scan horizons")
-
-    catalog = load_scanner_catalog(data_root)
-    lifecycle_events = _load_lifecycle_events(data_root, catalog)
-    resolved_cache: dict[str, ResolvedCatalogSource] = {}
-    evaluated_cache: dict[tuple[str, int], EvaluatedSeries] = {}
-
-    def resolved(source: ScannerSourceSpec) -> ResolvedCatalogSource:
-        item = resolved_cache.get(source.dataset_id)
-        if item is None:
-            try:
-                item = resolve_catalog_source(
-                    catalog,
-                    dataset_id=source.dataset_id,
-                    data_root=data_root,
-                )
-            except ScannerCatalogError as exc:
-                raise ScannerRunError(
-                    f"scanner source admission failed: {source.dataset_id}"
-                ) from exc
-            resolved_cache[source.dataset_id] = item
-        return item
-
-    def evaluated(source: ScannerSourceSpec, lookback: timedelta) -> EvaluatedSeries:
-        key = (source.dataset_id, int(lookback.total_seconds()))
-        item = evaluated_cache.get(key)
-        if item is None:
-            admitted = resolved(source)
-            item = evaluate_series(
-                admitted.series,
-                dataset_id=source.dataset_id,
-                eligible_information_end=as_of,
-                lookback=lookback,
-            )
-            evaluated_cache[key] = item
-        return item
-
-    graph_sources: dict[tuple[str, ScannerHorizon], tuple[ScannerSourceSpec, ...]] = {}
-    graph_series: dict[tuple[str, ScannerHorizon], dict[str, EvaluatedSeries]] = {}
-    model_series: dict[
-        tuple[str, ScannerHorizon], dict[tuple[str, str], EvaluatedSeries]
-    ] = {}
-    model_failure_reasons: dict[
-        tuple[str, ScannerHorizon], dict[tuple[str, str], str]
-    ] = {}
-    input_identities: dict[tuple[str, str, str], ScanInputIdentity] = {}
-
-    for horizon in horizons:
-        horizon_protocol = protocol.horizon(horizon)
-        model_lookback = horizon_protocol.evaluation_window + max(
-            duration for _template, duration in horizon_protocol.template_windows
-        )
-        for venue in protocol.venues:
-            scope = (venue, horizon)
-            graph_map = _sources_by_base(
-                catalog,
-                venue=venue,
-                interval=horizon_protocol.graph_interval,
-                quote_asset=protocol.quote_asset,
-            )
-            sources = tuple(
-                sorted(graph_map.values(), key=lambda item: item.base_asset)
-            )
-            graph_sources[scope] = sources
-            graph_values: dict[str, EvaluatedSeries] = {}
-            model_values: dict[tuple[str, str], EvaluatedSeries] = {}
-            model_failures: dict[tuple[str, str], str] = {}
-            for source in sources:
-                graph_value = evaluated(source, horizon_protocol.graph_window)
-                graph_values[source.base_asset] = graph_value
-                identity = ScanInputIdentity(
-                    dataset_id=graph_value.dataset_id,
-                    source_artifact_fingerprint=graph_value.source_artifact_fingerprint,
-                    selection_slice_fingerprint=graph_value.selection_slice_fingerprint,
-                )
-                input_identities[
-                    (
-                        identity.dataset_id,
-                        identity.source_artifact_fingerprint,
-                        identity.selection_slice_fingerprint,
-                    )
-                ] = identity
-
-                for resolution in horizon_protocol.model_resolutions:
-                    model_map = _sources_by_base(
-                        catalog,
-                        venue=venue,
-                        interval=resolution,
-                        quote_asset=protocol.quote_asset,
-                    )
-                    model_key = (source.base_asset, resolution.label)
-                    model_source = model_map.get(source.base_asset)
-                    if model_source is None:
-                        model_failures[model_key] = "model_source_unavailable"
-                        continue
-                    lifecycle = _evidence_for_source(
-                        model_source,
-                        lifecycle_events,
-                    )
-                    lifecycle_decision = classify_historical_eligibility(
-                        lifecycle,
-                        required_start=as_of - model_lookback,
-                        required_end=as_of,
-                    )
-                    if (
-                        lifecycle_decision.state
-                        is not HistoricalEligibilityState.KNOWN_ELIGIBLE
-                    ):
-                        model_failures[model_key] = "model_lifecycle_ineligible"
-                        continue
-                    try:
-                        model_value = evaluated(model_source, model_lookback)
-                    except TypeError, ValueError:
-                        model_failures[model_key] = "model_slice_unavailable"
-                        continue
-                    model_values[model_key] = model_value
-                    model_identity = ScanInputIdentity(
-                        dataset_id=model_value.dataset_id,
-                        source_artifact_fingerprint=(
-                            model_value.source_artifact_fingerprint
-                        ),
-                        selection_slice_fingerprint=(
-                            model_value.selection_slice_fingerprint
-                        ),
-                    )
-                    input_identities[
-                        (
-                            model_identity.dataset_id,
-                            model_identity.source_artifact_fingerprint,
-                            model_identity.selection_slice_fingerprint,
-                        )
-                    ] = model_identity
-            graph_series[scope] = graph_values
-            model_series[scope] = model_values
-            model_failure_reasons[scope] = model_failures
-
-    manual_inputs = tuple(
-        sorted(token for pin in pins for token in pin.semantic_tokens())
-    )
-    definition = ScanDefinition(
-        scanner_protocol_version=protocol.protocol_id,
-        protocol_identity=protocol_identity(protocol),
-        catalog_identity=catalog_semantic_identity(catalog),
-        as_of=as_of,
-        eligible_information_end=as_of,
-        venues=protocol.venues,
-        horizons=horizons,
-        input_slices=tuple(input_identities.values()),
-        manual_inputs=manual_inputs,
-        created_at=datetime.now(UTC),
-    )
-    return _PreparedInputs(
-        catalog=catalog,
-        definition=definition,
-        graph_sources=graph_sources,
-        graph_series=graph_series,
-        model_series=model_series,
-        model_failure_reasons=model_failure_reasons,
-        lifecycle_events=lifecycle_events,
-    )
 
 
 def _scope_pins(
@@ -721,6 +368,7 @@ def _search_scope(
 ) -> tuple[
     tuple[EligibleAssetRecord, ...],
     tuple[NeighborRecord, ...],
+    GraphMetadataRecord | None,
     tuple[ScoutTrialRecord, ...],
     dict[str, ScannerTrial],
 ]:
@@ -732,7 +380,7 @@ def _search_scope(
             raise ScannerRunError(
                 "manual pin references a venue with no admitted sources"
             )
-        return (), (), (), {}
+        return (), (), None, (), {}
     forensic = any(
         pin.forensic and pin.venue == venue and horizon in pin.horizons for pin in pins
     )
@@ -756,6 +404,15 @@ def _search_scope(
         snapshot,
         evaluated_by_asset=prepared.graph_series[scope],
         manual_pins=scope_pins,
+        protocol=protocol,
+    )
+    eligible_series = {
+        record.asset_id: prepared.graph_series[scope][record.asset_id]
+        for record in snapshot.eligible_records
+    }
+    metadata = graph_metadata_record(
+        graph,
+        series_by_asset=eligible_series,
         protocol=protocol,
     )
 
@@ -832,7 +489,7 @@ def _search_scope(
                             reason="scout_evaluation_failed",
                         )
                     )
-    return snapshot.records, graph.records, tuple(scouts), trials_by_id
+    return snapshot.records, graph.records, metadata, tuple(scouts), trials_by_id
 
 
 def _promotion_with_replay(
@@ -860,24 +517,38 @@ def run_scan(
     data_root: str | Path,
     run_root: str | Path,
     pins: Sequence[ScannerPinSpec] = (),
+    manual_replay_candidate_ids: Sequence[str] = (),
     replay_service: ScannerReplayService,
+    catalog_admission_guard: Callable[[ScannerCatalog], None],
     protocol: ScannerProtocol = SCANNER_V1_SLICE1,
 ) -> ScanRunResult:
-    """Run one frozen scan sequentially, delegating only authoritative replay outward."""
+    """Run one frozen scan while delegating authoritative replay outward."""
 
     data_path = Path(data_root).resolve()
     run_path = Path(run_root).resolve()
     pin_tuple = tuple(pins)
+    manual_ids = tuple(manual_replay_candidate_ids)
+    if any(
+        len(candidate_id) != 64
+        or any(character not in "0123456789abcdef" for character in candidate_id)
+        for candidate_id in manual_ids
+    ):
+        raise ValueError("manual replay candidate IDs must be SHA-256 fingerprints")
+    if len(set(manual_ids)) != len(manual_ids):
+        raise ValueError("manual replay candidate IDs must be unique")
     prepared = _prepare_inputs(
         as_of=as_of,
         horizons=tuple(horizons),
         data_root=data_path,
         pins=pin_tuple,
+        manual_replay_candidate_ids=manual_ids,
+        catalog_admission_guard=catalog_admission_guard,
         protocol=protocol,
     )
     generation = start_scan_generation(run_path, prepared.definition)
 
     eligible_rows: list[EligibleAssetRecord] = []
+    graph_metadata_rows: list[GraphMetadataRecord] = []
     neighbor_rows: list[NeighborRecord] = []
     scout_rows: list[ScoutTrialRecord] = []
     trials_by_id: dict[str, ScannerTrial] = {}
@@ -887,7 +558,7 @@ def run_scan(
 
     for horizon in horizons:
         for venue in protocol.venues:
-            eligible, neighbors, scouts, scope_trials = _search_scope(
+            eligible, neighbors, metadata, scouts, scope_trials = _search_scope(
                 prepared=prepared,
                 generation=generation,
                 venue=venue,
@@ -896,6 +567,8 @@ def run_scan(
                 protocol=protocol,
             )
             eligible_rows.extend(eligible)
+            if metadata is not None:
+                graph_metadata_rows.append(metadata)
             neighbor_rows.extend(neighbors)
             scout_rows.extend(scouts)
             scouts_by_horizon[horizon].extend(scouts)
@@ -904,11 +577,23 @@ def run_scan(
                 raise ScannerRunError("deterministic scanner candidate ID collision")
             trials_by_id.update(scope_trials)
 
+    unknown_manual = sorted(set(manual_ids) - set(trials_by_id))
+    if unknown_manual:
+        raise ValueError(
+            f"manual replay candidate is not an executable trial: {unknown_manual[0]}"
+        )
+
     promotions: list[PromotionRecord] = []
     for horizon in horizons:
+        horizon_scouts = tuple(scouts_by_horizon[horizon])
+        horizon_ids = {record.candidate_id for record in horizon_scouts}
+        horizon_manual = tuple(
+            candidate_id for candidate_id in manual_ids if candidate_id in horizon_ids
+        )
         promotions.extend(
             apply_promotion_policy(
-                tuple(scouts_by_horizon[horizon]),
+                horizon_scouts,
+                manual_candidate_ids=horizon_manual,
                 protocol=protocol,
             )
         )
@@ -916,6 +601,7 @@ def run_scan(
     write_scan_tables(
         generation,
         eligible_assets=tuple(eligible_rows),
+        graph_metadata=tuple(graph_metadata_rows),
         neighbors=tuple(neighbor_rows),
         scout_trials=tuple(scout_rows),
         promotions=tuple(promotions),
@@ -955,6 +641,7 @@ def run_scan(
         write_scan_tables(
             generation,
             eligible_assets=tuple(eligible_rows),
+            graph_metadata=tuple(graph_metadata_rows),
             neighbors=tuple(neighbor_rows),
             scout_trials=tuple(scout_rows),
             promotions=tuple(promotions),

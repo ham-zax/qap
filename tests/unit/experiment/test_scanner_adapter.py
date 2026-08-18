@@ -38,7 +38,7 @@ from qap.scanner.catalog import (
     ScannerSourceSpec,
     catalog_semantic_identity,
 )
-from qap.scanner.graph import NeighborRecord
+from qap.scanner.graph import GraphMetadataRecord, NeighborRecord
 from qap.scanner.models import ScanDefinition, ScanInputIdentity
 from qap.scanner.promotion import PromotionRecord, PromotionStatus
 from qap.scanner.protocol import (
@@ -173,6 +173,11 @@ def _definition(catalog: ScannerCatalog) -> ScanDefinition:
         scanner_protocol_version=SCANNER_V1_SLICE1.protocol_id,
         protocol_identity=protocol_identity(SCANNER_V1_SLICE1),
         catalog_identity=catalog_semantic_identity(catalog),
+        universe_policy_version=SCANNER_V1_SLICE1.universe_policy_version,
+        candidate_generator_version=SCANNER_V1_SLICE1.candidate_generator_version,
+        template_set_version=SCANNER_V1_SLICE1.template_set_version,
+        promotion_policy_version=SCANNER_V1_SLICE1.promotion_policy_version,
+        cost_policy_reference=SCANNER_V1_SLICE1.cost_policy.policy_id,
         as_of=END,
         eligible_information_end=END,
         venues=("binance",),
@@ -235,6 +240,25 @@ def _generation(tmp_path: Path, catalog: ScannerCatalog):
             (ETH, trial.source_artifact_fingerprints[1], "2" * 64),
         )
     )
+    horizon = SCANNER_V1_SLICE1.horizon(ScannerHorizon.SHORT)
+    graph_metadata = GraphMetadataRecord(
+        scan_id=definition.scan_id,
+        venue="binance",
+        horizon="short",
+        universe_snapshot_id=trial.universe_snapshot_id,
+        generator_version=definition.candidate_generator_version,
+        graph_interval=horizon.graph_interval.label,
+        graph_window_seconds=int(horizon.graph_window.total_seconds()),
+        neighbors_per_asset=SCANNER_V1_SLICE1.neighbors_per_asset,
+        minimum_pair_coverage=SCANNER_V1_SLICE1.minimum_pair_coverage,
+        maximum_missing_generator_bars=(
+            SCANNER_V1_SLICE1.maximum_missing_generator_bars
+        ),
+        eligible_asset_count=2,
+        total_valid_pair_comparisons=1,
+        input_selection_slice_fingerprints=("1" * 64, "2" * 64),
+        distance_digest="d" * 64,
+    )
     neighbor = NeighborRecord(
         scan_id=definition.scan_id,
         venue="binance",
@@ -280,6 +304,7 @@ def _generation(tmp_path: Path, catalog: ScannerCatalog):
     write_scan_tables(
         generation,
         eligible_assets=eligible,
+        graph_metadata=(graph_metadata,),
         neighbors=(neighbor,),
         scout_trials=(scout,),
         promotions=(promotion,),

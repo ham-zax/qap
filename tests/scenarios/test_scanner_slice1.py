@@ -1,3 +1,4 @@
+# pyright: reportUnknownArgumentType=false
 # pyright: reportUnknownMemberType=false
 # pyright: reportUnknownVariableType=false
 import json
@@ -6,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pyarrow.parquet as pq
+import pytest
 
 from qap.market import (
     BarInterval,
@@ -29,6 +31,9 @@ ETH = AssetId("ETH")
 USDT = AssetId("USDT")
 AS_OF = datetime(2024, 3, 1, tzinfo=UTC)
 HISTORY = timedelta(days=46)
+RESERVED_FINAL_OOS_FINGERPRINT = (
+    "b3069c70fb61f1e7fb6a8b1d338194817ba8896dfd2618b96091c8c46686f2a5"
+)
 
 
 def _price(asset: AssetId, elapsed_hours: float) -> float:
@@ -226,6 +231,12 @@ def test_scanner_short_horizon_direct_market_reaches_authoritative_replay(
     neighbors = pq.read_table(
         result.artifact_directory / "neighbors.parquet"
     ).to_pylist()
+    graph_metadata = pq.read_table(
+        result.artifact_directory / "graph_metadata.parquet"
+    ).to_pylist()
+    eligible = pq.read_table(
+        result.artifact_directory / "eligible_assets.parquet"
+    ).to_pylist()
     scouts = pq.read_table(
         result.artifact_directory / "scout_trials.parquet"
     ).to_pylist()
@@ -237,6 +248,17 @@ def test_scanner_short_horizon_direct_market_reaches_authoritative_replay(
     ).to_pylist()
     assert {(row["venue"], row["pair_id"]) for row in neighbors} == {
         ("binance", "BTC/ETH")
+    }
+    assert len(graph_metadata) == 1
+    graph_row = graph_metadata[0]
+    assert graph_row["eligible_asset_count"] == 2
+    assert graph_row["total_valid_pair_comparisons"] == 1
+    assert graph_row["neighbors_per_asset"] == 8
+    assert len(graph_row["distance_digest"]) == 64
+    assert set(graph_row["input_selection_slice_fingerprints"]) == {
+        row["selection_slice_fingerprint"]
+        for row in eligible
+        if row["automatic_eligible"]
     }
     assert len(scouts) == 18
     assert sum(row["trial_status"] == "invalid" for row in scouts) == 9
@@ -369,3 +391,78 @@ def test_scanner_unsupported_cross_stays_in_durable_attempt_denominator(
         and row["scout_relative_wealth_proxy"] is not None
         for row in scouts
     )
+
+
+def test_explicit_manual_replay_is_outside_automatic_budget(tmp_path: Path) -> None:
+    data_root = tmp_path / "data"
+    _write_fixture(data_root, include_direct=True)
+    baseline = run_scan_with_qap(
+        as_of=AS_OF,
+        horizons=(ScannerHorizon.SHORT,),
+        data_root=data_root,
+        run_root=tmp_path / "baseline-runs",
+        pins=(),
+    )
+    baseline_promotions = pq.read_table(
+        baseline.artifact_directory / "promotions.parquet"
+    ).to_pylist()
+    manual_candidate_id = next(
+        row["candidate_id"]
+        for row in baseline_promotions
+        if not row["selected_for_replay"]
+    )
+
+    manual = run_scan_with_qap(
+        as_of=AS_OF,
+        horizons=(ScannerHorizon.SHORT,),
+        data_root=data_root,
+        run_root=tmp_path / "manual-runs",
+        pins=(),
+        manual_replay_candidate_ids=(manual_candidate_id,),
+    )
+    manual_promotions = pq.read_table(
+        manual.artifact_directory / "promotions.parquet"
+    ).to_pylist()
+    selected = next(
+        row for row in manual_promotions if row["candidate_id"] == manual_candidate_id
+    )
+    attempts = pq.read_table(
+        manual.artifact_directory / "replay_attempts.parquet"
+    ).to_pylist()
+
+    assert manual.scan_id != baseline.scan_id
+    assert selected["automatic_selected"] is False
+    assert selected["manual_selected"] is True
+    assert selected["selected_for_replay"] is True
+    assert manual_candidate_id in {row["candidate_id"] for row in attempts}
+
+
+def test_scanner_rejects_reserved_final_oos_before_source_read(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root = tmp_path / "data"
+    run_root = tmp_path / "runs"
+    _write_fixture(data_root, include_direct=True)
+    catalog_path = data_root / "catalog.json"
+    payload = json.loads(catalog_path.read_text(encoding="utf-8"))
+    payload["sources"][0]["expected_semantic_fingerprint"] = (
+        RESERVED_FINAL_OOS_FINGERPRINT
+    )
+    catalog_path.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+
+    import qap.scanner.catalog as scanner_catalog
+
+    def fail_if_reader_runs(_path: Path) -> object:
+        raise AssertionError("reserved final-OOS source reader was invoked")
+
+    monkeypatch.setattr(scanner_catalog, "read_parquet_bar_series", fail_if_reader_runs)
+
+    with pytest.raises(ValueError, match="reserved final-OOS"):
+        run_scan_with_qap(
+            as_of=AS_OF,
+            horizons=(ScannerHorizon.SHORT,),
+            data_root=data_root,
+            run_root=run_root,
+            pins=(),
+        )

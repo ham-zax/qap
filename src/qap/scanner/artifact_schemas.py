@@ -24,6 +24,24 @@ ELIGIBLE_SCHEMA = pa.schema(
         ("forensic_research_allowed", pa.bool_()),
     ]
 )
+GRAPH_METADATA_SCHEMA = pa.schema(
+    [
+        ("scan_id", pa.string()),
+        ("venue", pa.string()),
+        ("horizon", pa.string()),
+        ("universe_snapshot_id", pa.string()),
+        ("generator_version", pa.string()),
+        ("graph_interval", pa.string()),
+        ("graph_window_seconds", pa.int64()),
+        ("neighbors_per_asset", pa.int64()),
+        ("minimum_pair_coverage", pa.float64()),
+        ("maximum_missing_generator_bars", pa.int64()),
+        ("eligible_asset_count", pa.int64()),
+        ("total_valid_pair_comparisons", pa.int64()),
+        ("input_selection_slice_fingerprints", pa.list_(pa.string())),
+        ("distance_digest", pa.string()),
+    ]
+)
 NEIGHBOR_SCHEMA = pa.schema(
     [
         ("scan_id", pa.string()),
@@ -90,6 +108,7 @@ REPLAY_SCHEMA = pa.schema(
 )
 TABLE_SCHEMAS: dict[str, Any] = {
     "eligible_assets.parquet": ELIGIBLE_SCHEMA,
+    "graph_metadata.parquet": GRAPH_METADATA_SCHEMA,
     "neighbors.parquet": NEIGHBOR_SCHEMA,
     "scout_trials.parquet": SCOUT_SCHEMA,
     "promotions.parquet": PROMOTION_SCHEMA,
@@ -98,6 +117,7 @@ TABLE_SCHEMAS: dict[str, Any] = {
 
 __all__ = [
     "ELIGIBLE_SCHEMA",
+    "GRAPH_METADATA_SCHEMA",
     "NEIGHBOR_SCHEMA",
     "PROMOTION_SCHEMA",
     "REPLAY_SCHEMA",

@@ -17,18 +17,25 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from qap.scanner.artifact_schemas import (
-    ELIGIBLE_SCHEMA,
-    NEIGHBOR_SCHEMA,
     PROMOTION_SCHEMA,
     REPLAY_SCHEMA,
-    SCOUT_SCHEMA,
     TABLE_SCHEMAS,
 )
-from qap.scanner.graph import NeighborRecord
+from qap.scanner.artifact_tables import (
+    eligible_table,
+    graph_metadata_table,
+    neighbor_table,
+    promotion_table,
+    scout_table,
+)
+from qap.scanner.graph import GraphMetadataRecord, NeighborRecord
+from qap.scanner.integrity import validate_scanner_integrity, write_scanner_integrity
 from qap.scanner.models import ScanDefinition
 from qap.scanner.promotion import PromotionRecord
 from qap.scanner.scout import ScoutTrialRecord
 from qap.scanner.universe import EligibleAssetRecord
+
+_AUTHORITATIVE_FILES = frozenset(("definition.json", "manifest.json", *TABLE_SCHEMAS))
 
 
 class ScanArtifactError(RuntimeError):
@@ -114,11 +121,11 @@ def _load_definition(path: Path) -> ScanDefinition:
             raise ValueError("definition must be a JSON object")
         declared_scan_id = payload.pop("scan_id", None)
         definition = ScanDefinition.model_validate(payload)
-        if declared_scan_id != definition.scan_id:
-            raise ValueError("definition scan_id does not match semantic payload")
-        return definition
     except (OSError, ValueError) as exc:
         raise ScanArtifactError("partial scan definition is malformed") from exc
+    if declared_scan_id != definition.scan_id:
+        raise ScanArtifactError("partial scan definition mismatch")
+    return definition
 
 
 def start_scan_generation(
@@ -153,101 +160,6 @@ def start_scan_generation(
     return generation
 
 
-def _eligible_table(records: tuple[EligibleAssetRecord, ...]) -> Any:
-    rows = [
-        {
-            "scan_id": item.scan_id,
-            "venue": item.venue,
-            "horizon": item.horizon.value,
-            "asset_id": item.asset_id,
-            "venue_symbol": item.venue_symbol,
-            "eligibility_state": item.eligibility_state.value,
-            "eligibility_reason": item.eligibility_reason,
-            "lifecycle_evidence_refs": list(item.lifecycle_evidence_refs),
-            "source_artifact_fingerprint": item.source_artifact_fingerprint,
-            "selection_slice_fingerprint": item.selection_slice_fingerprint,
-            "bar_coverage": item.bar_coverage,
-            "longest_missing_run": item.longest_missing_run,
-            "automatic_eligible": item.automatic_eligible,
-            "forensic_research_allowed": item.forensic_research_allowed,
-        }
-        for item in sorted(
-            records,
-            key=lambda value: (value.venue, value.horizon.value, value.asset_id),
-        )
-    ]
-    return pa.Table.from_pylist(rows, schema=ELIGIBLE_SCHEMA)
-
-
-def _neighbor_table(records: tuple[NeighborRecord, ...]) -> Any:
-    rows = [
-        {
-            "scan_id": item.scan_id,
-            "venue": item.venue,
-            "horizon": item.horizon,
-            "pair_id": item.pair_id,
-            "asset_a": item.asset_a,
-            "asset_b": item.asset_b,
-            "ssd_distance": item.ssd_distance,
-            "rank_from_a": item.rank_from_a,
-            "rank_from_b": item.rank_from_b,
-            "selected_by_a": item.selected_by_a,
-            "selected_by_b": item.selected_by_b,
-            "automatic_neighbor_selected": item.automatic_neighbor_selected,
-            "manual_pinned": item.manual_pinned,
-        }
-        for item in sorted(
-            records, key=lambda value: (value.venue, value.horizon, value.pair_id)
-        )
-    ]
-    return pa.Table.from_pylist(rows, schema=NEIGHBOR_SCHEMA)
-
-
-def _scout_table(records: tuple[ScoutTrialRecord, ...]) -> Any:
-    rows = [
-        {
-            "candidate_id": item.candidate_id,
-            "scan_id": item.scan_id,
-            "venue": item.venue,
-            "horizon": item.horizon,
-            "pair_id": item.pair_id,
-            "orientation": item.orientation,
-            "resolution": item.resolution,
-            "model_family": item.model_family,
-            "template_id": item.template_id,
-            "trial_status": item.trial_status.value,
-            "failure_reason": item.failure_reason,
-            "scout_relative_wealth_proxy": item.scout_relative_wealth_proxy,
-            "scout_turnover_proxy": item.scout_turnover_proxy,
-            "signal_count": item.signal_count,
-            "automatic_neighbor_selected": item.automatic_neighbor_selected,
-            "manual_pinned": item.manual_pinned,
-        }
-        for item in sorted(records, key=lambda value: value.candidate_id)
-    ]
-    return pa.Table.from_pylist(rows, schema=SCOUT_SCHEMA)
-
-
-def _promotion_table(records: tuple[PromotionRecord, ...]) -> Any:
-    rows = [
-        {
-            "candidate_id": item.candidate_id,
-            "promotion_rank": item.promotion_rank,
-            "promotion_status": item.promotion_status.value,
-            "budget_reason": item.budget_reason,
-            "automatic_selected": item.automatic_selected,
-            "manual_selected": item.manual_selected,
-            "selected_for_replay": item.selected_for_replay,
-            "direct_execution_instrument_id": item.direct_execution_instrument_id,
-            "deep_replay_run_id": item.deep_replay_run_id,
-            "deep_replay_status": item.deep_replay_status,
-            "economic_gate_status": item.economic_gate_status,
-        }
-        for item in sorted(records, key=lambda value: value.candidate_id)
-    ]
-    return pa.Table.from_pylist(rows, schema=PROMOTION_SCHEMA)
-
-
 def _attempt_table(records: tuple[ReplayAttemptRecord, ...]) -> Any:
     rows = [
         {
@@ -269,6 +181,7 @@ def write_scan_tables(
     generation: ScanArtifactGeneration,
     *,
     eligible_assets: tuple[EligibleAssetRecord, ...],
+    graph_metadata: tuple[GraphMetadataRecord, ...],
     neighbors: tuple[NeighborRecord, ...],
     scout_trials: tuple[ScoutTrialRecord, ...],
     promotions: tuple[PromotionRecord, ...],
@@ -280,6 +193,8 @@ def write_scan_tables(
     scan_id = generation.definition.scan_id
     if any(item.scan_id != scan_id for item in eligible_assets):
         raise ScanArtifactError("eligible asset record scan_id mismatch")
+    if any(item.scan_id != scan_id for item in graph_metadata):
+        raise ScanArtifactError("graph metadata record scan_id mismatch")
     if any(item.scan_id != scan_id for item in neighbors):
         raise ScanArtifactError("neighbor record scan_id mismatch")
     if any(item.scan_id != scan_id for item in scout_trials):
@@ -289,10 +204,11 @@ def write_scan_tables(
         raise ScanArtifactError("promotion candidate is absent from scout trial table")
 
     tables = {
-        "eligible_assets.parquet": _eligible_table(eligible_assets),
-        "neighbors.parquet": _neighbor_table(neighbors),
-        "scout_trials.parquet": _scout_table(scout_trials),
-        "promotions.parquet": _promotion_table(promotions),
+        "eligible_assets.parquet": eligible_table(eligible_assets),
+        "graph_metadata.parquet": graph_metadata_table(graph_metadata),
+        "neighbors.parquet": neighbor_table(neighbors),
+        "scout_trials.parquet": scout_table(scout_trials),
+        "promotions.parquet": promotion_table(promotions),
     }
     for name, table in tables.items():
         _atomic_write_table(generation.staging_directory / name, table)
@@ -491,7 +407,8 @@ def _reconcile_definition(
         )
         for item in definition.input_slices
     }
-    for row in tables["eligible_assets.parquet"].to_pylist():
+    eligible_rows = tables["eligible_assets.parquet"].to_pylist()
+    for row in eligible_rows:
         if row["scan_id"] != definition.scan_id:
             raise ScanArtifactError("eligible asset scan_id does not match definition")
         pair = (
@@ -502,6 +419,42 @@ def _reconcile_definition(
             raise ScanArtifactError(
                 "eligible asset frozen source/slice identity is absent from definition"
             )
+
+    metadata_rows = tables["graph_metadata.parquet"].to_pylist()
+    metadata_scopes = [(row["venue"], row["horizon"]) for row in metadata_rows]
+    if len(metadata_scopes) != len(set(metadata_scopes)):
+        raise ScanArtifactError("graph metadata scopes must be unique")
+    eligible_scopes = {(row["venue"], row["horizon"]) for row in eligible_rows}
+    if set(metadata_scopes) != eligible_scopes:
+        raise ScanArtifactError("graph metadata scopes do not match eligible evidence")
+    for row in metadata_rows:
+        if row["scan_id"] != definition.scan_id:
+            raise ScanArtifactError("graph metadata scan_id does not match definition")
+        if row["generator_version"] != definition.candidate_generator_version:
+            raise ScanArtifactError("graph metadata generator version mismatch")
+        scoped = [
+            eligible
+            for eligible in eligible_rows
+            if eligible["venue"] == row["venue"]
+            and eligible["horizon"] == row["horizon"]
+            and eligible["automatic_eligible"]
+        ]
+        if row["eligible_asset_count"] != len(scoped):
+            raise ScanArtifactError("graph metadata eligible denominator mismatch")
+        fingerprints = sorted(
+            eligible["selection_slice_fingerprint"] for eligible in scoped
+        )
+        if row["input_selection_slice_fingerprints"] != fingerprints:
+            raise ScanArtifactError(
+                "graph metadata selection-slice denominator mismatch"
+            )
+        maximum_pairs = len(scoped) * (len(scoped) - 1) // 2
+        if not 0 <= row["total_valid_pair_comparisons"] <= maximum_pairs:
+            raise ScanArtifactError("graph metadata pair denominator is impossible")
+        digest = row["distance_digest"]
+        if not isinstance(digest, str) or len(digest) != 64:
+            raise ScanArtifactError("graph metadata distance digest is invalid")
+
     for name in ("neighbors.parquet", "scout_trials.parquet"):
         if any(
             row["scan_id"] != definition.scan_id for row in tables[name].to_pylist()
@@ -639,12 +592,25 @@ def publish_scan_generation(generation: ScanArtifactGeneration) -> Path:
     _reconcile(reread_tables)
     if reread["replay_references"] != _replay_references(reread_tables):
         raise ScanArtifactError("scanner manifest replay references do not reconcile")
+    try:
+        write_scanner_integrity(
+            generation.staging_directory,
+            scan_id=generation.definition.scan_id,
+            authoritative_files=_AUTHORITATIVE_FILES,
+        )
+        validate_scanner_integrity(
+            generation.staging_directory,
+            scan_id=generation.definition.scan_id,
+            authoritative_files=_AUTHORITATIVE_FILES,
+        )
+    except ValueError as exc:
+        raise ScanArtifactError(str(exc)) from exc
     os.replace(generation.staging_directory, generation.final_directory)
     return generation.final_directory
 
 
 def discover_completed_scans(run_root: str | Path) -> tuple[Path, ...]:
-    """Return only manifest-bearing final scan directories, never partial staging."""
+    """Return only fully validated final scan directories, never partial staging."""
 
     scan_root = Path(run_root).resolve() / "scans"
     if not scan_root.is_dir():
@@ -653,16 +619,24 @@ def discover_completed_scans(run_root: str | Path) -> tuple[Path, ...]:
     for directory in scan_root.iterdir():
         if not directory.is_dir() or directory.name.endswith(".partial"):
             continue
-        manifest_path = directory / "manifest.json"
-        definition_path = directory / "definition.json"
-        if not manifest_path.is_file() or not definition_path.is_file():
-            continue
         try:
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        except OSError, json.JSONDecodeError:
-            continue
-        if manifest.get("scan_id") == directory.name:
-            completed.append(directory)
+            validate_scanner_integrity(
+                directory,
+                scan_id=directory.name,
+                authoritative_files=_AUTHORITATIVE_FILES,
+            )
+            definition = _load_definition(directory / "definition.json")
+            manifest = json.loads(
+                (directory / "manifest.json").read_text(encoding="utf-8")
+            )
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            raise ScanArtifactError(str(exc)) from exc
+        if (
+            definition.scan_id != directory.name
+            or manifest.get("scan_id") != directory.name
+        ):
+            raise ScanArtifactError("completed scanner artifact identity mismatch")
+        completed.append(directory)
     return tuple(sorted(completed))
 
 

@@ -148,9 +148,10 @@ def _candidate_id(
     right: EvaluatedSeries,
     protocol: ScannerProtocol,
 ) -> str:
+    if left.eligible_information_end != right.eligible_information_end:
+        raise ValueError("candidate model slices must share one information boundary")
     payload = {
-        "identity_version": "qap.scanner.candidate.v1",
-        "scan_id": graph.scan_id,
+        "identity_version": "qap.scanner.candidate.v2",
         "protocol_identity": protocol_identity(protocol),
         "venue": graph.venue,
         "horizon": graph.horizon,
@@ -162,19 +163,12 @@ def _candidate_id(
         "template_id": template_id.value,
         "window_bars": window_bars,
         "minimum_observations": minimum_observations,
-        "source_artifact_fingerprints": [
-            left.source_artifact_fingerprint,
-            right.source_artifact_fingerprint,
-        ],
+        "eligible_information_end": left.eligible_information_end.isoformat(),
         "selection_slice_fingerprints": [
             left.selection_slice_fingerprint,
             right.selection_slice_fingerprint,
         ],
         "evidence_dataset_ids": [left.dataset_id, right.dataset_id],
-        "automatic_neighbor_selected": record.automatic_neighbor_selected,
-        "manual_pinned": record.manual_pinned,
-        "generator_rank_from_a": record.rank_from_a,
-        "generator_rank_from_b": record.rank_from_b,
     }
     encoded = json.dumps(
         payload,

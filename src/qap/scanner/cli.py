@@ -9,7 +9,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from qap.scanner.models import ScannerPinSpec, ScannerPinsFile
+from qap.scanner.models import ScannerPinsFile, ScannerPinSpec
 from qap.scanner.protocol import ScannerHorizon
 
 
@@ -61,6 +61,12 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--run-root", type=Path, required=True)
     parser.add_argument("--pins-file", type=Path, default=None)
+    parser.add_argument(
+        "--manual-replay-candidate-id",
+        action="append",
+        default=[],
+        dest="manual_replay_candidate_ids",
+    )
     return parser
 
 
@@ -76,6 +82,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             data_root=arguments.data_root,
             run_root=arguments.run_root,
             pins=pins,
+            manual_replay_candidate_ids=tuple(arguments.manual_replay_candidate_ids),
         )
     except (
         OSError,

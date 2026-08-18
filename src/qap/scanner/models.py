@@ -9,14 +9,7 @@ from typing import Literal, Self
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from qap.portfolio import AssetId
-from qap.scanner.protocol import (
-    CANDIDATE_GENERATOR_VERSION,
-    PROMOTION_POLICY_VERSION,
-    SCANNER_V1_SLICE1,
-    TEMPLATE_SET_VERSION,
-    UNIVERSE_POLICY_VERSION,
-    ScannerHorizon,
-)
+from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon
 
 _FINGERPRINT = re.compile(r"^[0-9a-f]{64}$")
 
@@ -136,11 +129,11 @@ class ScanDefinition(_FrozenModel):
     scanner_protocol_version: str
     protocol_identity: str
     catalog_identity: str
-    universe_policy_version: str = UNIVERSE_POLICY_VERSION
-    candidate_generator_version: str = CANDIDATE_GENERATOR_VERSION
-    template_set_version: str = TEMPLATE_SET_VERSION
-    promotion_policy_version: str = PROMOTION_POLICY_VERSION
-    cost_policy_reference: str = SCANNER_V1_SLICE1.cost_policy.policy_id
+    universe_policy_version: str
+    candidate_generator_version: str
+    template_set_version: str
+    promotion_policy_version: str
+    cost_policy_reference: str
     as_of: datetime
     eligible_information_end: datetime
     venues: tuple[str, ...]

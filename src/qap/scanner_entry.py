@@ -6,6 +6,8 @@ from decimal import Decimal
 from pathlib import Path
 
 from qap.experiment.artifacts import read_run_artifacts
+from qap.experiment.dataset_seals import validate_expected_fingerprints_for_role
+from qap.experiment.manifest import DataRole
 from qap.experiment.scanner_adapter import run_scanner_candidate_replay
 from qap.scanner.artifacts import (
     ReplayAttemptRecord,
@@ -17,6 +19,13 @@ from qap.scanner.models import ScannerPinSpec
 from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon, ScannerProtocol
 from qap.scanner.run import ReplayReference, ScanRunResult, run_scan
 from qap.scanner.trials import ScannerTrial
+
+
+def _validate_scanner_catalog_admission(catalog: ScannerCatalog) -> None:
+    validate_expected_fingerprints_for_role(
+        (source.expected_semantic_fingerprint for source in catalog.sources),
+        data_role=DataRole.DEVELOPMENT,
+    )
 
 
 def _direct_execution_instrument_id(
@@ -125,6 +134,7 @@ def run_scan_with_qap(
     data_root: str | Path,
     run_root: str | Path,
     pins: Sequence[ScannerPinSpec] = (),
+    manual_replay_candidate_ids: Sequence[str] = (),
     repository_root: str | Path | None = None,
     protocol: ScannerProtocol = SCANNER_V1_SLICE1,
 ) -> ScanRunResult:
@@ -141,7 +151,9 @@ def run_scan_with_qap(
         data_root=data_root,
         run_root=run_root,
         pins=pins,
+        manual_replay_candidate_ids=manual_replay_candidate_ids,
         replay_service=_QapReplayService(repository),
+        catalog_admission_guard=_validate_scanner_catalog_admission,
         protocol=protocol,
     )
 

@@ -1,7 +1,10 @@
+# pyright: reportPrivateUsage=false
+
 import argparse
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -97,7 +100,7 @@ def test_pins_file_rejects_unknown_venue_duplicate_horizon_and_extra_fields(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "pins.json"
-    base = {
+    base: dict[str, Any] = {
         "schema_version": "qap.scanner.pins.v1",
         "pins": [
             {
@@ -130,7 +133,11 @@ def test_missing_pins_file_means_no_manual_inputs() -> None:
     assert load_pins_file(None) == ()
 
 
-def test_cli_prints_bounded_json_summary(monkeypatch, tmp_path: Path, capsys) -> None:
+def test_cli_prints_bounded_json_summary(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     artifact = tmp_path / "runs" / "scans" / ("a" * 64)
     result = ScanRunResult(
         scan_id="a" * 64,
@@ -149,7 +156,13 @@ def test_cli_prints_bounded_json_summary(monkeypatch, tmp_path: Path, capsys) ->
 
     import qap.scanner_entry as scanner_entry
 
-    monkeypatch.setattr(scanner_entry, "run_scan_with_qap", lambda **_kwargs: result)
+    captured: dict[str, object] = {}
+
+    def fake_run(**kwargs: object) -> ScanRunResult:
+        captured.update(kwargs)
+        return result
+
+    monkeypatch.setattr(scanner_entry, "run_scan_with_qap", fake_run)
     status = main(
         [
             "--as-of",
@@ -160,10 +173,15 @@ def test_cli_prints_bounded_json_summary(monkeypatch, tmp_path: Path, capsys) ->
             str(tmp_path / "data"),
             "--run-root",
             str(tmp_path / "runs"),
+            "--manual-replay-candidate-id",
+            "b" * 64,
+            "--manual-replay-candidate-id",
+            "c" * 64,
         ]
     )
 
     assert status == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload == result.summary_payload()
+    assert captured["manual_replay_candidate_ids"] == ("b" * 64, "c" * 64)
     assert "success" not in payload
