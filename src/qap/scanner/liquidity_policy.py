@@ -5,7 +5,6 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-from enum import StrEnum
 from typing import cast
 
 from qap.market import MarketMetadata, PublicBookSnapshot
@@ -28,7 +27,6 @@ from qap.scanner.prospective_protocol import (
     DAILY_COVERAGE_MINIMUM,
     DEPTH_CADENCE,
     L1_CADENCE,
-    LIQUIDITY_POLICY_VERSION,
     MINIMUM_QUALIFICATION_WINDOW,
     OVERALL_COVERAGE_MINIMUM,
     SAFE_CAPACITY_HAIRCUT,
@@ -40,24 +38,6 @@ from qap.scanner.protocol import SCANNER_V1_SLICE1
 _ZERO = Decimal("0")
 _ONE = Decimal("1")
 _TWO = Decimal("2")
-
-
-class QualificationState(StrEnum):
-    RESEARCH_ONLY = "research_only"
-    SMALL_CAPACITY = "small_capacity"
-    TRADABLE_NOW = "tradable_now"
-
-
-class QualificationReason(StrEnum):
-    ALL_CURRENT_EVIDENCE_SATISFIED = "all_current_evidence_satisfied"
-    ELIGIBILITY_UNRESOLVED = "eligibility_unresolved"
-    MICROSTRUCTURE_COVERAGE_INSUFFICIENT = "microstructure_coverage_insufficient"
-    INSTRUMENT_NOT_TWO_WAY_TRADABLE = "instrument_not_two_way_tradable"
-    CAPACITY_UNKNOWN = "capacity_unknown"
-    ORDER_CONSTRAINTS_UNSATISFIED = "order_constraints_unsatisfied"
-    ECONOMIC_GATES_FAILED = "economic_gates_failed"
-    REQUESTED_CAPITAL_ABOVE_CEILING = "requested_capital_above_ceiling"
-    NO_SUPPORTED_LOWER_CAPITAL = "no_supported_lower_capital"
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,16 +128,6 @@ class CandidateCapacity:
     buy_capital_ceiling: Decimal
     sell_capital_ceiling: Decimal
     candidate_capital_ceiling: Decimal
-
-
-@dataclass(frozen=True, slots=True)
-class QualificationDecision:
-    state: QualificationState
-    reason: QualificationReason
-    as_of: datetime
-    requested_capital: Decimal
-    estimated_capital_ceiling: Decimal | None
-    liquidity_policy_version: str = LIQUIDITY_POLICY_VERSION
 
 
 def _positive_decimal(value: object, *, field: str) -> Decimal:
@@ -507,131 +477,11 @@ def candidate_capital_ceiling(
     )
 
 
-def _decision(
-    state: QualificationState,
-    reason: QualificationReason,
-    *,
-    as_of: datetime,
-    requested_capital: Decimal,
-    ceiling: Decimal | None,
-) -> QualificationDecision:
-    return QualificationDecision(
-        state=state,
-        reason=reason,
-        as_of=as_of,
-        requested_capital=requested_capital,
-        estimated_capital_ceiling=ceiling,
-    )
-
-
-def qualify_candidate(
-    *,
-    as_of: datetime,
-    requested_capital: Decimal,
-    candidate_capital_ceiling: Decimal | None,
-    eligibility_resolved: bool,
-    capture_contract_satisfied: bool,
-    current_two_way_trading: bool,
-    order_constraints_satisfied: bool,
-    economic_gates_at_requested_capital: bool,
-    lower_tested_capital: Decimal | None,
-    economic_gates_at_lower_capital: bool,
-) -> QualificationDecision:
-    timestamp = _utc(as_of, field="as_of")
-    requested = _positive_decimal(requested_capital, field="requested_capital")
-    ceiling = (
-        None
-        if candidate_capital_ceiling is None
-        else _positive_decimal(
-            candidate_capital_ceiling, field="candidate_capital_ceiling"
-        )
-    )
-    lower = (
-        None
-        if lower_tested_capital is None
-        else _positive_decimal(lower_tested_capital, field="lower_tested_capital")
-    )
-    if not eligibility_resolved:
-        return _decision(
-            QualificationState.RESEARCH_ONLY,
-            QualificationReason.ELIGIBILITY_UNRESOLVED,
-            as_of=timestamp,
-            requested_capital=requested,
-            ceiling=ceiling,
-        )
-    if not capture_contract_satisfied:
-        return _decision(
-            QualificationState.RESEARCH_ONLY,
-            QualificationReason.MICROSTRUCTURE_COVERAGE_INSUFFICIENT,
-            as_of=timestamp,
-            requested_capital=requested,
-            ceiling=ceiling,
-        )
-    if not current_two_way_trading:
-        return _decision(
-            QualificationState.RESEARCH_ONLY,
-            QualificationReason.INSTRUMENT_NOT_TWO_WAY_TRADABLE,
-            as_of=timestamp,
-            requested_capital=requested,
-            ceiling=ceiling,
-        )
-    if ceiling is None:
-        return _decision(
-            QualificationState.RESEARCH_ONLY,
-            QualificationReason.CAPACITY_UNKNOWN,
-            as_of=timestamp,
-            requested_capital=requested,
-            ceiling=None,
-        )
-    if not order_constraints_satisfied:
-        return _decision(
-            QualificationState.RESEARCH_ONLY,
-            QualificationReason.ORDER_CONSTRAINTS_UNSATISFIED,
-            as_of=timestamp,
-            requested_capital=requested,
-            ceiling=ceiling,
-        )
-    if requested <= ceiling:
-        if economic_gates_at_requested_capital:
-            return _decision(
-                QualificationState.TRADABLE_NOW,
-                QualificationReason.ALL_CURRENT_EVIDENCE_SATISFIED,
-                as_of=timestamp,
-                requested_capital=requested,
-                ceiling=ceiling,
-            )
-        return _decision(
-            QualificationState.RESEARCH_ONLY,
-            QualificationReason.ECONOMIC_GATES_FAILED,
-            as_of=timestamp,
-            requested_capital=requested,
-            ceiling=ceiling,
-        )
-    if lower is not None and lower <= ceiling and economic_gates_at_lower_capital:
-        return _decision(
-            QualificationState.SMALL_CAPACITY,
-            QualificationReason.REQUESTED_CAPITAL_ABOVE_CEILING,
-            as_of=timestamp,
-            requested_capital=requested,
-            ceiling=ceiling,
-        )
-    return _decision(
-        QualificationState.RESEARCH_ONLY,
-        QualificationReason.NO_SUPPORTED_LOWER_CAPITAL,
-        as_of=timestamp,
-        requested_capital=requested,
-        ceiling=ceiling,
-    )
-
-
 __all__ = [
     "CandidateCapacity",
     "CaptureCoverageResult",
     "DirectionalC95Result",
     "DirectionalSafeSizeResult",
-    "QualificationDecision",
-    "QualificationReason",
-    "QualificationState",
     "RequiredTradeFractions",
     "TwoSidedC95Result",
     "candidate_capital_ceiling",
@@ -639,6 +489,5 @@ __all__ = [
     "evaluate_directional_c95",
     "evaluate_two_sided_c95",
     "find_directional_safe_size",
-    "qualify_candidate",
     "required_trade_fractions",
 ]

@@ -20,7 +20,6 @@ from qap.artifact_integrity import (
     ArtifactIntegrity,
     build_integrity_record,
 )
-from qap.scanner.liquidity_policy import QualificationReason, QualificationState
 from qap.scanner.prospective import ForwardCheckpoint, ForwardCohort, ForwardOutcome
 from qap.scanner.prospective_artifact_schemas import (
     CHECKPOINT_AUTHORITATIVE_FILES,
@@ -47,6 +46,7 @@ from qap.scanner.prospective_integrity import (
     read_outcome,
     validate_completed_generation,
 )
+from qap.scanner.qualification import QualificationReason, QualificationState
 
 
 def _identity(value: str, *, field: str) -> str:
@@ -127,8 +127,13 @@ class LiquidityEvidenceRecord:
 class CapacityQualificationRecord:
     checkpoint_id: str
     candidate_id: str
+    freeze_id: str
     as_of: datetime
     requested_capital: Decimal
+    prospective_protocol_version: str
+    prospective_protocol_identity: str
+    capture_snapshot_ids: tuple[str, ...]
+    market_metadata_fingerprint: str
     q_star_buy: Decimal | None
     q_safe_buy: Decimal | None
     q_star_sell: Decimal | None
@@ -139,12 +144,17 @@ class CapacityQualificationRecord:
     candidate_capital_ceiling: Decimal | None
     qualification_state: QualificationState
     reason: QualificationReason
+    eligibility_resolved: bool
     capture_contract_satisfied: bool
     current_two_way_trading: bool
     order_constraints_satisfied: bool
-    economic_gates_at_requested_capital: bool
+    requested_capital_qap_run_id: str | None
+    requested_baseline_gate_passed: bool
+    requested_adverse_gate_passed: bool
     lower_tested_capital: Decimal | None
-    economic_gates_at_lower_capital: bool
+    lower_capital_qap_run_id: str | None
+    lower_baseline_gate_passed: bool
+    lower_adverse_gate_passed: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -390,8 +400,13 @@ def _qualification_table(records: tuple[CapacityQualificationRecord, ...]) -> An
         {
             "checkpoint_id": item.checkpoint_id,
             "candidate_id": item.candidate_id,
+            "freeze_id": item.freeze_id,
             "as_of": item.as_of,
             "requested_capital": _decimal_text(item.requested_capital),
+            "prospective_protocol_version": item.prospective_protocol_version,
+            "prospective_protocol_identity": item.prospective_protocol_identity,
+            "capture_snapshot_ids": list(item.capture_snapshot_ids),
+            "market_metadata_fingerprint": item.market_metadata_fingerprint,
             "q_star_buy": _decimal_text(item.q_star_buy),
             "q_safe_buy": _decimal_text(item.q_safe_buy),
             "q_star_sell": _decimal_text(item.q_star_sell),
@@ -402,14 +417,17 @@ def _qualification_table(records: tuple[CapacityQualificationRecord, ...]) -> An
             "candidate_capital_ceiling": _decimal_text(item.candidate_capital_ceiling),
             "qualification_state": item.qualification_state.value,
             "reason": item.reason.value,
+            "eligibility_resolved": item.eligibility_resolved,
             "capture_contract_satisfied": item.capture_contract_satisfied,
             "current_two_way_trading": item.current_two_way_trading,
             "order_constraints_satisfied": item.order_constraints_satisfied,
-            "economic_gates_at_requested_capital": (
-                item.economic_gates_at_requested_capital
-            ),
+            "requested_capital_qap_run_id": item.requested_capital_qap_run_id,
+            "requested_baseline_gate_passed": item.requested_baseline_gate_passed,
+            "requested_adverse_gate_passed": item.requested_adverse_gate_passed,
             "lower_tested_capital": _decimal_text(item.lower_tested_capital),
-            "economic_gates_at_lower_capital": item.economic_gates_at_lower_capital,
+            "lower_capital_qap_run_id": item.lower_capital_qap_run_id,
+            "lower_baseline_gate_passed": item.lower_baseline_gate_passed,
+            "lower_adverse_gate_passed": item.lower_adverse_gate_passed,
         }
         for item in records
     ]
@@ -425,6 +443,7 @@ def _validate_lineage(
     checkpoint = generation.checkpoint
     if len(qualifications) != 1:
         raise ProspectiveArtifactError("checkpoint requires one qualification row")
+    qualification = qualifications[0]
     if (
         outcome.checkpoint_id != checkpoint.checkpoint_id
         or outcome.candidate_id != checkpoint.candidate_id
@@ -442,7 +461,15 @@ def _validate_lineage(
             or getattr(row, "candidate_id", None) != checkpoint.candidate_id
         ):
             raise ProspectiveArtifactError("checkpoint lineage mismatch")
-    if qualifications[0].as_of != checkpoint.information_end:
+    if (
+        qualification.freeze_id != checkpoint.freeze_id
+        or qualification.prospective_protocol_version
+        != checkpoint.prospective_protocol_version
+        or qualification.prospective_protocol_identity
+        != checkpoint.prospective_protocol_identity
+    ):
+        raise ProspectiveArtifactError("qualification freeze/protocol lineage mismatch")
+    if qualification.as_of != checkpoint.information_end:
         raise ProspectiveArtifactError(
             "qualification timestamp must match checkpoint cutoff"
         )

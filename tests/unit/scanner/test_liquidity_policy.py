@@ -1,8 +1,5 @@
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Any
-
-import pytest
 
 from qap.market import BookLevel, MarketMetadata, PublicBookSnapshot, VenueInstrument
 from qap.portfolio import AssetId
@@ -11,13 +8,10 @@ from qap.scanner.liquidity import (
     FrictionEvidence,
 )
 from qap.scanner.liquidity_policy import (
-    QualificationReason,
-    QualificationState,
     candidate_capital_ceiling,
     evaluate_capture_contract,
     evaluate_two_sided_c95,
     find_directional_safe_size,
-    qualify_candidate,
     required_trade_fractions,
 )
 from qap.scanner.prospective_protocol import (
@@ -233,67 +227,3 @@ def test_candidate_capital_ceiling_uses_buy_and_sell_demand_not_ten_pct_shortcut
     assert result.sell_capital_ceiling == Decimal("500")
     assert result.candidate_capital_ceiling == Decimal("500")
     assert result.candidate_capital_ceiling < Decimal("100") / Decimal("0.10")
-
-
-def test_qualification_requires_explicit_capital_and_distinguishes_small_capacity() -> (
-    None
-):
-    tradable = qualify_candidate(
-        as_of=AS_OF,
-        requested_capital=Decimal("400"),
-        candidate_capital_ceiling=Decimal("500"),
-        eligibility_resolved=True,
-        capture_contract_satisfied=True,
-        current_two_way_trading=True,
-        order_constraints_satisfied=True,
-        economic_gates_at_requested_capital=True,
-        lower_tested_capital=None,
-        economic_gates_at_lower_capital=False,
-    )
-    assert tradable.state is QualificationState.TRADABLE_NOW
-    assert tradable.reason is QualificationReason.ALL_CURRENT_EVIDENCE_SATISFIED
-
-    small = qualify_candidate(
-        as_of=AS_OF,
-        requested_capital=Decimal("600"),
-        candidate_capital_ceiling=Decimal("500"),
-        eligibility_resolved=True,
-        capture_contract_satisfied=True,
-        current_two_way_trading=True,
-        order_constraints_satisfied=True,
-        economic_gates_at_requested_capital=False,
-        lower_tested_capital=Decimal("400"),
-        economic_gates_at_lower_capital=True,
-    )
-    assert small.state is QualificationState.SMALL_CAPACITY
-    assert small.reason is QualificationReason.REQUESTED_CAPITAL_ABOVE_CEILING
-
-    research = qualify_candidate(
-        as_of=AS_OF,
-        requested_capital=Decimal("400"),
-        candidate_capital_ceiling=Decimal("500"),
-        eligibility_resolved=True,
-        capture_contract_satisfied=False,
-        current_two_way_trading=True,
-        order_constraints_satisfied=True,
-        economic_gates_at_requested_capital=True,
-        lower_tested_capital=None,
-        economic_gates_at_lower_capital=False,
-    )
-    assert research.state is QualificationState.RESEARCH_ONLY
-    assert research.reason is QualificationReason.MICROSTRUCTURE_COVERAGE_INSUFFICIENT
-
-    with pytest.raises(TypeError, match="requested_capital"):
-        bad_capital: Any = 400
-        qualify_candidate(
-            as_of=AS_OF,
-            requested_capital=bad_capital,
-            candidate_capital_ceiling=Decimal("500"),
-            eligibility_resolved=True,
-            capture_contract_satisfied=True,
-            current_two_way_trading=True,
-            order_constraints_satisfied=True,
-            economic_gates_at_requested_capital=True,
-            lower_tested_capital=None,
-            economic_gates_at_lower_capital=False,
-        )

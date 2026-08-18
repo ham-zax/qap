@@ -97,8 +97,13 @@ QUALIFICATION_SCHEMA = pa.schema(
     [
         ("checkpoint_id", pa.string()),
         ("candidate_id", pa.string()),
+        ("freeze_id", pa.string()),
         ("as_of", pa.timestamp("us", tz="UTC")),
         ("requested_capital", pa.string()),
+        ("prospective_protocol_version", pa.string()),
+        ("prospective_protocol_identity", pa.string()),
+        ("capture_snapshot_ids", pa.list_(pa.string())),
+        ("market_metadata_fingerprint", pa.string()),
         ("q_star_buy", pa.string()),
         ("q_safe_buy", pa.string()),
         ("q_star_sell", pa.string()),
@@ -109,12 +114,17 @@ QUALIFICATION_SCHEMA = pa.schema(
         ("candidate_capital_ceiling", pa.string()),
         ("qualification_state", pa.string()),
         ("reason", pa.string()),
+        ("eligibility_resolved", pa.bool_()),
         ("capture_contract_satisfied", pa.bool_()),
         ("current_two_way_trading", pa.bool_()),
         ("order_constraints_satisfied", pa.bool_()),
-        ("economic_gates_at_requested_capital", pa.bool_()),
+        ("requested_capital_qap_run_id", pa.string()),
+        ("requested_baseline_gate_passed", pa.bool_()),
+        ("requested_adverse_gate_passed", pa.bool_()),
         ("lower_tested_capital", pa.string()),
-        ("economic_gates_at_lower_capital", pa.bool_()),
+        ("lower_capital_qap_run_id", pa.string()),
+        ("lower_baseline_gate_passed", pa.bool_()),
+        ("lower_adverse_gate_passed", pa.bool_()),
     ]
 )
 

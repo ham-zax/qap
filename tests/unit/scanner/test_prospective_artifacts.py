@@ -9,7 +9,6 @@ from pathlib import Path
 import pyarrow.parquet as pq
 import pytest
 
-from qap.scanner.liquidity_policy import QualificationReason, QualificationState
 from qap.scanner.models import ScanInputIdentity
 from qap.scanner.prospective import (
     CandidateFreeze,
@@ -39,6 +38,7 @@ from qap.scanner.prospective_protocol import (
     prospective_protocol_identity,
 )
 from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon, protocol_identity
+from qap.scanner.qualification import QualificationReason, QualificationState
 
 FREEZE = datetime(2026, 8, 18, 0, 0, tzinfo=UTC)
 FORWARD_START = FREEZE + timedelta(hours=1)
@@ -151,8 +151,13 @@ def _qualification(checkpoint: ForwardCheckpoint) -> CapacityQualificationRecord
     return CapacityQualificationRecord(
         checkpoint_id=checkpoint.checkpoint_id,
         candidate_id=checkpoint.candidate_id,
+        freeze_id=checkpoint.freeze_id,
         as_of=checkpoint.information_end,
         requested_capital=Decimal("500"),
+        prospective_protocol_version=checkpoint.prospective_protocol_version,
+        prospective_protocol_identity=checkpoint.prospective_protocol_identity,
+        capture_snapshot_ids=("9" * 64,),
+        market_metadata_fingerprint="7" * 64,
         q_star_buy=None,
         q_safe_buy=None,
         q_star_sell=None,
@@ -163,12 +168,17 @@ def _qualification(checkpoint: ForwardCheckpoint) -> CapacityQualificationRecord
         candidate_capital_ceiling=None,
         qualification_state=QualificationState.RESEARCH_ONLY,
         reason=QualificationReason.CAPACITY_UNKNOWN,
+        eligibility_resolved=True,
         capture_contract_satisfied=False,
         current_two_way_trading=True,
         order_constraints_satisfied=True,
-        economic_gates_at_requested_capital=False,
+        requested_capital_qap_run_id=None,
+        requested_baseline_gate_passed=False,
+        requested_adverse_gate_passed=False,
         lower_tested_capital=None,
-        economic_gates_at_lower_capital=False,
+        lower_capital_qap_run_id=None,
+        lower_baseline_gate_passed=False,
+        lower_adverse_gate_passed=False,
     )
 
 
