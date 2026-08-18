@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/api/baskets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Baskets */
+        get: operations["listBaskets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/baskets/{basket_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Basket Detail */
+        get: operations["getBasket"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/experiments": {
         parameters: {
             query?: never;
@@ -30,6 +64,40 @@ export interface paths {
         };
         /** Experiment Detail */
         get: operations["getExperiment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forward/cohorts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Forward Cohorts */
+        get: operations["listForwardCohorts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forward/cohorts/{cohort_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Forward Cohort Detail */
+        get: operations["getForwardCohort"];
         put?: never;
         post?: never;
         delete?: never;
@@ -174,6 +242,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/scanner/protocol": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Scanner Protocol */
+        get: operations["getScannerProtocol"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Scans */
+        get: operations["listScans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scans/{scan_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Scan Detail */
+        get: operations["getScan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scans/{scan_id}/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Candidates */
+        get: operations["listScanCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scans/{scan_id}/candidates/{candidate_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Candidate Detail */
+        get: operations["getScanCandidate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -266,13 +419,113 @@ export interface components {
             /** Partial Correction Fraction */
             partial_correction_fraction: string;
         };
+        /** BasketDetailDto */
+        BasketDetailDto: {
+            /** Qap Experiment Run Id */
+            qap_experiment_run_id: string | null;
+            /** Qap Portfolio Run Id */
+            qap_portfolio_run_id: string | null;
+            /** Resolver Audit Available */
+            resolver_audit_available: boolean;
+            /**
+             * Schema Version
+             * @default qap.api.basket_detail.v1
+             * @constant
+             */
+            schema_version: "qap.api.basket_detail.v1";
+            /** Selected Edges */
+            selected_edges: components["schemas"]["BasketEdgeDto"][];
+            summary: components["schemas"]["BasketSummaryDto"];
+        };
+        /** BasketEdgeDto */
+        BasketEdgeDto: {
+            /** Asset A */
+            asset_a: string;
+            /** Asset B */
+            asset_b: string;
+            /** Automatic Neighbor Selected */
+            automatic_neighbor_selected: boolean;
+            /** Automatic Selected */
+            automatic_selected: boolean;
+            /** Candidate Id */
+            candidate_id: string;
+            /** Candidate Orientation */
+            candidate_orientation: string;
+            /** Deep Replay Failure Reason */
+            deep_replay_failure_reason: string | null;
+            /** Deep Replay Run Id */
+            deep_replay_run_id: string | null;
+            /** Deep Replay Status */
+            deep_replay_status: string | null;
+            /** Economic Gate Status */
+            economic_gate_status: string | null;
+            /** Manual Pinned */
+            manual_pinned: boolean;
+            /** Manual Selected */
+            manual_selected: boolean;
+            /** Model Family */
+            model_family: string;
+            /** Pair Id */
+            pair_id: string;
+            /** Resolution */
+            resolution: string;
+            /** Template Id */
+            template_id: string;
+        };
+        /** BasketListDto */
+        BasketListDto: {
+            /** Items */
+            items: components["schemas"]["BasketSummaryDto"][];
+            /**
+             * Schema Version
+             * @default qap.api.basket_list.v1
+             * @constant
+             */
+            schema_version: "qap.api.basket_list.v1";
+        };
+        /** BasketSummaryDto */
+        BasketSummaryDto: {
+            /**
+             * Artifact Status
+             * @enum {string}
+             */
+            artifact_status: "valid" | "invalid";
+            /** Attempt Status */
+            attempt_status?: string | null;
+            /** Basket Id */
+            basket_id: string;
+            /** Decision Resolution */
+            decision_resolution?: string | null;
+            /**
+             * Economic Assets
+             * @default []
+             */
+            economic_assets: string[];
+            /** Economic Gate Status */
+            economic_gate_status?: string | null;
+            error?: components["schemas"]["ErrorDetailDto"] | null;
+            /** Forensic */
+            forensic?: boolean | null;
+            /** Horizon */
+            horizon?: string | null;
+            /** Qap Run Id */
+            qap_run_id?: string | null;
+            /** Source As Of */
+            source_as_of?: string | null;
+            /** Source Momentum Scan Id */
+            source_momentum_scan_id?: string | null;
+            /** Source Scan Id */
+            source_scan_id?: string | null;
+            /** Venue */
+            venue?: string | null;
+        };
         /** BenchmarkSpec */
         BenchmarkSpec: {
             /**
              * Controls
              * @default []
              */
-            controls: (components["schemas"]["PeriodicFixedWeightControlSpec"] | components["schemas"]["BandPartialControlSpec"] | components["schemas"]["ContributionAwareBandControlSpec"])[];
+            controls: (components["schemas"]["PeriodicFixedWeightControlSpec"] | components["schemas"]["BandPartialControlSpec"] | components["schemas"]["ContributionAwareBandControlSpec"] | components["schemas"]["PairBlindRelativeMomentumControlSpec"])[];
             /** Primary Incremental Benchmark */
             primary_incremental_benchmark?: string | null;
             /**
@@ -280,6 +533,145 @@ export interface components {
              * @default false
              */
             relationship_alpha_claim: boolean;
+        };
+        /** CandidateDetailDto */
+        CandidateDetailDto: {
+            /** Basket Ids */
+            basket_ids: string[];
+            candidate: components["schemas"]["CandidateSummaryDto"];
+            /** Forward Cohort Ids */
+            forward_cohort_ids: string[];
+            /** Qualification Ids */
+            qualification_ids: string[];
+            /**
+             * Schema Version
+             * @default qap.api.candidate_detail.v1
+             * @constant
+             */
+            schema_version: "qap.api.candidate_detail.v1";
+        };
+        /** CandidateFreezeDto */
+        CandidateFreezeDto: {
+            /** Automatic Selected */
+            automatic_selected: boolean;
+            /** Candidate Deep Replay Run Id */
+            candidate_deep_replay_run_id: string;
+            /** Candidate Id */
+            candidate_id: string;
+            /**
+             * Forward End
+             * Format: date-time
+             */
+            forward_end: string;
+            /**
+             * Forward Start
+             * Format: date-time
+             */
+            forward_start: string;
+            /** Freeze Id */
+            freeze_id: string;
+            /**
+             * Frozen At
+             * Format: date-time
+             */
+            frozen_at: string;
+            /** Horizon */
+            horizon: string;
+            /** Manual Selected */
+            manual_selected: boolean;
+            /** Model Family */
+            model_family: string;
+            /** Orientation */
+            orientation: string;
+            /** Pair Id */
+            pair_id: string;
+            /** Resolution */
+            resolution: string;
+            /** Source Scan Id */
+            source_scan_id: string;
+            /** Template Id */
+            template_id: string;
+            /** Venue */
+            venue: string;
+        };
+        /** CandidateListDto */
+        CandidateListDto: {
+            /** Items */
+            items: components["schemas"]["CandidateSummaryDto"][];
+            /** Scan Id */
+            scan_id: string;
+            /**
+             * Schema Version
+             * @default qap.api.candidate_list.v1
+             * @constant
+             */
+            schema_version: "qap.api.candidate_list.v1";
+        };
+        /** CandidateSummaryDto */
+        CandidateSummaryDto: {
+            /** Automatic Neighbor Selected */
+            automatic_neighbor_selected: boolean;
+            /**
+             * Automatic Selected
+             * @default false
+             */
+            automatic_selected: boolean;
+            /** Budget Reason */
+            budget_reason?: string | null;
+            /** Candidate Id */
+            candidate_id: string;
+            /** Deep Replay Run Id */
+            deep_replay_run_id?: string | null;
+            /** Deep Replay Status */
+            deep_replay_status?: string | null;
+            /** Economic Gate Status */
+            economic_gate_status?: string | null;
+            /** Failure Reason */
+            failure_reason: string | null;
+            /** Horizon */
+            horizon: string;
+            /** Manual Pinned */
+            manual_pinned: boolean;
+            /**
+             * Manual Selected
+             * @default false
+             */
+            manual_selected: boolean;
+            /** Model Family */
+            model_family: string;
+            /** Orientation */
+            orientation: string;
+            /** Pair Id */
+            pair_id: string;
+            /** Promotion Rank */
+            promotion_rank?: number | null;
+            /** Promotion Status */
+            promotion_status?: string | null;
+            /** Replay Failure Reason */
+            replay_failure_reason?: string | null;
+            /** Replay Failure Stage */
+            replay_failure_stage?: string | null;
+            /** Resolution */
+            resolution: string;
+            /** Scan Id */
+            scan_id: string;
+            /** Scout Relative Wealth Proxy */
+            scout_relative_wealth_proxy: number | null;
+            /** Scout Turnover Proxy */
+            scout_turnover_proxy: number | null;
+            /**
+             * Selected For Replay
+             * @default false
+             */
+            selected_for_replay: boolean;
+            /** Signal Count */
+            signal_count: number;
+            /** Template Id */
+            template_id: string;
+            /** Trial Status */
+            trial_status: string;
+            /** Venue */
+            venue: string;
         };
         /** ComponentSpec */
         ComponentSpec: {
@@ -395,12 +787,31 @@ export interface components {
             adverse_cost_scenario?: components["schemas"]["CostScenarioSpec"] | null;
             /** Base Step */
             base_step?: string | null;
+            /** Bridge Asset */
+            bridge_asset?: string | null;
             /** Execution Instrument Id */
-            execution_instrument_id: string;
+            execution_instrument_id?: string | null;
+            /**
+             * Execution Instrument Ids
+             * @default []
+             */
+            execution_instrument_ids: string[];
             /** Fee Bps */
             fee_bps: string;
+            /**
+             * Market Metadata Mode
+             * @default required
+             * @enum {string}
+             */
+            market_metadata_mode: "required" | "historical_unconstrained";
             /** Minimum Rebalance Notional */
             minimum_rebalance_notional: string;
+            /**
+             * Mode
+             * @default direct
+             * @enum {string}
+             */
+            mode: "direct" | "multi_asset_bridge";
             /** Numeraire Asset */
             numeraire_asset: string;
             /** Slippage Bps */
@@ -651,6 +1062,108 @@ export interface components {
             /** Value */
             value: number;
         };
+        /** ForwardCheckpointDto */
+        ForwardCheckpointDto: {
+            /** Adverse Economic Gates Passed */
+            adverse_economic_gates_passed: boolean | null;
+            /** Baseline Economic Gates Passed */
+            baseline_economic_gates_passed: boolean | null;
+            /** Candidate Id */
+            candidate_id: string;
+            /** Checkpoint Id */
+            checkpoint_id: string;
+            /** Checkpoint Index */
+            checkpoint_index: number;
+            /** Cohort Id */
+            cohort_id: string;
+            /** Freeze Id */
+            freeze_id: string;
+            /**
+             * Information End
+             * Format: date-time
+             */
+            information_end: string;
+            /** Outcome Id */
+            outcome_id: string;
+            /** Outcome Status */
+            outcome_status: string;
+            /** Qap Run Id */
+            qap_run_id: string | null;
+            /** Strategy Vs Hodl */
+            strategy_vs_hodl: string | null;
+            /** Strategy Vs Primary Control */
+            strategy_vs_primary_control: string | null;
+        };
+        /** ForwardCohortDetailDto */
+        ForwardCohortDetailDto: {
+            /** Checkpoints */
+            checkpoints: components["schemas"]["ForwardCheckpointDto"][];
+            /** Freezes */
+            freezes: components["schemas"]["CandidateFreezeDto"][];
+            /** Qualifications */
+            qualifications: components["schemas"]["QualificationDto"][];
+            /**
+             * Schema Version
+             * @default qap.api.forward_cohort_detail.v1
+             * @constant
+             */
+            schema_version: "qap.api.forward_cohort_detail.v1";
+            summary: components["schemas"]["ForwardCohortSummaryDto"];
+        };
+        /** ForwardCohortListDto */
+        ForwardCohortListDto: {
+            /** Items */
+            items: components["schemas"]["ForwardCohortSummaryDto"][];
+            /**
+             * Schema Version
+             * @default qap.api.forward_cohort_list.v1
+             * @constant
+             */
+            schema_version: "qap.api.forward_cohort_list.v1";
+        };
+        /** ForwardCohortSummaryDto */
+        ForwardCohortSummaryDto: {
+            /**
+             * Artifact Status
+             * @enum {string}
+             */
+            artifact_status: "valid" | "invalid";
+            /**
+             * Candidate Ids
+             * @default []
+             */
+            candidate_ids: string[];
+            /** Checkpoint Count */
+            checkpoint_count?: number | null;
+            /** Cohort Id */
+            cohort_id: string;
+            error?: components["schemas"]["ErrorDetailDto"] | null;
+            /** Freeze At */
+            freeze_at?: string | null;
+            /** Horizon */
+            horizon?: string | null;
+            /** Qualification Count */
+            qualification_count?: number | null;
+            /** Source Scan Id */
+            source_scan_id?: string | null;
+        };
+        /** GraphScopeDto */
+        GraphScopeDto: {
+            /** Eligible Asset Count */
+            eligible_asset_count: number;
+            /** Graph Interval */
+            graph_interval: string;
+            /** Graph Window Seconds */
+            graph_window_seconds: number;
+            /** Horizon */
+            horizon: string;
+            /** Total Valid Pair Comparisons */
+            total_valid_pair_comparisons: number;
+            /** Universe Snapshot Id */
+            universe_snapshot_id: string;
+            /** Venue */
+            venue: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -712,6 +1225,65 @@ export interface components {
             venue_symbol: string;
         };
         JsonValue: unknown;
+        /** MomentumGenerationDto */
+        MomentumGenerationDto: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Formation Seconds */
+            formation_seconds: number;
+            /** Horizon */
+            horizon: string;
+            /** Momentum Scan Id */
+            momentum_scan_id: string;
+            /** Observations */
+            observations: components["schemas"]["MomentumObservationDto"][];
+            /** Resolution */
+            resolution: string;
+            /** Source Scan Id */
+            source_scan_id: string;
+            /** Universe Snapshot Id */
+            universe_snapshot_id: string;
+            /** Venue */
+            venue: string;
+        };
+        /** MomentumObservationDto */
+        MomentumObservationDto: {
+            /** Asset Id */
+            asset_id: string;
+            /** Bar Coverage */
+            bar_coverage: number;
+            /** Common Mode */
+            common_mode: number | null;
+            /** Common Mode Member Count */
+            common_mode_member_count: number;
+            /** Longest Missing Run */
+            longest_missing_run: number;
+            /** Own Momentum */
+            own_momentum: number | null;
+            /** Rank */
+            rank: number | null;
+            /** Reason */
+            reason: string;
+            /** Relative Momentum */
+            relative_momentum: number | null;
+            /** Status */
+            status: string;
+            /** Venue Symbol */
+            venue_symbol: string;
+        };
+        /** PairBlindRelativeMomentumControlSpec */
+        PairBlindRelativeMomentumControlSpec: {
+            /** Control Id */
+            control_id: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "pair_blind_relative_momentum";
+        };
         /** PairEvidenceDto */
         PairEvidenceDto: {
             /** Canonical Pair */
@@ -1134,6 +1706,42 @@ export interface components {
          * @enum {string}
          */
         PrimaryMetric: "hodl_relative_terminal_wealth" | "primary_control_relative_terminal_wealth";
+        /** QualificationDto */
+        QualificationDto: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Candidate Capital Ceiling */
+            candidate_capital_ceiling: string | null;
+            /** Candidate Id */
+            candidate_id: string;
+            /** Checkpoint Id */
+            checkpoint_id: string;
+            /** Current State Qap Run Id */
+            current_state_qap_run_id: string | null;
+            /** Freeze Id */
+            freeze_id: string;
+            /** Q Safe Buy */
+            q_safe_buy: string | null;
+            /** Q Safe Sell */
+            q_safe_sell: string | null;
+            /** Q Star Buy */
+            q_star_buy: string | null;
+            /** Q Star Sell */
+            q_star_sell: string | null;
+            /** Qualification Id */
+            qualification_id: string;
+            /** Reason */
+            reason: string;
+            /** Requested Capital */
+            requested_capital: string;
+            /** Requested Capital Qap Run Id */
+            requested_capital_qap_run_id: string | null;
+            /** State */
+            state: string;
+        };
         /** RebalanceDecisionAuditDto */
         RebalanceDecisionAuditDto: {
             /** Baseline Target Weights */
@@ -1348,6 +1956,129 @@ export interface components {
             /** Universe Mode */
             universe_mode?: string | null;
         };
+        /** ScanDetailDto */
+        ScanDetailDto: {
+            /** Graph Scopes */
+            graph_scopes: components["schemas"]["GraphScopeDto"][];
+            /** Momentum Generations */
+            momentum_generations: components["schemas"]["MomentumGenerationDto"][];
+            /**
+             * Schema Version
+             * @default qap.api.scan_detail.v1
+             * @constant
+             */
+            schema_version: "qap.api.scan_detail.v1";
+            summary: components["schemas"]["ScanSummaryDto"];
+            /** Universe */
+            universe: components["schemas"]["UniverseAssetDto"][];
+        };
+        /** ScanListDto */
+        ScanListDto: {
+            /** Items */
+            items: components["schemas"]["ScanSummaryDto"][];
+            /**
+             * Schema Version
+             * @default qap.api.scan_list.v1
+             * @constant
+             */
+            schema_version: "qap.api.scan_list.v1";
+        };
+        /** ScanSummaryDto */
+        ScanSummaryDto: {
+            /**
+             * Artifact Status
+             * @enum {string}
+             */
+            artifact_status: "valid" | "invalid";
+            /** As Of */
+            as_of?: string | null;
+            /** Candidate Count */
+            candidate_count?: number | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Eligible Information End */
+            eligible_information_end?: string | null;
+            error?: components["schemas"]["ErrorDetailDto"] | null;
+            /**
+             * Horizons
+             * @default []
+             */
+            horizons: string[];
+            /** Scan Id */
+            scan_id: string;
+            /** Selected Replay Count */
+            selected_replay_count?: number | null;
+            /** Survivor Count */
+            survivor_count?: number | null;
+            /**
+             * Venues
+             * @default []
+             */
+            venues: string[];
+        };
+        /** ScannerHorizonDto */
+        ScannerHorizonDto: {
+            /** Evaluation Window Seconds */
+            evaluation_window_seconds: number;
+            /** Graph Interval */
+            graph_interval: string;
+            /** Graph Window Seconds */
+            graph_window_seconds: number;
+            /** Horizon */
+            horizon: string;
+            /** Model Resolutions */
+            model_resolutions: string[];
+            /** Momentum Formation Seconds */
+            momentum_formation_seconds: number;
+            /** Momentum Resolution */
+            momentum_resolution: string;
+        };
+        /** ScannerProtocolDto */
+        ScannerProtocolDto: {
+            /** Basket Protocol Id */
+            basket_protocol_id: string;
+            /** Basket Protocol Identity */
+            basket_protocol_identity: string;
+            /** Horizons */
+            horizons: components["schemas"]["ScannerHorizonDto"][];
+            /** Protocol Id */
+            protocol_id: string;
+            /** Protocol Identity */
+            protocol_identity: string;
+            /** Quote Asset */
+            quote_asset: string;
+            /**
+             * Schema Version
+             * @default qap.api.scanner_protocol.v1
+             * @constant
+             */
+            schema_version: "qap.api.scanner_protocol.v1";
+            /** Venues */
+            venues: string[];
+        };
+        /** UniverseAssetDto */
+        UniverseAssetDto: {
+            /** Asset Id */
+            asset_id: string;
+            /** Automatic Eligible */
+            automatic_eligible: boolean;
+            /** Bar Coverage */
+            bar_coverage: number;
+            /** Eligibility Reason */
+            eligibility_reason: string;
+            /** Eligibility State */
+            eligibility_state: string;
+            /** Forensic Research Allowed */
+            forensic_research_allowed: boolean;
+            /** Horizon */
+            horizon: string;
+            /** Longest Missing Run */
+            longest_missing_run: number;
+            /** Venue */
+            venue: string;
+            /** Venue Symbol */
+            venue_symbol: string;
+        };
         /**
          * UniverseMode
          * @enum {string}
@@ -1375,6 +2106,57 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listBaskets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BasketListDto"];
+                };
+            };
+        };
+    };
+    getBasket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                basket_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BasketDetailDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listExperiments: {
         parameters: {
             query?: never;
@@ -1413,6 +2195,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExperimentDetailDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listForwardCohorts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForwardCohortListDto"];
+                };
+            };
+        };
+    };
+    getForwardCohort: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForwardCohortDetailDto"];
                 };
             };
             /** @description Validation Error */
@@ -1652,6 +2485,140 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PortfolioPerformanceDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getScannerProtocol: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScannerProtocolDto"];
+                };
+            };
+        };
+    };
+    listScans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanListDto"];
+                };
+            };
+        };
+    };
+    getScan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanDetailDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listScanCandidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateListDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getScanCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scan_id: string;
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateDetailDto"];
                 };
             };
             /** @description Validation Error */

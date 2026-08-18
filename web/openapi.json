@@ -224,7 +224,6 @@
             "type": "string"
           },
           "control_id": {
-            "minLength": 1,
             "title": "Control Id",
             "type": "string"
           },
@@ -248,6 +247,354 @@
         "title": "BandPartialControlSpec",
         "type": "object"
       },
+      "BasketDetailDto": {
+        "additionalProperties": false,
+        "properties": {
+          "qap_experiment_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qap Experiment Run Id"
+          },
+          "qap_portfolio_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qap Portfolio Run Id"
+          },
+          "resolver_audit_available": {
+            "title": "Resolver Audit Available",
+            "type": "boolean"
+          },
+          "schema_version": {
+            "const": "qap.api.basket_detail.v1",
+            "default": "qap.api.basket_detail.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "selected_edges": {
+            "items": {
+              "$ref": "#/components/schemas/BasketEdgeDto"
+            },
+            "title": "Selected Edges",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/BasketSummaryDto"
+          }
+        },
+        "required": [
+          "summary",
+          "selected_edges",
+          "qap_experiment_run_id",
+          "qap_portfolio_run_id",
+          "resolver_audit_available"
+        ],
+        "title": "BasketDetailDto",
+        "type": "object"
+      },
+      "BasketEdgeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_a": {
+            "title": "Asset A",
+            "type": "string"
+          },
+          "asset_b": {
+            "title": "Asset B",
+            "type": "string"
+          },
+          "automatic_neighbor_selected": {
+            "title": "Automatic Neighbor Selected",
+            "type": "boolean"
+          },
+          "automatic_selected": {
+            "title": "Automatic Selected",
+            "type": "boolean"
+          },
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "candidate_orientation": {
+            "title": "Candidate Orientation",
+            "type": "string"
+          },
+          "deep_replay_failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deep Replay Failure Reason"
+          },
+          "deep_replay_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deep Replay Run Id"
+          },
+          "deep_replay_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deep Replay Status"
+          },
+          "economic_gate_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Economic Gate Status"
+          },
+          "manual_pinned": {
+            "title": "Manual Pinned",
+            "type": "boolean"
+          },
+          "manual_selected": {
+            "title": "Manual Selected",
+            "type": "boolean"
+          },
+          "model_family": {
+            "title": "Model Family",
+            "type": "string"
+          },
+          "pair_id": {
+            "title": "Pair Id",
+            "type": "string"
+          },
+          "resolution": {
+            "title": "Resolution",
+            "type": "string"
+          },
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "pair_id",
+          "asset_a",
+          "asset_b",
+          "candidate_orientation",
+          "resolution",
+          "model_family",
+          "template_id",
+          "automatic_neighbor_selected",
+          "manual_pinned",
+          "automatic_selected",
+          "manual_selected",
+          "deep_replay_status",
+          "deep_replay_failure_reason",
+          "deep_replay_run_id",
+          "economic_gate_status"
+        ],
+        "title": "BasketEdgeDto",
+        "type": "object"
+      },
+      "BasketListDto": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BasketSummaryDto"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "qap.api.basket_list.v1",
+            "default": "qap.api.basket_list.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "BasketListDto",
+        "type": "object"
+      },
+      "BasketSummaryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_status": {
+            "enum": [
+              "valid",
+              "invalid"
+            ],
+            "title": "Artifact Status",
+            "type": "string"
+          },
+          "attempt_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Status"
+          },
+          "basket_id": {
+            "title": "Basket Id",
+            "type": "string"
+          },
+          "decision_resolution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Resolution"
+          },
+          "economic_assets": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Economic Assets",
+            "type": "array"
+          },
+          "economic_gate_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Economic Gate Status"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorDetailDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "forensic": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forensic"
+          },
+          "horizon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horizon"
+          },
+          "qap_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qap Run Id"
+          },
+          "source_as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source As Of"
+          },
+          "source_momentum_scan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Momentum Scan Id"
+          },
+          "source_scan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Scan Id"
+          },
+          "venue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue"
+          }
+        },
+        "required": [
+          "artifact_status",
+          "basket_id"
+        ],
+        "title": "BasketSummaryDto",
+        "type": "object"
+      },
       "BenchmarkSpec": {
         "additionalProperties": false,
         "properties": {
@@ -258,6 +605,7 @@
                 "mapping": {
                   "band_partial": "#/components/schemas/BandPartialControlSpec",
                   "contribution_aware_band": "#/components/schemas/ContributionAwareBandControlSpec",
+                  "pair_blind_relative_momentum": "#/components/schemas/PairBlindRelativeMomentumControlSpec",
                   "periodic_fixed_weight": "#/components/schemas/PeriodicFixedWeightControlSpec"
                 },
                 "propertyName": "kind"
@@ -271,6 +619,9 @@
                 },
                 {
                   "$ref": "#/components/schemas/ContributionAwareBandControlSpec"
+                },
+                {
+                  "$ref": "#/components/schemas/PairBlindRelativeMomentumControlSpec"
                 }
               ]
             },
@@ -296,6 +647,382 @@
           }
         },
         "title": "BenchmarkSpec",
+        "type": "object"
+      },
+      "CandidateDetailDto": {
+        "additionalProperties": false,
+        "properties": {
+          "basket_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Basket Ids",
+            "type": "array"
+          },
+          "candidate": {
+            "$ref": "#/components/schemas/CandidateSummaryDto"
+          },
+          "forward_cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Forward Cohort Ids",
+            "type": "array"
+          },
+          "qualification_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Qualification Ids",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "qap.api.candidate_detail.v1",
+            "default": "qap.api.candidate_detail.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate",
+          "forward_cohort_ids",
+          "qualification_ids",
+          "basket_ids"
+        ],
+        "title": "CandidateDetailDto",
+        "type": "object"
+      },
+      "CandidateFreezeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "automatic_selected": {
+            "title": "Automatic Selected",
+            "type": "boolean"
+          },
+          "candidate_deep_replay_run_id": {
+            "title": "Candidate Deep Replay Run Id",
+            "type": "string"
+          },
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "forward_end": {
+            "format": "date-time",
+            "title": "Forward End",
+            "type": "string"
+          },
+          "forward_start": {
+            "format": "date-time",
+            "title": "Forward Start",
+            "type": "string"
+          },
+          "freeze_id": {
+            "title": "Freeze Id",
+            "type": "string"
+          },
+          "frozen_at": {
+            "format": "date-time",
+            "title": "Frozen At",
+            "type": "string"
+          },
+          "horizon": {
+            "title": "Horizon",
+            "type": "string"
+          },
+          "manual_selected": {
+            "title": "Manual Selected",
+            "type": "boolean"
+          },
+          "model_family": {
+            "title": "Model Family",
+            "type": "string"
+          },
+          "orientation": {
+            "title": "Orientation",
+            "type": "string"
+          },
+          "pair_id": {
+            "title": "Pair Id",
+            "type": "string"
+          },
+          "resolution": {
+            "title": "Resolution",
+            "type": "string"
+          },
+          "source_scan_id": {
+            "title": "Source Scan Id",
+            "type": "string"
+          },
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "freeze_id",
+          "candidate_id",
+          "source_scan_id",
+          "automatic_selected",
+          "manual_selected",
+          "frozen_at",
+          "forward_start",
+          "forward_end",
+          "horizon",
+          "venue",
+          "pair_id",
+          "orientation",
+          "resolution",
+          "model_family",
+          "template_id",
+          "candidate_deep_replay_run_id"
+        ],
+        "title": "CandidateFreezeDto",
+        "type": "object"
+      },
+      "CandidateListDto": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateSummaryDto"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "scan_id": {
+            "title": "Scan Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.candidate_list.v1",
+            "default": "qap.api.candidate_list.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scan_id",
+          "items"
+        ],
+        "title": "CandidateListDto",
+        "type": "object"
+      },
+      "CandidateSummaryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "automatic_neighbor_selected": {
+            "title": "Automatic Neighbor Selected",
+            "type": "boolean"
+          },
+          "automatic_selected": {
+            "default": false,
+            "title": "Automatic Selected",
+            "type": "boolean"
+          },
+          "budget_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Reason"
+          },
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "deep_replay_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deep Replay Run Id"
+          },
+          "deep_replay_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deep Replay Status"
+          },
+          "economic_gate_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Economic Gate Status"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "horizon": {
+            "title": "Horizon",
+            "type": "string"
+          },
+          "manual_pinned": {
+            "title": "Manual Pinned",
+            "type": "boolean"
+          },
+          "manual_selected": {
+            "default": false,
+            "title": "Manual Selected",
+            "type": "boolean"
+          },
+          "model_family": {
+            "title": "Model Family",
+            "type": "string"
+          },
+          "orientation": {
+            "title": "Orientation",
+            "type": "string"
+          },
+          "pair_id": {
+            "title": "Pair Id",
+            "type": "string"
+          },
+          "promotion_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promotion Rank"
+          },
+          "promotion_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promotion Status"
+          },
+          "replay_failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replay Failure Reason"
+          },
+          "replay_failure_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replay Failure Stage"
+          },
+          "resolution": {
+            "title": "Resolution",
+            "type": "string"
+          },
+          "scan_id": {
+            "title": "Scan Id",
+            "type": "string"
+          },
+          "scout_relative_wealth_proxy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scout Relative Wealth Proxy"
+          },
+          "scout_turnover_proxy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scout Turnover Proxy"
+          },
+          "selected_for_replay": {
+            "default": false,
+            "title": "Selected For Replay",
+            "type": "boolean"
+          },
+          "signal_count": {
+            "title": "Signal Count",
+            "type": "integer"
+          },
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "trial_status": {
+            "title": "Trial Status",
+            "type": "string"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "scan_id",
+          "venue",
+          "horizon",
+          "pair_id",
+          "orientation",
+          "resolution",
+          "model_family",
+          "template_id",
+          "trial_status",
+          "failure_reason",
+          "scout_relative_wealth_proxy",
+          "scout_turnover_proxy",
+          "signal_count",
+          "automatic_neighbor_selected",
+          "manual_pinned"
+        ],
+        "title": "CandidateSummaryDto",
         "type": "object"
       },
       "ComponentSpec": {
@@ -358,7 +1085,6 @@
             "type": "string"
           },
           "control_id": {
-            "minLength": 1,
             "title": "Control Id",
             "type": "string"
           },
@@ -586,19 +1312,65 @@
             ],
             "title": "Base Step"
           },
+          "bridge_asset": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bridge Asset"
+          },
           "execution_instrument_id": {
-            "minLength": 1,
-            "title": "Execution Instrument Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Instrument Id"
+          },
+          "execution_instrument_ids": {
+            "default": [],
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Execution Instrument Ids",
+            "type": "array"
           },
           "fee_bps": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Fee Bps",
             "type": "string"
           },
+          "market_metadata_mode": {
+            "default": "required",
+            "enum": [
+              "required",
+              "historical_unconstrained"
+            ],
+            "title": "Market Metadata Mode",
+            "type": "string"
+          },
           "minimum_rebalance_notional": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Minimum Rebalance Notional",
+            "type": "string"
+          },
+          "mode": {
+            "default": "direct",
+            "enum": [
+              "direct",
+              "multi_asset_bridge"
+            ],
+            "title": "Mode",
             "type": "string"
           },
           "numeraire_asset": {
@@ -613,7 +1385,6 @@
           }
         },
         "required": [
-          "execution_instrument_id",
           "numeraire_asset",
           "fee_bps",
           "slippage_bps",
@@ -1276,6 +2047,323 @@
         "title": "FloatPointDto",
         "type": "object"
       },
+      "ForwardCheckpointDto": {
+        "additionalProperties": false,
+        "properties": {
+          "adverse_economic_gates_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adverse Economic Gates Passed"
+          },
+          "baseline_economic_gates_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Economic Gates Passed"
+          },
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "checkpoint_id": {
+            "title": "Checkpoint Id",
+            "type": "string"
+          },
+          "checkpoint_index": {
+            "title": "Checkpoint Index",
+            "type": "integer"
+          },
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "freeze_id": {
+            "title": "Freeze Id",
+            "type": "string"
+          },
+          "information_end": {
+            "format": "date-time",
+            "title": "Information End",
+            "type": "string"
+          },
+          "outcome_id": {
+            "title": "Outcome Id",
+            "type": "string"
+          },
+          "outcome_status": {
+            "title": "Outcome Status",
+            "type": "string"
+          },
+          "qap_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qap Run Id"
+          },
+          "strategy_vs_hodl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Vs Hodl"
+          },
+          "strategy_vs_primary_control": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Vs Primary Control"
+          }
+        },
+        "required": [
+          "checkpoint_id",
+          "cohort_id",
+          "candidate_id",
+          "freeze_id",
+          "checkpoint_index",
+          "information_end",
+          "outcome_id",
+          "outcome_status",
+          "qap_run_id",
+          "strategy_vs_hodl",
+          "strategy_vs_primary_control",
+          "baseline_economic_gates_passed",
+          "adverse_economic_gates_passed"
+        ],
+        "title": "ForwardCheckpointDto",
+        "type": "object"
+      },
+      "ForwardCohortDetailDto": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpoints": {
+            "items": {
+              "$ref": "#/components/schemas/ForwardCheckpointDto"
+            },
+            "title": "Checkpoints",
+            "type": "array"
+          },
+          "freezes": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateFreezeDto"
+            },
+            "title": "Freezes",
+            "type": "array"
+          },
+          "qualifications": {
+            "items": {
+              "$ref": "#/components/schemas/QualificationDto"
+            },
+            "title": "Qualifications",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "qap.api.forward_cohort_detail.v1",
+            "default": "qap.api.forward_cohort_detail.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ForwardCohortSummaryDto"
+          }
+        },
+        "required": [
+          "summary",
+          "freezes",
+          "checkpoints",
+          "qualifications"
+        ],
+        "title": "ForwardCohortDetailDto",
+        "type": "object"
+      },
+      "ForwardCohortListDto": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ForwardCohortSummaryDto"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "qap.api.forward_cohort_list.v1",
+            "default": "qap.api.forward_cohort_list.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ForwardCohortListDto",
+        "type": "object"
+      },
+      "ForwardCohortSummaryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_status": {
+            "enum": [
+              "valid",
+              "invalid"
+            ],
+            "title": "Artifact Status",
+            "type": "string"
+          },
+          "candidate_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Candidate Ids",
+            "type": "array"
+          },
+          "checkpoint_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Count"
+          },
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorDetailDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "freeze_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Freeze At"
+          },
+          "horizon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horizon"
+          },
+          "qualification_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification Count"
+          },
+          "source_scan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Scan Id"
+          }
+        },
+        "required": [
+          "artifact_status",
+          "cohort_id"
+        ],
+        "title": "ForwardCohortSummaryDto",
+        "type": "object"
+      },
+      "GraphScopeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "eligible_asset_count": {
+            "title": "Eligible Asset Count",
+            "type": "integer"
+          },
+          "graph_interval": {
+            "title": "Graph Interval",
+            "type": "string"
+          },
+          "graph_window_seconds": {
+            "title": "Graph Window Seconds",
+            "type": "integer"
+          },
+          "horizon": {
+            "title": "Horizon",
+            "type": "string"
+          },
+          "total_valid_pair_comparisons": {
+            "title": "Total Valid Pair Comparisons",
+            "type": "integer"
+          },
+          "universe_snapshot_id": {
+            "title": "Universe Snapshot Id",
+            "type": "string"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "venue",
+          "horizon",
+          "universe_snapshot_id",
+          "graph_interval",
+          "graph_window_seconds",
+          "eligible_asset_count",
+          "total_valid_pair_comparisons"
+        ],
+        "title": "GraphScopeDto",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1429,6 +2517,176 @@
         "type": "object"
       },
       "JsonValue": {},
+      "MomentumGenerationDto": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "formation_seconds": {
+            "title": "Formation Seconds",
+            "type": "integer"
+          },
+          "horizon": {
+            "title": "Horizon",
+            "type": "string"
+          },
+          "momentum_scan_id": {
+            "title": "Momentum Scan Id",
+            "type": "string"
+          },
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/MomentumObservationDto"
+            },
+            "title": "Observations",
+            "type": "array"
+          },
+          "resolution": {
+            "title": "Resolution",
+            "type": "string"
+          },
+          "source_scan_id": {
+            "title": "Source Scan Id",
+            "type": "string"
+          },
+          "universe_snapshot_id": {
+            "title": "Universe Snapshot Id",
+            "type": "string"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "momentum_scan_id",
+          "source_scan_id",
+          "venue",
+          "horizon",
+          "as_of",
+          "universe_snapshot_id",
+          "resolution",
+          "formation_seconds",
+          "observations"
+        ],
+        "title": "MomentumGenerationDto",
+        "type": "object"
+      },
+      "MomentumObservationDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "bar_coverage": {
+            "title": "Bar Coverage",
+            "type": "number"
+          },
+          "common_mode": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Common Mode"
+          },
+          "common_mode_member_count": {
+            "title": "Common Mode Member Count",
+            "type": "integer"
+          },
+          "longest_missing_run": {
+            "title": "Longest Missing Run",
+            "type": "integer"
+          },
+          "own_momentum": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Own Momentum"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "relative_momentum": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relative Momentum"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "title": "Venue Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_id",
+          "venue_symbol",
+          "status",
+          "reason",
+          "bar_coverage",
+          "longest_missing_run",
+          "own_momentum",
+          "common_mode",
+          "relative_momentum",
+          "common_mode_member_count",
+          "rank"
+        ],
+        "title": "MomentumObservationDto",
+        "type": "object"
+      },
+      "PairBlindRelativeMomentumControlSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "control_id": {
+            "title": "Control Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "pair_blind_relative_momentum",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "control_id"
+        ],
+        "title": "PairBlindRelativeMomentumControlSpec",
+        "type": "object"
+      },
       "PairEvidenceDto": {
         "additionalProperties": false,
         "properties": {
@@ -2471,7 +3729,6 @@
             "type": "integer"
           },
           "control_id": {
-            "minLength": 1,
             "title": "Control Id",
             "type": "string"
           },
@@ -2645,6 +3902,140 @@
         ],
         "title": "PrimaryMetric",
         "type": "string"
+      },
+      "QualificationDto": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "candidate_capital_ceiling": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Capital Ceiling"
+          },
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "checkpoint_id": {
+            "title": "Checkpoint Id",
+            "type": "string"
+          },
+          "current_state_qap_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current State Qap Run Id"
+          },
+          "freeze_id": {
+            "title": "Freeze Id",
+            "type": "string"
+          },
+          "q_safe_buy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q Safe Buy"
+          },
+          "q_safe_sell": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q Safe Sell"
+          },
+          "q_star_buy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q Star Buy"
+          },
+          "q_star_sell": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q Star Sell"
+          },
+          "qualification_id": {
+            "title": "Qualification Id",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "requested_capital": {
+            "title": "Requested Capital",
+            "type": "string"
+          },
+          "requested_capital_qap_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Capital Qap Run Id"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "qualification_id",
+          "checkpoint_id",
+          "candidate_id",
+          "freeze_id",
+          "as_of",
+          "requested_capital",
+          "state",
+          "reason",
+          "candidate_capital_ceiling",
+          "current_state_qap_run_id",
+          "requested_capital_qap_run_id",
+          "q_star_buy",
+          "q_safe_buy",
+          "q_star_sell",
+          "q_safe_sell"
+        ],
+        "title": "QualificationDto",
+        "type": "object"
       },
       "RebalanceDecisionAuditDto": {
         "additionalProperties": false,
@@ -3324,6 +4715,352 @@
         "title": "RunSummaryDto",
         "type": "object"
       },
+      "ScanDetailDto": {
+        "additionalProperties": false,
+        "properties": {
+          "graph_scopes": {
+            "items": {
+              "$ref": "#/components/schemas/GraphScopeDto"
+            },
+            "title": "Graph Scopes",
+            "type": "array"
+          },
+          "momentum_generations": {
+            "items": {
+              "$ref": "#/components/schemas/MomentumGenerationDto"
+            },
+            "title": "Momentum Generations",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "qap.api.scan_detail.v1",
+            "default": "qap.api.scan_detail.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ScanSummaryDto"
+          },
+          "universe": {
+            "items": {
+              "$ref": "#/components/schemas/UniverseAssetDto"
+            },
+            "title": "Universe",
+            "type": "array"
+          }
+        },
+        "required": [
+          "summary",
+          "universe",
+          "graph_scopes",
+          "momentum_generations"
+        ],
+        "title": "ScanDetailDto",
+        "type": "object"
+      },
+      "ScanListDto": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ScanSummaryDto"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "qap.api.scan_list.v1",
+            "default": "qap.api.scan_list.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ScanListDto",
+        "type": "object"
+      },
+      "ScanSummaryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_status": {
+            "enum": [
+              "valid",
+              "invalid"
+            ],
+            "title": "Artifact Status",
+            "type": "string"
+          },
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "candidate_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Count"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "eligible_information_end": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eligible Information End"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorDetailDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "horizons": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Horizons",
+            "type": "array"
+          },
+          "scan_id": {
+            "title": "Scan Id",
+            "type": "string"
+          },
+          "selected_replay_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Replay Count"
+          },
+          "survivor_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Survivor Count"
+          },
+          "venues": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Venues",
+            "type": "array"
+          }
+        },
+        "required": [
+          "artifact_status",
+          "scan_id"
+        ],
+        "title": "ScanSummaryDto",
+        "type": "object"
+      },
+      "ScannerHorizonDto": {
+        "additionalProperties": false,
+        "properties": {
+          "evaluation_window_seconds": {
+            "title": "Evaluation Window Seconds",
+            "type": "integer"
+          },
+          "graph_interval": {
+            "title": "Graph Interval",
+            "type": "string"
+          },
+          "graph_window_seconds": {
+            "title": "Graph Window Seconds",
+            "type": "integer"
+          },
+          "horizon": {
+            "title": "Horizon",
+            "type": "string"
+          },
+          "model_resolutions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Model Resolutions",
+            "type": "array"
+          },
+          "momentum_formation_seconds": {
+            "title": "Momentum Formation Seconds",
+            "type": "integer"
+          },
+          "momentum_resolution": {
+            "title": "Momentum Resolution",
+            "type": "string"
+          }
+        },
+        "required": [
+          "horizon",
+          "graph_interval",
+          "graph_window_seconds",
+          "evaluation_window_seconds",
+          "model_resolutions",
+          "momentum_resolution",
+          "momentum_formation_seconds"
+        ],
+        "title": "ScannerHorizonDto",
+        "type": "object"
+      },
+      "ScannerProtocolDto": {
+        "additionalProperties": false,
+        "properties": {
+          "basket_protocol_id": {
+            "title": "Basket Protocol Id",
+            "type": "string"
+          },
+          "basket_protocol_identity": {
+            "title": "Basket Protocol Identity",
+            "type": "string"
+          },
+          "horizons": {
+            "items": {
+              "$ref": "#/components/schemas/ScannerHorizonDto"
+            },
+            "title": "Horizons",
+            "type": "array"
+          },
+          "protocol_id": {
+            "title": "Protocol Id",
+            "type": "string"
+          },
+          "protocol_identity": {
+            "title": "Protocol Identity",
+            "type": "string"
+          },
+          "quote_asset": {
+            "title": "Quote Asset",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.scanner_protocol.v1",
+            "default": "qap.api.scanner_protocol.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "venues": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Venues",
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocol_id",
+          "protocol_identity",
+          "basket_protocol_id",
+          "basket_protocol_identity",
+          "venues",
+          "quote_asset",
+          "horizons"
+        ],
+        "title": "ScannerProtocolDto",
+        "type": "object"
+      },
+      "UniverseAssetDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "automatic_eligible": {
+            "title": "Automatic Eligible",
+            "type": "boolean"
+          },
+          "bar_coverage": {
+            "title": "Bar Coverage",
+            "type": "number"
+          },
+          "eligibility_reason": {
+            "title": "Eligibility Reason",
+            "type": "string"
+          },
+          "eligibility_state": {
+            "title": "Eligibility State",
+            "type": "string"
+          },
+          "forensic_research_allowed": {
+            "title": "Forensic Research Allowed",
+            "type": "boolean"
+          },
+          "horizon": {
+            "title": "Horizon",
+            "type": "string"
+          },
+          "longest_missing_run": {
+            "title": "Longest Missing Run",
+            "type": "integer"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "title": "Venue Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "venue",
+          "horizon",
+          "asset_id",
+          "venue_symbol",
+          "eligibility_state",
+          "eligibility_reason",
+          "bar_coverage",
+          "longest_missing_run",
+          "automatic_eligible",
+          "forensic_research_allowed"
+        ],
+        "title": "UniverseAssetDto",
+        "type": "object"
+      },
       "UniverseMode": {
         "enum": [
           "declared_fixed_basket",
@@ -3381,6 +5118,69 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/baskets": {
+      "get": {
+        "operationId": "listBaskets",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasketListDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Baskets",
+        "tags": [
+          "baskets"
+        ]
+      }
+    },
+    "/api/baskets/{basket_id}": {
+      "get": {
+        "operationId": "getBasket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "basket_id",
+            "required": true,
+            "schema": {
+              "title": "Basket Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasketDetailDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Basket Detail",
+        "tags": [
+          "baskets"
+        ]
+      }
+    },
     "/api/experiments": {
       "get": {
         "operationId": "listExperiments",
@@ -3441,6 +5241,69 @@
         "summary": "Experiment Detail",
         "tags": [
           "experiments"
+        ]
+      }
+    },
+    "/api/forward/cohorts": {
+      "get": {
+        "operationId": "listForwardCohorts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForwardCohortListDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Forward Cohorts",
+        "tags": [
+          "scanner"
+        ]
+      }
+    },
+    "/api/forward/cohorts/{cohort_id}": {
+      "get": {
+        "operationId": "getForwardCohort",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForwardCohortDetailDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Forward Cohort Detail",
+        "tags": [
+          "scanner"
         ]
       }
     },
@@ -3857,6 +5720,183 @@
         "summary": "Portfolio Performance",
         "tags": [
           "portfolios"
+        ]
+      }
+    },
+    "/api/scanner/protocol": {
+      "get": {
+        "operationId": "getScannerProtocol",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScannerProtocolDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Scanner Protocol",
+        "tags": [
+          "scanner"
+        ]
+      }
+    },
+    "/api/scans": {
+      "get": {
+        "operationId": "listScans",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanListDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Scans",
+        "tags": [
+          "scanner"
+        ]
+      }
+    },
+    "/api/scans/{scan_id}": {
+      "get": {
+        "operationId": "getScan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scan_id",
+            "required": true,
+            "schema": {
+              "title": "Scan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanDetailDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Scan Detail",
+        "tags": [
+          "scanner"
+        ]
+      }
+    },
+    "/api/scans/{scan_id}/candidates": {
+      "get": {
+        "operationId": "listScanCandidates",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scan_id",
+            "required": true,
+            "schema": {
+              "title": "Scan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateListDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Candidates",
+        "tags": [
+          "scanner"
+        ]
+      }
+    },
+    "/api/scans/{scan_id}/candidates/{candidate_id}": {
+      "get": {
+        "operationId": "getScanCandidate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scan_id",
+            "required": true,
+            "schema": {
+              "title": "Scan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "candidate_id",
+            "required": true,
+            "schema": {
+              "title": "Candidate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateDetailDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Candidate Detail",
+        "tags": [
+          "scanner"
         ]
       }
     }

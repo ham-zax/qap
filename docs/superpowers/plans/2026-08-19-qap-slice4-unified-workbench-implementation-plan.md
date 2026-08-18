@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-19
 
-**Status:** architecture frozen 2026-08-19 after plan review and stabilization. Slice-3 Milestone 6 handoff baseline is `dd9df14`. Do not reopen Slice-4 architecture before execution unless the final Slice-3 M7/M9 callable handoff contradicts this plan or an explicit Milestone-2 implementation refutation below fails. Do not execute until Slice-3 Milestone 7 and backend closure are complete and the user explicitly starts Slice 4.
+**Status:** implementation started 2026-08-19 after the user explicitly authorized Slice 4. Milestone 0 reconciled the frozen architecture against the completed Slice-3/Phase-15 handoff at `f8ef3e4`; the final Slice-3 source/test state remains `a79bd4d`. Do not reopen the architecture unless an explicit Milestone-2 implementation refutation below fails or a protected product/scientific boundary changes.
 
 **Goal:** make the completed Slice-1 discovery, Slice-2 prospective/actionability, and Slice-3 basket-research workflows operable and inspectable from one local web application without moving scientific or financial authority into FastAPI or React.
 
@@ -94,7 +94,7 @@ qap.scanner_entry.qualify_forward_with_qap(...)
 qap.market.public_capture.capture_public_spot(...)
 ```
 
-Slice-3 Milestone 7 must add two finite application operations before the Slice-4 handoff:
+The completed Slice-3 Milestone-7 handoff also provides:
 
 ```text
 generate_asset_momentum(...)
@@ -204,6 +204,20 @@ capture_public_evidence
 qualify_candidate
 run_basket
 ```
+
+Milestone-0 owner mapping against the completed backend handoff:
+
+| Slice-4 command | Existing application owner |
+|---|---|
+| `run_scan` | `qap.scanner_entry.run_scan_with_qap(...)` |
+| `generate_asset_momentum` | `qap.scanner_entry.generate_asset_momentum(...)` |
+| `freeze_forward_cohort` | `qap.scanner_entry.freeze_scan_with_qap(...)` |
+| `advance_forward_cohort` | `qap.scanner_entry.advance_forward_with_qap(...)` |
+| `capture_public_evidence` | `qap.market.public_capture.capture_public_spot(...)` |
+| `qualify_candidate` | `qap.scanner_entry.qualify_forward_with_qap(...)` |
+| `run_basket` | `qap.scanner_entry.run_basket_with_qap(...)` |
+
+Frozen read-model joins use existing artifact identities only: scan tables carry candidate and historical-QAP lineage; prospective cohort/checkpoint/qualification artifacts retain candidate identities; `BasketDefinition.selected_edges` retains candidate identities; and a completed basket attempt retains its authoritative `qap_run_id`. Browser requests therefore need domain identifiers and intent only, never filesystem/repository paths or frozen financial/protocol constants.
 
 A manual/pinned Slice-1 investigation is represented through the admitted scan/pin/manual-replay inputs already owned by Slice 1; do not create a separate arbitrary replay engine.
 

@@ -6,16 +6,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from qap.api.basket_views import BasketArtifactReader
 from qap.api.errors import ApiBoundaryError
 from qap.api.paper_operation_views import PaperOperationReader
 from qap.api.readers import RunArtifactReader
 from qap.api.routes import (
+    baskets_router,
     experiments_router,
     health_router,
     pairs_router,
     paper_operations,
     portfolios_router,
+    scanner_router,
 )
+from qap.api.scanner_views import ScannerArtifactReader
 from qap.api.schemas import ErrorDetailDto, ErrorEnvelopeDto
 from qap.api.settings import ApiSettings
 
@@ -52,6 +56,8 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.state.paper_operation_reader = PaperOperationReader(
         settings.run_root / "paper-operations"
     )
+    app.state.scanner_reader = ScannerArtifactReader(settings.run_root)
+    app.state.basket_reader = BasketArtifactReader(settings.run_root)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.allowed_origins),
@@ -131,6 +137,8 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.include_router(portfolios_router)
     app.include_router(pairs_router)
     app.include_router(paper_operations.router)
+    app.include_router(scanner_router)
+    app.include_router(baskets_router)
     return app
 
 
