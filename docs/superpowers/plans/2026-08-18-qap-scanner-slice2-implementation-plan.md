@@ -106,7 +106,7 @@ For each tested quote notional `q` and required snapshot/side:
 
 **Verification:** hand-calculated bid/ask examples, partial final level, unfillable examples, fee-once regression.
 
-## Task 4 — Compute `C95(q)` and safe tested size fail-closed
+## Task 4 — Compute `C95(q)` and `q_safe` fail-closed
 
 **Behavior:**
 
@@ -114,8 +114,9 @@ For each tested quote notional `q` and required snapshot/side:
 - For tested notional `q`, every required snapshot contributes either finite friction evidence or explicit infeasible/unfillable evidence.
 - Any required unfillable snapshot makes that `q` infeasible for the checkpoint rather than disappearing from the percentile calculation.
 - For fully fillable `q`, compute deterministic `C95(q)` using the approved percentile/interpolation convention and compare it only with the frozen adverse-cost authority from Slice 1.
-- Determine `q_safe` from the frozen tested-size grid/rule. Never interpolate/extrapolate beyond tested evidence unless the approved design explicitly defines such interpolation; otherwise choose the largest tested feasible size.
-- Preserve complete per-size evidence so a later reader can reconstruct why a larger size failed.
+- Determine `q_star` by deterministic Decimal bisection over the executable quote-notional range established by captured depth and admitted venue order precision. Do not invent a fixed notional ladder or extrapolate hidden depth.
+- Apply the frozen `liquidity-policy-v1` safety haircut exactly: `q_safe = 0.5 * q_star`.
+- Preserve every evaluated bisection point and its fixed-denominator evidence so a later reader can reconstruct why a larger size failed.
 
 **Verification:** percentile examples, denominator preservation, monotonic feasibility tests, all-unfillable and boundary cases.
 
@@ -123,7 +124,7 @@ For each tested quote notional `q` and required snapshot/side:
 
 **Behavior:**
 
-- Implement the approved policy transition/drift demand rule from the actual fixed EvidenceTilt state semantics and prospective drift evidence; do not use maximum tilt (`0.10`) as the trade-fraction divisor.
+- Implement direction-specific buy/sell demand from the actual prospective base-asset weight and frozen target set `{0.40, 0.50, 0.60}`. Each direction has a structural `0.20` floor, and observed NO_ACTION drift may increase one side beyond that floor. Do not use maximum tilt (`0.10`) as the trade-fraction divisor.
 - Capacity conversion must be conservative under direct transitions among neutral/tilted states and NO_ACTION drift. If the required one-way transition fraction cannot be established from the approved evidence, capacity fails closed to `research_only` rather than substituting a favorable number.
 - Keep candidate-local quote-capacity evidence separate from portfolio allocation. No cross-candidate allocator or combined balance resolver.
 - Store the exact transition/drift evidence and formula inputs used so qualification is auditable.
@@ -146,11 +147,12 @@ For each tested quote notional `q` and required snapshot/side:
 
 **Behavior:**
 
+- Publish the approved top-level cohort surface under `runs/scanner-forward/<cohort_id>/`: immutable `cohort.json` and `freezes.parquet`, plus append-only logical `checkpoints.parquet` and `outcomes.parquet` indexes.
 - Publish a cohort definition immutably before any prospective outcome is admitted.
 - Checkpoint staging persists definition/evidence rows before economic/liquidity evaluation can fail.
 - Use explicit PyArrow schemas and deterministic hashes/counts for candidate checkpoint rows, microstructure evidence references, tested-size liquidity rows, capacity/qualification rows, and any authoritative QAP run references.
 - Resume only when cohort/protocol/frozen source identities match exactly; otherwise fail closed.
-- A completed checkpoint generation is immutable and atomically published; `.partial` is recovery state only.
+- Keep recoverable per-checkpoint detail generations beneath the cohort as an internal implementation detail; a completed detail generation is immutable and atomically published, while `.partial` is recovery state only. Reopening an existing cohort must reconcile derived top-level indexes from completed immutable generations after an interrupted index refresh.
 - Forward checkpoints append by new checkpoint identity; they never rewrite prior completed checkpoint evidence.
 
 **Verification:** interrupted staging, duplicate/collision, resume mismatch, append-only checkpoint ordering, table/manifest reconciliation tests.
