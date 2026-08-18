@@ -12,6 +12,7 @@ import pyarrow as pa
 from qap.evaluation import incremental_log_relative_series
 from qap.experiment.data import ExperimentSetupError
 from qap.experiment.runner import ExperimentRun
+from qap.portfolio import AssetId
 from qap.portfolio._decimal import divide, exact_add, exact_multiply, exact_subtract
 
 _ONE = Decimal("1")
@@ -130,10 +131,16 @@ def build_inventory_table(run: ExperimentRun) -> Any:
     values: list[str] = []
     weights: list[str] = []
     basket = tuple(run.manifest.asset(key) for key in run.manifest.basket)
+    bridge = run.manifest.execution.bridge_asset
+    inventory_assets = (
+        (*basket, AssetId(bridge))
+        if bridge is not None and bridge not in run.manifest.basket
+        else basket
+    )
     for role in run.roles:
         for position, step in enumerate(role.trace.steps):
             total = role.values[position]
-            for asset in basket:
+            for asset in inventory_assets:
                 quantity = step.state_after.quantity(asset)
                 value = exact_multiply(
                     quantity,

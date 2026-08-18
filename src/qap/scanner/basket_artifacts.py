@@ -36,6 +36,11 @@ class BasketReplayStatus(StrEnum):
     COMPLETED = "completed"
 
 
+class BasketEconomicGateStatus(StrEnum):
+    DEVELOPMENT_SURVIVOR = "basket_development_survivor"
+    DEVELOPMENT_REJECTED = "basket_development_rejected"
+
+
 class BasketReplayAttempt(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
 
@@ -46,6 +51,7 @@ class BasketReplayAttempt(BaseModel):
     failure_stage: str | None = None
     failure_reason: str | None = None
     qap_run_id: str | None = None
+    economic_gate_status: BasketEconomicGateStatus | None = None
 
     @model_validator(mode="after")
     def validate_state(self) -> "BasketReplayAttempt":
@@ -56,6 +62,7 @@ class BasketReplayAttempt(BaseModel):
                     self.failure_stage,
                     self.failure_reason,
                     self.qap_run_id,
+                    self.economic_gate_status,
                 )
             ):
                 raise ValueError(
@@ -65,6 +72,10 @@ class BasketReplayAttempt(BaseModel):
         if self.status is BasketReplayStatus.COMPLETED:
             if not self.qap_run_id:
                 raise ValueError("completed basket attempt requires QAP run ID")
+            if self.economic_gate_status is None:
+                raise ValueError(
+                    "completed basket attempt requires economic gate status"
+                )
             if self.failure_stage is not None or self.failure_reason is not None:
                 raise ValueError("completed basket attempt cannot carry failure fields")
             return self
@@ -72,6 +83,8 @@ class BasketReplayAttempt(BaseModel):
             raise ValueError("failed basket attempt requires failure stage/reason")
         if self.qap_run_id is not None:
             raise ValueError("failed basket attempt cannot carry QAP run ID")
+        if self.economic_gate_status is not None:
+            raise ValueError("failed basket attempt cannot carry economic gate status")
         return self
 
 
@@ -199,6 +212,7 @@ def transition_basket_attempt(
     failure_stage: str | None = None,
     failure_reason: str | None = None,
     qap_run_id: str | None = None,
+    economic_gate_status: BasketEconomicGateStatus | None = None,
 ) -> BasketReplayAttempt:
     """Move the single enumerated attempt to one terminal state exactly once."""
 
@@ -212,6 +226,7 @@ def transition_basket_attempt(
         failure_stage=failure_stage,
         failure_reason=failure_reason,
         qap_run_id=qap_run_id,
+        economic_gate_status=economic_gate_status,
     )
     if current.status is not BasketReplayStatus.ENUMERATED:
         if current == replacement:
@@ -242,6 +257,11 @@ def publish_basket_generation(generation: BasketArtifactGeneration) -> Path:
         "attempt_id": attempt.attempt_id,
         "attempt_status": attempt.status.value,
         "qap_run_id": attempt.qap_run_id,
+        "economic_gate_status": (
+            None
+            if attempt.economic_gate_status is None
+            else attempt.economic_gate_status.value
+        ),
         "forensic": stored.forensic,
         "published_at": datetime.now(UTC).isoformat(),
     }
@@ -303,12 +323,20 @@ def read_basket_generation(
         raise BasketArtifactError("basket manifest status mismatch")
     if manifest.get("qap_run_id") != attempt.qap_run_id:
         raise BasketArtifactError("basket manifest QAP run mismatch")
+    expected_gate = (
+        None
+        if attempt.economic_gate_status is None
+        else attempt.economic_gate_status.value
+    )
+    if manifest.get("economic_gate_status") != expected_gate:
+        raise BasketArtifactError("basket manifest economic gate mismatch")
     return definition, attempt, manifest
 
 
 __all__ = [
     "BasketArtifactError",
     "BasketArtifactGeneration",
+    "BasketEconomicGateStatus",
     "BasketReplayAttempt",
     "BasketReplayStatus",
     "publish_basket_generation",

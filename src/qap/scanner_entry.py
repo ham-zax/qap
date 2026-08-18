@@ -1,11 +1,12 @@
 """Outer composition root for scanner research and authoritative QAP replay."""
 
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
 from qap.experiment.artifacts import read_run_artifacts
+from qap.experiment.basket_scanner_adapter import run_basket_replay
 from qap.experiment.dataset_seals import validate_expected_fingerprints_for_role
 from qap.experiment.manifest import DataRole
 from qap.experiment.prospective_scanner_adapter import (
@@ -18,22 +19,53 @@ from qap.scanner.artifacts import (
     ReplayAttemptRecord,
     ReplayAttemptStatus,
     ScanArtifactGeneration,
+    read_completed_scan,
 )
-from qap.scanner.catalog import ScannerCatalog
-from qap.scanner.models import ScannerPinSpec
+from qap.scanner.asset_momentum import build_asset_momentum_generation
+from qap.scanner.asset_momentum_artifacts import (
+    publish_asset_momentum_generation,
+    read_asset_momentum_generation,
+)
+from qap.scanner.basket import build_basket_definition_from_scan
+from qap.scanner.basket_artifacts import (
+    BasketReplayStatus,
+    publish_basket_generation,
+    read_basket_attempt,
+    read_basket_generation,
+    start_basket_generation,
+)
+from qap.scanner.basket_protocol import SCANNER_V1_BASKET
+from qap.scanner.catalog import (
+    ScannerCatalog,
+    catalog_semantic_identity,
+    load_scanner_catalog,
+    resolve_catalog_source,
+)
+from qap.scanner.models import ScanDefinition, ScannerPinSpec
 from qap.scanner.prospective import CandidateFreeze, ForwardCheckpoint
 from qap.scanner.prospective_run import (
     HistoricalReplayTemplate,
     advance_forward_cohort,
     freeze_completed_scan,
 )
-from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon, ScannerProtocol
+from qap.scanner.protocol import (
+    SCANNER_V1_SLICE1,
+    ScannerHorizon,
+    ScannerProtocol,
+    protocol_identity,
+)
 from qap.scanner.qualification_run import (
     ForwardQapState,
     qualify_forward_checkpoint,
 )
 from qap.scanner.run import ReplayReference, ScanRunResult, run_scan
+from qap.scanner.slices import EvaluatedSeries, evaluate_series
 from qap.scanner.trials import ScannerTrial
+from qap.scanner.universe import (
+    EligibleAssetRecord,
+    HistoricalEligibilityState,
+    UniverseSnapshot,
+)
 
 
 def _validate_scanner_catalog_admission(catalog: ScannerCatalog) -> None:
@@ -366,6 +398,182 @@ def qualify_forward_with_qap(
     )
 
 
+def _completed_scan_scope(
+    *,
+    run_root: str | Path,
+    scan_id: str,
+    venue: str,
+    horizon: ScannerHorizon,
+) -> tuple[ScanDefinition, UniverseSnapshot]:
+    scan_directory = Path(run_root).resolve() / "scans" / scan_id
+    definition, tables = read_completed_scan(scan_directory)
+    if (
+        definition.scanner_protocol_version != SCANNER_V1_SLICE1.protocol_id
+        or definition.protocol_identity != protocol_identity(SCANNER_V1_SLICE1)
+    ):
+        raise RuntimeError("source scan is not Scanner-V1 Slice-1 evidence")
+    normalized_venue = venue.strip().lower()
+    if normalized_venue not in definition.venues or horizon not in definition.horizons:
+        raise ValueError("momentum scope is absent from source scan")
+    eligible_rows = [
+        row
+        for row in tables["eligible_assets.parquet"]
+        if row["venue"] == normalized_venue and row["horizon"] == horizon.value
+    ]
+    metadata_rows = [
+        row
+        for row in tables["graph_metadata.parquet"]
+        if row["venue"] == normalized_venue and row["horizon"] == horizon.value
+    ]
+    if len(metadata_rows) != 1:
+        raise RuntimeError("source scan momentum scope metadata is ambiguous")
+    records = tuple(
+        EligibleAssetRecord(
+            scan_id=str(row["scan_id"]),
+            venue=str(row["venue"]),
+            horizon=ScannerHorizon(str(row["horizon"])),
+            asset_id=str(row["asset_id"]),
+            venue_symbol=str(row["venue_symbol"]),
+            eligibility_state=HistoricalEligibilityState(str(row["eligibility_state"])),
+            eligibility_reason=str(row["eligibility_reason"]),
+            lifecycle_evidence_refs=tuple(row["lifecycle_evidence_refs"] or ()),
+            source_artifact_fingerprint=str(row["source_artifact_fingerprint"]),
+            selection_slice_fingerprint=str(row["selection_slice_fingerprint"]),
+            bar_coverage=float(row["bar_coverage"]),
+            longest_missing_run=int(row["longest_missing_run"]),
+            automatic_eligible=bool(row["automatic_eligible"]),
+            forensic_research_allowed=bool(row["forensic_research_allowed"]),
+        )
+        for row in eligible_rows
+    )
+    return definition, UniverseSnapshot(
+        scan_id=definition.scan_id,
+        venue=normalized_venue,
+        horizon=horizon,
+        records=records,
+        universe_snapshot_id=str(metadata_rows[0]["universe_snapshot_id"]),
+    )
+
+
+def generate_asset_momentum(
+    *,
+    scan_id: str,
+    venue: str,
+    horizon: ScannerHorizon,
+    data_root: str | Path,
+    run_root: str | Path,
+) -> Path:
+    """Publish one frozen asset-native momentum generation from a completed scan."""
+
+    definition, snapshot = _completed_scan_scope(
+        run_root=run_root,
+        scan_id=scan_id,
+        venue=venue,
+        horizon=horizon,
+    )
+    catalog = load_scanner_catalog(data_root)
+    _validate_scanner_catalog_admission(catalog)
+    if definition.catalog_identity != catalog_semantic_identity(catalog):
+        raise RuntimeError("catalog does not match frozen source scan")
+    rule = SCANNER_V1_BASKET.momentum_rule(horizon)
+    evaluated_by_asset: dict[str, EvaluatedSeries] = {}
+    for record in snapshot.records:
+        matches = tuple(
+            source
+            for source in catalog.sources
+            if source.venue == snapshot.venue
+            and source.venue_symbol == record.venue_symbol
+            and source.base_asset == record.asset_id
+            and source.quote_asset == SCANNER_V1_BASKET.execution_bridge
+            and source.interval == rule.resolution.label
+        )
+        if len(matches) != 1:
+            raise RuntimeError(
+                f"momentum source is not uniquely frozen for asset {record.asset_id}"
+            )
+        resolved = resolve_catalog_source(
+            catalog,
+            dataset_id=matches[0].dataset_id,
+            data_root=data_root,
+        )
+        if resolved.source_artifact_fingerprint != record.source_artifact_fingerprint:
+            raise RuntimeError("momentum source does not match source-scan provenance")
+        evaluated_by_asset[record.asset_id] = evaluate_series(
+            resolved.series,
+            dataset_id=resolved.spec.dataset_id,
+            eligible_information_end=definition.eligible_information_end,
+            lookback=rule.formation,
+        )
+    generation = build_asset_momentum_generation(
+        snapshot,
+        evaluated_by_asset,
+        as_of=definition.eligible_information_end,
+    )
+    return publish_asset_momentum_generation(run_root, generation, snapshot)
+
+
+def run_basket_with_qap(
+    *,
+    scan_id: str,
+    venue: str,
+    horizon: ScannerHorizon,
+    decision_resolution: str,
+    economic_assets: Sequence[str],
+    candidate_ids: Sequence[str],
+    data_root: str | Path,
+    run_root: str | Path,
+    momentum_scan_id: str | None = None,
+    repository_root: str | Path | None = None,
+    run_timestamp: datetime | None = None,
+) -> Path:
+    """Run one manual basket intent through QAP and publish terminal evidence."""
+
+    repository = (
+        Path.cwd().resolve()
+        if repository_root is None
+        else Path(repository_root).resolve()
+    )
+    run_root_path = Path(run_root).resolve()
+    source_scan_directory = run_root_path / "scans" / scan_id
+    catalog = load_scanner_catalog(data_root)
+    _validate_scanner_catalog_admission(catalog)
+    source_momentum = None
+    if momentum_scan_id is not None:
+        source_momentum, _snapshot = read_asset_momentum_generation(
+            run_root_path / "asset-momentum" / momentum_scan_id
+        )
+    created_at = datetime.now(UTC) if run_timestamp is None else run_timestamp
+    definition = build_basket_definition_from_scan(
+        source_scan_directory,
+        catalog,
+        venue=venue,
+        horizon=horizon,
+        decision_resolution=decision_resolution,
+        economic_assets=economic_assets,
+        candidate_ids=candidate_ids,
+        created_at=created_at,
+        source_momentum=source_momentum,
+    )
+    final_directory = run_root_path / "baskets" / definition.basket_id
+    if final_directory.is_dir():
+        read_basket_generation(final_directory)
+        return final_directory
+
+    generation = start_basket_generation(run_root_path, definition)
+    attempt = read_basket_attempt(generation)
+    if attempt.status is BasketReplayStatus.ENUMERATED:
+        run_basket_replay(
+            generation=generation,
+            source_scan_directory=source_scan_directory,
+            catalog=catalog,
+            data_root=data_root,
+            repository_root=repository,
+            run_root=run_root_path,
+            run_timestamp=run_timestamp,
+        )
+    return publish_basket_generation(generation)
+
+
 def run_scan_with_qap(
     *,
     as_of: datetime,
@@ -400,6 +608,8 @@ def run_scan_with_qap(
 __all__ = [
     "advance_forward_with_qap",
     "freeze_scan_with_qap",
+    "generate_asset_momentum",
     "qualify_forward_with_qap",
+    "run_basket_with_qap",
     "run_scan_with_qap",
 ]

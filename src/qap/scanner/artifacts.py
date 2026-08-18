@@ -609,6 +609,51 @@ def publish_scan_generation(generation: ScanArtifactGeneration) -> Path:
     return generation.final_directory
 
 
+def read_completed_scan(
+    directory: str | Path,
+) -> tuple[ScanDefinition, dict[str, list[dict[str, Any]]]]:
+    """Read one completed scanner generation with integrity and semantic checks."""
+
+    root = Path(directory).resolve()
+    scan_id = root.name
+    try:
+        validate_scanner_integrity(
+            root,
+            scan_id=scan_id,
+            authoritative_files=_AUTHORITATIVE_FILES,
+        )
+        definition = _load_definition(root / "definition.json")
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise ScanArtifactError(str(exc)) from exc
+    if not isinstance(manifest, dict):
+        raise ScanArtifactError("scanner manifest must be an object")
+    if definition.scan_id != scan_id or manifest.get("scan_id") != scan_id:
+        raise ScanArtifactError("completed scanner artifact identity mismatch")
+
+    generation = ScanArtifactGeneration(
+        run_root=root.parent.parent,
+        scan_root=root.parent,
+        definition=definition,
+        staging_directory=root,
+        final_directory=root,
+    )
+    tables = _read_required_tables(generation)
+    _reconcile_definition(definition, tables)
+    _reconcile(tables)
+    if manifest.get("table_counts") != {
+        name: table.num_rows for name, table in tables.items()
+    }:
+        raise ScanArtifactError("scanner manifest table counts do not reconcile")
+    if manifest.get("table_hashes") != {
+        name: _table_hash(table) for name, table in tables.items()
+    }:
+        raise ScanArtifactError("scanner manifest table hashes do not reconcile")
+    if manifest.get("replay_references") != _replay_references(tables):
+        raise ScanArtifactError("scanner manifest replay references do not reconcile")
+    return definition, {name: table.to_pylist() for name, table in tables.items()}
+
+
 def discover_completed_scans(run_root: str | Path) -> tuple[Path, ...]:
     """Return only fully validated final scan directories, never partial staging."""
 
@@ -619,23 +664,7 @@ def discover_completed_scans(run_root: str | Path) -> tuple[Path, ...]:
     for directory in scan_root.iterdir():
         if not directory.is_dir() or directory.name.endswith(".partial"):
             continue
-        try:
-            validate_scanner_integrity(
-                directory,
-                scan_id=directory.name,
-                authoritative_files=_AUTHORITATIVE_FILES,
-            )
-            definition = _load_definition(directory / "definition.json")
-            manifest = json.loads(
-                (directory / "manifest.json").read_text(encoding="utf-8")
-            )
-        except (OSError, ValueError, json.JSONDecodeError) as exc:
-            raise ScanArtifactError(str(exc)) from exc
-        if (
-            definition.scan_id != directory.name
-            or manifest.get("scan_id") != directory.name
-        ):
-            raise ScanArtifactError("completed scanner artifact identity mismatch")
+        read_completed_scan(directory)
         completed.append(directory)
     return tuple(sorted(completed))
 
@@ -648,6 +677,7 @@ __all__ = [
     "discover_completed_scans",
     "enumerate_replay_attempt",
     "publish_scan_generation",
+    "read_completed_scan",
     "read_replay_attempt",
     "start_scan_generation",
     "transition_replay_attempt",

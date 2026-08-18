@@ -9,14 +9,13 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from hashlib import sha256
 from pathlib import Path
-from typing import Any, Self
+from typing import Self
 
-import pyarrow.parquet as pq
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from qap.market import BarInterval
 from qap.portfolio import AssetId
-from qap.scanner.artifact_schemas import TABLE_SCHEMAS
+from qap.scanner.artifacts import ScanArtifactError, read_completed_scan
 from qap.scanner.asset_momentum import AssetMomentumGeneration
 from qap.scanner.basket_protocol import (
     SCANNER_V1_BASKET,
@@ -27,8 +26,6 @@ from qap.scanner.catalog import (
     ScannerSourceSpec,
     catalog_semantic_identity,
 )
-from qap.scanner.integrity import validate_scanner_integrity
-from qap.scanner.models import ScanDefinition
 from qap.scanner.protocol import (
     SCANNER_V1_SLICE1,
     ScannerHorizon,
@@ -38,7 +35,6 @@ from qap.scanner.protocol import (
 from qap.scanner.trials import ScannerModelFamily
 
 _FINGERPRINT = re.compile(r"^[0-9a-f]{64}$")
-_SOURCE_SCAN_FILES = frozenset(("definition.json", "manifest.json", *TABLE_SCHEMAS))
 
 
 class BasketDefinitionError(ValueError):
@@ -340,54 +336,6 @@ class BasketDefinition(_FrozenModel):
         return sha256(encoded).hexdigest()
 
 
-def _load_source_scan(
-    directory: str | Path,
-) -> tuple[ScanDefinition, dict[str, list[dict[str, Any]]]]:
-    root = Path(directory).resolve()
-    scan_id = root.name
-    try:
-        validate_scanner_integrity(
-            root,
-            scan_id=scan_id,
-            authoritative_files=_SOURCE_SCAN_FILES,
-        )
-        payload = json.loads((root / "definition.json").read_text(encoding="utf-8"))
-        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
-    except (OSError, ValueError, json.JSONDecodeError) as exc:
-        raise BasketDefinitionError(
-            "source scan integrity/provenance is invalid"
-        ) from exc
-    if not isinstance(payload, dict) or not isinstance(manifest, dict):
-        raise BasketDefinitionError("source scan definition/manifest must be objects")
-    declared_scan_id = payload.pop("scan_id", None)
-    try:
-        definition = ScanDefinition.model_validate(payload)
-    except ValueError as exc:
-        raise BasketDefinitionError("source scan definition is invalid") from exc
-    if declared_scan_id != scan_id or definition.scan_id != scan_id:
-        raise BasketDefinitionError("source scan identity mismatch")
-    if manifest.get("scan_id") != scan_id:
-        raise BasketDefinitionError("source scan manifest identity mismatch")
-    if (
-        definition.scanner_protocol_version != SCANNER_V1_SLICE1.protocol_id
-        or definition.protocol_identity != protocol_identity(SCANNER_V1_SLICE1)
-    ):
-        raise BasketDefinitionError("source scan is not Scanner-V1 Slice-1 evidence")
-
-    rows: dict[str, list[dict[str, Any]]] = {}
-    for name, schema in TABLE_SCHEMAS.items():
-        try:
-            table = pq.read_table(root / name)
-        except Exception as exc:
-            raise BasketDefinitionError(
-                f"source scan table is unreadable: {name}"
-            ) from exc
-        if not table.schema.equals(schema):
-            raise BasketDefinitionError(f"source scan table schema mismatch: {name}")
-        rows[name] = table.to_pylist()
-    return definition, rows
-
-
 def _execution_source(
     catalog: ScannerCatalog,
     *,
@@ -424,7 +372,17 @@ def build_basket_definition_from_scan(
 ) -> BasketDefinition:
     """Validate one manual basket directly against immutable Slice-1 evidence."""
 
-    definition, tables = _load_source_scan(source_scan_directory)
+    try:
+        definition, tables = read_completed_scan(source_scan_directory)
+    except ScanArtifactError as exc:
+        raise BasketDefinitionError(
+            "source scan integrity/provenance is invalid"
+        ) from exc
+    if (
+        definition.scanner_protocol_version != SCANNER_V1_SLICE1.protocol_id
+        or definition.protocol_identity != protocol_identity(SCANNER_V1_SLICE1)
+    ):
+        raise BasketDefinitionError("source scan is not Scanner-V1 Slice-1 evidence")
     normalized_venue = venue.strip().lower()
     resolution = BarInterval(decision_resolution).label
     assets = tuple(sorted(AssetId(value).key for value in economic_assets))
