@@ -166,6 +166,7 @@ def _connected_components(
 
 
 def resolve_graph_target(
+    neutral_target: AllocationTarget,
     economic_assets: Sequence[AssetId],
     edges: Sequence[BasketGraphEdge],
     opinions: Mapping[str, int],
@@ -174,9 +175,11 @@ def resolve_graph_target(
 ) -> AllocationTarget:
     """Resolve the frozen graph into one component-neutral long-only target."""
 
+    if not isinstance(cast(object, neutral_target), AllocationTarget):
+        raise TypeError("neutral_target must be an AllocationTarget")
     assets = tuple(sorted(economic_assets))
-    if len(assets) < 2 or len(set(assets)) != len(assets):
-        raise ValueError("economic_assets must contain at least two unique assets")
+    if not 2 <= len(assets) <= 6 or len(set(assets)) != len(assets):
+        raise ValueError("economic_assets must contain 2-6 unique assets")
     by_id = _edges_by_id(edges)
     edge_tuple = tuple(by_id[edge_id] for edge_id in sorted(by_id))
     asset_set = set(assets)
@@ -189,6 +192,10 @@ def resolve_graph_target(
         raise ValueError("maximum_tilt must be finite and positive")
 
     neutral = divide(_ONE, Decimal(len(assets)))
+    if set(neutral_target.weights) != set(assets) or any(
+        neutral_target.weights[asset] != neutral for asset in assets
+    ):
+        raise ValueError("neutral_target must be equal weight over economic_assets")
     if maximum_tilt > neutral:
         raise ValueError("maximum_tilt must preserve long-only basket weights")
     pressure = {asset: 0 for asset in assets}
@@ -220,7 +227,7 @@ def resolve_graph_target(
             centered[asset] = exact_add(normalized[asset], mean.copy_negate())
 
     scale = max(value.copy_abs() for value in centered.values())
-    weights = {asset: neutral for asset in assets}
+    weights = dict(neutral_target.weights)
     if scale != _ZERO:
         for asset in assets:
             signed_scale = divide(centered[asset], scale)
