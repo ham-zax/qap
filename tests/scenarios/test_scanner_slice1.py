@@ -20,6 +20,7 @@ from qap.market import (
     write_parquet_bar_series,
 )
 from qap.portfolio import AssetId
+from qap.scanner.models import ScannerPinSpec
 from qap.scanner.protocol import ScannerHorizon
 from qap.scanner_entry import run_scan_with_qap
 
@@ -72,7 +73,12 @@ def _series(
     return validate_bar_series(tuple(bars))
 
 
-def _lifecycle_event(asset: AssetId) -> InstrumentLifecycleEvent:
+def _lifecycle_event(
+    asset: AssetId,
+    *,
+    effective_at: datetime | None = None,
+) -> InstrumentLifecycleEvent:
+    lifecycle_start = AS_OF - HISTORY if effective_at is None else effective_at
     return InstrumentLifecycleEvent(
         canonical_asset_id=asset,
         asset_identity_version=f"{asset.key.lower()}-v1",
@@ -80,8 +86,8 @@ def _lifecycle_event(asset: AssetId) -> InstrumentLifecycleEvent:
         venue_symbol=f"{asset.key}USDT",
         quote_asset=USDT,
         event_type=LifecycleEventType.LISTING_OR_TRADING_STARTED,
-        effective_at=AS_OF - HISTORY,
-        observed_at=AS_OF - HISTORY,
+        effective_at=lifecycle_start,
+        observed_at=lifecycle_start,
         source_type=LifecycleSourceType.OFFICIAL_EXCHANGE_ANNOUNCEMENT,
         source_id=f"fixture-{asset.key.lower()}-listing",
         confidence=LifecycleConfidence.CONFIRMED,
@@ -106,9 +112,18 @@ def _event_payload(event: InstrumentLifecycleEvent) -> dict[str, object]:
     }
 
 
-def _write_fixture(data_root: Path, *, include_direct: bool) -> None:
+def _write_fixture(
+    data_root: Path,
+    *,
+    include_direct: bool,
+    unknown_eth_lifecycle: bool = False,
+    lifecycle_start: datetime | None = None,
+) -> None:
     data_root.mkdir(parents=True)
-    events = (_lifecycle_event(BTC), _lifecycle_event(ETH))
+    events = (
+        _lifecycle_event(BTC, effective_at=lifecycle_start),
+        _lifecycle_event(ETH, effective_at=lifecycle_start),
+    )
     (data_root / "lifecycle.jsonl").write_text(
         "".join(
             json.dumps(_event_payload(event), sort_keys=True) + "\n" for event in events
@@ -142,7 +157,11 @@ def _write_fixture(data_root: Path, *, include_direct: bool) -> None:
                     "quote_asset": "USDT",
                     "interval": interval.label,
                     "expected_semantic_fingerprint": fingerprint_bar_series(series),
-                    "lifecycle_evidence_ids": [event_id_by_asset[asset]],
+                    "lifecycle_evidence_ids": (
+                        []
+                        if unknown_eth_lifecycle and asset == ETH
+                        else [event_id_by_asset[asset]]
+                    ),
                     "direct_pair_dataset_ids": (
                         [f"btc-eth-{interval.label}"] if include_direct else []
                     ),
@@ -233,6 +252,85 @@ def test_scanner_short_horizon_direct_market_reaches_authoritative_replay(
         for row in promotions
         if row["selected_for_replay"]
     )
+
+
+def test_model_warmup_before_lifecycle_eligibility_is_not_promotable(
+    tmp_path: Path,
+) -> None:
+    data_root = tmp_path / "data"
+    run_root = tmp_path / "runs"
+    _write_fixture(
+        data_root,
+        include_direct=True,
+        lifecycle_start=AS_OF - timedelta(days=30),
+    )
+
+    result = run_scan_with_qap(
+        as_of=AS_OF,
+        horizons=(ScannerHorizon.SHORT,),
+        data_root=data_root,
+        run_root=run_root,
+        pins=(),
+    )
+
+    scouts = pq.read_table(
+        result.artifact_directory / "scout_trials.parquet"
+    ).to_pylist()
+    assert len(scouts) == 18
+    assert {row["trial_status"] for row in scouts} == {"invalid"}
+    assert {row["failure_reason"] for row in scouts} == {
+        "model_source_unavailable",
+        "model_lifecycle_ineligible",
+    }
+    promotions = pq.read_table(
+        result.artifact_directory / "promotions.parquet"
+    ).to_pylist()
+    assert promotions == []
+
+
+def test_forensic_pin_can_research_unknown_asset_without_automatic_promotion(
+    tmp_path: Path,
+) -> None:
+    data_root = tmp_path / "data"
+    run_root = tmp_path / "runs"
+    _write_fixture(
+        data_root,
+        include_direct=False,
+        unknown_eth_lifecycle=True,
+    )
+    pin = ScannerPinSpec(
+        venue="binance",
+        asset_a="BTC",
+        asset_b="ETH",
+        horizons=(ScannerHorizon.SHORT,),
+        forensic=True,
+    )
+
+    result = run_scan_with_qap(
+        as_of=AS_OF,
+        horizons=(ScannerHorizon.SHORT,),
+        data_root=data_root,
+        run_root=run_root,
+        pins=(pin,),
+    )
+
+    eligible = pq.read_table(
+        result.artifact_directory / "eligible_assets.parquet"
+    ).to_pylist()
+    eth = next(row for row in eligible if row["asset_id"] == "ETH")
+    assert eth["eligibility_state"] == "historical_eligibility_unknown"
+    assert eth["automatic_eligible"] is False
+    assert eth["forensic_research_allowed"] is True
+    neighbors = pq.read_table(
+        result.artifact_directory / "neighbors.parquet"
+    ).to_pylist()
+    assert len(neighbors) == 1
+    assert neighbors[0]["manual_pinned"] is True
+    assert neighbors[0]["automatic_neighbor_selected"] is False
+    promotions = pq.read_table(
+        result.artifact_directory / "promotions.parquet"
+    ).to_pylist()
+    assert promotions == []
 
 
 def test_scanner_unsupported_cross_stays_in_durable_attempt_denominator(

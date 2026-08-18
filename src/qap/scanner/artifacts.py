@@ -85,7 +85,9 @@ def _canonical_json_bytes(payload: object) -> bytes:
 
 
 def _definition_bytes(definition: ScanDefinition) -> bytes:
-    return _canonical_json_bytes(definition.model_dump(mode="json"))
+    payload = definition.model_dump(mode="json")
+    payload["scan_id"] = definition.scan_id
+    return _canonical_json_bytes(payload)
 
 
 def _atomic_write_bytes(path: Path, payload: bytes) -> None:
@@ -107,7 +109,14 @@ def _atomic_write_table(path: Path, table: Any) -> None:
 
 def _load_definition(path: Path) -> ScanDefinition:
     try:
-        return ScanDefinition.model_validate_json(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError("definition must be a JSON object")
+        declared_scan_id = payload.pop("scan_id", None)
+        definition = ScanDefinition.model_validate(payload)
+        if declared_scan_id != definition.scan_id:
+            raise ValueError("definition scan_id does not match semantic payload")
+        return definition
     except (OSError, ValueError) as exc:
         raise ScanArtifactError("partial scan definition is malformed") from exc
 
@@ -500,6 +509,39 @@ def _reconcile_definition(
             raise ScanArtifactError(f"{name} scan_id does not match definition")
 
 
+def _replay_references(tables: dict[str, Any]) -> list[dict[str, object]]:
+    promotions = {
+        row["candidate_id"]: row
+        for row in tables["promotions.parquet"].to_pylist()
+        if row["selected_for_replay"]
+    }
+    references: list[dict[str, object]] = []
+    for attempt in sorted(
+        tables["replay_attempts.parquet"].to_pylist(),
+        key=lambda row: row["attempt_id"],
+    ):
+        promotion = promotions.get(attempt["candidate_id"])
+        references.append(
+            {
+                "attempt_id": attempt["attempt_id"],
+                "candidate_id": attempt["candidate_id"],
+                "attempt_status": attempt["attempt_status"],
+                "failure_stage": attempt["failure_stage"],
+                "failure_reason": attempt["failure_reason"],
+                "direct_execution_instrument_id": (
+                    None
+                    if promotion is None
+                    else promotion["direct_execution_instrument_id"]
+                ),
+                "deep_replay_run_id": attempt["deep_replay_run_id"],
+                "economic_gate_status": (
+                    None if promotion is None else promotion["economic_gate_status"]
+                ),
+            }
+        )
+    return references
+
+
 def _reconcile(tables: dict[str, Any]) -> Counter[str]:
     promotions = tables["promotions.parquet"].to_pylist()
     attempts = tables["replay_attempts.parquet"].to_pylist()
@@ -564,10 +606,18 @@ def publish_scan_generation(generation: ScanArtifactGeneration) -> Path:
         "scan_id": generation.definition.scan_id,
         "scanner_protocol_version": generation.definition.scanner_protocol_version,
         "protocol_identity": generation.definition.protocol_identity,
+        "universe_policy_version": generation.definition.universe_policy_version,
+        "candidate_generator_version": (
+            generation.definition.candidate_generator_version
+        ),
+        "template_set_version": generation.definition.template_set_version,
+        "promotion_policy_version": generation.definition.promotion_policy_version,
+        "cost_policy_reference": generation.definition.cost_policy_reference,
         "definition_sha256": sha256(_definition_bytes(stored)).hexdigest(),
         "table_counts": table_counts,
         "table_hashes": table_hashes,
         "replay_attempt_status_counts": dict(sorted(status_counts.items())),
+        "replay_references": _replay_references(tables),
         "published_at": datetime.now(UTC).isoformat(),
     }
     manifest_path = generation.staging_directory / "manifest.json"
@@ -587,6 +637,8 @@ def publish_scan_generation(generation: ScanArtifactGeneration) -> Path:
     }:
         raise ScanArtifactError("scanner manifest table hashes do not reconcile")
     _reconcile(reread_tables)
+    if reread["replay_references"] != _replay_references(reread_tables):
+        raise ScanArtifactError("scanner manifest replay references do not reconcile")
     os.replace(generation.staging_directory, generation.final_directory)
     return generation.final_directory
 

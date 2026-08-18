@@ -9,7 +9,14 @@ from typing import Literal, Self
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from qap.portfolio import AssetId
-from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon
+from qap.scanner.protocol import (
+    CANDIDATE_GENERATOR_VERSION,
+    PROMOTION_POLICY_VERSION,
+    SCANNER_V1_SLICE1,
+    TEMPLATE_SET_VERSION,
+    UNIVERSE_POLICY_VERSION,
+    ScannerHorizon,
+)
 
 _FINGERPRINT = re.compile(r"^[0-9a-f]{64}$")
 
@@ -129,6 +136,11 @@ class ScanDefinition(_FrozenModel):
     scanner_protocol_version: str
     protocol_identity: str
     catalog_identity: str
+    universe_policy_version: str = UNIVERSE_POLICY_VERSION
+    candidate_generator_version: str = CANDIDATE_GENERATOR_VERSION
+    template_set_version: str = TEMPLATE_SET_VERSION
+    promotion_policy_version: str = PROMOTION_POLICY_VERSION
+    cost_policy_reference: str = SCANNER_V1_SLICE1.cost_policy.policy_id
     as_of: datetime
     eligible_information_end: datetime
     venues: tuple[str, ...]
@@ -147,6 +159,18 @@ class ScanDefinition(_FrozenModel):
     def validate_identity_fingerprint(cls, value: str, info: object) -> str:
         field_name = getattr(info, "field_name", "identity")
         return _fingerprint(value, field=field_name)
+
+    @field_validator(
+        "universe_policy_version",
+        "candidate_generator_version",
+        "template_set_version",
+        "promotion_policy_version",
+        "cost_policy_reference",
+    )
+    @classmethod
+    def validate_version_reference(cls, value: str, info: object) -> str:
+        field_name = getattr(info, "field_name", "version reference")
+        return _non_empty(value, field=field_name)
 
     @field_validator("as_of", "eligible_information_end", "created_at")
     @classmethod
@@ -203,6 +227,11 @@ class ScanDefinition(_FrozenModel):
             "scanner_protocol_version": self.scanner_protocol_version,
             "protocol_identity": self.protocol_identity,
             "catalog_identity": self.catalog_identity,
+            "universe_policy_version": self.universe_policy_version,
+            "candidate_generator_version": self.candidate_generator_version,
+            "template_set_version": self.template_set_version,
+            "promotion_policy_version": self.promotion_policy_version,
+            "cost_policy_reference": self.cost_policy_reference,
             "as_of": self.as_of.isoformat(),
             "eligible_information_end": self.eligible_information_end.isoformat(),
             "venues": sorted(self.venues),

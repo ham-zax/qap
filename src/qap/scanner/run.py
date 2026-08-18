@@ -46,7 +46,8 @@ from qap.scanner.catalog import (
     load_scanner_catalog,
     resolve_catalog_source,
 )
-from qap.scanner.graph import ManualPairPin, NeighborRecord, SsdGraph, build_ssd_graph
+from qap.scanner.forensic_graph import ScopedManualPin, build_scanner_graph
+from qap.scanner.graph import NeighborRecord, SsdGraph
 from qap.scanner.models import ScanDefinition, ScanInputIdentity, ScannerPinSpec
 from qap.scanner.promotion import PromotionRecord, apply_promotion_policy
 from qap.scanner.protocol import (
@@ -65,8 +66,10 @@ from qap.scanner.trials import (
 )
 from qap.scanner.universe import (
     EligibleAssetRecord,
+    HistoricalEligibilityState,
     UniverseAssetInput,
     build_venue_horizon_universe,
+    classify_historical_eligibility,
 )
 
 
@@ -203,6 +206,9 @@ class _PreparedInputs:
     graph_series: Mapping[tuple[str, ScannerHorizon], Mapping[str, EvaluatedSeries]]
     model_series: Mapping[
         tuple[str, ScannerHorizon], Mapping[tuple[str, str], EvaluatedSeries]
+    ]
+    model_failure_reasons: Mapping[
+        tuple[str, ScannerHorizon], Mapping[tuple[str, str], str]
     ]
     lifecycle_events: Mapping[str, InstrumentLifecycleEvent]
 
@@ -362,6 +368,9 @@ def _prepare_inputs(
     model_series: dict[
         tuple[str, ScannerHorizon], dict[tuple[str, str], EvaluatedSeries]
     ] = {}
+    model_failure_reasons: dict[
+        tuple[str, ScannerHorizon], dict[tuple[str, str], str]
+    ] = {}
     input_identities: dict[tuple[str, str, str], ScanInputIdentity] = {}
 
     for horizon in horizons:
@@ -383,6 +392,7 @@ def _prepare_inputs(
             graph_sources[scope] = sources
             graph_values: dict[str, EvaluatedSeries] = {}
             model_values: dict[tuple[str, str], EvaluatedSeries] = {}
+            model_failures: dict[tuple[str, str], str] = {}
             for source in sources:
                 graph_value = evaluated(source, horizon_protocol.graph_window)
                 graph_values[source.base_asset] = graph_value
@@ -406,11 +416,32 @@ def _prepare_inputs(
                         interval=resolution,
                         quote_asset=protocol.quote_asset,
                     )
+                    model_key = (source.base_asset, resolution.label)
                     model_source = model_map.get(source.base_asset)
                     if model_source is None:
+                        model_failures[model_key] = "model_source_unavailable"
                         continue
-                    model_value = evaluated(model_source, model_lookback)
-                    model_values[(source.base_asset, resolution.label)] = model_value
+                    lifecycle = _evidence_for_source(
+                        model_source,
+                        lifecycle_events,
+                    )
+                    lifecycle_decision = classify_historical_eligibility(
+                        lifecycle,
+                        required_start=as_of - model_lookback,
+                        required_end=as_of,
+                    )
+                    if (
+                        lifecycle_decision.state
+                        is not HistoricalEligibilityState.KNOWN_ELIGIBLE
+                    ):
+                        model_failures[model_key] = "model_lifecycle_ineligible"
+                        continue
+                    try:
+                        model_value = evaluated(model_source, model_lookback)
+                    except TypeError, ValueError:
+                        model_failures[model_key] = "model_slice_unavailable"
+                        continue
+                    model_values[model_key] = model_value
                     model_identity = ScanInputIdentity(
                         dataset_id=model_value.dataset_id,
                         source_artifact_fingerprint=(
@@ -429,6 +460,7 @@ def _prepare_inputs(
                     ] = model_identity
             graph_series[scope] = graph_values
             model_series[scope] = model_values
+            model_failure_reasons[scope] = model_failures
 
     manual_inputs = tuple(
         sorted(token for pin in pins for token in pin.semantic_tokens())
@@ -451,6 +483,7 @@ def _prepare_inputs(
         graph_sources=graph_sources,
         graph_series=graph_series,
         model_series=model_series,
+        model_failure_reasons=model_failure_reasons,
         lifecycle_events=lifecycle_events,
     )
 
@@ -460,9 +493,13 @@ def _scope_pins(
     *,
     venue: str,
     horizon: ScannerHorizon,
-) -> tuple[ManualPairPin, ...]:
+) -> tuple[ScopedManualPin, ...]:
     return tuple(
-        ManualPairPin(asset_a=AssetId(pin.asset_a), asset_b=AssetId(pin.asset_b))
+        ScopedManualPin(
+            asset_a=AssetId(pin.asset_a),
+            asset_b=AssetId(pin.asset_b),
+            forensic=pin.forensic,
+        )
         for pin in pins
         if pin.venue == venue and horizon in pin.horizons
     )
@@ -716,7 +753,7 @@ def _search_scope(
         forensic=forensic,
         protocol=protocol,
     )
-    graph = build_ssd_graph(
+    graph = build_scanner_graph(
         snapshot,
         evaluated_by_asset=prepared.graph_series[scope],
         manual_pins=scope_pins,
@@ -726,6 +763,7 @@ def _search_scope(
     scouts: list[ScoutTrialRecord] = []
     trials_by_id: dict[str, ScannerTrial] = {}
     model_values = prepared.model_series[scope]
+    model_failures = prepared.model_failure_reasons[scope]
     horizon_protocol = protocol.horizon(horizon)
     for record in graph.records:
         pair_graph = replace(graph, records=(record,))
@@ -735,12 +773,26 @@ def _search_scope(
                 (record.asset_b, resolution.label),
             )
             if any(key not in model_values for key in required_keys):
+                failure_reasons = {
+                    model_failures.get(key, "model_source_unavailable")
+                    for key in required_keys
+                    if key not in model_values
+                }
+                reason = (
+                    "model_lifecycle_ineligible"
+                    if "model_lifecycle_ineligible" in failure_reasons
+                    else (
+                        "model_slice_unavailable"
+                        if "model_slice_unavailable" in failure_reasons
+                        else "model_source_unavailable"
+                    )
+                )
                 scouts.extend(
                     _invalid_resolution_records(
                         graph=graph,
                         record=record,
                         resolution=resolution,
-                        reason="model_source_unavailable",
+                        reason=reason,
                         protocol=protocol,
                     )
                 )
