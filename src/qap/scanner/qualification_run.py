@@ -3,7 +3,7 @@
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import cast
@@ -35,7 +35,6 @@ from qap.scanner.prospective_artifact_schemas import CHECKPOINT_TABLE
 from qap.scanner.prospective_artifacts import read_forward_cohort
 from qap.scanner.prospective_integrity import (
     completed_generation_dirs,
-    read_outcome,
     validate_completed_generation,
 )
 from qap.scanner.protocol import SCANNER_V1_SLICE1
@@ -50,21 +49,39 @@ class QualificationRunError(ValueError):
     """Raised when qualification cannot be tied to authoritative evidence."""
 
 
+def _utc(value: datetime, *, field: str) -> datetime:
+    if value.tzinfo is None or value.utcoffset() != timedelta(0):
+        raise QualificationRunError(f"{field} must be timezone-aware UTC")
+    return value.astimezone(UTC)
+
+
 @dataclass(frozen=True, slots=True)
 class ForwardQapState:
-    """Scanner-owned view of the forward QAP state needed for qualification."""
+    """Scanner-owned view of the current QAP state needed for qualification."""
 
+    qap_run_id: str
     direct_dataset_id: str
     instrument: VenueInstrument
     base_quantity: Decimal
     quote_quantity: Decimal
 
 
-ForwardQapStateLoader = Callable[[str, Path], ForwardQapState]
+CurrentQapStateLoader = Callable[
+    [
+        CandidateFreeze,
+        datetime,
+        ScannerCatalog,
+        Path,
+        Path,
+        datetime | None,
+    ],
+    ForwardQapState,
+]
 QualificationReplayRunner = Callable[
     [
         CandidateFreeze,
         ForwardCheckpoint,
+        datetime,
         Decimal,
         Decimal,
         ScannerCatalog,
@@ -147,36 +164,37 @@ def _checkpoint_and_freeze(
 
 def _direct_context(
     *,
-    checkpoint_directory: Path,
-    checkpoint: ForwardCheckpoint,
+    freeze: CandidateFreeze,
+    as_of: datetime,
     catalog: ScannerCatalog,
     data_root: Path,
     run_root: Path,
-    load_qap_state: ForwardQapStateLoader,
-) -> tuple[VenueInstrument, Decimal, Decimal]:
-    outcome = read_outcome(checkpoint_directory)
-    if outcome.qap_run_id is None:
-        raise QualificationRunError("forward checkpoint has no authoritative QAP run")
-    state = load_qap_state(outcome.qap_run_id, run_root)
+    load_current_state: CurrentQapStateLoader,
+    run_timestamp: datetime | None,
+) -> tuple[VenueInstrument, Decimal, Decimal, str]:
+    state = load_current_state(
+        freeze,
+        as_of,
+        catalog,
+        data_root,
+        run_root,
+        run_timestamp,
+    )
     current = catalog.source(state.direct_dataset_id)
     series = read_parquet_bar_series(data_root / current.relative_path)
     if series.instrument != state.instrument:
-        raise QualificationRunError("forward QAP direct-market lineage is incomplete")
+        raise QualificationRunError("current QAP direct-market lineage is incomplete")
     if fingerprint_bar_series(series) != current.expected_semantic_fingerprint:
         raise QualificationRunError("current direct-market source fingerprint mismatch")
-    matches = tuple(
-        bar
-        for bar in series.bars
-        if bar.bar_end_exclusive == checkpoint.information_end
-    )
+    matches = tuple(bar for bar in series.bars if bar.bar_end_exclusive == as_of)
     if len(matches) != 1:
         raise QualificationRunError("qualification direct-market price is unavailable")
     price = Decimal(str(matches[0].close))
     base_value = exact_multiply(state.base_quantity, price)
     total_value = exact_add(base_value, state.quote_quantity)
     if total_value <= 0:
-        raise QualificationRunError("forward QAP terminal valuation is invalid")
-    return state.instrument, price, divide(base_value, total_value)
+        raise QualificationRunError("current QAP terminal valuation is invalid")
+    return state.instrument, price, divide(base_value, total_value), state.qap_run_id
 
 
 def _capture_state(
@@ -214,21 +232,34 @@ def _capture_state(
         (item for item in reversed(metadata_rows) if item.observed_at <= as_of),
         None,
     )
-    if not l1 or not depth:
-        return l1, depth, metadata, False
     coverage = evaluate_capture_contract(
         tuple(item.observed_at for item in l1),
         tuple(item.observed_at for item in depth),
         window_end=as_of,
     )
-    return l1, depth, metadata, coverage.satisfied and metadata is not None
+    window_l1 = tuple(
+        item
+        for item in l1
+        if coverage.window_start <= item.observed_at < coverage.window_end
+    )
+    window_depth = tuple(
+        item
+        for item in depth
+        if coverage.window_start <= item.observed_at < coverage.window_end
+    )
+    return (
+        window_l1,
+        window_depth,
+        metadata,
+        coverage.satisfied and metadata is not None,
+    )
 
 
 def _two_way(metadata: MarketMetadata) -> bool:
     if metadata.instrument.venue == "binance":
         return metadata.status == "TRADING"
     if metadata.instrument.venue == "gate":
-        return metadata.status == "tradable"
+        return metadata.status == "TRADABLE"
     return False
 
 
@@ -307,12 +338,13 @@ def qualify_forward_checkpoint(
     *,
     cohort_root: str | Path,
     checkpoint_id: str,
+    as_of: datetime,
     requested_capital: Decimal,
     catalog: ScannerCatalog,
     data_root: str | Path,
     capture_root: str | Path,
     run_root: str | Path,
-    load_qap_state: ForwardQapStateLoader,
+    load_current_state: CurrentQapStateLoader,
     run_qualification: QualificationReplayRunner,
     run_timestamp: datetime | None = None,
 ) -> Path:
@@ -322,21 +354,26 @@ def qualify_forward_checkpoint(
     checkpoint_directory, checkpoint, freeze = _checkpoint_and_freeze(
         root, checkpoint_id
     )
+    qualification_as_of = _utc(as_of, field="as_of")
+    if qualification_as_of < checkpoint.information_end:
+        raise QualificationRunError("as_of must not precede the completed checkpoint")
     if not requested_capital.is_finite() or requested_capital <= 0:
         raise QualificationRunError("requested capital must be positive finite")
-    instrument, price, current_weight = _direct_context(
-        checkpoint_directory=checkpoint_directory,
-        checkpoint=checkpoint,
+    del checkpoint_directory
+    instrument, price, current_weight, current_state_run_id = _direct_context(
+        freeze=freeze,
+        as_of=qualification_as_of,
         catalog=catalog,
         data_root=Path(data_root).resolve(),
         run_root=Path(run_root).resolve(),
-        load_qap_state=load_qap_state,
+        load_current_state=load_current_state,
+        run_timestamp=run_timestamp,
     )
     l1, depth, metadata_snapshot, capture_satisfied = _capture_state(
         capture_root=Path(capture_root).resolve(),
         venue=instrument.venue,
         venue_symbol=instrument.venue_symbol,
-        as_of=checkpoint.information_end,
+        as_of=qualification_as_of,
     )
     metadata = None if metadata_snapshot is None else metadata_snapshot.metadata
     current_two_way = metadata is not None and _two_way(metadata)
@@ -345,16 +382,7 @@ def qualify_forward_checkpoint(
     buy_safe = sell_safe = None
     qualified_depth: tuple[PublicBookSnapshot, ...] = ()
     if capture_satisfied and metadata is not None:
-        coverage = evaluate_capture_contract(
-            tuple(item.observed_at for item in l1),
-            tuple(item.observed_at for item in depth),
-            window_end=checkpoint.information_end,
-        )
-        qualified_depth = tuple(
-            item
-            for item in depth
-            if coverage.window_start <= item.observed_at < coverage.window_end
-        )
+        qualified_depth = depth
         try:
             buy_safe = find_directional_safe_size(
                 qualified_depth,
@@ -409,6 +437,7 @@ def qualify_forward_checkpoint(
             run_id, baseline, adverse = run_qualification(
                 freeze,
                 checkpoint,
+                qualification_as_of,
                 tested_capital,
                 empirical,
                 catalog,
@@ -434,10 +463,11 @@ def qualify_forward_checkpoint(
     request = QualificationRequest(
         candidate_id=freeze.candidate_id,
         freeze_id=freeze.freeze_id,
-        as_of=checkpoint.information_end,
+        as_of=qualification_as_of,
         requested_capital=requested_capital,
         prospective_protocol_version=freeze.prospective_protocol_version,
         prospective_protocol_identity=freeze.prospective_protocol_identity,
+        current_state_qap_run_id=current_state_run_id,
         capture_snapshot_ids=snapshot_ids,
         market_metadata_fingerprint=(
             None if metadata_snapshot is None else metadata_snapshot.snapshot_id

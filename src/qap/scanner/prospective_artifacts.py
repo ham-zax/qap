@@ -203,6 +203,7 @@ def _verify_cohort_root(root: Path, cohort: ForwardCohort) -> None:
             artifact_id=cohort.cohort_id,
             required_files=COHORT_AUTHORITATIVE_FILES,
             allowed_files=COHORT_AUTHORITATIVE_FILES,
+            ignored_files=frozenset({CHECKPOINTS_INDEX, OUTCOMES_INDEX}),
         )
     except ValueError as exc:
         raise ProspectiveArtifactError(str(exc)) from exc
@@ -216,8 +217,6 @@ def _verify_cohort_root(root: Path, cohort: ForwardCohort) -> None:
         raise ProspectiveArtifactError(
             "cohort freeze table does not match frozen identity"
         )
-    _read_table(root / CHECKPOINTS_INDEX, CHECKPOINT_SCHEMA)
-    _read_table(root / OUTCOMES_INDEX, OUTCOME_INDEX_SCHEMA)
 
 
 def start_forward_cohort(

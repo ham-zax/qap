@@ -1,6 +1,6 @@
 """Authoritative QAP replay adapter for one frozen scanner prospective checkpoint."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import cast
@@ -9,6 +9,7 @@ from qap.experiment.artifacts import read_run_artifacts, run_experiment_to_artif
 from qap.experiment.data import DatasetFingerprintMismatchError, ExperimentSetupError
 from qap.experiment.dataset_seals import validate_expected_fingerprints_for_role
 from qap.experiment.manifest import DataRole, ExperimentManifest
+from qap.experiment.runner import prepare_experiment
 from qap.market import fingerprint_bar_series, read_parquet_bar_series
 from qap.portfolio._decimal import divide
 from qap.scanner.catalog import ScannerCatalog
@@ -78,44 +79,56 @@ def _validate_frozen_contract(
         raise ProspectiveReplayError("historical cost policy does not match freeze")
 
 
-def _forward_sources(
+def _resolved_sources(
     historical: ExperimentManifest,
-    checkpoint: ForwardCheckpoint,
+    expected_by_dataset: dict[str, str],
     catalog: ScannerCatalog,
 ) -> list[dict[str, object]]:
-    by_dataset = {item.dataset_id: item for item in checkpoint.forward_slices}
     historical_ids = {source.dataset_id for source in historical.data_sources}
-    if set(by_dataset) != historical_ids:
+    if set(expected_by_dataset) != historical_ids:
         raise ProspectiveReplayError(
-            "forward checkpoint must identify every frozen replay data source"
+            "prospective replay must identify every frozen replay data source"
         )
     validate_expected_fingerprints_for_role(
-        (item.source_artifact_fingerprint for item in checkpoint.forward_slices),
+        expected_by_dataset.values(),
         data_role=DataRole.DEVELOPMENT,
     )
     resolved: list[dict[str, object]] = []
     for source in historical.data_sources:
         current = catalog.source(source.dataset_id)
-        expected = by_dataset[source.dataset_id]
-        if (
-            current.expected_semantic_fingerprint
-            != expected.source_artifact_fingerprint
-        ):
-            raise ProspectiveReplayError("forward catalog fingerprint mismatch")
+        expected = expected_by_dataset[source.dataset_id]
+        if current.expected_semantic_fingerprint != expected:
+            raise ProspectiveReplayError("prospective catalog fingerprint mismatch")
         resolved.append(
             {
                 **source.model_dump(mode="json"),
                 "relative_path": current.relative_path,
-                "expected_semantic_fingerprint": expected.source_artifact_fingerprint,
+                "expected_semantic_fingerprint": expected,
             }
         )
     return resolved
 
 
-def _starting_quantities(
+def _forward_sources(
     historical: ExperimentManifest,
     checkpoint: ForwardCheckpoint,
+    catalog: ScannerCatalog,
+) -> list[dict[str, object]]:
+    return _resolved_sources(
+        historical,
+        {
+            item.dataset_id: item.source_artifact_fingerprint
+            for item in checkpoint.forward_slices
+        },
+        catalog,
+    )
+
+
+def _starting_quantities(
+    historical: ExperimentManifest,
     *,
+    forward_start: datetime,
+    expected_by_dataset: dict[str, str],
     data_root: Path,
     catalog: ScannerCatalog,
 ) -> dict[str, str]:
@@ -139,26 +152,16 @@ def _starting_quantities(
     if direct_source is None or direct_instrument is None:
         raise ProspectiveReplayError("frozen replay direct market is unavailable")
     current_direct = catalog.source(direct_source.dataset_id)
-    forward_identity = next(
-        (
-            item
-            for item in checkpoint.forward_slices
-            if item.dataset_id == direct_source.dataset_id
-        ),
-        None,
-    )
-    if forward_identity is None:
+    expected = expected_by_dataset.get(direct_source.dataset_id)
+    if expected is None:
         raise ProspectiveReplayError("forward direct-market identity is unavailable")
-    if (
-        current_direct.expected_semantic_fingerprint
-        != forward_identity.source_artifact_fingerprint
-    ):
+    if current_direct.expected_semantic_fingerprint != expected:
         raise ProspectiveReplayError("forward direct-market catalog mismatch")
     series = read_parquet_bar_series(data_root / current_direct.relative_path)
-    if fingerprint_bar_series(series) != forward_identity.source_artifact_fingerprint:
+    if fingerprint_bar_series(series) != expected:
         raise ProspectiveReplayError("forward direct-market fingerprint mismatch")
     matches = tuple(
-        bar for bar in series.bars if bar.bar_end_exclusive == checkpoint.forward_start
+        bar for bar in series.bars if bar.bar_end_exclusive == forward_start
     )
     if len(matches) != 1:
         raise ProspectiveReplayError("forward starting price is unavailable")
@@ -202,6 +205,10 @@ def prepare_prospective_manifest(
     loaded = _historical_run(Path(run_root), freeze)
     historical = loaded.manifest
     _validate_frozen_contract(freeze, historical)
+    expected_by_dataset = {
+        item.dataset_id: item.source_artifact_fingerprint
+        for item in checkpoint.forward_slices
+    }
     data_sources = _forward_sources(historical, checkpoint, catalog)
     warmup = (
         historical.effective_evaluation_window().start - historical.data_window.start
@@ -221,7 +228,8 @@ def prepare_prospective_manifest(
             "parent_run_id": freeze.candidate_deep_replay_run_id,
             "starting_quantities": _starting_quantities(
                 historical,
-                checkpoint,
+                forward_start=freeze.forward_start,
+                expected_by_dataset=expected_by_dataset,
                 data_root=Path(data_root).resolve(),
                 catalog=catalog,
             ),
@@ -232,6 +240,68 @@ def prepare_prospective_manifest(
             "evaluation_window": {
                 "start": freeze.forward_start.isoformat(),
                 "end": checkpoint.information_end.isoformat(),
+            },
+            "data_sources": data_sources,
+            "data_role": DataRole.DEVELOPMENT.value,
+        }
+    )
+    return ExperimentManifest.model_validate(payload)
+
+
+def prepare_prospective_current_manifest(
+    freeze: CandidateFreeze,
+    *,
+    as_of: datetime,
+    data_root: str | Path,
+    run_root: str | Path,
+    catalog: ScannerCatalog,
+) -> ExperimentManifest:
+    """Replay the frozen candidate through one explicit current qualification time."""
+
+    if as_of.tzinfo is None or as_of.utcoffset() != timedelta(0):
+        raise ProspectiveReplayError("qualification as_of must be timezone-aware UTC")
+    current_as_of = as_of.astimezone(UTC)
+    if current_as_of <= freeze.forward_start:
+        raise ProspectiveReplayError("qualification as_of must be after forward_start")
+
+    loaded = _historical_run(Path(run_root), freeze)
+    historical = loaded.manifest
+    _validate_frozen_contract(freeze, historical)
+    expected_by_dataset = {
+        source.dataset_id: (
+            catalog.source(source.dataset_id).expected_semantic_fingerprint
+        )
+        for source in historical.data_sources
+    }
+    data_sources = _resolved_sources(historical, expected_by_dataset, catalog)
+    warmup = (
+        historical.effective_evaluation_window().start - historical.data_window.start
+    )
+    data_start = freeze.forward_start - warmup
+    payload = historical.model_dump(mode="json")
+    payload.update(
+        {
+            "experiment_name": f"qualification-state-{freeze.freeze_id[:12]}",
+            "description": (
+                "Frozen scanner current-state replay for qualification; "
+                f"freeze={freeze.freeze_id}; as_of={current_as_of.isoformat()}."
+            ),
+            "research_family_id": f"scanner-qualification-state-{freeze.freeze_id}",
+            "parent_run_id": freeze.candidate_deep_replay_run_id,
+            "starting_quantities": _starting_quantities(
+                historical,
+                forward_start=freeze.forward_start,
+                expected_by_dataset=expected_by_dataset,
+                data_root=Path(data_root).resolve(),
+                catalog=catalog,
+            ),
+            "data_window": {
+                "start": data_start.isoformat(),
+                "end": current_as_of.isoformat(),
+            },
+            "evaluation_window": {
+                "start": freeze.forward_start.isoformat(),
+                "end": current_as_of.isoformat(),
             },
             "data_sources": data_sources,
             "data_role": DataRole.DEVELOPMENT.value,
@@ -271,6 +341,7 @@ def prepare_prospective_qualification_manifest(
     freeze: CandidateFreeze,
     checkpoint: ForwardCheckpoint,
     *,
+    as_of: datetime,
     requested_capital: Decimal,
     empirical_slippage_bps: Decimal,
     data_root: str | Path,
@@ -290,9 +361,14 @@ def prepare_prospective_qualification_manifest(
         raise ProspectiveReplayError(
             "empirical slippage must fit the frozen adverse slippage budget"
         )
-    base = prepare_prospective_manifest(
+    if (
+        checkpoint.freeze_id != freeze.freeze_id
+        or checkpoint.candidate_id != freeze.candidate_id
+    ):
+        raise ProspectiveReplayError("qualification checkpoint lineage mismatch")
+    base = prepare_prospective_current_manifest(
         freeze,
-        checkpoint,
+        as_of=as_of,
         data_root=data_root,
         run_root=run_root,
         catalog=catalog,
@@ -304,7 +380,7 @@ def prepare_prospective_qualification_manifest(
     payload["description"] = (
         "Frozen scanner explicit-capital qualification replay; "
         f"freeze={freeze.freeze_id}; checkpoint={checkpoint.checkpoint_id}; "
-        f"capital={requested_capital}."
+        f"as_of={as_of.isoformat()}; capital={requested_capital}."
     )
     payload["research_family_id"] = f"scanner-qualification-{freeze.freeze_id}"
     starting = cast(dict[str, object], payload["starting_quantities"])
@@ -319,10 +395,50 @@ def prepare_prospective_qualification_manifest(
     return ExperimentManifest.model_validate(payload)
 
 
+def run_prospective_current_state(
+    freeze: CandidateFreeze,
+    *,
+    as_of: datetime,
+    data_root: str | Path,
+    repository_root: str | Path,
+    run_root: str | Path,
+    catalog: ScannerCatalog,
+    run_timestamp: datetime | None = None,
+) -> str:
+    """Run the frozen candidate through one explicit current qualification time."""
+
+    manifest = prepare_prospective_current_manifest(
+        freeze,
+        as_of=as_of,
+        data_root=data_root,
+        run_root=run_root,
+        catalog=catalog,
+    )
+    prepared = prepare_experiment(
+        manifest,
+        data_root=data_root,
+        repository_root=repository_root,
+        run_timestamp=run_timestamp,
+    )
+    existing = Path(run_root).resolve() / prepared.provenance.run_id
+    if existing.is_dir():
+        read_run_artifacts(existing)
+        return prepared.provenance.run_id
+    paths = run_experiment_to_artifacts(
+        manifest,
+        data_root=data_root,
+        repository_root=repository_root,
+        run_root=run_root,
+        run_timestamp=datetime.now(UTC) if run_timestamp is None else run_timestamp,
+    )
+    return paths.run_id
+
+
 def run_prospective_qualification(
     freeze: CandidateFreeze,
     checkpoint: ForwardCheckpoint,
     *,
+    as_of: datetime,
     requested_capital: Decimal,
     empirical_slippage_bps: Decimal,
     data_root: str | Path,
@@ -336,6 +452,7 @@ def run_prospective_qualification(
     manifest = prepare_prospective_qualification_manifest(
         freeze,
         checkpoint,
+        as_of=as_of,
         requested_capital=requested_capital,
         empirical_slippage_bps=empirical_slippage_bps,
         data_root=data_root,
@@ -423,8 +540,10 @@ def run_prospective_checkpoint(
 
 __all__ = [
     "ProspectiveReplayError",
+    "prepare_prospective_current_manifest",
     "prepare_prospective_manifest",
     "prepare_prospective_qualification_manifest",
     "run_prospective_checkpoint",
+    "run_prospective_current_state",
     "run_prospective_qualification",
 ]

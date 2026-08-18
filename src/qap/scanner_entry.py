@@ -10,6 +10,7 @@ from qap.experiment.dataset_seals import validate_expected_fingerprints_for_role
 from qap.experiment.manifest import DataRole
 from qap.experiment.prospective_scanner_adapter import (
     run_prospective_checkpoint,
+    run_prospective_current_state,
     run_prospective_qualification,
 )
 from qap.experiment.scanner_adapter import run_scanner_candidate_replay
@@ -174,6 +175,9 @@ def _historical_replay_template(
             ("min_observations", str(minimum_observations)),
             ("window_bars", str(window_bars)),
         ),
+        warmup=(
+            manifest.effective_evaluation_window().start - manifest.data_window.start
+        ),
     )
 
 
@@ -205,6 +209,7 @@ def _forward_qap_state(run_id: str, run_root: Path) -> ForwardQapState:
     except KeyError as exc:
         raise RuntimeError("forward QAP terminal holdings are incomplete") from exc
     return ForwardQapState(
+        qap_run_id=run_id,
         direct_dataset_id=source.dataset_id,
         instrument=instrument.to_domain(),
         base_quantity=base_quantity,
@@ -286,6 +291,7 @@ def qualify_forward_with_qap(
     *,
     cohort_root: str | Path,
     checkpoint_id: str,
+    as_of: datetime,
     requested_capital: Decimal,
     catalog: ScannerCatalog,
     data_root: str | Path,
@@ -302,9 +308,29 @@ def qualify_forward_with_qap(
         else Path(repository_root).resolve()
     )
 
+    def load_current_state(
+        freeze: CandidateFreeze,
+        current_as_of: datetime,
+        current_catalog: ScannerCatalog,
+        current_data_root: Path,
+        current_run_root: Path,
+        timestamp: datetime | None,
+    ) -> ForwardQapState:
+        run_id = run_prospective_current_state(
+            freeze,
+            as_of=current_as_of,
+            data_root=current_data_root,
+            repository_root=repository,
+            run_root=current_run_root,
+            catalog=current_catalog,
+            run_timestamp=timestamp,
+        )
+        return _forward_qap_state(run_id, current_run_root)
+
     def run_qualification(
         freeze: CandidateFreeze,
         checkpoint: ForwardCheckpoint,
+        current_as_of: datetime,
         capital: Decimal,
         slippage_bps: Decimal,
         current_catalog: ScannerCatalog,
@@ -315,6 +341,7 @@ def qualify_forward_with_qap(
         return run_prospective_qualification(
             freeze,
             checkpoint,
+            as_of=current_as_of,
             requested_capital=capital,
             empirical_slippage_bps=slippage_bps,
             data_root=current_data_root,
@@ -327,12 +354,13 @@ def qualify_forward_with_qap(
     return qualify_forward_checkpoint(
         cohort_root=cohort_root,
         checkpoint_id=checkpoint_id,
+        as_of=as_of,
         requested_capital=requested_capital,
         catalog=catalog,
         data_root=data_root,
         capture_root=capture_root,
         run_root=run_root,
-        load_qap_state=_forward_qap_state,
+        load_current_state=load_current_state,
         run_qualification=run_qualification,
         run_timestamp=run_timestamp,
     )

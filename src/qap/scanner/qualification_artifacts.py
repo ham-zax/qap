@@ -3,6 +3,7 @@
 import json
 import os
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 from hashlib import sha256
 from pathlib import Path
@@ -100,6 +101,7 @@ def _request_payload(evidence: QualificationEvidence) -> dict[str, object]:
         "requested_capital": _decimal_text(request.requested_capital),
         "prospective_protocol_version": request.prospective_protocol_version,
         "prospective_protocol_identity": request.prospective_protocol_identity,
+        "current_state_qap_run_id": request.current_state_qap_run_id,
         "capture_snapshot_ids": list(request.capture_snapshot_ids),
         "market_metadata_fingerprint": request.market_metadata_fingerprint,
         "eligibility_resolved": request.eligibility_resolved,
@@ -171,10 +173,12 @@ def publish_qualification(
     root = Path(cohort_root).resolve()
     manifest, checkpoint = _checkpoint_lineage(root, evidence.checkpoint_id)
     request = evidence.decision.request
+    information_end = checkpoint.get("information_end")
     if (
         manifest.get("candidate_id") != request.candidate_id
         or manifest.get("freeze_id") != request.freeze_id
-        or checkpoint.get("information_end") != request.as_of
+        or not isinstance(information_end, datetime)
+        or request.as_of < information_end
     ):
         raise QualificationArtifactError("qualification checkpoint lineage mismatch")
 

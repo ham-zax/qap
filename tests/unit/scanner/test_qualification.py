@@ -25,6 +25,7 @@ def _request(**overrides: object) -> QualificationRequest:
         "requested_capital": Decimal("400"),
         "prospective_protocol_version": PROSPECTIVE_V1.protocol_id,
         "prospective_protocol_identity": prospective_protocol_identity(PROSPECTIVE_V1),
+        "current_state_qap_run_id": "qap-current-state",
         "capture_snapshot_ids": ("c" * 64, "d" * 64),
         "market_metadata_fingerprint": "e" * 64,
         "eligibility_resolved": True,

@@ -82,6 +82,7 @@ def read_and_validate_integrity(
     artifact_id: str,
     required_files: frozenset[str],
     allowed_files: frozenset[str],
+    ignored_files: frozenset[str] = frozenset(),
 ) -> ArtifactIntegrity:
     root = directory.resolve()
     path = root / INTEGRITY_FILE
@@ -104,7 +105,9 @@ def read_and_validate_integrity(
     physical_authoritative = frozenset(
         candidate.name
         for candidate in root.iterdir()
-        if candidate.is_file() and candidate.name != INTEGRITY_FILE
+        if candidate.is_file()
+        and candidate.name != INTEGRITY_FILE
+        and candidate.name not in ignored_files
     )
     if physical_authoritative != declared:
         undeclared = ", ".join(sorted(physical_authoritative - declared))

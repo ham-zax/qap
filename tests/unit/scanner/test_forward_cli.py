@@ -81,10 +81,16 @@ def test_forward_cli_capture_dispatches_and_emits_json(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
+    captured: dict[str, object] = {}
+
+    def capture(**kwargs: object) -> Path:
+        captured.update(kwargs)
+        return Path("/tmp/book.parquet")
+
     monkeypatch.setattr(
         forward_cli,
         "capture_public_spot",
-        lambda **_kwargs: Path("/tmp/book.parquet"),
+        capture,
     )
     assert (
         forward_cli.main(
@@ -107,6 +113,7 @@ def test_forward_cli_capture_dispatches_and_emits_json(
         == 0
     )
     assert _output(capsys) == {"capture_file": "/tmp/book.parquet"}
+    assert "observed_at" not in captured
 
 
 def test_forward_cli_qualify_dispatches_and_emits_json(
@@ -127,6 +134,8 @@ def test_forward_cli_qualify_dispatches_and_emits_json(
                 "/tmp/cohort",
                 "--checkpoint-id",
                 "b" * 64,
+                "--as-of",
+                "2026-08-18T02:00:00Z",
                 "--requested-capital",
                 "100",
                 "--data-root",

@@ -246,7 +246,7 @@ def test_slice2_vertical_freeze_advance_qualify_and_scoreboard(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     data_root, run_root, cohort_root = _manual_survivor(tmp_path, monkeypatch)
-    catalog = _append_forward_data(data_root)
+    catalog = _append_forward_data(data_root, hours=15 * 24)
     checkpoints = advance_forward_with_qap(
         cohort_root=cohort_root,
         catalog=catalog,
@@ -263,17 +263,20 @@ def test_slice2_vertical_freeze_advance_qualify_and_scoreboard(
     checkpoint_id = read_manifest(checkpoints[0])["checkpoint_id"]
     assert isinstance(checkpoint_id, str)
 
+    qualification_as_of = AS_OF + timedelta(days=15)
     missing_capture = tmp_path / "capture-missing"
-    _write_metadata_only(missing_capture, as_of=outcome.through, price=2.0)
+    _write_metadata_only(missing_capture, as_of=qualification_as_of, price=2.0)
     missing = qualify_forward_with_qap(
         cohort_root=cohort_root,
         checkpoint_id=checkpoint_id,
+        as_of=qualification_as_of,
         requested_capital=Decimal("10"),
         catalog=catalog,
         data_root=data_root,
         capture_root=missing_capture,
         repository_root=REPOSITORY_ROOT,
         run_root=run_root,
+        run_timestamp=qualification_as_of + timedelta(hours=1),
     )
     missing_record = read_qualification(missing)
     assert missing_record["state"] == "research_only"
@@ -282,32 +285,39 @@ def test_slice2_vertical_freeze_advance_qualify_and_scoreboard(
     direct = catalog.source("btc-eth-1h")
     series = read_parquet_bar_series(data_root / direct.relative_path)
     current = next(
-        bar for bar in series.bars if bar.bar_end_exclusive == outcome.through
+        bar for bar in series.bars if bar.bar_end_exclusive == qualification_as_of
     )
     full_capture = tmp_path / "capture-full"
-    _write_full_capture(full_capture, as_of=outcome.through, mid=current.close)
+    _write_full_capture(full_capture, as_of=qualification_as_of, mid=current.close)
     qualified = qualify_forward_with_qap(
         cohort_root=cohort_root,
         checkpoint_id=checkpoint_id,
+        as_of=qualification_as_of,
         requested_capital=Decimal("10"),
         catalog=catalog,
         data_root=data_root,
         capture_root=full_capture,
         repository_root=REPOSITORY_ROOT,
         run_root=run_root,
-        run_timestamp=datetime(2026, 8, 18, 3, 0, tzinfo=UTC),
+        run_timestamp=qualification_as_of + timedelta(hours=1),
     )
     record = read_qualification(qualified)
     request = cast(dict[str, object], record["request"])
+    assert request["as_of"] == qualification_as_of.isoformat()
     assert request["capture_contract_satisfied"] is True
-    assert record["state"] == "tradable_now"
-    assert record["reason"] == "all_current_evidence_satisfied"
+    assert request["current_state_qap_run_id"] is not None
     assert request["requested_capital_qap_run_id"] is not None
+    assert isinstance(request["requested_baseline_gate_passed"], bool)
+    assert isinstance(request["requested_adverse_gate_passed"], bool)
+    assert record["reason"] != "microstructure_coverage_insufficient"
+    assert record["reason"] != "instrument_not_two_way_tradable"
 
     scoreboard = cohort_scoreboard(cohort_root)
     assert scoreboard["manual_selected_count"] == 1
     assert scoreboard["new_freeze_count"] == 1
-    assert scoreboard["outcome_state_counts"] == {"partial": 1}
+    assert scoreboard["outcome_state_counts"] == {}
+    assert scoreboard["manual_only_outcome_state_counts"] == {"partial": 1}
+    assert scoreboard["all_selection_outcome_state_counts"] == {"partial": 1}
     assert scoreboard["qualification_count"] == 2
 
 
@@ -354,7 +364,13 @@ def test_slice2_zero_member_cohort_and_prospective_failure_remain_visible(
     assert invalid.status is ForwardOutcomeStatus.INVALID
     assert invalid.failure_reason is not None
     assert invalid.failure_reason.startswith("ExperimentSetupError:")
-    assert cohort_scoreboard(cohort_root)["outcome_state_counts"] == {
+    scoreboard = cohort_scoreboard(cohort_root)
+    assert scoreboard["outcome_state_counts"] == {}
+    assert scoreboard["manual_only_outcome_state_counts"] == {
+        "invalid": 1,
+        "partial": 1,
+    }
+    assert scoreboard["all_selection_outcome_state_counts"] == {
         "invalid": 1,
         "partial": 1,
     }

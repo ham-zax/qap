@@ -63,6 +63,7 @@ class HistoricalReplayTemplate:
     evidence_sources: tuple[tuple[str, str], ...]
     data_source_dataset_ids: tuple[str, ...]
     model_parameters: tuple[tuple[str, str], ...]
+    warmup: timedelta
 
 
 HistoricalTemplateLoader = Callable[[str, Path], HistoricalReplayTemplate]
@@ -312,6 +313,7 @@ def _forward_slices(
     load_historical_template: HistoricalTemplateLoader,
 ) -> tuple[tuple[ScanInputIdentity, ...], datetime, datetime]:
     template = load_historical_template(freeze.candidate_deep_replay_run_id, run_root)
+    data_start = freeze.forward_start - template.warmup
     identities: list[ScanInputIdentity] = []
     first_completions: list[datetime] = []
     for dataset_id in template.data_source_dataset_ids:
@@ -323,9 +325,12 @@ def _forward_slices(
         bars = tuple(
             bar
             for bar in series.bars
-            if freeze.forward_start < bar.bar_end_exclusive <= through
+            if data_start <= bar.candle_open_time and bar.bar_end_exclusive <= through
         )
-        if not bars:
+        outcome_bars = tuple(
+            bar for bar in bars if bar.bar_end_exclusive > freeze.forward_start
+        )
+        if not outcome_bars:
             raise ProspectiveRunError(
                 "forward source has no completed post-freeze bars"
             )
@@ -340,7 +345,7 @@ def _forward_slices(
                 ),
             )
         )
-        first_completions.append(bars[0].bar_end_exclusive)
+        first_completions.append(outcome_bars[0].bar_end_exclusive)
     return tuple(identities), max(first_completions), through
 
 
@@ -361,19 +366,51 @@ def _existing_checkpoint(
     *,
     freeze_id: str,
     information_end: datetime,
-) -> Path | None:
+) -> tuple[Path, int, str] | None:
     for directory in completed_generation_dirs(cohort_root):
         manifest, tables = validate_completed_generation(directory)
         if manifest.get("freeze_id") != freeze_id:
             continue
         checkpoint = tables["checkpoint.parquet"].to_pylist()[0]
         if checkpoint["information_end"] == information_end:
-            return directory
+            checkpoint_index = manifest.get("checkpoint_index")
+            checkpoint_id = manifest.get("checkpoint_id")
+            if (
+                not isinstance(checkpoint_index, int)
+                or isinstance(checkpoint_index, bool)
+                or not isinstance(checkpoint_id, str)
+            ):
+                raise ProspectiveRunError("existing checkpoint manifest is malformed")
+            return directory, checkpoint_index, checkpoint_id
     return None
 
 
+def _score_outcomes(
+    outcomes: tuple[ForwardOutcome, ...],
+) -> tuple[dict[str, int], int, str | None, list[str], list[str]]:
+    states = Counter(item.status.value for item in outcomes)
+    matured = tuple(item for item in outcomes if item.status.value == "matured")
+    passes = sum(
+        item.baseline_economic_gates_passed is True
+        and item.adverse_economic_gates_passed is True
+        for item in matured
+    )
+    fraction = None if not matured else str(Decimal(passes) / Decimal(len(matured)))
+    vs_hodl = sorted(
+        str(item.strategy_vs_hodl)
+        for item in outcomes
+        if item.strategy_vs_hodl is not None
+    )
+    vs_primary = sorted(
+        str(item.strategy_vs_primary_control)
+        for item in outcomes
+        if item.strategy_vs_primary_control is not None
+    )
+    return dict(sorted(states.items())), passes, fraction, vs_hodl, vs_primary
+
+
 def cohort_scoreboard(cohort_root: str | Path) -> dict[str, object]:
-    """Summarize prospective policy evidence without aggregating candidate wealth."""
+    """Summarize automatic policy evidence separately from manual selections."""
 
     root = Path(cohort_root).resolve()
     try:
@@ -383,13 +420,19 @@ def cohort_scoreboard(cohort_root: str | Path) -> dict[str, object]:
     outcomes = tuple(
         read_outcome(directory) for directory in completed_generation_dirs(root)
     )
-    outcome_states = Counter(item.status.value for item in outcomes)
-    matured = tuple(item for item in outcomes if item.status.value == "matured")
-    matured_passes = sum(
-        item.baseline_economic_gates_passed is True
-        and item.adverse_economic_gates_passed is True
-        for item in matured
+    freeze_by_id = {item.freeze_id: item for item in cohort.candidate_freezes}
+    automatic_outcomes = tuple(
+        item for item in outcomes if freeze_by_id[item.freeze_id].automatic_selected
     )
+    manual_only_outcomes = tuple(
+        item
+        for item in outcomes
+        if freeze_by_id[item.freeze_id].manual_selected
+        and not freeze_by_id[item.freeze_id].automatic_selected
+    )
+    automatic = _score_outcomes(automatic_outcomes)
+    manual_only = _score_outcomes(manual_only_outcomes)
+    all_selection = _score_outcomes(outcomes)
     model_families = Counter(item.model_family for item in cohort.candidate_freezes)
     qualifications = read_qualifications(root)
     qualification_states = Counter(
@@ -404,23 +447,21 @@ def cohort_scoreboard(cohort_root: str | Path) -> dict[str, object]:
         "manual_selected_count": cohort.manual_member_count,
         "new_freeze_count": len(cohort.candidate_freezes),
         "reselection_count": len(cohort.reselections),
-        "outcome_state_counts": dict(sorted(outcome_states.items())),
-        "matured_pass_count": matured_passes,
-        "matured_pass_fraction": (
-            None
-            if not matured
-            else str(Decimal(matured_passes) / Decimal(len(matured)))
-        ),
-        "strategy_vs_hodl": sorted(
-            str(item.strategy_vs_hodl)
-            for item in outcomes
-            if item.strategy_vs_hodl is not None
-        ),
-        "strategy_vs_primary_control": sorted(
-            str(item.strategy_vs_primary_control)
-            for item in outcomes
-            if item.strategy_vs_primary_control is not None
-        ),
+        "outcome_state_counts": automatic[0],
+        "matured_pass_count": automatic[1],
+        "matured_pass_fraction": automatic[2],
+        "strategy_vs_hodl": automatic[3],
+        "strategy_vs_primary_control": automatic[4],
+        "manual_only_outcome_state_counts": manual_only[0],
+        "manual_only_matured_pass_count": manual_only[1],
+        "manual_only_matured_pass_fraction": manual_only[2],
+        "manual_only_strategy_vs_hodl": manual_only[3],
+        "manual_only_strategy_vs_primary_control": manual_only[4],
+        "all_selection_outcome_state_counts": all_selection[0],
+        "all_selection_matured_pass_count": all_selection[1],
+        "all_selection_matured_pass_fraction": all_selection[2],
+        "all_selection_strategy_vs_hodl": all_selection[3],
+        "all_selection_strategy_vs_primary_control": all_selection[4],
         "model_family_counts": dict(sorted(model_families.items())),
         "qualification_state_counts": dict(sorted(qualification_states.items())),
         "qualification_count": len(qualifications),
@@ -450,16 +491,15 @@ def advance_forward_cohort(
         raise ProspectiveRunError("forward cohort definition is malformed") from exc
     completed: list[Path] = []
     for freeze in cohort.candidate_freezes:
-        if requested_through > freeze.forward_end:
-            raise ProspectiveRunError("through exceeds frozen prospective horizon")
-        if requested_through <= freeze.forward_start:
-            raise ProspectiveRunError("through must extend beyond forward_start")
+        candidate_through = min(requested_through, freeze.forward_end)
+        if candidate_through <= freeze.forward_start:
+            continue
         slices, first_complete, information_end = _forward_slices(
             freeze,
             catalog=catalog,
             data_root=data,
             run_root=runs,
-            through=requested_through,
+            through=candidate_through,
             load_historical_template=load_historical_template,
         )
         existing = _existing_checkpoint(
@@ -467,14 +507,16 @@ def advance_forward_cohort(
             freeze_id=freeze.freeze_id,
             information_end=information_end,
         )
-        if existing is not None:
-            completed.append(existing)
-            continue
+        checkpoint_index = (
+            existing[1]
+            if existing is not None
+            else _next_checkpoint_index(root, freeze.freeze_id)
+        )
         checkpoint = ForwardCheckpoint(
             cohort_id=cohort.cohort_id,
             candidate_id=freeze.candidate_id,
             freeze_id=freeze.freeze_id,
-            checkpoint_index=_next_checkpoint_index(root, freeze.freeze_id),
+            checkpoint_index=checkpoint_index,
             freeze_at=freeze.frozen_at,
             eligible_information_end=freeze.eligible_information_end,
             forward_start=freeze.forward_start,
@@ -492,6 +534,13 @@ def advance_forward_cohort(
                 else _utc(run_timestamp, field="run_timestamp")
             ),
         )
+        if existing is not None:
+            if checkpoint.checkpoint_id != existing[2]:
+                raise ProspectiveRunError(
+                    "existing checkpoint information state mismatch"
+                )
+            completed.append(existing[0])
+            continue
         outcome = run_checkpoint(
             freeze,
             checkpoint,

@@ -75,6 +75,7 @@ class QualificationRequest:
     requested_capital: Decimal
     prospective_protocol_version: str
     prospective_protocol_identity: str
+    current_state_qap_run_id: str
     capture_snapshot_ids: tuple[str, ...]
     market_metadata_fingerprint: str | None
     eligibility_resolved: bool
@@ -118,6 +119,13 @@ class QualificationRequest:
                 field="prospective_protocol_identity",
             ),
         )
+        current_state_run = _optional_run_id(
+            self.current_state_qap_run_id,
+            field="current_state_qap_run_id",
+        )
+        if current_state_run is None:
+            raise ValueError("current state requires a QAP run reference")
+        object.__setattr__(self, "current_state_qap_run_id", current_state_run)
         metadata_fingerprint = (
             None
             if self.market_metadata_fingerprint is None

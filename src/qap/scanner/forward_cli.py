@@ -74,11 +74,11 @@ def _parser() -> argparse.ArgumentParser:
         required=True,
     )
     capture.add_argument("--capture-root", type=Path, required=True)
-    capture.add_argument("--observed-at", type=_utc, default=None)
 
     qualify = subcommands.add_parser("qualify")
     qualify.add_argument("--cohort-root", type=Path, required=True)
     qualify.add_argument("--checkpoint-id", required=True)
+    qualify.add_argument("--as-of", type=_utc, required=True)
     qualify.add_argument("--requested-capital", type=_capital, required=True)
     qualify.add_argument("--data-root", type=Path, required=True)
     qualify.add_argument("--capture-root", type=Path, required=True)
@@ -119,13 +119,13 @@ def _run(arguments: argparse.Namespace) -> dict[str, object]:
             quote_asset=AssetId(arguments.quote),
             capture_root=arguments.capture_root,
             kind=CaptureKind(arguments.kind),
-            observed_at=arguments.observed_at,
         )
         return {"capture_file": str(path)}
     if arguments.command == "qualify":
         path = qualify_forward_with_qap(
             cohort_root=arguments.cohort_root,
             checkpoint_id=arguments.checkpoint_id,
+            as_of=arguments.as_of,
             requested_capital=arguments.requested_capital,
             catalog=load_scanner_catalog(arguments.data_root),
             data_root=arguments.data_root,

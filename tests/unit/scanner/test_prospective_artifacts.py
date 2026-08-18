@@ -179,8 +179,9 @@ def test_completed_checkpoint_and_cohort_root_are_integrity_sealed(
     assert pq.read_table(final / LIQUIDITY_TABLE).to_pylist()[0]["fillable"] is False
 
     (root / CHECKPOINTS_INDEX).unlink()
-    with pytest.raises(ProspectiveArtifactError, match="file set mismatch"):
-        start_forward_cohort(tmp_path, _cohort())
+    assert start_forward_cohort(tmp_path, _cohort()) == root
+    assert pq.read_table(root / CHECKPOINTS_INDEX).num_rows == 1
+    assert pq.read_table(root / OUTCOMES_INDEX).num_rows == 1
 
 
 def test_cohort_freeze_tamper_fails_before_checkpoint_start(tmp_path: Path) -> None:
