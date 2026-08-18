@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-19
 
-**Status:** amended 2026-08-19 after plan review. Slice-3 Milestone 6 handoff baseline is `dd9df14`. Do not execute until Slice-3 Milestone 7 and backend closure are complete and the user explicitly starts Slice 4.
+**Status:** architecture frozen 2026-08-19 after plan review and stabilization. Slice-3 Milestone 6 handoff baseline is `dd9df14`. Do not reopen Slice-4 architecture before execution unless the final Slice-3 M7/M9 callable handoff contradicts this plan or an explicit Milestone-2 implementation refutation below fails. Do not execute until Slice-3 Milestone 7 and backend closure are complete and the user explicitly starts Slice 4.
 
 **Goal:** make the completed Slice-1 discovery, Slice-2 prospective/actionability, and Slice-3 basket-research workflows operable and inspectable from one local web application without moving scientific or financial authority into FastAPI or React.
 
@@ -34,7 +34,7 @@
 - Public capture remains the existing bounded one-shot public Binance/Gate capture. Slice 4 does not add a scheduler/daemon.
 - Pair-level `tradable_now`/capacity remains pair/candidate evidence and must never be promoted to a basket-level capacity/actionability claim.
 - Local/single-operator deployment is a V1 invariant, not merely a default. A mutation-capable API must bind to loopback only; wildcard CORS is forbidden and every admitted browser origin must itself be loopback/local. Do not add authentication, tenancy, cloud deployment, Redis, Celery, Kafka, a database, or a distributed queue without a separately demonstrated need.
-- At most one mutating research operation may be active at a time in V1. Run one mutation-capable FastAPI process and guard the active-check → operation reservation → worker spawn critical section with one process-local launch lock. A second mutation request fails synchronously with typed `409 operation_busy` and the active operation ID. Read-only queries remain available while an operation runs.
+- At most one mutating research operation may be active at a time in V1. The supported mutation-capable launcher must run exactly one FastAPI/Uvicorn worker; document it explicitly with `--workers 1`. Guard the active-check → operation reservation → worker spawn critical section with one process-local launch lock. A second mutation request fails synchronously with typed `409 operation_busy` and the active operation ID. Read-only queries remain available while an operation runs.
 - CORS remains explicit and narrow. Mutation routes add only the HTTP methods/headers they require.
 - Preserve negative, invalid, failed, no-survivor, insufficient-evidence, and rejected outcomes in API/read models and UI. Do not filter them into a positive-only workflow.
 - Keep OpenAPI the frontend contract source; do not hand-maintain parallel TypeScript DTOs.
@@ -328,11 +328,18 @@ Persist operation state under the configured run root in a separate operational 
 - [ ] Enforce one active mutating worker globally in V1. Run one mutation-capable API process and use one process-local lock around active-operation check, operation reservation, and worker spawn so concurrent/double-submit HTTP requests cannot both launch. This serializes scan/forward/capture/qualification/momentum/basket mutations and therefore prevents concurrent read-modify-write capture streams without changing Slice-2 storage.
 - [ ] Launch the local worker with `subprocess.Popen([...])` using `sys.executable`, an importable Python module, `start_new_session=True`, no shell, and no CLI invocation.
 - [ ] Redirect worker stdout/stderr to operation-local operational logs/files rather than inheriting the HTTP process streams.
-- [ ] Persist internal PID + worker start metadata after successful spawn. A spawn failure immediately records `failed`; it must not leave an operation indefinitely active.
+- [ ] Persist internal worker identity as `(pid, process_start_marker)` after successful spawn. On the supported Linux/WSL local runtime, derive the start marker from the process start time exposed by `/proc/<pid>/stat` using standard-library file reads; never treat PID existence alone as proof that the original worker is still alive. A spawn failure immediately records `failed`; it must not leave an operation indefinitely active.
 - [ ] Worker reads the internal operation request and calls the existing Python owner directly.
 - [ ] API restart must not erase completed/failed/interrupted operation history. A worker process may continue independently of the HTTP process.
-- [ ] On startup/read reconciliation, if a previously `running` operation has no live worker, transition it to `interrupted` with an explicit operational reason rather than pretending completion or auto-resuming it.
+- [ ] On startup/read reconciliation, consider a previously `running` operation live only when both PID and persisted process-start marker match the current process identity. If the PID is absent or has been reused for a different start marker, transition the operation to `interrupted` with an explicit operational reason rather than pretending completion or auto-resuming it.
 - [ ] Scientific/application exceptions become operation failure state; they do not mutate completed evidence or convert fatal research-integrity failures into ordinary positive results.
+
+### Implementation-time refutation checks
+
+These are deliberately implementation checks rather than new architecture:
+
+1. Confirm the only supported mutation-capable launch path is a single FastAPI/Uvicorn process with `--workers 1`. Update the operator/startup documentation when mutation routes land. If any supported launcher can still create multiple API processes against the same `run_root`, the process-local launch lock is insufficient; the smallest allowed escalation is one global application launch lock covering only active-check → operation reservation → worker spawn. Do not add per-resource locking or a lock framework.
+2. Confirm orphan reconciliation compares persisted `(pid, process_start_marker)` rather than PID alone so ordinary OS PID reuse cannot keep stale work falsely `running`.
 
 ### Operational settings
 
@@ -371,10 +378,11 @@ GET  /api/operations/{operation_id}
 
 - A long scan returns an operation ID promptly rather than keeping the browser request open until the scan finishes.
 - While one mutation is running, a second mutation receives typed `409 operation_busy`; read-only API access remains available.
+- The supported mutation-capable launcher is explicitly single-process/single-worker (`--workers 1`); if implementation evidence disproves that guarantee, use only the conditional global application launch lock described above.
 - A completed operation points to an authoritative scan/momentum/cohort/qualification/basket/QAP identity.
-- API restart does not destroy completed/failed/interrupted operation history.
+- API restart does not destroy completed/failed/interrupted operation history, and PID reuse cannot cause an interrupted worker to be mistaken for the original process.
 - Mutation-capable serving fails closed outside the loopback/local-origin boundary.
-- No CLI, shell command, Redis/Celery/database, worker pool, or scheduler is introduced.
+- No CLI, shell command, Redis/Celery/database, worker pool, per-resource lock framework, or scheduler is introduced.
 
 ---
 
@@ -620,6 +628,10 @@ uv run python scripts/run_playwright_e2e.py
 ```
 
 Use the existing rendered-browser/accessibility acceptance process for new primary routes at desktop and mobile widths. Keep all Slice-4 Playwright flows deterministic and no-network: use local fixture scan/capture/basket data, never real Binance/Gate capture or a production-sized 1,000-asset scan in the repository gate. Do not add screenshot-snapshot or CSS-trivia tests merely to increase coverage.
+
+### Plan-freeze rule
+
+Do not revise this architecture again merely to anticipate implementation details. Before Slice 4 starts, M0 may synchronize exact callable names/DTOs with the completed Slice-3 M7/M9 handoff. During implementation, change the architecture only if one of the explicit Milestone-2 refutation checks fails or a protected product/scientific boundary changes.
 
 ### Exit criteria
 
