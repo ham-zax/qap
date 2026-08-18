@@ -1,5 +1,7 @@
 # QAP Scanner Slice 1 Implementation Plan
 
+> **Historical execution record — 2026-08-18:** Slice 1 has been implemented and subsequently remediated. This file preserves the original execution plan and should not be rewritten to make the historical sequence appear cleaner than it was. Where this plan conflicts with the final Slice-1 design/as-built contracts, the remediated design and committed implementation govern. Remediation evidence is recorded in `docs/reviews/2026-08-18-scanner-remediation-review.md` and the completed benchmark/result record in `docs/research/2026-08-18-qap-scanner-slice1-results.md`.
+
 > **For the implementation lead:** REQUIRED SUB-SKILL: use `superpowers:executing-plans` in the single authorized implementation thread. Do not dispatch secondary coding/review agents; the repository mission explicitly requires direct sequential implementation.
 
 **Goal:** Implement the approved bounded Scanner-V1 Slice-1 pair-discovery foundation so one frozen point-in-time scan can produce deterministic venue-local pair hypotheses, rank fixed mean-reversion trials with a non-authoritative scout, spend at most ten automatic authoritative QAP replays per horizon, and preserve complete search provenance without creating a second economic engine.

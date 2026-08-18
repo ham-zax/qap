@@ -138,6 +138,26 @@ selection_slice_fingerprint
 
 Candidate/trial identity binds to the exact slice fingerprints, not merely to the mutable extent of a source artifact.
 
+The scanner therefore distinguishes three identity classes:
+
+```text
+SourceArtifactIdentity
+  full admitted physical source
+  provenance / tamper / partial-resume authority
+
+InformationStateIdentity
+  exact causal rows visible through the information cutoff
+  historical semantic research state
+
+CandidateSemanticId
+  frozen scanner protocol
+  + PIT semantic universe state
+  + pair/model/template/orientation
+  + exact information-state fingerprints
+```
+
+`CandidateSemanticId` does **not** include mutable future source extent, scan-generation identity, filesystem location, or publication timestamp. Whole-source fingerprints and `scan_id` remain provenance references on the candidate record and continue to protect admission/resume integrity.
+
 The slice hash must be deterministic over canonical row serialization, including at least:
 ```text
 venue instrument interval
@@ -452,7 +472,7 @@ Do not add a 90-candidate tournament, Bayesian optimizer, Hyperband controller, 
 
 `qap.experiment` converts each promoted immutable `ScannerCandidate` into an ordinary development-role QAP experiment.
 
-Candidate identity includes at least:
+The persisted candidate record includes at least:
 ```text
 candidate_id
 scan_id
@@ -476,6 +496,8 @@ candidate_generator_version/rank
 scout_relative_wealth_proxy
 scout_turnover_proxy
 ```
+The presence of a field in the persisted candidate record does not imply that the field participates in `candidate_id`. The semantic hash follows the identity contract in §5.1; generation/source provenance remains attached but non-semantic for historical candidate identity.
+
 The adapter supplies the existing experiment engine with:
 
 - exact admitted market slices/fingerprints;
