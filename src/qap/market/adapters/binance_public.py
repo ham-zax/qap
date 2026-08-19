@@ -7,6 +7,7 @@ exclusive completion boundary from the declared interval.
 """
 
 import math
+import os
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
@@ -21,7 +22,10 @@ from qap.market.microstructure import PublicBookSnapshot, public_book_snapshot_f
 from qap.market.validation import ValidatedBarSeries, validate_bar_series
 from qap.portfolio import AssetId
 
-_PUBLIC_BASE_URL = "https://data-api.binance.vision"
+_PUBLIC_BASE_URL = os.environ.get(
+    "QAP_BINANCE_PUBLIC_BASE_URL",
+    "https://data-api.binance.vision",
+).rstrip("/")
 _EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 _MAX_KLINE_LIMIT = 1000
 

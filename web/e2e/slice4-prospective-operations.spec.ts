@@ -53,7 +53,19 @@ test('Slice 4 prospective workflow preserves causal evidence and operation failu
   await expect(
     page.getByRole('heading', { name: 'One-shot public capture' }),
   ).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Capture now' })).toBeVisible()
+  await page.getByLabel('Capture kind').selectOption('metadata')
+  await page.getByLabel('Venue symbol').fill('BTCETH')
+  await page.getByLabel('Base asset').fill('BTC')
+  await page.getByLabel('Quote asset').fill('ETH')
+  await page.getByRole('button', { name: 'Capture now' }).click()
+
+  const captureOperationLink = page.getByRole('link', { name: /^Track / })
+  await expect(captureOperationLink).toBeVisible()
+  const captureOperationId = operationIdFromHref(
+    await captureOperationLink.getAttribute('href'),
+  )
+  const captureOperation = await waitForOperation(request, captureOperationId)
+  expect(captureOperation.result?.kind).toBe('metadata')
 
   await page.getByLabel('Qualification checkpoint').selectOption(checkpointId)
   await page.getByLabel('Qualification as-of').fill(fixture.qualification_as_of)
@@ -61,7 +73,10 @@ test('Slice 4 prospective workflow preserves causal evidence and operation failu
   await page.getByRole('button', { name: 'Qualify' }).click()
 
   const qualifyOperationLink = page.getByRole('link', { name: /^Track / })
-  await expect(qualifyOperationLink).toBeVisible()
+  await expect(qualifyOperationLink).not.toHaveAttribute(
+    'href',
+    `/operations/${captureOperationId}`,
+  )
   await waitForOperation(
     request,
     operationIdFromHref(await qualifyOperationLink.getAttribute('href')),

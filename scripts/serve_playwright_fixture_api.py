@@ -218,6 +218,45 @@ def _market_metadata(instrument: VenueInstrument) -> MarketMetadata:
     )
 
 
+def _fixture_binance_exchange_info(symbol: str) -> dict[str, object]:
+    if symbol.strip().upper() != "BTCETH":
+        return {"symbols": []}
+    return {
+        "timezone": "UTC",
+        "serverTime": 0,
+        "symbols": [
+            {
+                "symbol": "BTCETH",
+                "status": "TRADING",
+                "baseAsset": "BTC",
+                "quoteAsset": "ETH",
+                "isSpotTradingAllowed": True,
+                "permissionSets": [["SPOT"]],
+                "filters": [
+                    {
+                        "filterType": "PRICE_FILTER",
+                        "minPrice": "0",
+                        "maxPrice": "0",
+                        "tickSize": "0.0001",
+                    },
+                    {
+                        "filterType": "LOT_SIZE",
+                        "minQty": "0",
+                        "maxQty": "0",
+                        "stepSize": "0.001",
+                    },
+                    {
+                        "filterType": "MARKET_LOT_SIZE",
+                        "minQty": "0",
+                        "maxQty": "0",
+                        "stepSize": "0.001",
+                    },
+                ],
+            }
+        ],
+    }
+
+
 def _write_capture(capture_root: Path, *, mid: float) -> None:
     instrument = VenueInstrument(
         venue="binance",
@@ -392,6 +431,12 @@ def main() -> None:
         app.add_api_route(
             "/__fixture/state",
             lambda: fixture_state,
+            methods=["GET"],
+            include_in_schema=False,
+        )
+        app.add_api_route(
+            "/__fixture/binance/api/v3/exchangeInfo",
+            _fixture_binance_exchange_info,
             methods=["GET"],
             include_in_schema=False,
         )

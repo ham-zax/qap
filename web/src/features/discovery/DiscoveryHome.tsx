@@ -37,6 +37,7 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
     horizons: ['short'],
     forensic: false,
   })
+  const [manualReplayIds, setManualReplayIds] = useState('')
   const [operation, setOperation] = useState<OperationRefDto | null>(null)
 
   const mutation = useMutation({
@@ -50,16 +51,21 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
   )
 
   const toggleHorizon = (horizon: Horizon) => {
-    setHorizons((current) =>
-      current.includes(horizon)
-        ? current.filter((item) => item !== horizon)
-        : [...current, horizon],
-    )
+    const next = horizons.includes(horizon)
+      ? horizons.filter((item) => item !== horizon)
+      : [...horizons, horizon]
+    setHorizons(next)
+    setPins((current) => current.map((pin) => ({ ...pin, horizons: next })))
+    setPinDraft((current) => ({ ...current, horizons: next }))
   }
 
   const addPin = () => {
-    if (!pinDraft.asset_a.trim() || !pinDraft.asset_b.trim()) return
-    setPins((current) => [...current, pinDraft])
+    if (
+      horizons.length === 0 ||
+      !pinDraft.asset_a.trim() ||
+      !pinDraft.asset_b.trim()
+    ) return
+    setPins((current) => [...current, { ...pinDraft, horizons }])
     setPinDraft({ ...pinDraft, asset_a: '', asset_b: '' })
   }
 
@@ -69,7 +75,10 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
       as_of: asOf,
       horizons,
       pins,
-      manual_replay_candidate_ids: [],
+      manual_replay_candidate_ids: manualReplayIds
+        .split(/[\s,]+/)
+        .map((item) => item.trim())
+        .filter(Boolean),
     })
   }
 
@@ -210,6 +219,17 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
                 ))}
               </ul>
             ) : null}
+
+            <label className="mt-5 block text-sm font-medium text-secondary">
+              Optional manual replay candidate IDs
+              <input
+                className="mt-2 min-h-11 w-full rounded-md border border-border bg-canvas px-3 text-foreground"
+                value={manualReplayIds}
+                onChange={(event) => setManualReplayIds(event.target.value)}
+                placeholder="Candidate IDs, separated by spaces or commas"
+                aria-label="Manual replay candidate IDs"
+              />
+            </label>
           </div>
 
           <button

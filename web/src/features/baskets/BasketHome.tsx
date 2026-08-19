@@ -57,6 +57,9 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
           item.horizon === horizon &&
           item.resolution === resolution &&
           item.trial_status === 'valid' &&
+          item.deep_replay_status !== 'replay_failed' &&
+          (item.deep_replay_status !== 'setup_failed' ||
+            item.replay_failure_reason === 'unsupported_direct_market') &&
           assets.includes(item.pair_id.split('/')[0] ?? '') &&
           assets.includes(item.pair_id.split('/')[1] ?? ''),
       ),
@@ -157,7 +160,7 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
                       <option value="">No edge selected</option>
                       {options.map((candidate) => (
                         <option key={candidate.candidate_id} value={candidate.candidate_id}>
-                          {candidate.model_family} · {candidate.template_id} · {candidate.orientation}{candidate.manual_pinned ? ' · manual' : ''}{candidate.deep_replay_status === 'setup_failed' ? ' · indirect' : ''}
+                          {candidate.model_family} · {candidate.template_id} · {candidate.orientation}{candidate.manual_pinned ? ' · manual' : ''}{candidate.deep_replay_status === 'setup_failed' && candidate.replay_failure_reason === 'unsupported_direct_market' ? ' · indirect' : ''}
                         </option>
                       ))}
                     </select>

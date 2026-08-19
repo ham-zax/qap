@@ -110,6 +110,10 @@ def main(argv: list[str]) -> int:
                     str(web_port),
                 ],
                 cwd=_ROOT,
+                env={
+                    **os.environ,
+                    "QAP_BINANCE_PUBLIC_BASE_URL": f"{api_base_url}/__fixture/binance",
+                },
                 stdout=api_log,
                 stderr=subprocess.STDOUT,
                 start_new_session=True,

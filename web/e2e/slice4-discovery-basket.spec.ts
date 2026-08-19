@@ -51,6 +51,30 @@ test('Slice 4 discovery and basket workflow stays artifact-authoritative', async
   await expect(page.getByText('Persisted', { exact: true })).toBeVisible()
   await expect(page.getByText(/28d formation/)).toBeVisible()
 
+  await page.goto('/scanner')
+  await page.getByLabel('UTC as-of').fill(fixture.scan_as_of)
+  await page.getByRole('checkbox', { name: 'short' }).uncheck()
+  await page.getByRole('checkbox', { name: 'swing' }).check()
+  await page.getByLabel('Pin asset A').fill('BTC')
+  await page.getByLabel('Pin asset B').fill('ETH')
+  await page.getByRole('button', { name: 'Add pin' }).click()
+  await expect(page.getByText(/binance · BTC\/ETH · swing/)).toBeVisible()
+  await page.getByLabel('Manual replay candidate IDs').fill(fixture.manual_candidate_id)
+  await page.getByRole('button', { name: 'Run scan' }).click()
+
+  const manualScanOperationLink = page.getByRole('link', { name: /^Track / })
+  await expect(manualScanOperationLink).toBeVisible()
+  const manualScanOperation = await waitForOperation(
+    request,
+    operationIdFromHref(await manualScanOperationLink.getAttribute('href')),
+  )
+  const manualScanId = String(manualScanOperation.result?.scan_id ?? '')
+  expect(manualScanId).not.toBe('')
+
+  await page.goto(`/candidate/${manualScanId}/${fixture.manual_candidate_id}`)
+  await expect(page.getByText('manual / pinned lineage')).toBeVisible()
+  await expect(page.getByText(/deep replay completed/)).toBeVisible()
+
   await page.goto(
     `/candidate/${fixture.baseline_scan_id}/${fixture.basket_candidate_id}`,
   )
