@@ -8,6 +8,11 @@ from pathlib import Path
 from typing import Any, cast
 
 from qap.api.errors import ApiBoundaryError
+from qap.api.research_idea_views import (
+    product_follow_up,
+    research_idea_longitudinal,
+    resolved_reselections,
+)
 from qap.api.scanner_completed import completed_research_stages, research_claim
 from qap.api.scanner_schemas import (
     CandidateDetailDto,
@@ -291,6 +296,13 @@ class ScannerArtifactReader:
         return ScanDetailDto(
             summary=summary,
             stages=completed_research_stages(tables),
+            product_follow_up=product_follow_up(
+                scan_id=declared.scan_id,
+                claim=research_claim(definition),
+                horizons=tuple(item.value for item in definition.horizons),
+                survivor_count=summary.survivor_count or 0,
+                cohorts=self._valid_cohorts,
+            ),
             universe=universe,
             graph_scopes=scopes,
             momentum_generations=self._momentum_for_scan(declared.scan_id),
@@ -436,25 +448,37 @@ class ScannerArtifactReader:
         )
         if candidate is None:
             raise _not_found("candidate", identity)
-        cohort_ids: list[str] = []
-        qualification_ids: list[str] = []
-        for cohort_root, cohort in self._valid_cohorts():
-            if identity not in cohort.candidate_ids:
-                continue
-            cohort_ids.append(cohort.cohort_id)
-            try:
-                qualifications = read_qualifications(cohort_root)
-            except (OSError, QualificationArtifactError, TypeError, ValueError) as exc:
-                raise _invalid("forward_cohort", cohort.cohort_id) from exc
-            for qualification in qualifications:
-                request = _mapping(qualification.get("request"), field="request")
-                if request.get("candidate_id") == identity:
-                    qualification_ids.append(str(qualification["qualification_id"]))
+        cohorts = self._valid_cohorts()
+        try:
+            longitudinal = research_idea_longitudinal(candidate, cohorts)
+        except (
+            OSError,
+            ProspectiveArtifactError,
+            QualificationArtifactError,
+            KeyError,
+            TypeError,
+            ValueError,
+        ) as exc:
+            raise _invalid("candidate", identity) from exc
+        claim = research_claim(definition)
+        summary = self._summary(definition.scan_id, definition, tables)
         return CandidateDetailDto(
             candidate=candidate,
-            claim=research_claim(definition),
-            forward_cohort_ids=tuple(sorted(cohort_ids)),
-            qualification_ids=tuple(sorted(qualification_ids)),
+            claim=claim,
+            product_follow_up=product_follow_up(
+                scan_id=definition.scan_id,
+                claim=claim,
+                horizons=tuple(item.value for item in definition.horizons),
+                survivor_count=summary.survivor_count or 0,
+                cohorts=cohorts,
+            ),
+            longitudinal=longitudinal,
+            forward_cohort_ids=tuple(
+                sorted({item.selection_cohort_id for item in longitudinal.memberships})
+            ),
+            qualification_ids=tuple(
+                item.qualification_id for item in longitudinal.current_assessments
+            ),
             basket_ids=self._basket_memberships(identity),
         )
 
@@ -654,6 +678,7 @@ class ScannerArtifactReader:
                 self._qualification_dto(document)
                 for document in read_qualifications(root)
             )
+            reselections = resolved_reselections(cohort, self._valid_cohorts())
         except (
             OSError,
             ProspectiveArtifactError,
@@ -666,6 +691,7 @@ class ScannerArtifactReader:
         return ForwardCohortDetailDto(
             summary=self._cohort_summary(root, cohort),
             freezes=tuple(self._freeze_dto(item) for item in cohort.candidate_freezes),
+            reselections=reselections,
             checkpoints=checkpoints,
             qualifications=qualifications,
         )

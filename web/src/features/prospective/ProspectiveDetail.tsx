@@ -44,6 +44,8 @@ function captureKindLabel(kind: 'l1' | 'depth' | 'metadata') {
 export function ProspectiveDetail({ apiClient, data }: ProspectiveDetailProps) {
   const latestCheckpoint = data.checkpoints.at(-1)
   const firstFreeze = data.freezes[0]
+  const firstReselection = data.reselections[0]
+  const firstFollowUp = firstFreeze ?? firstReselection
   const [advanceThrough, setAdvanceThrough] = useState('')
   const [assessmentAsOf, setAssessmentAsOf] = useState('')
   const [capital, setCapital] = useState('')
@@ -135,13 +137,13 @@ export function ProspectiveDetail({ apiClient, data }: ProspectiveDetailProps) {
         </p>
       </header>
 
-      {firstFreeze ? (
+      {data.summary.source_scan_id ? (
         <LineageTrail
           items={[
             {
               label: 'historical research',
-              value: firstFreeze.source_scan_id,
-              href: `/scanner/${firstFreeze.source_scan_id}`,
+              value: data.summary.source_scan_id,
+              href: `/scanner/${data.summary.source_scan_id}`,
             },
             { label: 'forward validation', value: data.summary.cohort_id },
           ]}
@@ -165,18 +167,21 @@ export function ProspectiveDetail({ apiClient, data }: ProspectiveDetailProps) {
         aria-labelledby="boundary-heading"
       >
         <h2 id="boundary-heading" className="mt-0 text-xl font-semibold text-foreground">
-          What was frozen, and what happened later
+          What was selected, and what happened later
         </h2>
         <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-center">
           <div className="rounded-md border border-border bg-canvas/40 p-4">
             <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-              Frozen historical research
+              Historical research selection
             </p>
             <p className="mt-2 mb-1 font-semibold text-foreground">
-              {data.freezes.length} research idea{data.freezes.length === 1 ? '' : 's'}
+              {data.summary.candidate_ids.length} research idea
+              {data.summary.candidate_ids.length === 1 ? '' : 's'}
             </p>
             <p className="m-0 text-sm text-secondary">
-              Frozen{' '}
+              {data.reselections.length && data.freezes.length === 0
+                ? 'Selection recorded '
+                : 'Frozen '}
               {data.summary.freeze_at
                 ? formatResearchTimestamp(data.summary.freeze_at)
                 : 'before forward evidence'}
@@ -192,17 +197,53 @@ export function ProspectiveDetail({ apiClient, data }: ProspectiveDetailProps) {
             <p className="mt-2 mb-1 font-semibold text-foreground">
               {latestCheckpoint
                 ? outcomeLabel(latestCheckpoint.outcome_status)
-                : 'No forward checkpoint yet'}
+                : data.reselections.length && data.freezes.length === 0
+                  ? 'Evidence continues on the linked active stream'
+                  : 'No forward checkpoint yet'}
             </p>
             <p className="m-0 text-sm text-secondary">
-              {firstFreeze
-                ? `${formatResearchTimestamp(firstFreeze.forward_start)} → ${formatResearchTimestamp(firstFreeze.forward_end)}`
+              {firstFollowUp
+                ? `${formatResearchTimestamp(firstFollowUp.forward_start)} → ${formatResearchTimestamp(firstFollowUp.forward_end)}`
                 : 'The frozen validation horizon is applied by QAP.'}
             </p>
           </div>
         </div>
       </section>
 
+      {data.reselections.length ? (
+        <section className="mb-6 rounded-lg border border-border bg-panel p-5" aria-labelledby="reselection-heading">
+          <h2 id="reselection-heading" className="mt-0 text-lg font-semibold text-foreground">
+            Linked active follow-up streams
+          </h2>
+          <p className="text-sm leading-6 text-secondary">
+            QAP reselected an already-frozen semantic rule instead of starting an overlapping
+            prospective experiment. Later checkpoints and current assessments remain owned by
+            the active stream below.
+          </p>
+          <div className="mt-4 space-y-3">
+            {data.reselections.map((item) => (
+              <article key={`${item.candidate_id}-${item.active_freeze_id}`} className="rounded-md border border-border p-4">
+                <p className="m-0 text-sm font-semibold text-foreground">
+                  Research Idea {shortId(item.candidate_id)}
+                </p>
+                <p className="mt-2 mb-0 text-sm text-secondary">
+                  Reselected {formatResearchTimestamp(item.reselected_at)} · active window{' '}
+                  {formatResearchTimestamp(item.forward_start)} →{' '}
+                  {formatResearchTimestamp(item.forward_end)}
+                </p>
+                <a
+                  className="mt-3 inline-flex min-h-11 items-center font-semibold text-accent"
+                  href={`/prospective/${item.active_cohort_id}`}
+                >
+                  Open active evidence stream
+                </a>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {data.freezes.length > 0 ? (
       <div className="grid gap-5 xl:grid-cols-3">
         <section
           className="rounded-lg border border-border bg-panel p-5"
@@ -383,18 +424,33 @@ export function ProspectiveDetail({ apiClient, data }: ProspectiveDetailProps) {
           ) : null}
         </section>
       </div>
+      ) : (
+        <section className="rounded-lg border border-border bg-panel p-5">
+          <h2 className="mt-0 text-lg font-semibold text-foreground">
+            Evidence updates continue on the active stream
+          </h2>
+          <p className="mb-0 text-sm leading-6 text-secondary">
+            This cohort contains reselections only, so it does not own duplicate checkpoints
+            or qualifications. Use the active evidence-stream links above for specialist
+            updates and exact evidence.
+          </p>
+        </section>
+      )}
 
-      <ProspectiveAssessmentResults qualifications={data.qualifications} />
-
-      <ProspectiveEvidenceSections
-        apiClient={apiClient}
-        data={data}
-        currentReadiness={currentReadiness}
-        onCaptureStarted={(operation) => {
-          setLastOperation(operation)
-          setReadinessRequest(null)
-        }}
-      />
+      {data.freezes.length > 0 ? (
+        <>
+          <ProspectiveAssessmentResults qualifications={data.qualifications} />
+          <ProspectiveEvidenceSections
+            apiClient={apiClient}
+            data={data}
+            currentReadiness={currentReadiness}
+            onCaptureStarted={(operation) => {
+              setLastOperation(operation)
+              setReadinessRequest(null)
+            }}
+          />
+        </>
+      ) : null}
     </section>
   )
 }

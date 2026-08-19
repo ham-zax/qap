@@ -148,12 +148,87 @@ class CandidateListDto(ApiDto):
     items: tuple[CandidateSummaryDto, ...]
 
 
+class ProductFollowUpDto(ApiDto):
+    state: Literal["start_available", "existing", "unavailable"]
+    horizon: str | None
+    survivor_count: int
+    cohort_id: str | None = None
+    reason: str | None = None
+
+
+class ResearchIdeaForwardCheckpointDto(ApiDto):
+    checkpoint_id: str
+    active_cohort_id: str
+    checkpoint_index: int
+    information_end: datetime
+    outcome_status: Literal["pending", "partial", "matured", "invalid"]
+    qap_run_id: str | None
+    strategy_vs_hodl: str | None
+    strategy_vs_primary_control: str | None
+    baseline_economic_gates_passed: bool | None
+    adverse_economic_gates_passed: bool | None
+    failure_reason: str | None
+
+
+class ResearchIdeaCurrentAssessmentDto(ApiDto):
+    qualification_id: str
+    active_cohort_id: str
+    checkpoint_id: str
+    as_of: datetime
+    requested_capital: str
+    state: Literal["research_only", "small_capacity", "tradable_now"]
+    reason: str
+    candidate_capital_ceiling: str | None
+
+
+class ResearchIdeaFollowUpMembershipDto(ApiDto):
+    selection_cohort_id: str
+    membership_kind: Literal["new_freeze", "reselection"]
+    candidate_id: str
+    source_scan_id: str
+    selected_at: datetime
+    automatic_selected: bool
+    manual_selected: bool
+    active_freeze_id: str
+    active_cohort_id: str
+    active_candidate_id: str
+    active_source_scan_id: str
+    forward_start: datetime
+    forward_end: datetime
+    checkpoints: tuple[ResearchIdeaForwardCheckpointDto, ...]
+    assessments: tuple[ResearchIdeaCurrentAssessmentDto, ...]
+
+
+class ResearchIdeaLongitudinalDto(ApiDto):
+    historical_discovery_state: Literal["evaluated", "unavailable"]
+    historical_replay_state: Literal[
+        "supported",
+        "not_supported",
+        "unavailable",
+        "not_completed",
+    ]
+    later_state: Literal[
+        "not_started",
+        "waiting_for_later_evidence",
+        "later_evidence_accumulating",
+        "later_evidence_supported",
+        "later_evidence_not_supported",
+        "later_evidence_unavailable",
+    ]
+    later_reason: str | None
+    memberships: tuple[ResearchIdeaFollowUpMembershipDto, ...]
+    current_evidence_state: Literal["not_assessed", "assessment_available"]
+    current_assessments: tuple[ResearchIdeaCurrentAssessmentDto, ...]
+
+
 class CandidateDetailDto(ApiDto):
-    schema_version: Literal["qap.api.candidate_detail.v2"] = (
-        "qap.api.candidate_detail.v2"
+    schema_version: Literal["qap.api.candidate_detail.v3"] = (
+        "qap.api.candidate_detail.v3"
     )
     candidate: CandidateSummaryDto
     claim: ResearchClaimDto
+    product_follow_up: ProductFollowUpDto | None
+    longitudinal: ResearchIdeaLongitudinalDto
     forward_cohort_ids: tuple[str, ...]
     qualification_ids: tuple[str, ...]
     basket_ids: tuple[str, ...]
@@ -180,9 +255,10 @@ class CompletedResearchStagesDto(ApiDto):
 
 
 class ScanDetailDto(ApiDto):
-    schema_version: Literal["qap.api.scan_detail.v2"] = "qap.api.scan_detail.v2"
+    schema_version: Literal["qap.api.scan_detail.v3"] = "qap.api.scan_detail.v3"
     summary: ScanSummaryDto
     stages: CompletedResearchStagesDto
+    product_follow_up: ProductFollowUpDto | None
     universe: tuple[UniverseAssetDto, ...]
     graph_scopes: tuple[GraphScopeDto, ...]
     momentum_generations: tuple[MomentumGenerationDto, ...]
@@ -205,6 +281,20 @@ class CandidateFreezeDto(ApiDto):
     model_family: str
     template_id: str
     candidate_deep_replay_run_id: str
+
+
+class ForwardReselectionDto(ApiDto):
+    active_freeze_id: str
+    candidate_id: str
+    source_scan_id: str
+    automatic_selected: bool
+    manual_selected: bool
+    reselected_at: datetime
+    active_cohort_id: str
+    active_candidate_id: str
+    active_source_scan_id: str
+    forward_start: datetime
+    forward_end: datetime
 
 
 class ForwardCheckpointDto(ApiDto):
@@ -271,11 +361,12 @@ class ForwardCohortListDto(ApiDto):
 
 
 class ForwardCohortDetailDto(ApiDto):
-    schema_version: Literal["qap.api.forward_cohort_detail.v1"] = (
-        "qap.api.forward_cohort_detail.v1"
+    schema_version: Literal["qap.api.forward_cohort_detail.v2"] = (
+        "qap.api.forward_cohort_detail.v2"
     )
     summary: ForwardCohortSummaryDto
     freezes: tuple[CandidateFreezeDto, ...]
+    reselections: tuple[ForwardReselectionDto, ...]
     checkpoints: tuple[ForwardCheckpointDto, ...]
     qualifications: tuple[QualificationDto, ...]
 
@@ -400,6 +491,7 @@ __all__ = [
     "ForwardCohortDetailDto",
     "ForwardCohortListDto",
     "ForwardCohortSummaryDto",
+    "ForwardReselectionDto",
     "FreezeForwardCohortRequestDto",
     "GraphScopeDto",
     "MomentumGenerationDto",
@@ -408,9 +500,14 @@ __all__ = [
     "OperationDto",
     "OperationListDto",
     "OperationRefDto",
+    "ProductFollowUpDto",
     "QualificationDto",
     "QualificationRequestDto",
     "ResearchClaimDto",
+    "ResearchIdeaCurrentAssessmentDto",
+    "ResearchIdeaFollowUpMembershipDto",
+    "ResearchIdeaForwardCheckpointDto",
+    "ResearchIdeaLongitudinalDto",
     "RunScanRequestDto",
     "ScanDetailDto",
     "ScanListDto",

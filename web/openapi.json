@@ -774,6 +774,19 @@
             "title": "Forward Cohort Ids",
             "type": "array"
           },
+          "longitudinal": {
+            "$ref": "#/components/schemas/ResearchIdeaLongitudinalDto"
+          },
+          "product_follow_up": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductFollowUpDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "qualification_ids": {
             "items": {
               "type": "string"
@@ -782,8 +795,8 @@
             "type": "array"
           },
           "schema_version": {
-            "const": "qap.api.candidate_detail.v2",
-            "default": "qap.api.candidate_detail.v2",
+            "const": "qap.api.candidate_detail.v3",
+            "default": "qap.api.candidate_detail.v3",
             "title": "Schema Version",
             "type": "string"
           }
@@ -791,6 +804,8 @@
         "required": [
           "candidate",
           "claim",
+          "product_follow_up",
+          "longitudinal",
           "forward_cohort_ids",
           "qualification_ids",
           "basket_ids"
@@ -2831,9 +2846,16 @@
             "title": "Qualifications",
             "type": "array"
           },
+          "reselections": {
+            "items": {
+              "$ref": "#/components/schemas/ForwardReselectionDto"
+            },
+            "title": "Reselections",
+            "type": "array"
+          },
           "schema_version": {
-            "const": "qap.api.forward_cohort_detail.v1",
-            "default": "qap.api.forward_cohort_detail.v1",
+            "const": "qap.api.forward_cohort_detail.v2",
+            "default": "qap.api.forward_cohort_detail.v2",
             "title": "Schema Version",
             "type": "string"
           },
@@ -2844,6 +2866,7 @@
         "required": [
           "summary",
           "freezes",
+          "reselections",
           "checkpoints",
           "qualifications"
         ],
@@ -2990,6 +3013,73 @@
           "cohort_id"
         ],
         "title": "ForwardCohortSummaryDto",
+        "type": "object"
+      },
+      "ForwardReselectionDto": {
+        "additionalProperties": false,
+        "properties": {
+          "active_candidate_id": {
+            "title": "Active Candidate Id",
+            "type": "string"
+          },
+          "active_cohort_id": {
+            "title": "Active Cohort Id",
+            "type": "string"
+          },
+          "active_freeze_id": {
+            "title": "Active Freeze Id",
+            "type": "string"
+          },
+          "active_source_scan_id": {
+            "title": "Active Source Scan Id",
+            "type": "string"
+          },
+          "automatic_selected": {
+            "title": "Automatic Selected",
+            "type": "boolean"
+          },
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "forward_end": {
+            "format": "date-time",
+            "title": "Forward End",
+            "type": "string"
+          },
+          "forward_start": {
+            "format": "date-time",
+            "title": "Forward Start",
+            "type": "string"
+          },
+          "manual_selected": {
+            "title": "Manual Selected",
+            "type": "boolean"
+          },
+          "reselected_at": {
+            "format": "date-time",
+            "title": "Reselected At",
+            "type": "string"
+          },
+          "source_scan_id": {
+            "title": "Source Scan Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "active_freeze_id",
+          "candidate_id",
+          "source_scan_id",
+          "automatic_selected",
+          "manual_selected",
+          "reselected_at",
+          "active_cohort_id",
+          "active_candidate_id",
+          "active_source_scan_id",
+          "forward_start",
+          "forward_end"
+        ],
+        "title": "ForwardReselectionDto",
         "type": "object"
       },
       "FreezeForwardCohortRequestDto": {
@@ -5069,6 +5159,64 @@
         "title": "PrimaryMetric",
         "type": "string"
       },
+      "ProductFollowUpDto": {
+        "additionalProperties": false,
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "horizon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horizon"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "state": {
+            "enum": [
+              "start_available",
+              "existing",
+              "unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "survivor_count": {
+            "title": "Survivor Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "state",
+          "horizon",
+          "survivor_count"
+        ],
+        "title": "ProductFollowUpDto",
+        "type": "object"
+      },
       "ProductMarketDataDto": {
         "additionalProperties": false,
         "properties": {
@@ -5729,6 +5877,357 @@
           "scope_identity"
         ],
         "title": "ResearchClaimDto",
+        "type": "object"
+      },
+      "ResearchIdeaCurrentAssessmentDto": {
+        "additionalProperties": false,
+        "properties": {
+          "active_cohort_id": {
+            "title": "Active Cohort Id",
+            "type": "string"
+          },
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "candidate_capital_ceiling": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Capital Ceiling"
+          },
+          "checkpoint_id": {
+            "title": "Checkpoint Id",
+            "type": "string"
+          },
+          "qualification_id": {
+            "title": "Qualification Id",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "requested_capital": {
+            "title": "Requested Capital",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "research_only",
+              "small_capacity",
+              "tradable_now"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "qualification_id",
+          "active_cohort_id",
+          "checkpoint_id",
+          "as_of",
+          "requested_capital",
+          "state",
+          "reason",
+          "candidate_capital_ceiling"
+        ],
+        "title": "ResearchIdeaCurrentAssessmentDto",
+        "type": "object"
+      },
+      "ResearchIdeaFollowUpMembershipDto": {
+        "additionalProperties": false,
+        "properties": {
+          "active_candidate_id": {
+            "title": "Active Candidate Id",
+            "type": "string"
+          },
+          "active_cohort_id": {
+            "title": "Active Cohort Id",
+            "type": "string"
+          },
+          "active_freeze_id": {
+            "title": "Active Freeze Id",
+            "type": "string"
+          },
+          "active_source_scan_id": {
+            "title": "Active Source Scan Id",
+            "type": "string"
+          },
+          "assessments": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchIdeaCurrentAssessmentDto"
+            },
+            "title": "Assessments",
+            "type": "array"
+          },
+          "automatic_selected": {
+            "title": "Automatic Selected",
+            "type": "boolean"
+          },
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "checkpoints": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchIdeaForwardCheckpointDto"
+            },
+            "title": "Checkpoints",
+            "type": "array"
+          },
+          "forward_end": {
+            "format": "date-time",
+            "title": "Forward End",
+            "type": "string"
+          },
+          "forward_start": {
+            "format": "date-time",
+            "title": "Forward Start",
+            "type": "string"
+          },
+          "manual_selected": {
+            "title": "Manual Selected",
+            "type": "boolean"
+          },
+          "membership_kind": {
+            "enum": [
+              "new_freeze",
+              "reselection"
+            ],
+            "title": "Membership Kind",
+            "type": "string"
+          },
+          "selected_at": {
+            "format": "date-time",
+            "title": "Selected At",
+            "type": "string"
+          },
+          "selection_cohort_id": {
+            "title": "Selection Cohort Id",
+            "type": "string"
+          },
+          "source_scan_id": {
+            "title": "Source Scan Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "selection_cohort_id",
+          "membership_kind",
+          "candidate_id",
+          "source_scan_id",
+          "selected_at",
+          "automatic_selected",
+          "manual_selected",
+          "active_freeze_id",
+          "active_cohort_id",
+          "active_candidate_id",
+          "active_source_scan_id",
+          "forward_start",
+          "forward_end",
+          "checkpoints",
+          "assessments"
+        ],
+        "title": "ResearchIdeaFollowUpMembershipDto",
+        "type": "object"
+      },
+      "ResearchIdeaForwardCheckpointDto": {
+        "additionalProperties": false,
+        "properties": {
+          "active_cohort_id": {
+            "title": "Active Cohort Id",
+            "type": "string"
+          },
+          "adverse_economic_gates_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adverse Economic Gates Passed"
+          },
+          "baseline_economic_gates_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Economic Gates Passed"
+          },
+          "checkpoint_id": {
+            "title": "Checkpoint Id",
+            "type": "string"
+          },
+          "checkpoint_index": {
+            "title": "Checkpoint Index",
+            "type": "integer"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "information_end": {
+            "format": "date-time",
+            "title": "Information End",
+            "type": "string"
+          },
+          "outcome_status": {
+            "enum": [
+              "pending",
+              "partial",
+              "matured",
+              "invalid"
+            ],
+            "title": "Outcome Status",
+            "type": "string"
+          },
+          "qap_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qap Run Id"
+          },
+          "strategy_vs_hodl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Vs Hodl"
+          },
+          "strategy_vs_primary_control": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Vs Primary Control"
+          }
+        },
+        "required": [
+          "checkpoint_id",
+          "active_cohort_id",
+          "checkpoint_index",
+          "information_end",
+          "outcome_status",
+          "qap_run_id",
+          "strategy_vs_hodl",
+          "strategy_vs_primary_control",
+          "baseline_economic_gates_passed",
+          "adverse_economic_gates_passed",
+          "failure_reason"
+        ],
+        "title": "ResearchIdeaForwardCheckpointDto",
+        "type": "object"
+      },
+      "ResearchIdeaLongitudinalDto": {
+        "additionalProperties": false,
+        "properties": {
+          "current_assessments": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchIdeaCurrentAssessmentDto"
+            },
+            "title": "Current Assessments",
+            "type": "array"
+          },
+          "current_evidence_state": {
+            "enum": [
+              "not_assessed",
+              "assessment_available"
+            ],
+            "title": "Current Evidence State",
+            "type": "string"
+          },
+          "historical_discovery_state": {
+            "enum": [
+              "evaluated",
+              "unavailable"
+            ],
+            "title": "Historical Discovery State",
+            "type": "string"
+          },
+          "historical_replay_state": {
+            "enum": [
+              "supported",
+              "not_supported",
+              "unavailable",
+              "not_completed"
+            ],
+            "title": "Historical Replay State",
+            "type": "string"
+          },
+          "later_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Later Reason"
+          },
+          "later_state": {
+            "enum": [
+              "not_started",
+              "waiting_for_later_evidence",
+              "later_evidence_accumulating",
+              "later_evidence_supported",
+              "later_evidence_not_supported",
+              "later_evidence_unavailable"
+            ],
+            "title": "Later State",
+            "type": "string"
+          },
+          "memberships": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchIdeaFollowUpMembershipDto"
+            },
+            "title": "Memberships",
+            "type": "array"
+          }
+        },
+        "required": [
+          "historical_discovery_state",
+          "historical_replay_state",
+          "later_state",
+          "later_reason",
+          "memberships",
+          "current_evidence_state",
+          "current_assessments"
+        ],
+        "title": "ResearchIdeaLongitudinalDto",
         "type": "object"
       },
       "ResearchPathReadinessDto": {
@@ -6431,9 +6930,19 @@
             "title": "Momentum Generations",
             "type": "array"
           },
+          "product_follow_up": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductFollowUpDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "schema_version": {
-            "const": "qap.api.scan_detail.v2",
-            "default": "qap.api.scan_detail.v2",
+            "const": "qap.api.scan_detail.v3",
+            "default": "qap.api.scan_detail.v3",
             "title": "Schema Version",
             "type": "string"
           },
@@ -6454,6 +6963,7 @@
         "required": [
           "summary",
           "stages",
+          "product_follow_up",
           "universe",
           "graph_scopes",
           "momentum_generations"
@@ -8027,6 +8537,48 @@
           }
         },
         "summary": "Current Approved Readiness",
+        "tags": [
+          "product-research"
+        ]
+      }
+    },
+    "/api/product-research/{scan_id}/follow-up": {
+      "post": {
+        "operationId": "startCurrentApprovedResearchFollowUp",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scan_id",
+            "required": true,
+            "schema": {
+              "title": "Scan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationRefDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Current Approved Follow Up",
         "tags": [
           "product-research"
         ]

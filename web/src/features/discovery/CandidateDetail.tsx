@@ -5,6 +5,8 @@ import type { QapApiClient } from '../../api/client'
 import type { CandidateDetailDto, OperationRefDto } from '../../api/types'
 import { Badge, type BadgeTone } from '../../components/ui/Badge'
 import { LineageTrail } from '../lineage/LineageTrail'
+import { ProductFollowUpAction } from './ProductFollowUpAction'
+import { ResearchIdeaEvidenceLayers } from './ResearchIdeaEvidenceLayers'
 
 interface CandidateDetailProps {
   apiClient: QapApiClient
@@ -117,6 +119,16 @@ export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
           </a>
         ) : null}
       </section>
+
+      {isProductClaim && candidate.economic_gate_status === 'deep_replay_survivor' ? (
+        <ProductFollowUpAction
+          apiClient={apiClient}
+          scanId={candidate.scan_id}
+          followUp={data.product_follow_up}
+        />
+      ) : null}
+
+      {isProductClaim ? <ResearchIdeaEvidenceLayers data={data.longitudinal} /> : null}
 
       <details className="mt-6 rounded-lg border border-border bg-panel p-5">
         <summary className="min-h-11 cursor-pointer py-2 text-lg font-semibold text-foreground">
@@ -328,18 +340,17 @@ export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
           )}
         </section>
       </div>
-      ) : (
+      ) : !isProductClaim ? (
         <section className="mt-8 rounded-lg border border-border bg-panel p-5">
           <h2 className="mt-0 text-lg font-semibold text-foreground">
             Follow-up research
           </h2>
           <p className="mb-0 text-sm leading-6 text-secondary">
-            {isProductClaim
-              ? 'This current-approved retrospective scan is complete historical evidence. Longitudinal follow-up is not available for this claim yet; review the completed evidence here or start a new Research task.'
-              : 'This versioned research claim is preserved as completed evidence. Longitudinal follow-up is not authorized for this claim.'}
+            This versioned research claim is preserved as completed evidence. Longitudinal
+            follow-up is not authorized for this claim.
           </p>
         </section>
-      )}
+      ) : null}
     </section>
   )
 }

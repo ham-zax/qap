@@ -430,6 +430,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/product-research/{scan_id}/follow-up": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Current Approved Follow Up */
+        post: operations["startCurrentApprovedResearchFollowUp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/qualifications": {
         parameters: {
             query?: never;
@@ -888,14 +905,16 @@ export interface components {
             claim: components["schemas"]["ResearchClaimDto"];
             /** Forward Cohort Ids */
             forward_cohort_ids: string[];
+            longitudinal: components["schemas"]["ResearchIdeaLongitudinalDto"];
+            product_follow_up: components["schemas"]["ProductFollowUpDto"] | null;
             /** Qualification Ids */
             qualification_ids: string[];
             /**
              * Schema Version
-             * @default qap.api.candidate_detail.v2
+             * @default qap.api.candidate_detail.v3
              * @constant
              */
-            schema_version: "qap.api.candidate_detail.v2";
+            schema_version: "qap.api.candidate_detail.v3";
         };
         /** CandidateFreezeDto */
         CandidateFreezeDto: {
@@ -1660,12 +1679,14 @@ export interface components {
             freezes: components["schemas"]["CandidateFreezeDto"][];
             /** Qualifications */
             qualifications: components["schemas"]["QualificationDto"][];
+            /** Reselections */
+            reselections: components["schemas"]["ForwardReselectionDto"][];
             /**
              * Schema Version
-             * @default qap.api.forward_cohort_detail.v1
+             * @default qap.api.forward_cohort_detail.v2
              * @constant
              */
-            schema_version: "qap.api.forward_cohort_detail.v1";
+            schema_version: "qap.api.forward_cohort_detail.v2";
             summary: components["schemas"]["ForwardCohortSummaryDto"];
         };
         /** ForwardCohortListDto */
@@ -1708,6 +1729,40 @@ export interface components {
             qualification_count?: number | null;
             /** Source Scan Id */
             source_scan_id?: string | null;
+        };
+        /** ForwardReselectionDto */
+        ForwardReselectionDto: {
+            /** Active Candidate Id */
+            active_candidate_id: string;
+            /** Active Cohort Id */
+            active_cohort_id: string;
+            /** Active Freeze Id */
+            active_freeze_id: string;
+            /** Active Source Scan Id */
+            active_source_scan_id: string;
+            /** Automatic Selected */
+            automatic_selected: boolean;
+            /** Candidate Id */
+            candidate_id: string;
+            /**
+             * Forward End
+             * Format: date-time
+             */
+            forward_end: string;
+            /**
+             * Forward Start
+             * Format: date-time
+             */
+            forward_start: string;
+            /** Manual Selected */
+            manual_selected: boolean;
+            /**
+             * Reselected At
+             * Format: date-time
+             */
+            reselected_at: string;
+            /** Source Scan Id */
+            source_scan_id: string;
         };
         /** FreezeForwardCohortRequestDto */
         FreezeForwardCohortRequestDto: {
@@ -2451,6 +2506,22 @@ export interface components {
          * @enum {string}
          */
         PrimaryMetric: "hodl_relative_terminal_wealth" | "primary_control_relative_terminal_wealth";
+        /** ProductFollowUpDto */
+        ProductFollowUpDto: {
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Horizon */
+            horizon: string | null;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "start_available" | "existing" | "unavailable";
+            /** Survivor Count */
+            survivor_count: number;
+        };
         /** ProductMarketDataDto */
         ProductMarketDataDto: {
             /** Generations */
@@ -2669,6 +2740,136 @@ export interface components {
             label: string;
             /** Scope Identity */
             scope_identity: string | null;
+        };
+        /** ResearchIdeaCurrentAssessmentDto */
+        ResearchIdeaCurrentAssessmentDto: {
+            /** Active Cohort Id */
+            active_cohort_id: string;
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Candidate Capital Ceiling */
+            candidate_capital_ceiling: string | null;
+            /** Checkpoint Id */
+            checkpoint_id: string;
+            /** Qualification Id */
+            qualification_id: string;
+            /** Reason */
+            reason: string;
+            /** Requested Capital */
+            requested_capital: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "research_only" | "small_capacity" | "tradable_now";
+        };
+        /** ResearchIdeaFollowUpMembershipDto */
+        ResearchIdeaFollowUpMembershipDto: {
+            /** Active Candidate Id */
+            active_candidate_id: string;
+            /** Active Cohort Id */
+            active_cohort_id: string;
+            /** Active Freeze Id */
+            active_freeze_id: string;
+            /** Active Source Scan Id */
+            active_source_scan_id: string;
+            /** Assessments */
+            assessments: components["schemas"]["ResearchIdeaCurrentAssessmentDto"][];
+            /** Automatic Selected */
+            automatic_selected: boolean;
+            /** Candidate Id */
+            candidate_id: string;
+            /** Checkpoints */
+            checkpoints: components["schemas"]["ResearchIdeaForwardCheckpointDto"][];
+            /**
+             * Forward End
+             * Format: date-time
+             */
+            forward_end: string;
+            /**
+             * Forward Start
+             * Format: date-time
+             */
+            forward_start: string;
+            /** Manual Selected */
+            manual_selected: boolean;
+            /**
+             * Membership Kind
+             * @enum {string}
+             */
+            membership_kind: "new_freeze" | "reselection";
+            /**
+             * Selected At
+             * Format: date-time
+             */
+            selected_at: string;
+            /** Selection Cohort Id */
+            selection_cohort_id: string;
+            /** Source Scan Id */
+            source_scan_id: string;
+        };
+        /** ResearchIdeaForwardCheckpointDto */
+        ResearchIdeaForwardCheckpointDto: {
+            /** Active Cohort Id */
+            active_cohort_id: string;
+            /** Adverse Economic Gates Passed */
+            adverse_economic_gates_passed: boolean | null;
+            /** Baseline Economic Gates Passed */
+            baseline_economic_gates_passed: boolean | null;
+            /** Checkpoint Id */
+            checkpoint_id: string;
+            /** Checkpoint Index */
+            checkpoint_index: number;
+            /** Failure Reason */
+            failure_reason: string | null;
+            /**
+             * Information End
+             * Format: date-time
+             */
+            information_end: string;
+            /**
+             * Outcome Status
+             * @enum {string}
+             */
+            outcome_status: "pending" | "partial" | "matured" | "invalid";
+            /** Qap Run Id */
+            qap_run_id: string | null;
+            /** Strategy Vs Hodl */
+            strategy_vs_hodl: string | null;
+            /** Strategy Vs Primary Control */
+            strategy_vs_primary_control: string | null;
+        };
+        /** ResearchIdeaLongitudinalDto */
+        ResearchIdeaLongitudinalDto: {
+            /** Current Assessments */
+            current_assessments: components["schemas"]["ResearchIdeaCurrentAssessmentDto"][];
+            /**
+             * Current Evidence State
+             * @enum {string}
+             */
+            current_evidence_state: "not_assessed" | "assessment_available";
+            /**
+             * Historical Discovery State
+             * @enum {string}
+             */
+            historical_discovery_state: "evaluated" | "unavailable";
+            /**
+             * Historical Replay State
+             * @enum {string}
+             */
+            historical_replay_state: "supported" | "not_supported" | "unavailable" | "not_completed";
+            /** Later Reason */
+            later_reason: string | null;
+            /**
+             * Later State
+             * @enum {string}
+             */
+            later_state: "not_started" | "waiting_for_later_evidence" | "later_evidence_accumulating" | "later_evidence_supported" | "later_evidence_not_supported" | "later_evidence_unavailable";
+            /** Memberships */
+            memberships: components["schemas"]["ResearchIdeaFollowUpMembershipDto"][];
         };
         /** ResearchPathReadinessDto */
         ResearchPathReadinessDto: {
@@ -2897,12 +3098,13 @@ export interface components {
             graph_scopes: components["schemas"]["GraphScopeDto"][];
             /** Momentum Generations */
             momentum_generations: components["schemas"]["MomentumGenerationDto"][];
+            product_follow_up: components["schemas"]["ProductFollowUpDto"] | null;
             /**
              * Schema Version
-             * @default qap.api.scan_detail.v2
+             * @default qap.api.scan_detail.v3
              * @constant
              */
-            schema_version: "qap.api.scan_detail.v2";
+            schema_version: "qap.api.scan_detail.v3";
             stages: components["schemas"]["CompletedResearchStagesDto"];
             summary: components["schemas"]["ScanSummaryDto"];
             /** Universe */
@@ -3839,6 +4041,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CurrentApprovedReadinessDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    startCurrentApprovedResearchFollowUp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
                 };
             };
             /** @description Validation Error */

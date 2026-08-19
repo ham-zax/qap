@@ -108,6 +108,11 @@ export function createApiClient({
         method: 'POST',
         body: JSON.stringify(command),
       }),
+    startCurrentApprovedResearchFollowUp: (scanId: string) =>
+      request<OperationRefDto>(
+        `/api/product-research/${encodeURIComponent(scanId)}/follow-up`,
+        { method: 'POST' },
+      ),
     refreshResearchUniverseDirectory: () =>
       request<ResearchUniverseDto>('/api/research-universe/directory-refresh', {
         method: 'POST',

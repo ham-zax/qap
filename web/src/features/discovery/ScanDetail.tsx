@@ -9,6 +9,7 @@ import type {
 } from '../../api/types'
 import { Badge } from '../../components/ui/Badge'
 import { formatResearchTimestamp } from '../../lib/format'
+import { ProductFollowUpAction } from './ProductFollowUpAction'
 import { ResearchStageSummary } from './ResearchStageSummary'
 
 interface ScanDetailProps {
@@ -174,6 +175,14 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
           </p>
         )}
       </section>
+
+      {isProductClaim && (data.summary.survivor_count ?? 0) > 0 ? (
+        <ProductFollowUpAction
+          apiClient={apiClient}
+          scanId={data.summary.scan_id}
+          followUp={data.product_follow_up}
+        />
+      ) : null}
 
       {isPitClaim ? (
       <section className="mt-8 rounded-lg border border-border bg-panel p-5" aria-labelledby="momentum-heading">

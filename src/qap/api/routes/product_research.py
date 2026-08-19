@@ -1,5 +1,6 @@
 """Current-approved Product research readiness and initiation routes."""
 
+from datetime import UTC, datetime
 from typing import Literal, cast
 
 from fastapi import APIRouter, Request
@@ -19,7 +20,8 @@ from qap.api.product_research_schemas import (
 )
 from qap.api.product_schemas import MarketDataMaintenanceDto
 from qap.api.routes.operations import operation_manager
-from qap.api.scanner_schemas import OperationRefDto
+from qap.api.scanner_schemas import FreezeForwardCohortRequestDto, OperationRefDto
+from qap.api.scanner_views import ScannerArtifactReader
 from qap.api.settings import ApiSettings
 from qap.product_current_approved import (
     CurrentApprovedReadiness,
@@ -46,6 +48,13 @@ def _settings(request: Request) -> ApiSettings:
     if not isinstance(settings, ApiSettings):
         raise RuntimeError("API settings are not configured")
     return settings
+
+
+def _scanner_reader(request: Request) -> ScannerArtifactReader:
+    reader = cast(object, request.app.state.scanner_reader)
+    if not isinstance(reader, ScannerArtifactReader):
+        raise RuntimeError("Scanner artifact reader is not configured")
+    return reader
 
 
 def _require_local_market(request: Request) -> None:
@@ -209,6 +218,55 @@ def run_current_approved_research(
     )
     payload = cast(dict[str, JsonValue], worker_request.model_dump(mode="json"))
     return operation_manager(request).submit(OperationKind.RUN_SCAN, payload)
+
+
+@router.post(
+    "/{scan_id}/follow-up",
+    response_model=OperationRefDto,
+    status_code=202,
+    operation_id="startCurrentApprovedResearchFollowUp",
+)
+def start_current_approved_follow_up(
+    scan_id: str,
+    request: Request,
+) -> OperationRefDto:
+    _require_local_market(request)
+    detail = _scanner_reader(request).scan_detail(scan_id)
+    follow_up = detail.product_follow_up
+    if follow_up is None:
+        raise ApiBoundaryError(
+            code="product_follow_up_claim_invalid",
+            message=(
+                "Follow-up is available only for completed current-approved research."
+            ),
+            status_code=409,
+            context={"scan_id": scan_id},
+        )
+    if follow_up.state == "existing" and follow_up.cohort_id is not None:
+        raise ApiBoundaryError(
+            code="product_follow_up_exists",
+            message="Follow-up already exists for this research generation.",
+            status_code=409,
+            context={"cohort_id": follow_up.cohort_id},
+        )
+    if follow_up.state != "start_available" or follow_up.horizon is None:
+        raise ApiBoundaryError(
+            code="product_follow_up_unavailable",
+            message=follow_up.reason
+            or "Follow-up is unavailable for this research generation.",
+            status_code=409,
+            context={"scan_id": scan_id},
+        )
+    command = FreezeForwardCohortRequestDto(
+        scan_id=detail.summary.scan_id,
+        horizon=cast(Literal["short", "medium", "swing"], follow_up.horizon),
+        freeze_at=datetime.now(UTC),
+    )
+    payload = cast(dict[str, JsonValue], command.model_dump(mode="json"))
+    return operation_manager(request).submit(
+        OperationKind.FREEZE_FORWARD_COHORT,
+        payload,
+    )
 
 
 __all__ = ["router"]

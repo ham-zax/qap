@@ -11,6 +11,7 @@ import type {
 } from '../../api/types'
 import { Badge, type BadgeTone } from '../../components/ui/Badge'
 import { formatResearchTimestamp } from '../../lib/format'
+import { ProductFollowUpAction } from './ProductFollowUpAction'
 import { ResearchStageSummary } from './ResearchStageSummary'
 
 type Horizon = 'short' | 'medium' | 'swing'
@@ -210,6 +211,7 @@ export function ProductResearch({
 
       {scanId && completedScan.data ? (
         <CompletedProductResult
+          apiClient={apiClient}
           data={completedScan.data}
           candidates={completedCandidates.data}
         />
@@ -434,9 +436,11 @@ function OperationState({
 }
 
 function CompletedProductResult({
+  apiClient,
   data,
   candidates,
 }: {
+  apiClient: QapApiClient
   data: ScanDetailDto
   candidates: Awaited<ReturnType<QapApiClient['listScanCandidates']>> | undefined
 }) {
@@ -500,6 +504,13 @@ function CompletedProductResult({
           </p>
         )}
       </div>
+      {(ideaCount ?? 0) > 0 ? (
+        <ProductFollowUpAction
+          apiClient={apiClient}
+          scanId={data.summary.scan_id}
+          followUp={data.product_follow_up}
+        />
+      ) : null}
       <a
         className="mt-5 inline-flex min-h-11 items-center font-semibold text-accent"
         href={`/scanner/${data.summary.scan_id}`}
