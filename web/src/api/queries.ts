@@ -14,6 +14,11 @@ export function createQapQueries(client: QapApiClient) {
         queryKey: ['research-universe'] as const,
         queryFn: () => client.getResearchUniverse(),
       }),
+    currentApprovedReadiness: (horizon: 'short' | 'medium' | 'swing') =>
+      queryOptions({
+        queryKey: ['current-approved-readiness', horizon] as const,
+        queryFn: () => client.getCurrentApprovedResearchReadiness(horizon),
+      }),
     scannerProtocol: () =>
       queryOptions({
         queryKey: ['scanner-protocol'] as const,

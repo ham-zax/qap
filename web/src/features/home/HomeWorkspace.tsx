@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 
 import type {
+  CurrentApprovedReadinessDto,
   ExperimentListDto,
   ForwardCohortListDto,
   OperationListDto,
@@ -12,6 +13,8 @@ import { researchStatusPresentation } from '../experiments/presentation'
 
 interface HomeWorkspaceProps {
   workspace: WorkspaceStatusDto
+  readiness: CurrentApprovedReadinessDto[]
+  readinessUnavailable: boolean
   experiments: ExperimentListDto
   forwardCohorts: ForwardCohortListDto
   operations: OperationListDto
@@ -40,14 +43,16 @@ const goals = [
     to: '/baskets' as const,
   },
   {
-    title: 'Review prior results',
-    description: 'Open finished research and its economic evidence.',
+    title: 'Review history',
+    description: 'Open finished research and its preserved evidence.',
     to: '/experiments' as const,
   },
 ]
 
 export function HomeWorkspace({
   workspace,
+  readiness,
+  readinessUnavailable,
   experiments,
   forwardCohorts,
   operations,
@@ -55,6 +60,7 @@ export function HomeWorkspace({
   const activeOperation = operations.items.find(
     (operation) => operation.status === 'running',
   )
+  const productResearchReady = readiness.some((item) => item.ready_for_research)
   const validations = forwardCohorts.items
     .filter((cohort) => cohort.artifact_status === 'valid')
     .slice(0, 3)
@@ -83,29 +89,32 @@ export function HomeWorkspace({
           </p>
         </header>
 
-        {workspace.workspace_mode === 'local_market' &&
-        workspace.market_data_status === 'not_prepared' ? (
+        {workspace.workspace_mode === 'local_market' && !productResearchReady ? (
           <section
             aria-labelledby="local-market-setup-heading"
             className="mb-8 rounded-lg border border-warning/45 bg-panel p-5"
           >
-            <Badge tone="warning">Local Market setup</Badge>
+            <Badge tone={readinessUnavailable ? 'negative' : 'warning'}>
+              {readinessUnavailable ? 'Readiness unavailable' : 'Research setup'}
+            </Badge>
             <h2
               id="local-market-setup-heading"
               className="mt-3 mb-2 text-xl font-semibold text-foreground"
             >
-              Prepare this workspace before research
+              {readinessUnavailable
+                ? 'Research readiness could not be checked'
+                : 'Current-approved research is not ready yet'}
             </h2>
             <p className="m-0 max-w-3xl text-sm leading-6 text-secondary">
-              Choose the assets QAP is allowed to research, then prepare public market
-              data. No prepared Local Market data is available in this workspace yet,
-              and Sample Workspace data is never treated as your local market state.
+              {readinessUnavailable
+                ? 'QAP could not confirm readiness for every Research timeframe, so Home does not infer a ready/not-ready conclusion. Open Research to inspect the backend error directly.'
+                : 'This guidance comes from backend research readiness rather than catalog presence. Open Research to choose one timeframe and see the backend-owned identity, current-market, history, maintenance, and direct-market evidence.'}
             </p>
             <Link
               className="mt-4 inline-flex min-h-11 items-center font-semibold text-accent"
-              to="/universe"
+              to="/scanner"
             >
-              Choose research assets →
+              Review research readiness →
             </Link>
           </section>
         ) : null}
@@ -219,8 +228,8 @@ export function HomeWorkspace({
             </div>
           ) : (
             <p className="rounded-lg border border-border bg-panel p-5 text-sm text-secondary">
-              No forward validation is available to resume. Start from a research idea
-              in Discover.
+              No forward validation is available to resume. Start from a Research Idea
+              in Research.
             </p>
           )}
         </section>
@@ -231,7 +240,7 @@ export function HomeWorkspace({
               Recent research results
             </h2>
             <Link className="text-sm font-semibold text-accent" to="/experiments">
-              View all results
+              View History
             </Link>
           </div>
 

@@ -30,6 +30,9 @@ export function AppShell({ children, workspaceMode }: AppShellProps) {
               {workspaceMode === 'sample' ? 'Sample Workspace' : 'Local Market'}
             </Badge>
           ) : null}
+          <Link className="text-xs font-semibold text-muted hover:text-foreground" to="/operations">
+            Activity
+          </Link>
         </div>
         <nav
           className="flex w-full flex-row flex-wrap gap-2 md:w-auto md:flex-nowrap"
@@ -39,19 +42,13 @@ export function AppShell({ children, workspaceMode }: AppShellProps) {
             Home
           </Link>
           <Link className={navLinkClass} to="/scanner">
-            Discover
-          </Link>
-          <Link className={navLinkClass} to="/prospective">
-            Validate
+            Research
           </Link>
           <Link className={navLinkClass} to="/baskets">
             Portfolios
           </Link>
           <Link className={navLinkClass} to="/experiments">
-            Results
-          </Link>
-          <Link className={navLinkClass} to="/operations">
-            Activity
+            History
           </Link>
         </nav>
       </header>

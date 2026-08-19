@@ -32,6 +32,17 @@ class ScannerProtocolDto(ApiDto):
     horizons: tuple[ScannerHorizonDto, ...]
 
 
+class ResearchClaimDto(ApiDto):
+    kind: Literal[
+        "current_approved_retrospective",
+        "historical_pit",
+        "versioned_other",
+    ]
+    label: str
+    claim_identity: str | None
+    scope_identity: str | None
+
+
 class ScanSummaryDto(ApiDto):
     artifact_status: Literal["valid", "invalid"]
     scan_id: str
@@ -43,6 +54,7 @@ class ScanSummaryDto(ApiDto):
     candidate_count: int | None = None
     selected_replay_count: int | None = None
     survivor_count: int | None = None
+    claim: ResearchClaimDto | None = None
     error: ErrorDetailDto | None = None
 
 
@@ -137,18 +149,40 @@ class CandidateListDto(ApiDto):
 
 
 class CandidateDetailDto(ApiDto):
-    schema_version: Literal["qap.api.candidate_detail.v1"] = (
-        "qap.api.candidate_detail.v1"
+    schema_version: Literal["qap.api.candidate_detail.v2"] = (
+        "qap.api.candidate_detail.v2"
     )
     candidate: CandidateSummaryDto
+    claim: ResearchClaimDto
     forward_cohort_ids: tuple[str, ...]
     qualification_ids: tuple[str, ...]
     basket_ids: tuple[str, ...]
 
 
+class CompletedResearchScopeStagesDto(ApiDto):
+    venue: str
+    horizon: str
+    scope_asset_count: int
+    relationship_comparison_count: int
+    retained_relationship_count: int
+    enumerated_rule_count: int
+    valid_rule_count: int
+    invalid_rule_count: int
+    selected_for_replay_count: int
+    completed_replay_count: int
+    replay_unavailable_count: int
+    rejected_replay_count: int
+    research_idea_count: int
+
+
+class CompletedResearchStagesDto(ApiDto):
+    scopes: tuple[CompletedResearchScopeStagesDto, ...]
+
+
 class ScanDetailDto(ApiDto):
-    schema_version: Literal["qap.api.scan_detail.v1"] = "qap.api.scan_detail.v1"
+    schema_version: Literal["qap.api.scan_detail.v2"] = "qap.api.scan_detail.v2"
     summary: ScanSummaryDto
+    stages: CompletedResearchStagesDto
     universe: tuple[UniverseAssetDto, ...]
     graph_scopes: tuple[GraphScopeDto, ...]
     momentum_generations: tuple[MomentumGenerationDto, ...]
@@ -358,6 +392,8 @@ __all__ = [
     "CandidateFreezeDto",
     "CandidateListDto",
     "CandidateSummaryDto",
+    "CompletedResearchScopeStagesDto",
+    "CompletedResearchStagesDto",
     "CaptureReadinessDto",
     "CapturePublicEvidenceRequestDto",
     "ForwardCheckpointDto",
@@ -374,6 +410,7 @@ __all__ = [
     "OperationRefDto",
     "QualificationDto",
     "QualificationRequestDto",
+    "ResearchClaimDto",
     "RunScanRequestDto",
     "ScanDetailDto",
     "ScanListDto",

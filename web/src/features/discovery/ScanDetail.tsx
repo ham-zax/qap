@@ -9,6 +9,7 @@ import type {
 } from '../../api/types'
 import { Badge } from '../../components/ui/Badge'
 import { formatResearchTimestamp } from '../../lib/format'
+import { ResearchStageSummary } from './ResearchStageSummary'
 
 interface ScanDetailProps {
   apiClient: QapApiClient
@@ -21,6 +22,9 @@ function shortId(value: string) {
 }
 
 export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
+  const claim = data.summary.claim
+  const isProductClaim = claim?.kind === 'current_approved_retrospective'
+  const isPitClaim = claim?.kind === 'historical_pit'
   const scopes = data.graph_scopes
   const [scopeKey, setScopeKey] = useState(
     scopes.length ? `${scopes[0].venue}:${scopes[0].horizon}` : '',
@@ -45,32 +49,18 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
   const survivors = candidates.items.filter(
     (candidate) => candidate.economic_gate_status === 'deep_replay_survivor',
   )
-  const rejected = candidates.items.filter(
-    (candidate) => candidate.economic_gate_status === 'deep_replay_rejected',
-  )
-  const unavailable = candidates.items.filter(
-    (candidate) =>
-      candidate.trial_status !== 'valid' ||
-      candidate.deep_replay_status === 'setup_failed' ||
-      candidate.deep_replay_status === 'replay_failed',
-  )
-  const validNotReplayed = candidates.items.filter(
-    (candidate) =>
-      candidate.trial_status === 'valid' &&
-      candidate.economic_gate_status !== 'deep_replay_survivor' &&
-      candidate.economic_gate_status !== 'deep_replay_rejected' &&
-      candidate.deep_replay_status !== 'setup_failed' &&
-      candidate.deep_replay_status !== 'replay_failed',
-  )
-
   return (
     <section className="min-w-0">
       <header className="mb-8 max-w-4xl">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
-          Historical discovery
+          {isProductClaim
+            ? 'Current-approved retrospective research'
+            : isPitClaim
+              ? 'Historical point-in-time research'
+              : 'Versioned research claim'}
         </p>
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          Research ideas
+          Research Ideas
         </h1>
         <div className="flex flex-wrap gap-2">
           <Badge tone={data.summary.artifact_status === 'valid' ? 'info' : 'negative'}>
@@ -78,13 +68,22 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
               ? 'Evidence available'
               : 'Evidence unavailable'}
           </Badge>
-          <Badge tone="info">{candidates.items.length} evaluated rules</Badge>
-          <Badge tone="info">{survivors.length} passed historical checks</Badge>
+          {claim ? <Badge tone="info">{claim.label}</Badge> : null}
+          <Badge tone="info">{data.summary.candidate_count ?? 0} fixed rule evaluations</Badge>
+          <Badge tone="info">{data.summary.survivor_count ?? 0} Research Ideas</Badge>
         </div>
-        {data.summary.as_of ? (
+        {data.summary.eligible_information_end ? (
           <p className="mt-3 mb-0 text-sm text-secondary">
-            Frozen as of {formatResearchTimestamp(data.summary.as_of)} ·{' '}
+            {isProductClaim ? 'Data through ' : 'Historical cutoff '}
+            {formatResearchTimestamp(data.summary.eligible_information_end)} ·{' '}
             {data.summary.venues.join(' / ')} · {data.summary.horizons.join(' / ')}
+          </p>
+        ) : null}
+        {isProductClaim ? (
+          <p className="mt-3 mb-0 text-sm leading-6 text-secondary">
+            This scan researched the assets approved and currently resolved when the run
+            started. It does not claim that the full current scope existed throughout the
+            historical window.
           </p>
         ) : null}
         <details className="mt-4 text-sm text-secondary">
@@ -92,6 +91,12 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
             Exact scan evidence
           </summary>
           <p className="m-0 break-all">Scan ID: {data.summary.scan_id}</p>
+          {claim?.claim_identity ? (
+            <p className="mt-1 mb-0 break-all">Claim identity: {claim.claim_identity}</p>
+          ) : null}
+          {claim?.scope_identity ? (
+            <p className="mt-1 mb-0 break-all">Scope identity: {claim.scope_identity}</p>
+          ) : null}
         </details>
       </header>
 
@@ -104,7 +109,13 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
             <p className="mt-2 mb-0 text-2xl font-semibold text-foreground">
               {graph.eligible_asset_count}
             </p>
-            <p className="mt-1 mb-0 text-sm text-secondary">PIT-admitted assets</p>
+            <p className="mt-1 mb-0 text-sm text-secondary">
+              {isProductClaim
+                ? 'Current-approved assets in this frozen scope'
+                : isPitClaim
+                  ? 'PIT-admitted assets'
+                  : 'Assets in this frozen scope'}
+            </p>
             <p className="mt-3 mb-0 text-xs text-muted">
               {graph.total_valid_pair_comparisons} valid pair comparisons · {graph.graph_interval}
             </p>
@@ -114,45 +125,26 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
 
       <section className="mt-8" aria-labelledby="research-summary-heading">
         <h2 id="research-summary-heading" className="text-xl font-semibold text-foreground">
-          Historical research summary
+          Completed research stages
         </h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <article className="rounded-lg border border-positive/45 bg-panel p-4">
-            <p className="m-0 text-2xl font-semibold text-positive">{survivors.length}</p>
-            <p className="mt-2 mb-0 text-sm text-secondary">
-              Passed historical research checks
-            </p>
-          </article>
-          <article className="rounded-lg border border-warning/45 bg-panel p-4">
-            <p className="m-0 text-2xl font-semibold text-warning">{rejected.length}</p>
-            <p className="mt-2 mb-0 text-sm text-secondary">
-              Evaluated but did not pass
-            </p>
-          </article>
-          <article className="rounded-lg border border-border bg-panel p-4">
-            <p className="m-0 text-2xl font-semibold text-foreground">
-              {validNotReplayed.length}
-            </p>
-            <p className="mt-2 mb-0 text-sm text-secondary">
-              Valid rules not replayed
-            </p>
-          </article>
-          <article className="rounded-lg border border-negative/45 bg-panel p-4">
-            <p className="m-0 text-2xl font-semibold text-negative">
-              {unavailable.length}
-            </p>
-            <p className="mt-2 mb-0 text-sm text-secondary">
-              Invalid or unavailable evidence
-            </p>
-          </article>
+        <p className="mt-2 text-sm leading-6 text-secondary">
+          These counts are composed by the backend from immutable completed scanner
+          tables. Relationship comparisons and fixed-rule evaluations are distinct stages,
+          not a percentage conversion funnel.
+        </p>
+        <div className="mt-4">
+          <ResearchStageSummary
+            stages={data.stages}
+            claimKind={claim?.kind ?? 'versioned_other'}
+          />
         </div>
       </section>
 
       <section className="mt-8" aria-labelledby="research-ideas-heading">
         <h2 id="research-ideas-heading" className="text-xl font-semibold text-foreground">
-          Research ideas
+          Research Ideas
         </h2>
-        {survivors.length ? (
+        {(data.summary.survivor_count ?? 0) > 0 ? (
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             {survivors.map((candidate) => (
               <article
@@ -183,6 +175,7 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
         )}
       </section>
 
+      {isPitClaim ? (
       <section className="mt-8 rounded-lg border border-border bg-panel p-5" aria-labelledby="momentum-heading">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -272,6 +265,7 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
           </div>
         )}
       </section>
+      ) : null}
 
       <details className="mt-8 rounded-lg border border-border bg-panel p-5">
         <summary className="min-h-11 cursor-pointer py-2 text-xl font-semibold text-foreground">
@@ -322,11 +316,13 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
       </details>
 
       <section className="mt-8" aria-labelledby="universe-heading">
-        <h2 id="universe-heading" className="text-xl font-semibold text-foreground">Point-in-time universe</h2>
+        <h2 id="universe-heading" className="text-xl font-semibold text-foreground">
+          {isPitClaim ? 'Point-in-time universe' : 'Frozen research scope'}
+        </h2>
         <div
           className="mt-4 overflow-x-auto rounded-lg border border-border bg-panel"
           role="region"
-          aria-label="Point-in-time universe table"
+          aria-label={isPitClaim ? 'Point-in-time universe table' : 'Frozen research scope table'}
           tabIndex={0}
         >
           <table className="w-full min-w-[46rem] text-left text-sm">
@@ -338,7 +334,15 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
                 <tr key={`${asset.venue}-${asset.horizon}-${asset.asset_id}`} className="border-t border-border">
                   <td className="px-4 py-3 font-semibold text-foreground">{asset.asset_id}<span className="ml-2 text-xs font-normal text-muted">{asset.venue_symbol}</span></td>
                   <td className="px-4 py-3 text-secondary">{asset.venue} / {asset.horizon}</td>
-                  <td className="px-4 py-3 text-secondary">{asset.automatic_eligible ? 'automatic eligible' : asset.forensic_research_allowed ? 'forensic only' : asset.eligibility_reason}</td>
+                  <td className="px-4 py-3 text-secondary">
+                    {isProductClaim && asset.eligibility_state === 'current_approved_current_survivor'
+                      ? 'current approved scope'
+                      : asset.automatic_eligible
+                        ? 'automatic eligible'
+                        : asset.forensic_research_allowed
+                          ? 'forensic only'
+                          : asset.eligibility_reason}
+                  </td>
                   <td className="px-4 py-3 tabular-nums text-secondary">{(asset.bar_coverage * 100).toFixed(1)}%</td>
                 </tr>
               ))}

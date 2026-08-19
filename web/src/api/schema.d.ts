@@ -885,16 +885,17 @@ export interface components {
             /** Basket Ids */
             basket_ids: string[];
             candidate: components["schemas"]["CandidateSummaryDto"];
+            claim: components["schemas"]["ResearchClaimDto"];
             /** Forward Cohort Ids */
             forward_cohort_ids: string[];
             /** Qualification Ids */
             qualification_ids: string[];
             /**
              * Schema Version
-             * @default qap.api.candidate_detail.v1
+             * @default qap.api.candidate_detail.v2
              * @constant
              */
-            schema_version: "qap.api.candidate_detail.v1";
+            schema_version: "qap.api.candidate_detail.v2";
         };
         /** CandidateFreezeDto */
         CandidateFreezeDto: {
@@ -1094,6 +1095,40 @@ export interface components {
              * Format: date-time
              */
             window_start: string;
+        };
+        /** CompletedResearchScopeStagesDto */
+        CompletedResearchScopeStagesDto: {
+            /** Completed Replay Count */
+            completed_replay_count: number;
+            /** Enumerated Rule Count */
+            enumerated_rule_count: number;
+            /** Horizon */
+            horizon: string;
+            /** Invalid Rule Count */
+            invalid_rule_count: number;
+            /** Rejected Replay Count */
+            rejected_replay_count: number;
+            /** Relationship Comparison Count */
+            relationship_comparison_count: number;
+            /** Replay Unavailable Count */
+            replay_unavailable_count: number;
+            /** Research Idea Count */
+            research_idea_count: number;
+            /** Retained Relationship Count */
+            retained_relationship_count: number;
+            /** Scope Asset Count */
+            scope_asset_count: number;
+            /** Selected For Replay Count */
+            selected_for_replay_count: number;
+            /** Valid Rule Count */
+            valid_rule_count: number;
+            /** Venue */
+            venue: string;
+        };
+        /** CompletedResearchStagesDto */
+        CompletedResearchStagesDto: {
+            /** Scopes */
+            scopes: components["schemas"]["CompletedResearchScopeStagesDto"][];
         };
         /** ComponentSpec */
         ComponentSpec: {
@@ -2621,6 +2656,20 @@ export interface components {
             /** Reasons */
             reasons: components["schemas"]["ReadinessReasonDto"][];
         };
+        /** ResearchClaimDto */
+        ResearchClaimDto: {
+            /** Claim Identity */
+            claim_identity: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "current_approved_retrospective" | "historical_pit" | "versioned_other";
+            /** Label */
+            label: string;
+            /** Scope Identity */
+            scope_identity: string | null;
+        };
         /** ResearchPathReadinessDto */
         ResearchPathReadinessDto: {
             /** Canonical Asset Id */
@@ -2850,10 +2899,11 @@ export interface components {
             momentum_generations: components["schemas"]["MomentumGenerationDto"][];
             /**
              * Schema Version
-             * @default qap.api.scan_detail.v1
+             * @default qap.api.scan_detail.v2
              * @constant
              */
-            schema_version: "qap.api.scan_detail.v1";
+            schema_version: "qap.api.scan_detail.v2";
+            stages: components["schemas"]["CompletedResearchStagesDto"];
             summary: components["schemas"]["ScanSummaryDto"];
             /** Universe */
             universe: components["schemas"]["UniverseAssetDto"][];
@@ -2880,6 +2930,7 @@ export interface components {
             as_of?: string | null;
             /** Candidate Count */
             candidate_count?: number | null;
+            claim?: components["schemas"]["ResearchClaimDto"] | null;
             /** Created At */
             created_at?: string | null;
             /** Eligible Information End */

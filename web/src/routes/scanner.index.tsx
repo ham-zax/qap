@@ -1,20 +1,29 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { DiscoveryHome } from '../features/discovery/DiscoveryHome'
+import { ResearchHome } from '../features/discovery/ResearchHome'
 
 export const Route = createFileRoute('/scanner/')({
   loader: async ({ context }) => {
-    const [protocol, scans] = await Promise.all([
+    const [workspace, protocol, scans] = await Promise.all([
+      context.queryClient.ensureQueryData(context.queries.workspaceStatus()),
       context.queryClient.ensureQueryData(context.queries.scannerProtocol()),
       context.queryClient.ensureQueryData(context.queries.scans()),
     ])
-    return { protocol, scans }
+    return { workspace, protocol, scans }
   },
   component: ScannerIndexRoute,
 })
 
 function ScannerIndexRoute() {
-  const { protocol, scans } = Route.useLoaderData()
-  const { apiClient } = Route.useRouteContext()
-  return <DiscoveryHome apiClient={apiClient} protocol={protocol} scans={scans} />
+  const { workspace, protocol, scans } = Route.useLoaderData()
+  const { apiClient, queries } = Route.useRouteContext()
+  return (
+    <ResearchHome
+      apiClient={apiClient}
+      queries={queries}
+      workspace={workspace}
+      protocol={protocol}
+      scans={scans}
+    />
+  )
 }

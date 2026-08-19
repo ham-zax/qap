@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from qap.api.errors import ApiBoundaryError
+from qap.api.scanner_completed import completed_research_stages, research_claim
 from qap.api.scanner_schemas import (
     CandidateDetailDto,
     CandidateFreezeDto,
@@ -39,6 +40,7 @@ from qap.scanner.basket_protocol import (
     SCANNER_V1_BASKET,
     basket_protocol_identity,
 )
+from qap.scanner.models import ScanDefinition
 from qap.scanner.prospective_artifact_schemas import CHECKPOINT_TABLE
 from qap.scanner.prospective_artifacts import (
     ProspectiveArtifactError,
@@ -154,7 +156,9 @@ class ScannerArtifactReader:
             horizons=tuple(horizons),
         )
 
-    def _scan(self, scan_id: str) -> tuple[object, dict[str, list[dict[str, Any]]]]:
+    def _scan(
+        self, scan_id: str
+    ) -> tuple[ScanDefinition, dict[str, list[dict[str, Any]]]]:
         identity = _identity(scan_id, kind="scan")
         directory = self.scan_root / identity
         if not directory.is_dir():
@@ -167,7 +171,7 @@ class ScannerArtifactReader:
     @staticmethod
     def _summary(
         scan_id: str,
-        definition: object,
+        definition: ScanDefinition,
         tables: dict[str, list[dict[str, Any]]],
     ) -> ScanSummaryDto:
         declared = cast(Any, definition)
@@ -189,6 +193,7 @@ class ScannerArtifactReader:
                 row["economic_gate_status"] == "deep_replay_survivor"
                 for row in promotions
             ),
+            claim=research_claim(definition),
         )
 
     def list_scans(self) -> ScanListDto:
@@ -285,6 +290,7 @@ class ScannerArtifactReader:
         )
         return ScanDetailDto(
             summary=summary,
+            stages=completed_research_stages(tables),
             universe=universe,
             graph_scopes=scopes,
             momentum_generations=self._momentum_for_scan(declared.scan_id),
@@ -421,7 +427,8 @@ class ScannerArtifactReader:
         return tuple(sorted(memberships))
 
     def candidate_detail(self, scan_id: str, candidate_id: str) -> CandidateDetailDto:
-        candidates = self.list_candidates(scan_id).items
+        definition, tables = self._scan(scan_id)
+        candidates = self._candidates(tables)
         identity = _identity(candidate_id, kind="candidate")
         candidate = next(
             (item for item in candidates if item.candidate_id == identity),
@@ -445,6 +452,7 @@ class ScannerArtifactReader:
                     qualification_ids.append(str(qualification["qualification_id"]))
         return CandidateDetailDto(
             candidate=candidate,
+            claim=research_claim(definition),
             forward_cohort_ids=tuple(sorted(cohort_ids)),
             qualification_ids=tuple(sorted(qualification_ids)),
             basket_ids=self._basket_memberships(identity),

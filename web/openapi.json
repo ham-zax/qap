@@ -764,6 +764,9 @@
           "candidate": {
             "$ref": "#/components/schemas/CandidateSummaryDto"
           },
+          "claim": {
+            "$ref": "#/components/schemas/ResearchClaimDto"
+          },
           "forward_cohort_ids": {
             "items": {
               "type": "string"
@@ -779,14 +782,15 @@
             "type": "array"
           },
           "schema_version": {
-            "const": "qap.api.candidate_detail.v1",
-            "default": "qap.api.candidate_detail.v1",
+            "const": "qap.api.candidate_detail.v2",
+            "default": "qap.api.candidate_detail.v2",
             "title": "Schema Version",
             "type": "string"
           }
         },
         "required": [
           "candidate",
+          "claim",
           "forward_cohort_ids",
           "qualification_ids",
           "basket_ids"
@@ -1288,6 +1292,97 @@
           "missing_capture_kinds"
         ],
         "title": "CaptureReadinessDto",
+        "type": "object"
+      },
+      "CompletedResearchScopeStagesDto": {
+        "additionalProperties": false,
+        "properties": {
+          "completed_replay_count": {
+            "title": "Completed Replay Count",
+            "type": "integer"
+          },
+          "enumerated_rule_count": {
+            "title": "Enumerated Rule Count",
+            "type": "integer"
+          },
+          "horizon": {
+            "title": "Horizon",
+            "type": "string"
+          },
+          "invalid_rule_count": {
+            "title": "Invalid Rule Count",
+            "type": "integer"
+          },
+          "rejected_replay_count": {
+            "title": "Rejected Replay Count",
+            "type": "integer"
+          },
+          "relationship_comparison_count": {
+            "title": "Relationship Comparison Count",
+            "type": "integer"
+          },
+          "replay_unavailable_count": {
+            "title": "Replay Unavailable Count",
+            "type": "integer"
+          },
+          "research_idea_count": {
+            "title": "Research Idea Count",
+            "type": "integer"
+          },
+          "retained_relationship_count": {
+            "title": "Retained Relationship Count",
+            "type": "integer"
+          },
+          "scope_asset_count": {
+            "title": "Scope Asset Count",
+            "type": "integer"
+          },
+          "selected_for_replay_count": {
+            "title": "Selected For Replay Count",
+            "type": "integer"
+          },
+          "valid_rule_count": {
+            "title": "Valid Rule Count",
+            "type": "integer"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "venue",
+          "horizon",
+          "scope_asset_count",
+          "relationship_comparison_count",
+          "retained_relationship_count",
+          "enumerated_rule_count",
+          "valid_rule_count",
+          "invalid_rule_count",
+          "selected_for_replay_count",
+          "completed_replay_count",
+          "replay_unavailable_count",
+          "rejected_replay_count",
+          "research_idea_count"
+        ],
+        "title": "CompletedResearchScopeStagesDto",
+        "type": "object"
+      },
+      "CompletedResearchStagesDto": {
+        "additionalProperties": false,
+        "properties": {
+          "scopes": {
+            "items": {
+              "$ref": "#/components/schemas/CompletedResearchScopeStagesDto"
+            },
+            "title": "Scopes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "scopes"
+        ],
+        "title": "CompletedResearchStagesDto",
         "type": "object"
       },
       "ComponentSpec": {
@@ -5588,6 +5683,54 @@
         "title": "ResearchAssetReadinessDto",
         "type": "object"
       },
+      "ResearchClaimDto": {
+        "additionalProperties": false,
+        "properties": {
+          "claim_identity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claim Identity"
+          },
+          "kind": {
+            "enum": [
+              "current_approved_retrospective",
+              "historical_pit",
+              "versioned_other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "scope_identity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Identity"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "claim_identity",
+          "scope_identity"
+        ],
+        "title": "ResearchClaimDto",
+        "type": "object"
+      },
       "ResearchPathReadinessDto": {
         "additionalProperties": false,
         "properties": {
@@ -6289,10 +6432,13 @@
             "type": "array"
           },
           "schema_version": {
-            "const": "qap.api.scan_detail.v1",
-            "default": "qap.api.scan_detail.v1",
+            "const": "qap.api.scan_detail.v2",
+            "default": "qap.api.scan_detail.v2",
             "title": "Schema Version",
             "type": "string"
+          },
+          "stages": {
+            "$ref": "#/components/schemas/CompletedResearchStagesDto"
           },
           "summary": {
             "$ref": "#/components/schemas/ScanSummaryDto"
@@ -6307,6 +6453,7 @@
         },
         "required": [
           "summary",
+          "stages",
           "universe",
           "graph_scopes",
           "momentum_generations"
@@ -6370,6 +6517,16 @@
               }
             ],
             "title": "Candidate Count"
+          },
+          "claim": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchClaimDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "created_at": {
             "anyOf": [

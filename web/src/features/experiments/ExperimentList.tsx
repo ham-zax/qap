@@ -142,16 +142,16 @@ export function ExperimentList({
   const runItems = researchRuns?.items ?? []
 
   return (
-    <section aria-labelledby="results-heading" className="min-w-0">
+    <section aria-labelledby="history-heading" className="min-w-0">
       <header className="mb-8 max-w-4xl">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
-          Results
+          History
         </p>
         <h1
-          id="results-heading"
+          id="history-heading"
           className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl"
         >
-          Research evidence
+          Research history
         </h1>
         <p className="m-0 text-sm leading-6 text-secondary md:text-base">
           Revisit research ideas, forward validations, portfolio results, QAP research
@@ -161,17 +161,19 @@ export function ExperimentList({
       </header>
 
       <ResultSection
-        eyebrow="Research ideas"
-        title="Discovery research"
-        description="Historical discovery snapshots and the research ideas they contain."
+        eyebrow="Research Ideas"
+        title="Research scans"
+        description="Completed scanner research and the Research Ideas it contains."
         empty={scanItems.length === 0}
-        emptyText="No discovery research results are available yet."
+        emptyText="No completed research scans are available yet."
       >
         {scanItems.map((scan) => (
           <article key={scan.scan_id} className="rounded-lg border border-border bg-panel p-5">
             <div className="flex flex-wrap gap-2">
               <Badge tone={scan.artifact_status === 'valid' ? 'info' : 'negative'}>
-                {scan.artifact_status === 'valid' ? 'Historical research' : 'Invalid artifact'}
+                {scan.artifact_status === 'valid'
+                  ? scan.claim?.label ?? 'Research evidence'
+                  : 'Invalid artifact'}
               </Badge>
             </div>
             <h3 className="mt-4 mb-2 text-base font-semibold text-foreground">
@@ -179,9 +181,11 @@ export function ExperimentList({
               {(scan.survivor_count ?? 0) === 1 ? '' : 's'}
             </h3>
             <p className="m-0 text-sm text-secondary">
-              {scan.as_of ? `As of ${formatResearchTimestamp(scan.as_of)}` : 'As-of unavailable'}
+              {scan.eligible_information_end
+                ? `${scan.claim?.kind === 'current_approved_retrospective' ? 'Data through' : scan.claim?.kind === 'historical_pit' ? 'Historical cutoff' : 'Data boundary'} ${formatResearchTimestamp(scan.eligible_information_end)}`
+                : 'Data boundary unavailable'}
               {' · '}
-              {scan.candidate_count ?? 0} candidate records
+              {scan.candidate_count ?? 0} fixed rule evaluations
             </p>
             {scan.error ? (
               <p className="mt-3 text-sm text-negative">{scan.error.message}</p>

@@ -56,6 +56,8 @@ function historicalVerdict(
 
 export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
   const candidate = data.candidate
+  const isProductClaim = data.claim.kind === 'current_approved_retrospective'
+  const isPitClaim = data.claim.kind === 'historical_pit'
   const [freezeAt, setFreezeAt] = useState('')
   const [operation, setOperation] = useState<OperationRefDto | null>(null)
   const freeze = useMutation({
@@ -81,6 +83,7 @@ export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
         </h1>
         <div className="flex flex-wrap gap-2">
           <Badge tone={verdict.tone}>{verdict.label}</Badge>
+          <Badge tone="info">{data.claim.label}</Badge>
           <Badge tone="info">{candidate.horizon} timeframe</Badge>
         </div>
         <p className="mt-3 mb-0 text-sm leading-6 text-secondary">
@@ -105,7 +108,7 @@ export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
             Review historical result
           </a>
         ) : null}
-        {candidate.economic_gate_status === 'deep_replay_survivor' ? (
+        {candidate.economic_gate_status === 'deep_replay_survivor' && isPitClaim ? (
           <a
             className="ml-4 mt-2 inline-flex min-h-11 items-center rounded-md bg-accent px-4 font-semibold text-canvas no-underline"
             href="#start-forward-validation"
@@ -120,6 +123,10 @@ export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
           Advanced research and exact evidence
         </summary>
         <div className="mt-4">
+      <p className="mb-4 text-sm leading-6 text-secondary">
+        Claim: {data.claim.label}
+        {data.claim.claim_identity ? ` · ${shortId(data.claim.claim_identity)}` : ''}
+      </p>
       <LineageTrail
         items={[
           { label: 'scan', value: candidate.scan_id, href: `/scanner/${candidate.scan_id}` },
@@ -143,7 +150,13 @@ export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
           </p>
           <ol className="mt-4 space-y-4 pl-5 text-sm leading-6 text-secondary">
             <li>
-              <strong className="text-foreground">PIT scope:</strong>{' '}
+              <strong className="text-foreground">
+                {isProductClaim
+                  ? 'Frozen Product scope:'
+                  : isPitClaim
+                    ? 'PIT scope:'
+                    : 'Frozen research scope:'}
+              </strong>{' '}
               {candidate.venue} / {candidate.horizon}, from scan{' '}
               <a className="text-accent" href={`/scanner/${candidate.scan_id}`}>
                 {shortId(candidate.scan_id)}
@@ -224,7 +237,7 @@ export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
         </div>
       </details>
 
-      {candidate.economic_gate_status === 'deep_replay_survivor' ? (
+      {candidate.economic_gate_status === 'deep_replay_survivor' && isPitClaim ? (
         <section id="start-forward-validation" className="mt-8 rounded-lg border border-border bg-panel p-5" aria-labelledby="freeze-heading">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-2xl">
@@ -266,6 +279,7 @@ export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
         </section>
       ) : null}
 
+      {isPitClaim ? (
       <div className="mt-8 grid gap-5 lg:grid-cols-3">
         <section className="rounded-lg border border-border bg-panel p-4">
           <h2 className="mt-0 text-base font-semibold text-foreground">Forward validations</h2>
@@ -314,6 +328,18 @@ export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
           )}
         </section>
       </div>
+      ) : (
+        <section className="mt-8 rounded-lg border border-border bg-panel p-5">
+          <h2 className="mt-0 text-lg font-semibold text-foreground">
+            Follow-up research
+          </h2>
+          <p className="mb-0 text-sm leading-6 text-secondary">
+            {isProductClaim
+              ? 'This current-approved retrospective scan is complete historical evidence. Longitudinal follow-up is not available for this claim yet; review the completed evidence here or start a new Research task.'
+              : 'This versioned research claim is preserved as completed evidence. Longitudinal follow-up is not authorized for this claim.'}
+          </p>
+        </section>
+      )}
     </section>
   )
 }

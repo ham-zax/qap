@@ -2,6 +2,9 @@ import type { components } from './schema'
 
 type WorkspaceStatusDto = components['schemas']['WorkspaceStatusDto']
 type ResearchUniverseDto = components['schemas']['ResearchUniverseDto']
+type CurrentApprovedReadinessDto = components['schemas']['CurrentApprovedReadinessDto']
+type CurrentApprovedResearchRequestDto =
+  components['schemas']['CurrentApprovedResearchRequestDto']
 type IdentityMappingRequestDto = components['schemas']['IdentityMappingRequestDto']
 type AssetAdmissionRequestDto = components['schemas']['AssetAdmissionRequestDto']
 type ExperimentListDto = components['schemas']['ExperimentListDto']
@@ -94,6 +97,17 @@ export function createApiClient({
   return {
     getWorkspaceStatus: () => request<WorkspaceStatusDto>('/api/workspace'),
     getResearchUniverse: () => request<ResearchUniverseDto>('/api/research-universe'),
+    getCurrentApprovedResearchReadiness: (horizon: 'short' | 'medium' | 'swing') => {
+      const query = new URLSearchParams({ horizon })
+      return request<CurrentApprovedReadinessDto>(
+        `/api/product-research/readiness?${query}`,
+      )
+    },
+    runCurrentApprovedResearch: (command: CurrentApprovedResearchRequestDto) =>
+      request<OperationRefDto>('/api/product-research', {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }),
     refreshResearchUniverseDirectory: () =>
       request<ResearchUniverseDto>('/api/research-universe/directory-refresh', {
         method: 'POST',

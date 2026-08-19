@@ -18,11 +18,17 @@ interface DiscoveryHomeProps {
   apiClient: QapApiClient
   protocol: ScannerProtocolDto
   scans: ScanListDto
+  embedded?: boolean
 }
 
 const HORIZONS: Horizon[] = ['short', 'medium', 'swing']
 
-export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps) {
+export function DiscoveryHome({
+  apiClient,
+  protocol,
+  scans,
+  embedded = false,
+}: DiscoveryHomeProps) {
   const [asOf, setAsOf] = useState('')
   const [horizons, setHorizons] = useState<Horizon[]>(['short'])
   const [pins, setPins] = useState<Pin[]>([])
@@ -82,14 +88,21 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
     <section className="min-w-0">
       <header className="mb-8 max-w-4xl">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
-          Research ideas
+          Advanced Research
         </p>
-        <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          Discover
-        </h1>
+        {embedded ? (
+          <h2 className="mb-3 text-2xl font-bold tracking-tight text-foreground">
+            Historical Point-in-Time Research
+          </h2>
+        ) : (
+          <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+            Historical Point-in-Time Research
+          </h1>
+        )}
         <p className="m-0 text-sm leading-6 text-secondary md:text-base">
-          Choose when and how far ahead to research. QAP applies the frozen market
-          universe, models, costs, and historical checks.
+          Use the strict historical PIT scanner with an explicit analysis cutoff,
+          multiple horizons, manual pins, forensic scope, or manual replay IDs. These
+          controls remain separate from the normal current-approved Product claim.
         </p>
       </header>
 
@@ -306,6 +319,7 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
         </details>
       </div>
 
+      {!embedded ? (
       <section className="mt-8" aria-labelledby="completed-scans-heading">
         <h2
           id="completed-scans-heading"
@@ -361,6 +375,7 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
           </div>
         )}
       </section>
+      ) : null}
     </section>
   )
 }

@@ -28,7 +28,7 @@ export function OperationList({ data }: OperationListProps) {
           Background activity
         </h1>
         <p className="m-0 text-sm leading-6 text-secondary md:text-base">
-          Follow tasks started from Discover, Validate, and Portfolios. Activity tells you
+          Follow tasks started from Research, Portfolios, and specialist workflows. Activity tells you
           whether the work ran; the resulting research evidence is separate and may still
           be negative or rejected.
         </p>
