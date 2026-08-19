@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-19
 
-**Status:** implementation started 2026-08-19 after the user explicitly authorized Slice 4. Milestone 0 reconciled the frozen architecture against the completed Slice-3/Phase-15 handoff at `f8ef3e4`; the final Slice-3 source/test state remains `a79bd4d`. Do not reopen the architecture unless an explicit Milestone-2 implementation refutation below fails or a protected product/scientific boundary changes.
+**Status:** implementation started 2026-08-19 after the user explicitly authorized Slice 4. Milestone 0 reconciled the frozen architecture against the completed Slice-3/Phase-15 handoff at `f8ef3e4`; the original Slice-3 M9 full repository gate was green at `a79bd4d`, and the post-review Slice-3 remediation handoff is `142a18d`. Do not reopen the architecture unless an explicit Milestone-2 implementation refutation below fails or a protected product/scientific boundary changes.
 
 **Goal:** make the completed Slice-1 discovery, Slice-2 prospective/actionability, and Slice-3 basket-research workflows operable and inspectable from one local web application without moving scientific or financial authority into FastAPI or React.
 

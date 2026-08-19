@@ -16,8 +16,9 @@ Slice 2 prospective/liquidity design, and Phase-15 reconciliation.
 Purpose: authorize the implementation mission to execute the new scanner slices in
 dependency order without reverting to the earlier generic NxM scanner concept.
 Impact: Phases 14 and 15 are explicit mission scope. Scanner V1 Slices 1–3 are
-now complete and repository-verified; Slice-3 final source/test state is `a79bd4d`
-and results are recorded in `docs/research/2026-08-18-qap-scanner-slice3-results.md`.
+complete; Slice-3's original M9 full repository gate was green at `a79bd4d`, and
+the post-review remediation handoff is `142a18d`. Results are recorded in
+`docs/research/2026-08-18-qap-scanner-slice3-results.md`.
 The frozen Slice-4 unified-workbench plan is post-Phase-15 product work and must not
 begin merely because Phase 15 is complete; require an explicit user start for Slice 4.
 Evidence: docs/plans/15-research-scanner-and-candidate-workbench.md;

@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-18
 
-**Status:** complete and repository-verified 2026-08-19. Milestone 6 implementation landed at `46ef407` with integrity closure at `dd9df14`; Milestone 7 completed at `0a15506`; the final repository-verified Slice-3 source/test state is `a79bd4d`. Milestone 8 is explicitly superseded by Slice 4's unified QAP Workbench, and Milestone 9 backend closure is complete. Results: `docs/research/2026-08-18-qap-scanner-slice3-results.md`.
+**Status:** complete 2026-08-19. Milestone 6 implementation landed at `46ef407` with integrity closure at `dd9df14`; Milestone 7 completed at `0a15506`; the original M9 full repository gate was green at `a79bd4d`; and post-review Slice-3 remediation landed at `142a18d`. The remediation's Slice-3 scenario and static repository gates are green, while the current whole-repository pytest gate has two later Slice-4 OpenAPI contract-test mismatches unrelated to Slice 3. Milestone 8 is explicitly superseded by Slice 4's unified QAP Workbench, and Milestone 9 backend closure remains complete. Results: `docs/research/2026-08-18-qap-scanner-slice3-results.md`.
 
 **Goal:** implement the approved Slice-3 asset-native momentum surface and manual 3–6 asset one-inventory basket workflow without creating a second backtester, optimizer, cross-venue wallet, or live-capital path.
 

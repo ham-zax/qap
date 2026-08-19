@@ -1,7 +1,7 @@
 # QAP Scanner V1 Slice-3 Results
 
 Date: 2026-08-19
-Status: asset-native momentum and manual one-inventory basket research are complete and repository-verified; this is development evidence only, not final-OOS evidence, basket capacity evidence, or a trading recommendation.
+Status: asset-native momentum and manual one-inventory basket research are complete. The original M9 full repository gate was green at `a79bd4d`; post-review remediation is complete at `142a18d` with the Slice-3 scenario and static repository gates green. The current whole-repository pytest gate is blocked only by two later Slice-4 OpenAPI contract-test mismatches. This is development evidence only, not final-OOS evidence, basket capacity evidence, or a trading recommendation.
 
 ## Verified source state
 
@@ -10,7 +10,8 @@ Status: asset-native momentum and manual one-inventory basket research are compl
 - Milestone-6 research-integrity closure: `dd9df14` (`fix: close slice3 milestone6 integrity seams`)
 - Milestone-7 application vertical: `0a15506` (`feat: complete slice3 basket application vertical`)
 - Final architecture-gate alignment: `a79bd4d` (`test: align slice3 architecture gate`)
-- Repository-verified Slice-3 source/test state: `a79bd4d`
+- Original M9 repository-verified Slice-3 source/test state: `a79bd4d`
+- Post-review Slice-3 remediation handoff: `142a18d` (`fix: close slice3 basket review findings`)
 - Slice-1 historical discovery and Slice-2 prospective/current qualification contracts remain prerequisites and were not reopened.
 - The former Slice-3 Milestone-8 Candidate Workbench is intentionally superseded by the separately frozen Slice-4 unified-workbench plan; Slice 4 was not implemented during this closure.
 
@@ -109,16 +110,16 @@ A basket failing any mandatory comparator remains a completed, persisted `basket
 
 The deterministic Slice-3 scenario exercises the real owners without exchange network access:
 
-1. writes local immutable Binance-style AAA/USDT, BBB/USDT, and CCC/USDT hourly evidence plus lifecycle/catalog records;
+1. writes local immutable Binance-style AAA/USDT, BBB/USDT, and CCC/USDT hourly evidence plus one real AAA/BBB direct market and lifecycle/catalog records;
 2. runs the real Slice-1 short-horizon scan;
-3. selects a valid pair rule whose direct pair replay is unavailable, leaving explicit `setup_failed / unsupported_direct_market` pair lineage;
+3. proves at least one selected candidate reaches completed direct pair replay and also retains a valid scout-only indirect candidate whose pair has no direct market;
 4. generates and publishes the first-class short-horizon asset-momentum artifact;
-5. submits a three-asset manual basket using the real asset/USDT execution legs;
-6. runs ordinary QAP through multi-asset bridge execution;
-7. publishes a completed basket survivor with authoritative QAP reference;
-8. repeats the same intent and reuses the terminal immutable basket artifact;
-9. submits a second valid negative-scaffold candidate from the same scan;
-10. persists that sibling as `basket_development_rejected` rather than filtering it out;
+5. submits a three-asset manual basket using the scout-only indirect rule and the real asset/USDT execution legs;
+6. verifies the pair-blind control has all 48 required short-horizon returns at the first evaluation boundary and that both strategy and primary control are causally available there;
+7. runs ordinary QAP through multi-asset bridge execution and publishes a completed basket survivor with authoritative QAP reference;
+8. submits a second basket containing both the completed direct edge and the scout-only indirect edge and reaches one authoritative QAP result;
+9. repeats the original intent and reuses the terminal immutable basket artifact;
+10. submits a valid negative-scaffold sibling from the same scan and persists it as `basket_development_rejected` rather than filtering it out;
 11. verifies the resulting QAP run is `DataRole.DEVELOPMENT`, does not consume final OOS, and contains strategy, HODL, band, and pair-blind roles.
 
 This fixture is deterministic implementation evidence. Its positive/negative synthetic classifications are not claims about real-market profitability.
@@ -144,7 +145,7 @@ Import-linter and the repository architecture test both enforce that narrow boun
 
 ## Repository completion gate
 
-The final `a79bd4d` source/test state was verified with the mandatory Slice-3/M9 repository gates:
+The original M9 `a79bd4d` source/test state was verified with the mandatory Slice-3/M9 repository gates:
 
 ```text
 uv run pytest -q
@@ -168,6 +169,33 @@ uv run lint-imports
 git diff --check
 passed
 ```
+
+Post-review remediation at `142a18d` corrected the pair-blind warm-up to reserve one more price observation than the required return count and extended the no-network vertical to cover a completed direct edge together with a scout-only indirect edge. Verification after that remediation:
+
+```text
+uv run pytest -q tests/scenarios/test_scanner_slice3.py
+1 passed in 96.17s
+
+uv run ruff check .
+All checks passed!
+
+uv run ruff format --check .
+345 files already formatted
+
+uv run pyright src tests scripts
+0 errors, 0 warnings, 0 informations
+
+uv run python scripts/check_source_size.py
+source-size: ok (24 review warnings; no >700-line hard failure)
+
+uv run lint-imports
+8 contracts kept, 0 broken
+
+git diff --check
+passed
+```
+
+The current whole-repository `uv run pytest -q` result after `142a18d` was `665 passed, 1 skipped, 2 failed`. Both failures are in `tests/contract/api/test_openapi.py` and are caused by later Slice-4 API work: the test still expects the former read-only operation-ID set and the former `QAP Research Evidence API` title while the current application exposes the new Slice-4 command/query surface and `QAP Research Application API` title. Neither failure touches the Slice-3 remediation files or invalidates the targeted Slice-3 scenario above.
 
 The 500-700 line source-size warnings remain review tripwires only. No current hand-written source file exceeds the repository hard limit; the new basket scanner adapter is 495 lines.
 
