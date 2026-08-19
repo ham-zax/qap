@@ -1,6 +1,6 @@
 # QAP Plan Map
 
-**Status:** Implementation is complete through Phase 16. Phase 17 Product Layer M0-M3 are complete and integrated; M4 current-approved policy + explainable backend readiness/safe cutoff is the current implementation frontier, with read-only M5 Research/funnel reconnaissance allowed in parallel. The completed Phase-16 shell remains partially visible until later Phase-17 IA milestones deliberately supersede it.
+**Status:** Implementation is complete through Phase 16. Phase 17 Product Layer M0-M4 are complete and integrated; M5 self-explanatory Research + truthful discovery funnel/primary IA is the current implementation frontier, with read-only M6 longitudinal/evidence-layer reconnaissance allowed in parallel. The completed Phase-16 shell remains partially visible until later Phase-17 IA milestones deliberately supersede it.
 
 Update context — 2026-08-19 (Phase-17 design freeze)
 Trigger: post-Phase-16 investigation of clean-install operation showed that the remaining product problem is not another visual pass: QAP lacks an explicit operator-approved research universe, production market-data preparation/refresh, immutable source generations/provenance, honest current-approved versus historical-PIT claim separation, and persistent current-evidence collection.
