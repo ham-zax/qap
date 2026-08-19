@@ -291,31 +291,46 @@ The no-additional-participant branch has been exercised: the recommended IA/term
 
 ## 10. Milestone 4 — Forward Validation and Current Capital experience
 
-**Status:** stopped before source mutation at the documented capture-readiness boundary. See `docs/research/2026-08-19-qap-phase16-m4-boundary-stop-handoff.md`.
+**Status:** complete. The documented capture-readiness boundary fired and was resolved by the bounded backend read composition below. See `docs/research/2026-08-19-qap-phase16-m4-boundary-stop-handoff.md` for the stop evidence.
 
 **Files:**
 
+- Create: `src/qap/api/capture_views.py`
+- Modify: `src/qap/api/scanner_schemas.py`
+- Modify: `src/qap/api/routes/scanner.py`
+- Regenerate: `web/openapi.json`, `web/src/api/schema.d.ts`
+- Modify: `web/src/api/client.ts`, `web/src/api/types.ts`
 - Modify: `web/src/features/prospective/ProspectiveHome.tsx`
 - Modify: `web/src/features/prospective/ProspectiveDetail.tsx`
+- Create: `web/src/features/prospective/ProspectiveAssessmentResults.tsx`
+- Create: `web/src/features/prospective/ProspectiveEvidenceSections.tsx`
 
 **Interfaces:**
 
-- Consumes: existing freeze/advance/capture/qualification commands and prospective/qualification read models.
+- Consumes: existing freeze/advance/capture/qualification commands and prospective/qualification read models, plus the bounded read-only `CaptureReadinessDto` composition.
 - Produces: causal cross-session validation UX with guided evidence readiness.
+- New read only: `GET /api/forward/cohorts/{cohort_id}/capture-readiness?checkpoint_id=...&as_of=...`.
+
+**Boundary resolution decision:**
+
+- The read composes only already-authoritative lineage: the selected completed forward checkpoint, its frozen candidate, the frozen QAP deep-replay execution instrument, existing public-capture artifacts, and the existing backend-owned `evaluate_capture_contract(...)` policy.
+- It returns the authoritative venue/symbol/base/quote identity, L1/depth captured-versus-expected coverage, metadata availability, overall readiness, and the finite missing capture kinds.
+- All seven mutation commands remain unchanged. The browser still invokes the existing `capture_public_evidence` command one capture kind at a time; no generic job/capture API is introduced.
+- React may present the returned readiness and choose the first returned missing finite capture kind for the guided next action, but it must not recompute capture coverage, market identity, capacity, or qualification truth.
 
 **Steps:**
 
-- [ ] Present list items as Forward Validations rather than cohort records in the primary layer.
-- [ ] Show the frozen research idea, freeze time, predefined horizon/maturity, and current stage.
-- [ ] Add a visual temporal boundary between historical evidence and later evidence.
-- [ ] Rename primary `Advance cohort` action to `Update forward evidence`; explain that QAP applies the frozen horizon and the operator is only advancing through available information.
-- [ ] Present partial vs matured outcomes in plain language without calling partial evidence a failure.
-- [ ] Replace the current three equal-weight command cards with a staged task hierarchy: update forward evidence → ensure current market evidence → evaluate amount.
-- [ ] Build a current-evidence readiness summary from existing read-model facts before exposing capture mechanics.
-- [ ] When capture is needed, guide the existing bounded capture commands contextually. Venue symbol/base/quote/capture kind belong in Advanced/manual capture unless they cannot be inferred safely from authoritative evidence.
-- [ ] Present qualification as `Current capital assessment`, asking primarily for `Amount to evaluate` and the relevant as-of/current state.
-- [ ] Present the result in plain language with explicit no-live-authority text.
-- [ ] Keep exact state, q-safe values, gates, snapshot IDs, checkpoint IDs, and request details under evidence/audit disclosure.
+- [x] Present list items as Forward Validations rather than cohort records in the primary layer.
+- [x] Show the frozen research idea, freeze time, predefined horizon/maturity, and current stage.
+- [x] Add a visual temporal boundary between historical evidence and later evidence.
+- [x] Rename primary `Advance cohort` action to `Update forward evidence`; explain that QAP applies the frozen horizon and the operator is only advancing through available information.
+- [x] Present partial vs matured outcomes in plain language without calling partial evidence a failure.
+- [x] Replace the current three equal-weight command cards with a staged task hierarchy: update forward evidence → ensure current market evidence → evaluate amount.
+- [x] Build a current-evidence readiness summary from existing read-model facts before exposing capture mechanics.
+- [x] When capture is needed, guide the existing bounded capture commands contextually. Venue symbol/base/quote/capture kind belong in Advanced/manual capture unless they cannot be inferred safely from authoritative evidence.
+- [x] Present qualification as `Current capital assessment`, asking primarily for `Amount to evaluate` and the relevant as-of/current state.
+- [x] Present the result in plain language with explicit no-live-authority text.
+- [x] Keep exact state, q-safe values, gates, snapshot IDs, checkpoint IDs, and request details under evidence/audit disclosure.
 
 **Boundary checkpoint:**
 

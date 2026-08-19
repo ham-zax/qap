@@ -1,10 +1,12 @@
-"""Read-only Scanner-V1 discovery and prospective routes."""
+"""Scanner-V1 discovery, prospective reads, and bounded commands."""
 
+from datetime import datetime
 from typing import cast
 
 from fastapi import APIRouter, Request
 from pydantic import JsonValue
 
+from qap.api.capture_views import forward_capture_readiness
 from qap.api.operations import OperationKind
 from qap.api.routes.operations import operation_manager
 from qap.api.scanner_schemas import (
@@ -12,6 +14,7 @@ from qap.api.scanner_schemas import (
     CandidateDetailDto,
     CandidateListDto,
     CapturePublicEvidenceRequestDto,
+    CaptureReadinessDto,
     ForwardCohortDetailDto,
     ForwardCohortListDto,
     FreezeForwardCohortRequestDto,
@@ -25,6 +28,7 @@ from qap.api.scanner_schemas import (
 )
 from qap.api.scanner_views import ScannerArtifactReader
 from qap.api.schemas import ApiDto
+from qap.api.settings import ApiSettings
 
 router = APIRouter(tags=["scanner"])
 
@@ -168,6 +172,28 @@ def forward_cohort_detail(
     request: Request,
 ) -> ForwardCohortDetailDto:
     return _reader(request).forward_cohort_detail(cohort_id)
+
+
+@router.get(
+    "/api/forward/cohorts/{cohort_id}/capture-readiness",
+    response_model=CaptureReadinessDto,
+    operation_id="getForwardCaptureReadiness",
+)
+def forward_capture_readiness_route(
+    cohort_id: str,
+    checkpoint_id: str,
+    as_of: datetime,
+    request: Request,
+) -> CaptureReadinessDto:
+    settings = cast(ApiSettings, request.app.state.settings)
+    capture_root = settings.capture_root or (settings.run_root / "public-capture")
+    return forward_capture_readiness(
+        detail=_reader(request).forward_cohort_detail(cohort_id),
+        run_root=settings.run_root,
+        capture_root=capture_root,
+        checkpoint_id=checkpoint_id,
+        as_of=as_of,
+    )
 
 
 @router.post(

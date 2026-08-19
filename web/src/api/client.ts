@@ -17,6 +17,7 @@ type CandidateListDto = components['schemas']['CandidateListDto']
 type CandidateDetailDto = components['schemas']['CandidateDetailDto']
 type ForwardCohortListDto = components['schemas']['ForwardCohortListDto']
 type ForwardCohortDetailDto = components['schemas']['ForwardCohortDetailDto']
+type CaptureReadinessDto = components['schemas']['CaptureReadinessDto']
 type BasketListDto = components['schemas']['BasketListDto']
 type BasketDetailDto = components['schemas']['BasketDetailDto']
 type OperationRefDto = components['schemas']['OperationRefDto']
@@ -148,6 +149,18 @@ export function createApiClient({
       request<ForwardCohortDetailDto>(
         `/api/forward/cohorts/${encodeURIComponent(cohortId)}`,
       ),
+    getForwardCaptureReadiness: (
+      cohortId: string,
+      options: { checkpointId: string; asOf: string },
+    ) => {
+      const query = new URLSearchParams({
+        checkpoint_id: options.checkpointId,
+        as_of: options.asOf,
+      })
+      return request<CaptureReadinessDto>(
+        `/api/forward/cohorts/${encodeURIComponent(cohortId)}/capture-readiness?${query}`,
+      )
+    },
     listBaskets: () => request<BasketListDto>('/api/baskets'),
     getBasket: (basketId: string) =>
       request<BasketDetailDto>(`/api/baskets/${encodeURIComponent(basketId)}`),

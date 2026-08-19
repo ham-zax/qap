@@ -158,6 +158,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/forward/cohorts/{cohort_id}/capture-readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Forward Capture Readiness Route */
+        get: operations["getForwardCaptureReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -843,6 +860,63 @@ export interface components {
             venue: "binance" | "gate";
             /** Venue Symbol */
             venue_symbol: string;
+        };
+        /** CaptureReadinessDto */
+        CaptureReadinessDto: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Base Asset */
+            base_asset: string;
+            /** Checkpoint Id */
+            checkpoint_id: string;
+            /** Cohort Id */
+            cohort_id: string;
+            /** Depth Captured Slots */
+            depth_captured_slots: number;
+            /** Depth Expected Slots */
+            depth_expected_slots: number;
+            /** Depth Overall Coverage */
+            depth_overall_coverage: string;
+            /** L1 Captured Slots */
+            l1_captured_slots: number;
+            /** L1 Expected Slots */
+            l1_expected_slots: number;
+            /** L1 Overall Coverage */
+            l1_overall_coverage: string;
+            /** Metadata Available */
+            metadata_available: boolean;
+            /** Missing Capture Kinds */
+            missing_capture_kinds: ("l1" | "depth" | "metadata")[];
+            /** Quote Asset */
+            quote_asset: string;
+            /** Ready */
+            ready: boolean;
+            /**
+             * Schema Version
+             * @default qap.api.capture_readiness.v1
+             * @constant
+             */
+            schema_version: "qap.api.capture_readiness.v1";
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+            /** Venue Symbol */
+            venue_symbol: string;
+            /**
+             * Window End
+             * Format: date-time
+             */
+            window_end: string;
+            /**
+             * Window Start
+             * Format: date-time
+             */
+            window_start: string;
         };
         /** ComponentSpec */
         ComponentSpec: {
@@ -2719,6 +2793,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getForwardCaptureReadiness: {
+        parameters: {
+            query: {
+                checkpoint_id: string;
+                as_of: string;
+            };
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureReadinessDto"];
                 };
             };
             /** @description Validation Error */

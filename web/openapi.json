@@ -1151,6 +1151,126 @@
         "title": "CapturePublicEvidenceRequestDto",
         "type": "object"
       },
+      "CaptureReadinessDto": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "base_asset": {
+            "title": "Base Asset",
+            "type": "string"
+          },
+          "checkpoint_id": {
+            "title": "Checkpoint Id",
+            "type": "string"
+          },
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "depth_captured_slots": {
+            "title": "Depth Captured Slots",
+            "type": "integer"
+          },
+          "depth_expected_slots": {
+            "title": "Depth Expected Slots",
+            "type": "integer"
+          },
+          "depth_overall_coverage": {
+            "title": "Depth Overall Coverage",
+            "type": "string"
+          },
+          "l1_captured_slots": {
+            "title": "L1 Captured Slots",
+            "type": "integer"
+          },
+          "l1_expected_slots": {
+            "title": "L1 Expected Slots",
+            "type": "integer"
+          },
+          "l1_overall_coverage": {
+            "title": "L1 Overall Coverage",
+            "type": "string"
+          },
+          "metadata_available": {
+            "title": "Metadata Available",
+            "type": "boolean"
+          },
+          "missing_capture_kinds": {
+            "items": {
+              "enum": [
+                "l1",
+                "depth",
+                "metadata"
+              ],
+              "type": "string"
+            },
+            "title": "Missing Capture Kinds",
+            "type": "array"
+          },
+          "quote_asset": {
+            "title": "Quote Asset",
+            "type": "string"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "schema_version": {
+            "const": "qap.api.capture_readiness.v1",
+            "default": "qap.api.capture_readiness.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "title": "Venue Symbol",
+            "type": "string"
+          },
+          "window_end": {
+            "format": "date-time",
+            "title": "Window End",
+            "type": "string"
+          },
+          "window_start": {
+            "format": "date-time",
+            "title": "Window Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cohort_id",
+          "checkpoint_id",
+          "as_of",
+          "window_start",
+          "window_end",
+          "venue",
+          "venue_symbol",
+          "base_asset",
+          "quote_asset",
+          "l1_expected_slots",
+          "l1_captured_slots",
+          "l1_overall_coverage",
+          "depth_expected_slots",
+          "depth_captured_slots",
+          "depth_overall_coverage",
+          "metadata_available",
+          "ready",
+          "missing_capture_kinds"
+        ],
+        "title": "CaptureReadinessDto",
+        "type": "object"
+      },
       "ComponentSpec": {
         "additionalProperties": false,
         "properties": {
@@ -6011,6 +6131,67 @@
           }
         },
         "summary": "Advance Forward Cohort",
+        "tags": [
+          "scanner"
+        ]
+      }
+    },
+    "/api/forward/cohorts/{cohort_id}/capture-readiness": {
+      "get": {
+        "operationId": "getForwardCaptureReadiness",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "checkpoint_id",
+            "required": true,
+            "schema": {
+              "title": "Checkpoint Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "as_of",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "As Of",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureReadinessDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Forward Capture Readiness Route",
         "tags": [
           "scanner"
         ]

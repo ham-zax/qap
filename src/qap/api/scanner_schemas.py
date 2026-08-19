@@ -246,6 +246,30 @@ class ForwardCohortDetailDto(ApiDto):
     qualifications: tuple[QualificationDto, ...]
 
 
+class CaptureReadinessDto(ApiDto):
+    schema_version: Literal["qap.api.capture_readiness.v1"] = (
+        "qap.api.capture_readiness.v1"
+    )
+    cohort_id: str
+    checkpoint_id: str
+    as_of: datetime
+    window_start: datetime
+    window_end: datetime
+    venue: Literal["binance", "gate"]
+    venue_symbol: str
+    base_asset: str
+    quote_asset: str
+    l1_expected_slots: int
+    l1_captured_slots: int
+    l1_overall_coverage: str
+    depth_expected_slots: int
+    depth_captured_slots: int
+    depth_overall_coverage: str
+    metadata_available: bool
+    ready: bool
+    missing_capture_kinds: tuple[Literal["l1", "depth", "metadata"], ...]
+
+
 class ScannerPinRequestDto(ApiDto):
     venue: Literal["binance", "gate"]
     asset_a: str
@@ -334,6 +358,7 @@ __all__ = [
     "CandidateFreezeDto",
     "CandidateListDto",
     "CandidateSummaryDto",
+    "CaptureReadinessDto",
     "CapturePublicEvidenceRequestDto",
     "ForwardCheckpointDto",
     "ForwardCohortDetailDto",

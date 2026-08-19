@@ -15,22 +15,22 @@ export function ProspectiveHome({ data }: ProspectiveHomeProps) {
     <section className="min-w-0">
       <header className="mb-8 max-w-4xl">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
-          Scanner V1 forward evidence
+          Validate
         </p>
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          Prospective
+          Forward validations
         </h1>
         <p className="m-0 text-sm leading-6 text-secondary md:text-base">
-          Frozen candidates, forward checkpoints, public microstructure evidence, and
-          explicit-capital qualifications. Pair actionability remains distinct from
-          basket research.
+          Follow research ideas that were frozen before later evidence, update current
+          market evidence when needed, and evaluate hypothetical capital without
+          implying live-trading authority.
         </p>
       </header>
 
       {data.items.length === 0 ? (
         <p className="text-secondary">
-          No forward cohorts exist yet. Freeze an eligible historical survivor from
-          Discovery.
+          No forward validations exist yet. Start one from an eligible research idea in
+          Discover.
         </p>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -46,7 +46,7 @@ export function ProspectiveHome({ data }: ProspectiveHomeProps) {
                 {cohort.horizon ? <Badge tone="info">{cohort.horizon}</Badge> : null}
               </div>
               <h2 className="mt-4 mb-2 text-base font-semibold text-foreground">
-                Cohort {shortId(cohort.cohort_id)}
+                Forward validation {shortId(cohort.cohort_id)}
               </h2>
               {cohort.freeze_at ? (
                 <p className="m-0 text-sm text-secondary">
@@ -55,13 +55,13 @@ export function ProspectiveHome({ data }: ProspectiveHomeProps) {
               ) : null}
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="m-0 text-xs text-muted">Automatic members</p>
+                  <p className="m-0 text-xs text-muted">Automatic ideas</p>
                   <p className="mt-1 mb-0 font-semibold text-foreground">
                     {cohort.automatic_member_count ?? 0}
                   </p>
                 </div>
                 <div>
-                  <p className="m-0 text-xs text-muted">Manual members</p>
+                  <p className="m-0 text-xs text-muted">Manual ideas</p>
                   <p className="mt-1 mb-0 font-semibold text-foreground">
                     {cohort.manual_member_count ?? 0}
                   </p>
@@ -73,7 +73,7 @@ export function ProspectiveHome({ data }: ProspectiveHomeProps) {
                   </p>
                 </div>
                 <div>
-                  <p className="m-0 text-xs text-muted">Qualifications</p>
+                  <p className="m-0 text-xs text-muted">Capital assessments</p>
                   <p className="mt-1 mb-0 font-semibold text-foreground">
                     {cohort.qualification_count ?? 0}
                   </p>
@@ -86,7 +86,7 @@ export function ProspectiveHome({ data }: ProspectiveHomeProps) {
                 className="mt-5 inline-flex min-h-11 items-center font-semibold text-accent"
                 href={`/prospective/${cohort.cohort_id}`}
               >
-                Inspect forward evidence
+                Continue validation
               </a>
             </article>
           ))}
