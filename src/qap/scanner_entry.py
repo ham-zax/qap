@@ -210,6 +210,13 @@ def _historical_replay_template(
         warmup=(
             manifest.effective_evaluation_window().start - manifest.data_window.start
         ),
+        evidence_source_paths=tuple(
+            sorted(
+                (source.dataset_id, source.relative_path)
+                for source in manifest.data_sources
+                if source.instrument_id in evidence_ids
+            )
+        ),
     )
 
 

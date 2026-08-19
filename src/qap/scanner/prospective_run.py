@@ -22,7 +22,7 @@ from qap.scanner.artifact_schemas import (
     SCOUT_SCHEMA,
 )
 from qap.scanner.artifacts import discover_completed_scans
-from qap.scanner.catalog import ScannerCatalog, load_scanner_catalog
+from qap.scanner.catalog import ScannerCatalog
 from qap.scanner.models import ScanDefinition, ScanInputIdentity
 from qap.scanner.prospective import (
     CandidateFreeze,
@@ -64,6 +64,7 @@ class HistoricalReplayTemplate:
     data_source_dataset_ids: tuple[str, ...]
     model_parameters: tuple[tuple[str, str], ...]
     warmup: timedelta
+    evidence_source_paths: tuple[tuple[str, str], ...] = ()
 
 
 HistoricalTemplateLoader = Callable[[str, Path], HistoricalReplayTemplate]
@@ -158,7 +159,6 @@ def _active_freezes(
 def _historical_selection_lineage(
     *,
     data_root: Path,
-    catalog: ScannerCatalog,
     template: HistoricalReplayTemplate,
     definition: ScanDefinition,
     horizon: ScannerHorizon,
@@ -172,11 +172,30 @@ def _historical_selection_lineage(
         duration for _template, duration in horizon_rule.template_windows
     )
     admitted = set(definition.input_slices)
+    historical_paths = dict(template.evidence_source_paths)
+    expected_ids = {
+        dataset_id for dataset_id, _fingerprint in template.evidence_sources
+    }
+    if set(historical_paths) != expected_ids:
+        raise ProspectiveRunError(
+            "historical survivor physical source lineage is incomplete"
+        )
     source_fingerprints: list[str] = []
     slice_fingerprints: list[str] = []
     for dataset_id, expected_fingerprint in template.evidence_sources:
-        source = catalog.source(dataset_id)
-        series = read_parquet_bar_series(data_root / source.relative_path)
+        root = data_root.resolve()
+        try:
+            source_path = (root / historical_paths[dataset_id]).resolve(strict=True)
+            source_path.relative_to(root)
+        except (OSError, ValueError) as exc:
+            raise ProspectiveRunError(
+                "historical survivor physical source is unavailable"
+            ) from exc
+        if not source_path.is_file():
+            raise ProspectiveRunError(
+                "historical survivor physical source is unavailable"
+            )
+        series = read_parquet_bar_series(source_path)
         evaluated = evaluate_series(
             series,
             dataset_id=dataset_id,
@@ -220,7 +239,6 @@ def freeze_completed_scan(
     frozen_at = _utc(freeze_at, field="freeze_at")
     scan_directory = _scan_directory(root, scan_id)
     definition = _scan_definition(scan_directory)
-    catalog = load_scanner_catalog(data)
     if definition.scan_id != scan_id:
         raise ProspectiveRunError("requested scan identity mismatch")
     if definition.eligible_information_end > frozen_at:
@@ -255,7 +273,6 @@ def freeze_completed_scan(
         template = load_historical_template(run_id, root)
         source_fingerprints, slice_fingerprints = _historical_selection_lineage(
             data_root=data,
-            catalog=catalog,
             template=template,
             definition=definition,
             horizon=horizon,

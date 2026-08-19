@@ -26,6 +26,7 @@ from qap.api.routes import (
 from qap.api.scanner_views import ScannerArtifactReader
 from qap.api.schemas import ErrorDetailDto, ErrorEnvelopeDto
 from qap.api.settings import ApiSettings
+from qap.product_market_data import ProductMarketData
 from qap.product_universe import ProductUniverse
 
 
@@ -67,6 +68,10 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.state.scanner_reader = ScannerArtifactReader(settings.run_root)
     app.state.basket_reader = BasketArtifactReader(settings.run_root)
     app.state.product_universe = ProductUniverse(settings.run_root)
+    app.state.product_market_data = ProductMarketData(
+        settings.run_root,
+        settings.market_data_root,
+    )
     app.state.operation_manager = OperationManager(settings)
     app.add_middleware(
         CORSMiddleware,
