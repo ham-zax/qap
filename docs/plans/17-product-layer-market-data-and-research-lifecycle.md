@@ -1,12 +1,14 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M9 are complete and integrated. The selective legacy-QAP salvage amendment is approved. Full M8 now provides longitudinal History/utility Activity plus claim-aware manual Portfolio presentation over the immutable Product basket provenance/source-binding foundation. M9 closes the demonstrated local lifecycle gaps with exact maintenance-owner recovery, bounded launcher startup readiness, live collector-status refresh, and operator wording; current evidence does not justify Tauri or another desktop shell for Product V1. M10 representative-user comprehension/authority closure is the sole remaining Phase-17 acceptance gate.
+**Status:** M0-M9 are complete and integrated. M10 is REOPENED IN DESIGN REVIEW after a real-user iPhone walkthrough showed that the Product exposes setup/governance machinery before the primary research jobs. Follow-up review clarified that the missing capability is broader than a Pair Research UI: QAP needs a typed Research Recipe / capability-preflight layer so a researcher can declare a method, check whether QAP can reproduce it faithfully, understand exact unsupported/blocked/data-readiness reasons, and only then execute it through existing experiment/scanner authority. M10-0 owns this design amendment; no M10 implementation is authorized until review.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
 **Investigation evidence:** `docs/research/2026-08-19-qap-product-layer-investigation.md`
 
 **Legacy salvage evidence:** `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`
+
+**Research cockpit investigation:** `docs/research/2026-08-20-qap-research-cockpit-investigation.md`
 
 **Trigger:** Phase 16 is complete, but a clean QAP workspace still depends on expert/manual preparation of admissible assets, scanner market-data catalog state, longitudinal refreshes, and current public-evidence collection. That makes the application understandable only after hidden operational prerequisites have already been satisfied.
 
@@ -44,7 +46,7 @@ Phase 17 selectively adopts the following patterns inside current QAP owners:
 - **M7:** ownership/hidden-state review before adding long-lived collector state;
 - **M8:** inventory/HODL-relative product-intent evidence in Portfolio/History presentation, without changing current QAP economics;
 - **M9:** explicit process/state ownership and recovery analysis before any packaging decision;
-- **M10:** comprehension checks for authority, evidence layer, negative results, and approval/readiness distinctions.
+- **M10:** research-intent-first Pair/Universe UX plus a typed Research Recipe/capability-preflight layer that can explain exact support, fidelity, readiness, and constitution blockers before execution; representative-user comprehension remains the final gate.
 
 The following legacy patterns are explicitly rejected for Phase 17:
 
@@ -699,31 +701,224 @@ Packaging must preserve loopback/local authority and the live-capital `NO-GO` bo
 
 M9 completed without a desktop dependency. The mature Product-V1 runtime remains launcher + loopback API + web + one Local Market collector + detached bounded scientific workers. Product market-data maintenance now persists exact PID/process-start ownership and converts an orphaned `running` row into explicit failed/interrupted operational evidence on owner restart. The launcher proves API health, exact workspace identity, web readiness, and Local Market collector health before printing `QAP workbench ready.`; the open shell refreshes workspace/collector health periodically. Tauri remains deferred because no representative-user or runtime evidence currently shows that a desktop shell is the smallest required solution.
 
-## 13. Milestone 10 - Representative-user comprehension closure
+## 13. Milestone 10 - Research Cockpit + typed Experiment Lab + representative-user closure
 
-**Purpose:** Validate that the Product Layer is understandable, not merely clickable.
+**Status:** REOPENED / DESIGN REVIEW. The first real-user mobile walkthrough invalidated the assumption that M10 was only a final comprehension study. The follow-up clarification makes the correction broader than a Pair Research UI: QAP needs a first-class **research recipe / capability-preflight layer** so an operator can declare a method, type-check it, learn exactly why it is or is not supported, and execute it only when it compiles faithfully to current QAP authority.
 
-Representative users should complete realistic tasks without developer coaching and then explain:
+**Investigation:** `docs/research/2026-08-20-qap-research-cockpit-investigation.md`
 
-- which assets QAP researched;
-- why those assets were included;
-- which venue/data cutoff applied;
-- why a Research Idea appeared;
-- difference between original historical, later forward, and current evidence;
-- difference between task failure, incomplete evidence, and negative research;
-- what a hypothetical-capital assessment means;
-- whether QAP recommends or can place a live trade.
+### M10-0 - Research Cockpit + Experiment Contract design amendment - CURRENT
 
-They must also be able to distinguish:
+**Purpose:** Freeze the corrected Product research journey and the smallest typed experiment contract before further implementation.
 
-- approved asset versus data-ready asset;
-- data/readiness failure versus valid negative research;
-- relationship evidence versus economic implementation versus later/current evidence;
-- a valid zero/neutral result versus application failure.
+The normal Research surface remains organized around user intent:
 
-The final answer to the last question must be **no**.
+```text
+Research
+  -> Research a pair
+  -> Scan my universe
+  -> Focus scan (one asset against the approved universe), if approved
+  -> Experiment Lab (advanced)
+```
 
-Misunderstanding of a protected concept triggers design review rather than a frontend workaround that changes scientific meaning.
+The advanced experiment flow is:
+
+```text
+Draft research recipe
+-> Check support
+-> inspect exact support/fidelity/readiness reasons
+-> compile only supported semantics to frozen QAP ExperimentManifest(s)
+-> run through existing replay/economics
+-> retain recipe + compiled-manifest lineage
+```
+
+M10-0 must review and decide:
+
+- Pair Research semantics for a concrete pair such as `W / BTC`;
+- explicit Universal Scan semantics over the current approved-ready universe;
+- whether Focus Scan is a first-class secondary mode;
+- the Research Recipe envelope separating research object, relationship/evidence method, decision rule, allocation/rebalance, risk overlays, parameter-selection/calibration, execution/costs, benchmarks/evaluation, and data role;
+- support/fidelity states and typed reason codes;
+- one explicit versioned capability catalog rather than a plugin/runtime registry;
+- the compile-down boundary to existing `ExperimentManifest`, `research_family_id`, data-role/final-OOS, replay, controls, and immutable provenance;
+- exact-first asset search and mobile selected-item behavior;
+- just-in-time identity/admission/data setup that preserves the user's unfinished research draft;
+- what independent identity evidence can be shown safely to a non-expert user.
+
+No runtime/scientific implementation is authorized by M10-0. Do not amend the frozen design spec until these decisions are reviewed.
+
+### M10-A - Typed Research Recipe + Capability Preflight - BLOCKED ON M10-0 APPROVAL
+
+Implement the smallest backend domain/API owner that can answer **before execution** whether a declared recipe is representable, executable, claim-compatible, and data-ready.
+
+#### Required recipe decomposition
+
+Do not treat `model` as one catch-all field. The recipe must be able to declare, separately:
+
+```text
+research object
+relationship / evidence method
+signal / decision rule
+allocation / rebalance policy
+risk overlays
+selection / calibration protocol
+execution + costs
+benchmarks + evaluation / data role
+source/reference metadata when reproducing published research
+```
+
+#### Required support states
+
+At minimum:
+
+```text
+runnable_exact
+runnable_after_setup
+adaptation_possible
+diagnostic_only
+unsupported
+blocked_by_constitution
+invalid
+```
+
+`adaptation_possible` must never be presented as an exact reproduction.
+
+#### Required typed reason categories
+
+The checker needs a bounded reason vocabulary that can distinguish, for example:
+
+```text
+unknown_method
+known_method_not_implemented
+method_not_admitted_for_replay
+method_has_no_current_data_contract
+unsupported_research_object
+incompatible_component_combination
+requires_short_position
+requires_leverage_or_borrow
+requires_derivative
+requires_unimplemented_risk_overlay
+requires_unimplemented_parameter_selection
+requires_unimplemented_walk_forward_protocol
+requires_unavailable_numerical_backend
+requires_missing_identity_confirmation
+requires_operator_asset_approval
+requires_market_data
+requires_real_direct_market
+current_claim_incompatible
+strict_pit_evidence_required
+cannot_claim_faithful_replication
+adaptation_available
+```
+
+Each reason must identify the failing recipe component, distinguish missing implementation from missing setup/data from a protected constitution boundary, and identify the nearest current capability when one exists.
+
+#### Capability catalog
+
+Use one explicit in-code/versioned catalog. Do **not** add generic plugins, dynamic imports, arbitrary Python execution, or runtime strategy registration.
+
+The initial catalog should describe existing QAP capabilities first:
+
+- rolling log-ratio relationship evidence;
+- rolling residual/OLS relationship evidence;
+- slow momentum;
+- cross-sectional relative log return;
+- scheduled targets;
+- basket graph policy;
+- current control specifications;
+- direct and admitted bridge execution modes;
+- current data-role/final-OOS and economic-claim constraints.
+
+The catalog may include a small number of **known but unimplemented** named methods solely to explain support status, such as Student-t Copula. Such entries are non-executable and cannot dispatch code.
+
+#### Compile down, do not build a second backtester
+
+A recipe may compile only to:
+
+- one existing `ExperimentManifest`; or
+- an explicit finite family of sibling manifests under one `research_family_id` when the recipe declares precommitted variants.
+
+Existing immutable data fingerprints, code provenance, controls, HODL/economic comparison, negative results, final-OOS reservation/consumption, and artifact ownership remain authoritative.
+
+The check/preflight operation is read-only: it must not download data, mutate admission, consume OOS, or start a scientific run.
+
+### M10-B - Research Cockpit + Experiment Lab Product Surface - BLOCKED ON M10-A
+
+Build the user-facing surface on top of the typed recipe/preflight boundary.
+
+Required modes:
+
+```text
+PAIR RESEARCH
+select Asset A + Asset B
+-> choose one Product timeframe
+-> default versioned QAP pair-comparison recipe
+-> resolve genuine setup blockers without losing the draft
+-> run existing current-approved scanner/replay authority
+-> compare relationship/model/economic evidence
+
+UNIVERSAL SCAN
+show approved/ready scope
+-> choose one Product timeframe
+-> Scan my universe
+-> truthful backend stage funnel
+-> inspect retained/replayed/rejected/Research-Idea relationships
+
+EXPERIMENT LAB
+choose research object
+-> choose/define catalogued research recipe and declared parameters/variants
+-> choose data role/evaluation protocol
+-> Check support
+-> inspect exact blockers/adaptations
+-> run only if the recipe compiles faithfully to current QAP authority
+```
+
+Focus Scan may join the same surface if M10-0 approves it and the scope seam remains bounded.
+
+Default Pair Research should keep a versioned QAP method family so novices do not accidentally redefine the Product claim. Experiment Lab, however, **may allow explicit method/parameter selection** because those variants are predeclared and retained under research-family/data-role semantics rather than silently selected after outcomes.
+
+Asset/setup behavior still requires:
+
+- exact symbol match before prefix before substring/other matches;
+- selecting an asset collapses/replaces the long result list on mobile;
+- unresolved identity becomes a bounded `needs one-time setup` interruption;
+- identity and approval remain separate backend authorities;
+- ticker equality never becomes identity proof;
+- pair/universe readiness is shown in user-task language;
+- protocol IDs, fingerprints, physical generation paths, and other audit vocabulary remain available under progressive disclosure.
+
+### M10-C - Capability/Fidelity proof with real research methods - BLOCKED ON M10-A/B
+
+Prove the machinery with deliberately different cases. This milestone validates the support checker; it does **not** require implementing every method.
+
+1. **Current rolling-residual pair recipe** — reaches `runnable_exact` or `runnable_after_setup` for a compatible pair.
+2. **Current slow-momentum recipe** — explains that it is asset evidence/policy rather than automatically a pair-relationship model.
+3. **Student-t Copula recipe** — returns `known_method_not_implemented` / no current QAP model/data/policy contract; it must not falsely claim the selected pair itself is incompatible.
+4. **Rafael Baptista Palazzi 2025 exact-replication recipe** — identifies related OLS/z-score capability but blocks faithful reproduction where the paper requires semantics current QAP does not support, including long-short positions and undeclared selection/risk mechanisms.
+5. **Palazzi-inspired QAP adaptation** — can exist only as a separately named/declared recipe if intentionally created; it must not inherit an exact-replication claim.
+6. **Unknown method ID** — returns `unknown_method`; no dynamic dispatch is attempted.
+
+Published methodologies are manually curated into typed recipes with source metadata. Phase 17 does **not** attempt automatic paper-to-code interpretation.
+
+### M10-D - Representative-user comprehension / authority closure - FINAL
+
+Only after M10-A/B/C exist should representative users complete realistic tasks without developer coaching. At minimum they must be able to:
+
+- find exact `W` without hunting through substring matches;
+- start `W / BTC` Pair Research;
+- run/understand Scan My Universe;
+- open Experiment Lab and check whether a named method/recipe is supported;
+- explain the difference between `method unsupported`, `pair/data not ready`, `blocked by QAP constitution`, and valid negative research;
+- inspect what a paper recipe actually declares about relationship evidence, decision rule, rebalance/allocation, risk, tuning/selection, benchmark, and OOS evaluation;
+- distinguish an exact replication from a QAP adaptation;
+- distinguish model/evidence from economic replay and later/current evidence;
+- recover from identity/data setup without needing provenance vocabulary;
+- distinguish approved versus data-ready assets;
+- distinguish Product current-approved research from strict historical PIT;
+- explain what a hypothetical-capital assessment means;
+- answer correctly that QAP does **not** recommend, authorize, or place live trades.
+
+Misunderstanding of a protected concept still triggers design review rather than changing scientific meaning in React.
 
 ## 14. Performance policy
 
@@ -791,7 +986,11 @@ M6  longitudinal idea + evidence-layer semantics/follow-up  COMPLETE
 M7  ownership-safe persistent current-evidence collector    COMPLETE
 M8  objective-aware Portfolios + History + utility Activity COMPLETE
 M9  process/state ownership + packaging decision            COMPLETE
-M10 representative-user comprehension/authority closure     CURRENT
+M10-0 Research Cockpit + Experiment Contract design        CURRENT / REVIEW
+M10-A typed Research Recipe + capability preflight         BLOCKED ON M10-0
+M10-B Research Cockpit + Experiment Lab                    BLOCKED ON M10-A
+M10-C capability/fidelity proof with real methods          BLOCKED ON M10-A/B
+M10-D representative-user comprehension/authority closure  FINAL / BLOCKED
 ```
 
 Do not start M5 visual/React restructuring before M1-M4 make workspace/universe/data/readiness state authoritative.
@@ -820,12 +1019,22 @@ Phase 17 is complete only when:
 - History preserves approval/readiness/research/economic-stage distinctions and explains what was learned/falsified/uncertain without becoming scientific authority;
 - primary IA is `Home | Research | Portfolios | History` with Activity as a utility;
 - negative research remains first-class evidence;
-- representative users can explain the protected meanings in M10;
+- the normal Research page exposes Pair Research and an explicit Scan My Universe flow before setup/audit machinery;
+- exact asset search prioritizes exact matches and selected setup does not disappear below a long mobile result list;
+- Pair Research preserves the selected research draft across identity/admission/data interruptions;
+- default Pair Research uses a versioned admitted QAP method family, while advanced Experiment Lab may select declared method/parameter variants only through research-family/data-role accounting;
+- Universal Scan uses backend-owned scanner stages and never invents a frontend “interestingness” score;
+- a typed Research Recipe can separate relationship evidence, decision rule, rebalance/allocation, risk overlay, parameter-selection protocol, execution/costs, benchmarks/evaluation, and data role;
+- `Check support` is read-only and distinguishes exact support, setup/data blockers, adaptations, unimplemented methods, and constitutionally forbidden semantics with typed reasons;
+- supported recipes compile downward to existing `ExperimentManifest`/replay/economic authority rather than a second backtester or plugin runtime;
+- a published method can be represented as an exact-replication recipe and receive a truthful blocked/unsupported report without being silently adapted;
+- Student-t Copula can be reported as known-but-unimplemented without claiming the selected pair itself is incompatible;
+- representative users can complete the M10-D research tasks and explain the protected meanings;
 - QAP still has no live-capital/private-exchange authority.
 
 ## 19. Fresh-agent implementation mission
 
-> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the Product Layer investigation/design, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M9 are complete and integrated. The only remaining milestone is M10 representative-user comprehension/authority closure. Do not fabricate user-study evidence or convert a misunderstanding into changed scientific meaning. Preserve `Home | Research | Portfolios | History`, strict PIT as Advanced Research, current-approved Product claim semantics, longitudinal evidence-layer distinctions, manual Portfolio authority, local-only/no-live-trade authority, and the M9 launcher/process ownership model. Testing remains opt-in under the current execution policy.
+> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the frozen Product Layer design, this plan, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and `docs/research/2026-08-20-qap-research-cockpit-investigation.md`. Phase 17 M0-M9 are complete and must not be replayed. M10 is reopened in design review: M10-0 must be approved before executable M10-A work. The core correction is a research-intent-first cockpit plus a typed Research Recipe / `Check support` layer that compiles only faithful supported recipes into existing ExperimentManifest/scanner/replay authority. Preserve strict PIT as Advanced Research, current-approved claim/readiness truth, fail-closed identity, immutable data provenance, research-family/final-OOS semantics, longitudinal evidence, manual Portfolio authority, and no-live-trade authority. Do not build a generic plugin runtime or auto-adapt published research. Copula is an example known-unimplemented method, not a required milestone. Testing remains opt-in under the current execution policy.
 
 ## 20. One-screen status
 
@@ -849,8 +1058,14 @@ Phase 17 M8-A History / utility Activity                           COMPLETE
 Phase 17 M8-B Product Portfolio presentation                      COMPLETE
 Phase 17 M9 process / state ownership + lifecycle hardening        COMPLETE
 
-NEXT / FINAL ACCEPTANCE
-Phase 17 M10 representative-user comprehension / authority closure
+CURRENT / DESIGN REVIEW
+Phase 17 M10-0 Research Cockpit + Experiment Contract design
+
+BLOCKED UNTIL REVIEW / DEPENDENCIES
+Phase 17 M10-A typed Research Recipe + capability preflight
+Phase 17 M10-B Research Cockpit + Experiment Lab
+Phase 17 M10-C capability/fidelity proof with real methods
+Phase 17 M10-D representative-user acceptance
 
 CURRENT PRIMARY IA
 Home | Research | Portfolios | History

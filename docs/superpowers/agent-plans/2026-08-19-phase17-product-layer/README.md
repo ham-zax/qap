@@ -5,15 +5,20 @@
 **Source plan:** `docs/plans/17-product-layer-market-data-and-research-lifecycle.md`
 **Investigation evidence:** `docs/research/2026-08-19-qap-product-layer-investigation.md`
 **Legacy salvage evidence:** `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`
+**Research cockpit evidence:** `docs/research/2026-08-20-qap-research-cockpit-investigation.md`
 **Frozen design base:** `1bb6e78`
-**Execution shape:** M0-M9 are integrated; the remaining M10 gate is human-led representative-user comprehension/authority acceptance, not another autonomous implementation writer
-**Current wave:** 11 — final acceptance
+**Execution shape:** M0-M9 remain integrated; M10 is reopened in design review after real-user feedback exposed both a missing Pair Research / Universal Scan cockpit and a missing typed Research Recipe / capability-preflight layer. No executable writer is authorized until M10-0 is reviewed.
+**Current wave:** 11 — M10-0 Research Cockpit + Experiment Contract design review
 
 ## Current frontier
 
 | Mission | Type | Status | Can start | Workspace | Isolation reason | Blocked by |
 |---|---|---|---|---|---|---|
-| M10 representative-user comprehension / authority closure | human-led acceptance | ready for representative participants | when representative users are available | stable integrated Product V1 on `main` | acceptance evidence must come from actual/likely users; an autonomous coding agent cannot fabricate it | none — M0-M9 integrated |
+| M10-0 Research Cockpit + Experiment Contract amendment | read-only/design planning | current / ready for review | now | stable integrated Product V1 on `main` | freezes Pair/Universe UX plus Research Recipe, support/fidelity states, capability catalog, and compile-down boundary | none — M0-M9 integrated |
+| M10-A Typed Research Recipe + capability preflight | executable backend | blocked | after M10-0 approval | not materialized | read-only `Check support`, typed reasons, faithful compile to existing experiment authority | M10-0 |
+| M10-B Research Cockpit + Experiment Lab | executable Product | blocked | after M10-A | not materialized | Pair Research, Universal Scan, Experiment Lab, exact-first search, JIT setup | M10-A |
+| M10-C capability/fidelity proof | acceptance/research | blocked | after M10-A/B | stable integrated build | proves current, unsupported, constitution-blocked, paper-replication/adaptation cases | M10-A and M10-B |
+| M10-D representative-user closure | human-led acceptance | blocked | after M10-C | stable integrated Product build | validates corrected research/experiment tasks with actual/likely users | M10-C |
 
 ## Dependency map
 
@@ -48,10 +53,22 @@ M8 Product basket provenance + History/Activity + Portfolio convergence
 M9 process/state lifecycle hardening / no-desktop-shell decision
         |
         v
-M10 representative-user comprehension / authority closure   CURRENT
+M10-0 Research Cockpit + Experiment Contract design         CURRENT
+        |
+        v
+M10-A typed Research Recipe + capability preflight
+        |
+        v
+M10-B Research Cockpit + Experiment Lab
+        |
+        v
+M10-C capability/fidelity proof with real methods
+        |
+        v
+M10-D representative-user comprehension / authority closure
 ```
 
-Full M8 is integrated through `3b7c32d`: M8-A adds backend-composed longitudinal History and utility Activity attention, while M8-B makes current-approved Product research the normal manual Portfolio source without changing basket science. M9 is integrated at `d9cb44e`: stale market-data maintenance now has exact process-owner recovery, the launcher proves API/workspace/web/collector readiness before declaring success, the UI refreshes collector health, and current evidence still does not justify Tauri. M10 is the only remaining Phase-17 gate and requires real representative-user evidence.
+Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. The first real-user mobile walkthrough then exposed a different problem: the trustworthy Product substrate exists, but normal Research does not yet expose the user's primary jobs (`W/BTC` Pair Research and an explicit Universal Scan) before identity/provenance administration. M10 is therefore reopened at M10-0 design review. The frozen Phase-17 design remains unchanged until the cockpit amendment is reviewed.
 
 ## Milestone progress
 
@@ -69,7 +86,11 @@ Full M8 is integrated through `3b7c32d`: M8-A adds backend-composed longitudinal
 | M8-A History + utility Activity | complete / integrated at `2aa60ea` | — |
 | M8-B Product Portfolio presentation | complete / integrated through `0efd728` plus claim-wording closure `3b7c32d` | — |
 | M9 process/state ownership + packaging decision | complete / integrated at `d9cb44e`; no desktop shell selected | — |
-| M10 representative-user comprehension/authority closure | current / requires representative participants | human-led acceptance |
+| M10-0 Research Cockpit + Experiment Contract design | current / review | planner + user review |
+| M10-A typed Research Recipe + capability preflight | blocked on M10-0 | future backend writer after approval |
+| M10-B Research Cockpit + Experiment Lab | blocked on M10-A | future Product writer |
+| M10-C capability/fidelity proof with real methods | blocked on M10-A/B | acceptance/research pass; no method implementation implied |
+| M10-D representative-user comprehension/authority closure | final / blocked | human-led acceptance |
 
 ## Shared contracts
 
@@ -86,23 +107,31 @@ Full M8 is integrated through `3b7c32d`: M8-A adds backend-composed longitudinal
 
 ## Workspace policy
 
-No autonomous writer is currently required. M0-M9 are integrated on `main`; former Phase-17 worktrees are historical milestone state. M10 acceptance should exercise the stable integrated Product V1 rather than a feature branch. Any remediation triggered by an observed protected-concept misunderstanding must return through normal single-writer planning rather than editing scientific meaning during the study.
+No autonomous writer is currently authorized. M0-M9 are integrated on `main`; former Phase-17 worktrees are historical milestone state. M10-0 is a design-review checkpoint, not an implementation branch. After approval, M10-A should first materialize the bounded backend Research Recipe / `Check support` boundary. Only after that contract is stable should M10-B build the Product cockpit/Experiment Lab. Copula, Palazzi-style reproduction, Momentum variants, or any other method must be classified by the capability layer; M10 does not preapprove implementing them.
 
 ## Integration policy
 
 M1 is integrated at `461a33c`, M2 at `8e45c36`, the M3 shared foundation at `1a476db`, Binance at `f1fab24`, Gate is integrated from original venue commit `30297cd`, final adaptive M3 orchestration at `c1d97eb`, M4 at `d49e597` plus planner closure `c3c81ca`, M5 at `6b40028`, M6 at `c1db648`, M7 at `d5fbddc`, M8-0 at `01e8d3e`, M8-A at `2aa60ea`, M8-B centrally at `0efd728` plus claim-wording closure `3b7c32d`, and M9 at `d9cb44e`.
 
-Full M8 and M9 are closed. No generated-contract conflict remained after M8 integration, and the combined OpenAPI/type/build contract was revalidated centrally. M10 does not unlock another implementation branch by default; it unlocks Phase-17 closure only when representative-user evidence satisfies the protected comprehension criteria.
+Full M8 and M9 are closed. No generated-contract conflict remained after M8 integration, and the combined OpenAPI/type/build contract was revalidated centrally. Real-user evidence now explicitly blocks Phase-17 closure: M10-0 must review/freeze the Research Cockpit amendment before any executable M10-A branch is created. The existing scientific design is not implicitly amended by the planning report.
 
 ## Execution lifetime policy
 
-M10 is human-led acceptance rather than a persistent coding mission. If the study spans sessions, preserve participant-independent notes, scenario coverage, observed misunderstandings, and exact evidence paths; never record secrets or fabricate participant reactions. Status/progress questions remain steering events unless the user explicitly stops/replaces the acceptance effort.
+M10-0 is a bounded design/review mission. No persistent coding process is needed while the user is reviewing the cockpit/experiment plan. If/when M10-A implementation is approved, return to normal one-writer Persistent Agent Loop execution. M10-D remains human-led acceptance; never fabricate participant reactions or usability metrics.
 
 ## Verification policy
 
-### M10 — representative-user comprehension / authority closure
+### M10-0 — Research Cockpit + Experiment Contract design review
 
-Use actual/likely users, including limited technical/trading expertise and low digital skill/accessibility where possible. Ask them to complete realistic Product tasks without developer coaching and then explain the protected concepts in their own words. Record qualitative evidence only; do not fabricate quantitative usability metrics. A misunderstanding of a protected scientific/authority concept triggers design review and, if needed, a separately scoped remediation cycle rather than redefining the concept in the acceptance notes.
+Review `docs/research/2026-08-20-qap-research-cockpit-investigation.md` against the current backend and legacy product-intent evidence. No implementation until Pair Research, Universal Scan, optional Focus Scan, Research Recipe decomposition, support/fidelity states, typed reasons, capability catalog, and faithful compile-down semantics are explicitly approved.
+
+### M10-C — capability/fidelity proof
+
+Use representative recipes rather than new method implementations: a current rolling-residual recipe, current momentum semantics, known-unimplemented Student-t Copula, a Palazzi exact-replication recipe that should be blocked truthfully, a separately declared adaptation, and an unknown method ID.
+
+### M10-D — representative-user comprehension / authority closure
+
+After M10-A/B/C exist, use actual/likely users, including limited technical/trading expertise and low digital skill/accessibility where possible. Ask them to complete realistic Pair Research / Universal Scan / Experiment Lab support-check tasks without developer coaching and then explain the protected concepts in their own words. Record qualitative evidence only; do not fabricate quantitative usability metrics.
 
 ## Future / blocked work
 
@@ -121,14 +150,20 @@ The whole Phase-17 implementation is decomposed at low resolution below. Detaile
 | **8 — complete** | **Write M7:** ownership-safe persistent current-evidence collector/qualification bridge | **Read-only M8 objective-aware convergence reconnaissance** | M7 integrated at `d5fbddc`; M8 reconnaissance found a serial basket-provenance foundation is required |
 | **9 — complete** | **Write M8-0:** Product basket source/provenance + immutable M3 generation binding | **Read-only M9 process/state ownership reconnaissance** | M8-0 integrated at `01e8d3e`; M9 recon recommends no desktop shell for Product V1 |
 | **10 — complete** | **Write M8-A:** History + utility Activity with research-learning semantics | **Write M8-B:** objective-aware Product Portfolio presentation convergence | full M8 integrated through `3b7c32d` |
-| **11 — current/final** | **M9 lifecycle hardening complete at `d9cb44e`** | **M10 human-led comprehension/authority acceptance** | no desktop dependency on current evidence; Phase 17 closes only after real representative-user evidence satisfies M10 |
+| **11 — current/design review** | **M10-0 Research Cockpit + Experiment Contract amendment** | user/planner review; no executable agent | Pair/Universe UX + typed recipe/support contract must be frozen |
+| **12 — blocked** | **M10-A typed Research Recipe + capability preflight** | read-only contract review | starts only after M10-0 approval; no new research method implementation |
+| **13 — blocked** | **M10-B Research Cockpit + Experiment Lab** | **M10-C capability/fidelity proof** | Product surface follows stable preflight semantics; proof uses current/unsupported/paper cases |
+| **14 — closure** | integration/remediation only if approved | **M10-D human-led acceptance** | Phase 17 closes only after corrected research/experiment tasks and protected meanings are demonstrated |
 
 This map is a dependency plan, not permission to start future writers early. The planner must re-evaluate each wave from returned commits/reports and may collapse or reshape later waves when repository reality makes the original split unnecessary.
 
 Important remaining work now:
 
-- M10 representative-user comprehension/authority closure is the sole remaining Phase-17 gate.
-- No additional autonomous implementation writer is justified before actual M10 evidence identifies a concrete remediation need.
+- M10-0 Research Cockpit + Experiment Contract design amendment is the current frontier.
+- M10-A typed Research Recipe / capability preflight is blocked until review.
+- M10-B Pair Research / Universal Scan / Experiment Lab Product work is blocked on M10-A.
+- M10-C must prove truthful support/fidelity reporting using current methods, Student-t Copula as known-unimplemented, Palazzi exact/adapted cases, and an unknown method.
+- M10-D representative-user acceptance remains final and blocked.
 - Tauri/desktop packaging remains deferred; current Product-V1 evidence supports the hardened launcher/browser model.
 
 ## Status log
@@ -147,4 +182,5 @@ Important remaining work now:
 - `2026-08-20` — M7 `d5fbddc` returned complete and was verified/fast-forward integrated. It adds bounded Product SQLite current-evidence state, exact slot/restart semantics, a Local Market collector process, M6 frozen-lineage instrument resolution, existing readiness/qualification reuse, Product amount assessment, and launcher lifecycle integration without changing scientific policy. M8 reconnaissance found Product-v1 basket economics compatible but provenance/current-catalog source binding incompatible; Wave 9 therefore materialized a serial M8-0 basket foundation before later M8-A/M8-B fan-out, with Agent 2 moving to read-only M9 process/state reconnaissance.
 - `2026-08-20` — M8-0 `01e8d3e` returned complete and was verified/fast-forward integrated. Product baskets now seal separately truthful Product source provenance and exact immutable M3 execution generations, while strict PIT basket behavior remains unchanged. M9 reconnaissance found no current evidence for a desktop shell and identified one later lifecycle correctness repair: ownerless stale `market_data_maintenance=running`. Wave 10 materialized the intended genuine fan-out: Agent 1 on History/Activity and Agent 2 on Product Portfolio presentation.
 - `2026-08-20` — M8-A `2aa60ea` and M8-B `291f2f3` returned complete on clean disjoint branches. Central review found one M8-B unknown-versioned-claim wording seam and closed it before integration; full M8 is integrated through `3b7c32d`. A fresh combined OpenAPI export, generated TypeScript contract, Ruff/format/Pyright/import-contract, typecheck, build, and diff-hygiene pass were green; no tests were run.
-- `2026-08-20` — M9 lifecycle hardening completed centrally at `d9cb44e`. Market-data maintenance now persists PID/start-marker ownership and recovers orphaned `running` state as explicit failure; the launcher waits for exact API/workspace/web/collector readiness before declaring success; the shell refreshes collector status while open. A real Local Market launcher smoke reached `QAP workbench ready.` with the collector running and cleaned its ports on shutdown. Tauri remains deferred. M10 representative-user comprehension/authority closure is now the sole remaining Phase-17 gate.
+- `2026-08-20` — M9 lifecycle hardening completed centrally at `d9cb44e`. Market-data maintenance now persists PID/start-marker ownership and recovers orphaned `running` state as explicit failure; the launcher waits for exact API/workspace/web/collector readiness before declaring success; the shell refreshes collector status while open. A real Local Market launcher smoke reached `QAP workbench ready.` with the collector running and cleaned its ports on shutdown. Tauri remains deferred.
+- `2026-08-20` — First real-user mobile research walkthrough reopened M10 in design review. Follow-up clarified the intended Product: not a Copula-specific UI, but machinery to declare/type-check research recipes, explain exact support/fidelity/readiness/constitution blockers, and run only faithfully supported methods through existing QAP experiment authority. Pair Research, Universal Scan, and an advanced Experiment Lab are now planned on top of that contract; M10-A/B/C/D remain blocked pending M10-0 review.
