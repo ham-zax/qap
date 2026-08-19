@@ -23,7 +23,10 @@ export function AppShell({ children }: AppShellProps) {
           </Link>
           <p className="text-xs text-muted sm:text-sm">Research evidence workbench</p>
         </div>
-        <nav className="flex w-full flex-row gap-2 md:w-auto" aria-label="Primary navigation">
+        <nav
+          className="flex w-full flex-row flex-wrap gap-2 md:w-auto md:flex-nowrap"
+          aria-label="Primary navigation"
+        >
           <Link className={navLinkClass} to="/scanner">
             Discovery
           </Link>

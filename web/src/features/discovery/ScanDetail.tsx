@@ -138,7 +138,10 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
         ) : (
           <div className="mt-4 grid gap-4 xl:grid-cols-2">
             {data.momentum_generations.map((generation) => (
-              <article key={generation.momentum_scan_id} className="rounded-md border border-border p-4">
+              <article
+                key={generation.momentum_scan_id}
+                className="min-w-0 rounded-md border border-border p-4"
+              >
                 <div className="flex flex-wrap gap-2">
                   <Badge tone="positive">Persisted</Badge>
                   <Badge tone="info">{generation.venue} / {generation.horizon}</Badge>
@@ -146,7 +149,12 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
                 <p className="mt-3 mb-0 text-sm text-secondary">
                   {generation.resolution} · {Math.round(generation.formation_seconds / 86400)}d formation · {generation.observations.length} observations
                 </p>
-                <div className="mt-3 overflow-x-auto">
+                <div
+                  className="mt-3 overflow-x-auto"
+                  role="region"
+                  aria-label={`${generation.venue} ${generation.horizon} momentum ranking table`}
+                  tabIndex={0}
+                >
                   <table className="w-full text-left text-sm">
                     <thead className="text-xs text-muted">
                       <tr><th className="py-2 pr-3">Rank</th><th className="py-2 pr-3">Asset</th><th className="py-2">Relative momentum</th></tr>
@@ -223,7 +231,12 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
 
       <section className="mt-8" aria-labelledby="universe-heading">
         <h2 id="universe-heading" className="text-xl font-semibold text-foreground">Point-in-time universe</h2>
-        <div className="mt-4 overflow-x-auto rounded-lg border border-border bg-panel">
+        <div
+          className="mt-4 overflow-x-auto rounded-lg border border-border bg-panel"
+          role="region"
+          aria-label="Point-in-time universe table"
+          tabIndex={0}
+        >
           <table className="w-full min-w-[46rem] text-left text-sm">
             <thead className="bg-subtle text-xs uppercase tracking-[0.06em] text-muted">
               <tr><th className="px-4 py-3">Asset</th><th className="px-4 py-3">Scope</th><th className="px-4 py-3">Eligibility</th><th className="px-4 py-3">Coverage</th></tr>
