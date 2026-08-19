@@ -1,5 +1,6 @@
 import type { components } from './schema'
 
+export type WorkspaceStatusDto = components['schemas']['WorkspaceStatusDto']
 export type RunSummaryDto = components['schemas']['RunSummaryDto']
 export type ExperimentListDto = components['schemas']['ExperimentListDto']
 export type ExperimentDetailDto = components['schemas']['ExperimentDetailDto']

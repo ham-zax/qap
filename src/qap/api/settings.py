@@ -3,6 +3,7 @@
 import os
 from ipaddress import ip_address
 from pathlib import Path
+from typing import Literal
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -19,6 +20,7 @@ class ApiSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     run_root: Path
+    workspace_mode: Literal["sample", "local_market"] = "local_market"
     market_data_root: Path | None = None
     repository_root: Path | None = None
     capture_root: Path | None = None
@@ -80,6 +82,9 @@ class ApiSettings(BaseModel):
         """Load launch-only path/network overrides from dedicated environment keys."""
 
         run_root = os.environ.get("QAP_API_RUN_ROOT", "runs")
+        workspace_mode = os.environ.get("QAP_API_WORKSPACE_MODE", "local_market")
+        if workspace_mode not in ("sample", "local_market"):
+            raise ValueError("QAP_API_WORKSPACE_MODE must be sample or local_market")
         market_data_root = os.environ.get("QAP_API_MARKET_DATA_ROOT")
         repository_root = os.environ.get("QAP_API_REPOSITORY_ROOT", ".")
         capture_root = os.environ.get("QAP_API_CAPTURE_ROOT")
@@ -91,6 +96,7 @@ class ApiSettings(BaseModel):
         )
         return cls(
             run_root=Path(run_root),
+            workspace_mode=workspace_mode,
             market_data_root=(
                 None if market_data_root is None else Path(market_data_root)
             ),

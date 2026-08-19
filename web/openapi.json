@@ -5764,6 +5764,63 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "WorkspaceStatusDto": {
+        "additionalProperties": false,
+        "properties": {
+          "market_data_catalog_updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Data Catalog Updated At"
+          },
+          "market_data_status": {
+            "enum": [
+              "not_prepared",
+              "catalog_detected"
+            ],
+            "title": "Market Data Status",
+            "type": "string"
+          },
+          "product_maintenance_status": {
+            "const": "idle",
+            "default": "idle",
+            "title": "Product Maintenance Status",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.workspace_status.v1",
+            "default": "qap.api.workspace_status.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "workspace_mode": {
+            "enum": [
+              "sample",
+              "local_market"
+            ],
+            "title": "Workspace Mode",
+            "type": "string"
+          },
+          "workspace_root": {
+            "title": "Workspace Root",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_mode",
+          "workspace_root",
+          "market_data_status",
+          "market_data_catalog_updated_at"
+        ],
+        "title": "WorkspaceStatusDto",
+        "type": "object"
       }
     }
   },
@@ -6982,6 +7039,27 @@
         "summary": "Generate Momentum",
         "tags": [
           "scanner"
+        ]
+      }
+    },
+    "/api/workspace": {
+      "get": {
+        "operationId": "getWorkspaceStatus",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceStatusDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Workspace Status",
+        "tags": [
+          "workspace"
         ]
       }
     }

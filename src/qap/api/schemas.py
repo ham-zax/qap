@@ -22,6 +22,17 @@ class HealthDto(ApiDto):
     status: Literal["ok"] = "ok"
 
 
+class WorkspaceStatusDto(ApiDto):
+    schema_version: Literal["qap.api.workspace_status.v1"] = (
+        "qap.api.workspace_status.v1"
+    )
+    workspace_mode: Literal["sample", "local_market"]
+    workspace_root: str
+    market_data_status: Literal["not_prepared", "catalog_detected"]
+    market_data_catalog_updated_at: datetime | None
+    product_maintenance_status: Literal["idle"] = "idle"
+
+
 class ErrorDetailDto(ApiDto):
     code: str
     message: str

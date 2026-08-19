@@ -14,6 +14,8 @@ export interface QapRouterContext {
 }
 
 export const Route = createRootRouteWithContext<QapRouterContext>()({
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(context.queries.workspaceStatus()),
   component: RootLayout,
   pendingComponent: () => (
     <StatusMessage title="Loading evidence">
@@ -39,8 +41,9 @@ export const Route = createRootRouteWithContext<QapRouterContext>()({
 })
 
 function RootLayout() {
+  const workspace = Route.useLoaderData()
   return (
-    <AppShell>
+    <AppShell workspaceMode={workspace.workspace_mode}>
       <Outlet />
     </AppShell>
   )

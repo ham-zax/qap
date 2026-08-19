@@ -1,5 +1,6 @@
 import type { components } from './schema'
 
+type WorkspaceStatusDto = components['schemas']['WorkspaceStatusDto']
 type ExperimentListDto = components['schemas']['ExperimentListDto']
 type ExperimentDetailDto = components['schemas']['ExperimentDetailDto']
 type PortfolioSnapshotDto = components['schemas']['PortfolioSnapshotDto']
@@ -88,6 +89,7 @@ export function createApiClient({
   }
 
   return {
+    getWorkspaceStatus: () => request<WorkspaceStatusDto>('/api/workspace'),
     listExperiments: () => request<ExperimentListDto>('/api/experiments'),
     getExperiment: (runId: string) =>
       request<ExperimentDetailDto>(`/api/experiments/${encodeURIComponent(runId)}`),

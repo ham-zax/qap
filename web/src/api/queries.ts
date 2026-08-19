@@ -4,6 +4,11 @@ import type { QapApiClient } from './client'
 
 export function createQapQueries(client: QapApiClient) {
   return {
+    workspaceStatus: () =>
+      queryOptions({
+        queryKey: ['workspace-status'] as const,
+        queryFn: () => client.getWorkspaceStatus(),
+      }),
     scannerProtocol: () =>
       queryOptions({
         queryKey: ['scanner-protocol'] as const,

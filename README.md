@@ -69,14 +69,15 @@ For normal local use, start the API and web app together from the repository roo
 ./scripts/start_workbench.sh
 ```
 
-Then open `http://localhost:5173`. The launcher uses the repository `runs/` directory by default; set `QAP_RUN_ROOT=/path/to/runs` before invoking it if you want a different evidence root. Press `Ctrl+C` to stop both processes.
+Then open `http://localhost:5173`. The launcher starts a `local_market` workspace by default and uses the resolved run root as its local workspace identity. Set `QAP_RUN_ROOT=/path/to/runs` before invoking it to select a different workspace root, or set `QAP_API_WORKSPACE_MODE=sample` for an intentional Sample Workspace. Press `Ctrl+C` to stop both processes.
 
-This launcher is the current pre-Phase-17 local workflow. Phase 17 M1 will make Sample versus Local Market workspace identity explicit and will stop treating port occupancy alone as proof that the intended workspace is already running.
+Before starting anything, the launcher verifies the backend workspace mode and root. It reports an already-running intended workspace separately from another/sample QAP workspace, an unrelated port occupant, or a partial API/web startup instead of treating port occupancy alone as proof that the intended workspace is running.
 
 For separate-process/manual startup, start the local single-operator API from the repository root. Mutation-capable serving is intentionally loopback-only and uses exactly one Uvicorn worker:
 
 ```bash
 QAP_API_RUN_ROOT="$QAP_RUN_ROOT" \
+QAP_API_WORKSPACE_MODE=local_market \
 QAP_API_MARKET_DATA_ROOT="$PWD" \
 QAP_API_REPOSITORY_ROOT="$PWD" \
 QAP_API_CAPTURE_ROOT="$QAP_RUN_ROOT/public-capture" \

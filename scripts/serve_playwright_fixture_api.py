@@ -419,6 +419,7 @@ def main() -> None:
         app = create_app(
             ApiSettings(
                 run_root=run_root,
+                workspace_mode="sample",
                 market_data_root=data_root,
                 repository_root=_ROOT,
                 capture_root=capture_root,

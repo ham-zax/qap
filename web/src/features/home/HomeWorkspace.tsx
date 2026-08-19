@@ -4,12 +4,14 @@ import type {
   ExperimentListDto,
   ForwardCohortListDto,
   OperationListDto,
+  WorkspaceStatusDto,
 } from '../../api/types'
 import { Badge } from '../../components/ui/Badge'
 import { formatResearchTimestamp } from '../../lib/format'
 import { researchStatusPresentation } from '../experiments/presentation'
 
 interface HomeWorkspaceProps {
+  workspace: WorkspaceStatusDto
   experiments: ExperimentListDto
   forwardCohorts: ForwardCohortListDto
   operations: OperationListDto
@@ -39,6 +41,7 @@ const goals = [
 ]
 
 export function HomeWorkspace({
+  workspace,
   experiments,
   forwardCohorts,
   operations,
@@ -69,6 +72,27 @@ export function HomeWorkspace({
             QAP remains a research system and does not place or authorize live trades.
           </p>
         </header>
+
+        {workspace.workspace_mode === 'local_market' &&
+        workspace.market_data_status === 'not_prepared' ? (
+          <section
+            aria-labelledby="local-market-setup-heading"
+            className="mb-8 rounded-lg border border-warning/45 bg-panel p-5"
+          >
+            <Badge tone="warning">Local Market setup</Badge>
+            <h2
+              id="local-market-setup-heading"
+              className="mt-3 mb-2 text-xl font-semibold text-foreground"
+            >
+              Prepare this workspace before research
+            </h2>
+            <p className="m-0 max-w-3xl text-sm leading-6 text-secondary">
+              Choose the assets QAP is allowed to research, then prepare public market
+              data. No prepared Local Market data is available in this workspace yet,
+              and Sample Workspace data is never treated as your local market state.
+            </p>
+          </section>
+        ) : null}
 
         <div className="grid gap-4 md:grid-cols-2">
           {goals.map((goal) => (

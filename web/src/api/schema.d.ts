@@ -465,6 +465,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Workspace Status */
+        get: operations["getWorkspaceStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2510,6 +2527,35 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** WorkspaceStatusDto */
+        WorkspaceStatusDto: {
+            /** Market Data Catalog Updated At */
+            market_data_catalog_updated_at: string | null;
+            /**
+             * Market Data Status
+             * @enum {string}
+             */
+            market_data_status: "not_prepared" | "catalog_detected";
+            /**
+             * Product Maintenance Status
+             * @default idle
+             * @constant
+             */
+            product_maintenance_status: "idle";
+            /**
+             * Schema Version
+             * @default qap.api.workspace_status.v1
+             * @constant
+             */
+            schema_version: "qap.api.workspace_status.v1";
+            /**
+             * Workspace Mode
+             * @enum {string}
+             */
+            workspace_mode: "sample" | "local_market";
+            /** Workspace Root */
+            workspace_root: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -3361,6 +3407,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getWorkspaceStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceStatusDto"];
                 };
             };
         };

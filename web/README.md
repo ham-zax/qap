@@ -19,6 +19,7 @@ Start the local single-operator API. The mutation-capable launcher is loopback-o
 
 ```bash
 QAP_API_RUN_ROOT=/tmp/qap-ui-runs \
+QAP_API_WORKSPACE_MODE=sample \
 QAP_API_MARKET_DATA_ROOT="$PWD" \
 QAP_API_REPOSITORY_ROOT="$PWD" \
 QAP_API_CAPTURE_ROOT=/tmp/qap-ui-runs/public-capture \
@@ -36,7 +37,7 @@ pnpm generate:api
 pnpm dev --host 127.0.0.1 --port 5173
 ```
 
-Vite proxies `/api` to `http://127.0.0.1:8000`. Set `VITE_QAP_API_BASE_URL` only when the API is served elsewhere.
+Vite proxies `/api` to `http://127.0.0.1:8000`. Set `VITE_QAP_API_BASE_URL` only when the API is served elsewhere. The shell reads `/api/workspace` from the backend: sample mode carries a persistent `Sample Workspace` marker, while a `local_market` workspace with no prepared scanner catalog shows the clean setup zero-state rather than presenting sample data as local market state.
 
 ## Contract generation
 

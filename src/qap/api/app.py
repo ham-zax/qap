@@ -20,6 +20,7 @@ from qap.api.routes import (
     paper_operations,
     portfolios_router,
     scanner_router,
+    workspace_router,
 )
 from qap.api.scanner_views import ScannerArtifactReader
 from qap.api.schemas import ErrorDetailDto, ErrorEnvelopeDto
@@ -139,6 +140,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
     )
 
     app.include_router(health_router)
+    app.include_router(workspace_router)
     app.include_router(experiments_router)
     app.include_router(portfolios_router)
     app.include_router(pairs_router)
