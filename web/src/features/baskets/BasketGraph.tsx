@@ -29,7 +29,7 @@ export function BasketGraph({ assets, edges }: BasketGraphProps) {
   return (
     <svg
       viewBox={`0 0 ${size} ${size}`}
-      className="mx-auto w-full max-w-[20rem]"
+      className="basket-graph mx-auto w-full max-w-[20rem]"
       role="img"
       aria-label="Basket topology"
     >

@@ -74,7 +74,7 @@ export function PaperOperationList({ items }: PaperOperationListProps) {
               className={`flex min-w-0 flex-col rounded-lg border bg-panel p-4 md:p-5 ${reconciled ? 'border-border' : 'border-negative/45'}`}
             >
               <div className="mb-4 flex flex-wrap items-center gap-2">
-                <Badge tone={reconciled ? 'positive' : 'negative'}>
+                <Badge tone={reconciled ? 'info' : 'warning'}>
                   {reconciled ? 'Reconciled' : 'Reconciliation mismatch'}
                 </Badge>
                 <Badge tone="info">Forward paper · operational dry run</Badge>

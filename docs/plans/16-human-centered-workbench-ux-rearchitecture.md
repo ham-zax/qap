@@ -414,6 +414,8 @@ If authoritative existing read models do not provide enough information for Reac
 
 ## 13. Milestone 7 — Visual-system convergence
 
+**Status:** complete.
+
 **Files:**
 
 - Modify: `web/src/styles/tokens.css`
@@ -427,18 +429,20 @@ If authoritative existing read models do not provide enough information for Reac
 
 **Steps:**
 
-- [ ] Establish distinct treatments for operational activity, evidence completeness/validity, and research conclusion.
-- [ ] Establish surface hierarchy for goal, verdict, contextual evidence, advanced research, and audit detail.
-- [ ] Standardize number/identifier presentation: human-readable value first; exact value/ID on demand.
-- [ ] Use motion only where it communicates state transition or coordinated evidence focus; prefer existing CSS/native capabilities.
-- [ ] Preserve reduced-motion behavior and existing accessible focus/touch targets.
-- [ ] Give Basket/Portfolio graph/evidence coordination the strongest visual treatment after information hierarchy is correct.
+- [x] Establish distinct treatments for operational activity, evidence completeness/validity, and research conclusion.
+- [x] Establish surface hierarchy for goal, verdict, contextual evidence, advanced research, and audit detail.
+- [x] Standardize number/identifier presentation: human-readable value first; exact value/ID on demand.
+- [x] Use motion only where it communicates state transition or coordinated evidence focus; prefer existing CSS/native capabilities.
+- [x] Preserve reduced-motion behavior and existing accessible focus/touch targets.
+- [x] Give Basket/Portfolio graph/evidence coordination the strongest visual treatment after information hierarchy is correct.
 
 **Acceptance criteria:**
 
 - The application no longer looks like six unrelated forms/tables sharing Tailwind classes.
 - Attention intensity follows meaning, not simply positive/negative color.
 - Dense evidence remains readable on desktop and degrades gracefully on mobile.
+
+**Rendered verification:** live desktop and 390×844 mobile passes covered Home, Results, Portfolios, and a dense completed portfolio result. Those pages had no horizontal document overflow and no axe WCAG A/AA violations. Axe marked the three SVG portfolio-node labels for manual contrast review because it cannot resolve the SVG/current-color combination; the labels use the high-contrast foreground token on the panel node fill.
 
 ## 14. Milestone 8 — Human-centered acceptance and closure
 

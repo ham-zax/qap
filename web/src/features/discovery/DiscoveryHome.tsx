@@ -323,7 +323,7 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
                 className="rounded-lg border border-border bg-panel p-4"
               >
                 <div className="flex flex-wrap gap-2">
-                  <Badge tone={scan.artifact_status === 'valid' ? 'positive' : 'negative'}>
+                  <Badge tone={scan.artifact_status === 'valid' ? 'info' : 'negative'}>
                     {scan.artifact_status === 'valid'
                       ? 'Evidence available'
                       : 'Evidence unavailable'}

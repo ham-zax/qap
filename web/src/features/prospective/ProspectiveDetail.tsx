@@ -292,7 +292,7 @@ export function ProspectiveDetail({ apiClient, data }: ProspectiveDetailProps) {
           ) : null}
           {currentReadiness ? (
             <div className="mt-4 rounded-md border border-border bg-canvas/40 p-4">
-              <Badge tone={currentReadiness.ready ? 'positive' : 'warning'}>
+              <Badge tone={currentReadiness.ready ? 'info' : 'warning'}>
                 {currentReadiness.ready ? 'Current evidence ready' : 'Evidence needs updates'}
               </Badge>
               <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">

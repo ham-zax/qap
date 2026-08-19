@@ -73,7 +73,7 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
           Research ideas
         </h1>
         <div className="flex flex-wrap gap-2">
-          <Badge tone={data.summary.artifact_status === 'valid' ? 'positive' : 'negative'}>
+          <Badge tone={data.summary.artifact_status === 'valid' ? 'info' : 'negative'}>
             {data.summary.artifact_status === 'valid'
               ? 'Evidence available'
               : 'Evidence unavailable'}
@@ -236,7 +236,7 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
                 className="min-w-0 rounded-md border border-border p-4"
               >
                 <div className="flex flex-wrap gap-2">
-                  <Badge tone="positive">Persisted</Badge>
+                  <Badge tone="info">Persisted evidence</Badge>
                   <Badge tone="info">{generation.venue} / {generation.horizon}</Badge>
                 </div>
                 <p className="mt-3 mb-0 text-sm text-secondary">
@@ -300,7 +300,7 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
                     {candidate.model_family}<br />{candidate.template_id} · {candidate.resolution}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge tone={candidate.trial_status === 'valid' ? 'positive' : 'negative'}>{candidate.trial_status}</Badge>
+                    <Badge tone={candidate.trial_status === 'valid' ? 'info' : 'negative'}>{candidate.trial_status}</Badge>
                     {candidate.failure_reason ? <p className="mt-1 mb-0 text-xs text-negative">{candidate.failure_reason}</p> : null}
                   </td>
                   <td className="px-4 py-3 text-secondary">

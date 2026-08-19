@@ -2,8 +2,8 @@ import type { OperationDto } from '../../api/types'
 
 export function operationStatusTone(
   status: OperationDto['status'],
-): 'positive' | 'warning' | 'negative' | 'info' {
-  if (status === 'completed') return 'positive'
+): 'neutral' | 'warning' | 'negative' | 'info' {
+  if (status === 'completed') return 'neutral'
   if (status === 'running') return 'info'
   if (status === 'interrupted') return 'warning'
   return 'negative'

@@ -317,7 +317,7 @@ export function ExperimentList({
               {paper.artifact_status === 'invalid' ? (
                 <Badge tone="negative">Invalid artifact</Badge>
               ) : (
-                <Badge tone={paper.reconciliation_matches === true ? 'positive' : 'warning'}>
+                <Badge tone={paper.reconciliation_matches === true ? 'info' : 'warning'}>
                   {paper.reconciliation_matches === true
                     ? 'Reconciled paper evidence'
                     : 'Paper reconciliation mismatch'}

@@ -103,7 +103,7 @@ export function PaperOperationDetail({ data }: PaperOperationDetailProps) {
         className={`rounded-lg border bg-panel p-5 md:p-6 ${reconciled ? 'border-positive/45' : 'border-negative/45'}`}
       >
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Badge tone={reconciled ? 'positive' : 'negative'}>
+          <Badge tone={reconciled ? 'info' : 'warning'}>
             {reconciled ? 'Reconciled' : 'Reconciliation mismatch'}
           </Badge>
           <Badge tone="info">Forward paper · operational dry run</Badge>
@@ -277,7 +277,7 @@ export function PaperOperationDetail({ data }: PaperOperationDetailProps) {
             <h2 id="reconciliation-heading" className="m-0 text-lg font-semibold text-foreground">
               Independent reconciliation
             </h2>
-            <Badge tone={data.reconciliation.matches ? 'positive' : 'negative'}>
+            <Badge tone={data.reconciliation.matches ? 'info' : 'warning'}>
               {data.reconciliation.matches ? 'Matches' : 'Mismatch'}
             </Badge>
           </div>

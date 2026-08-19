@@ -40,7 +40,7 @@ export function ProspectiveHome({ data }: ProspectiveHomeProps) {
               className="rounded-lg border border-border bg-panel p-5"
             >
               <div className="flex flex-wrap gap-2">
-                <Badge tone={cohort.artifact_status === 'valid' ? 'positive' : 'negative'}>
+                <Badge tone={cohort.artifact_status === 'valid' ? 'info' : 'negative'}>
                   {cohort.artifact_status}
                 </Badge>
                 {cohort.horizon ? <Badge tone="info">{cohort.horizon}</Badge> : null}

@@ -40,6 +40,10 @@
   --status-negative: var(--color-negative);
   --status-warning: var(--color-warning);
   --status-info: var(--color-info);
+
+  /* Phase 16 shared evidence/topology treatments. */
+  --state-evidence: var(--color-info);
+  --surface-context: #111821;
   --chart-series-1: #78a9ff;
   --chart-series-2: #c4a7e7;
   --chart-series-3: #7dd3c7;
