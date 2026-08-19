@@ -225,6 +225,8 @@ The no-additional-participant branch has been exercised: the recommended IA/term
 
 ## 8. Milestone 2 — Goal-oriented Home and shell
 
+**Status:** complete at `eb40327`.
+
 **Files:**
 
 - Create: `web/src/features/home/HomeWorkspace.tsx`
@@ -239,13 +241,13 @@ The no-additional-participant branch has been exercised: the recommended IA/term
 
 **Steps:**
 
-- [ ] Replace root `ExperimentList` with Home.
-- [ ] Present four primary goals: find ideas, continue validation, analyze portfolio, review prior work.
-- [ ] Surface at most one active mutation prominently, with status and Activity link.
-- [ ] Surface forward validations that are waiting/ready for later evidence without requiring users to remember cohort IDs.
-- [ ] Surface recent finished research results without turning Home into another evidence table.
-- [ ] Move Research Runs/Paper Operations out of the primary novice navigation according to the frozen IA while preserving their routes and deep links.
-- [ ] Keep keyboard/skip-link/navigation semantics intact.
+- [x] Replace root `ExperimentList` with Home.
+- [x] Present four primary goals: find ideas, continue validation, analyze portfolio, review prior work.
+- [x] Surface at most one active mutation prominently, with status and Activity link.
+- [x] Surface forward validations that are waiting/ready for later evidence without requiring users to remember cohort IDs.
+- [x] Surface recent finished research results without turning Home into another evidence table.
+- [x] Move Research Runs/Paper Operations out of the primary novice navigation according to the frozen IA while preserving their routes and deep links.
+- [x] Keep keyboard/skip-link/navigation semantics intact.
 
 **Acceptance criteria:**
 
@@ -254,6 +256,8 @@ The no-additional-participant branch has been exercised: the recommended IA/term
 - Exact evidence routes remain reachable.
 
 ## 9. Milestone 3 — Discover and Research Idea experience
+
+**Status:** complete at `b1cce7a`.
 
 **Files:**
 
@@ -268,16 +272,16 @@ The no-additional-participant branch has been exercised: the recommended IA/term
 
 **Steps:**
 
-- [ ] Make the default scan command ask only for ordinary user intent: analysis date and research timeframe.
-- [ ] Move manual pins, forensic mode, manual replay candidate IDs, and protocol details into `Advanced research controls`.
-- [ ] Keep all existing command fields available; do not remove operator capability.
-- [ ] On Scan Detail, lead with scope, number of research ideas that received meaningful historical evaluation, and a concise summary of accepted/rejected/unavailable evidence.
-- [ ] Present a prioritized Research Ideas section before the complete candidate-trial ledger.
-- [ ] Keep the complete trial ledger available under `All evaluated rules` / advanced evidence so negative evidence and denominator remain visible.
-- [ ] Translate raw replay/model-source statuses in primary copy while preserving exact enum text in detail disclosure.
-- [ ] Candidate Detail must lead with pair + plain historical verdict + comparison/control context + next valid action.
-- [ ] Move candidate ID, scan ID, model/template/resolution/orientation, promotion mechanics, and exact lineage into research/audit disclosure.
-- [ ] Rename `Freeze prospective cohort` in the primary layer to `Start forward validation` while preserving exact backend behavior.
+- [x] Make the default scan command ask only for ordinary user intent: analysis date and research timeframe.
+- [x] Move manual pins, forensic mode, manual replay candidate IDs, and protocol details into `Advanced research controls`.
+- [x] Keep all existing command fields available; do not remove operator capability.
+- [x] On Scan Detail, lead with scope, number of research ideas that received meaningful historical evaluation, and a concise summary of accepted/rejected/unavailable evidence.
+- [x] Present a prioritized Research Ideas section before the complete candidate-trial ledger.
+- [x] Keep the complete trial ledger available under `All evaluated rules` / advanced evidence so negative evidence and denominator remain visible.
+- [x] Translate raw replay/model-source statuses in primary copy while preserving exact enum text in detail disclosure.
+- [x] Candidate Detail must lead with pair + plain historical verdict + comparison/control context + next valid action.
+- [x] Move candidate ID, scan ID, model/template/resolution/orientation, promotion mechanics, and exact lineage into research/audit disclosure.
+- [x] Rename `Freeze prospective cohort` in the primary layer to `Start forward validation` while preserving exact backend behavior.
 
 **Acceptance criteria:**
 
@@ -286,6 +290,8 @@ The no-additional-participant branch has been exercised: the recommended IA/term
 - Advanced users retain all current manual/forensic/replay capability.
 
 ## 10. Milestone 4 — Forward Validation and Current Capital experience
+
+**Status:** stopped before source mutation at the documented capture-readiness boundary. See `docs/research/2026-08-19-qap-phase16-m4-boundary-stop-handoff.md`.
 
 **Files:**
 

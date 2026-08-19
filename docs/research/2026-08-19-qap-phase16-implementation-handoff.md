@@ -1,5 +1,7 @@
 # QAP Phase 16 — Implementation Summary and Handoff
 
+> Current continuation: M2 and M3 are complete; M4 stopped at its backend capture-readiness boundary. Continue from [the M4 boundary handoff](2026-08-19-qap-phase16-m4-boundary-stop-handoff.md), not from the older M2 start instructions below.
+
 Update context — 2026-08-19
 Trigger: Phase 16 current-state UX investigation and terminology/information-architecture checkpoint are complete.
 Purpose: Give a fresh implementation agent one authoritative starting point for executing the human-centered workbench re-architecture without replaying prior design work or reopening scientific/backend contracts.
