@@ -8,12 +8,13 @@ import { Badge } from './ui/Badge'
 interface AppShellProps {
   children: ReactNode
   workspaceMode?: WorkspaceStatusDto['workspace_mode']
+  collectorStatus?: WorkspaceStatusDto['current_evidence_collector_status']
 }
 
 const navLinkClass =
   'flex min-h-11 w-auto flex-1 items-center justify-center rounded-md border border-transparent px-3 py-2 text-sm font-semibold text-secondary no-underline transition-[background-color,border-color,color] duration-150 hover:bg-subtle hover:text-foreground data-[status=active]:border-border data-[status=active]:bg-subtle data-[status=active]:text-foreground md:flex-none'
 
-export function AppShell({ children, workspaceMode }: AppShellProps) {
+export function AppShell({ children, workspaceMode, collectorStatus }: AppShellProps) {
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -28,6 +29,25 @@ export function AppShell({ children, workspaceMode }: AppShellProps) {
           {workspaceMode ? (
             <Badge tone={workspaceMode === 'sample' ? 'warning' : 'neutral'}>
               {workspaceMode === 'sample' ? 'Sample Workspace' : 'Local Market'}
+            </Badge>
+          ) : null}
+          {workspaceMode === 'sample' ? (
+            <Badge tone="neutral">Current evidence collection disabled</Badge>
+          ) : workspaceMode === 'local_market' && collectorStatus ? (
+            <Badge
+              tone={
+                collectorStatus === 'running'
+                  ? 'positive'
+                  : collectorStatus === 'failed'
+                    ? 'negative'
+                    : 'warning'
+              }
+            >
+              {collectorStatus === 'running'
+                ? 'Current evidence collector running'
+                : collectorStatus === 'failed'
+                  ? 'Current evidence collector failed'
+                  : 'Current evidence collector not running'}
             </Badge>
           ) : null}
           <Link className="text-xs font-semibold text-muted hover:text-foreground" to="/operations">

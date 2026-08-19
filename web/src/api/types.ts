@@ -30,6 +30,10 @@ export type CandidateDetailDto = components['schemas']['CandidateDetailDto']
 export type ProductFollowUpDto = components['schemas']['ProductFollowUpDto']
 export type ResearchIdeaLongitudinalDto =
   components['schemas']['ResearchIdeaLongitudinalDto']
+export type ResearchIdeaCurrentEvidenceDto =
+  components['schemas']['ResearchIdeaCurrentEvidenceDto']
+export type ProductAmountAssessmentRequestDto =
+  components['schemas']['ProductAmountAssessmentRequestDto']
 export type ForwardCohortListDto = components['schemas']['ForwardCohortListDto']
 export type ForwardCohortDetailDto = components['schemas']['ForwardCohortDetailDto']
 export type CaptureReadinessDto = components['schemas']['CaptureReadinessDto']

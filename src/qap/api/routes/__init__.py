@@ -6,6 +6,9 @@ from qap.api.routes.health import router as health_router
 from qap.api.routes.operations import router as operations_router
 from qap.api.routes.pairs import router as pairs_router
 from qap.api.routes.portfolios import router as portfolios_router
+from qap.api.routes.product_current_evidence import (
+    router as product_current_evidence_router,
+)
 from qap.api.routes.product_market_data import router as product_market_data_router
 from qap.api.routes.product_research import router as product_research_router
 from qap.api.routes.research_universe import router as research_universe_router
@@ -19,6 +22,7 @@ __all__ = [
     "operations_router",
     "pairs_router",
     "portfolios_router",
+    "product_current_evidence_router",
     "product_market_data_router",
     "product_research_router",
     "research_universe_router",

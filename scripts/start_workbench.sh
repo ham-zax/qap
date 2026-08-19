@@ -61,6 +61,16 @@ raise SystemExit(0 if matches else 1)
 ' "$WORKSPACE_MODE" "$RUN_ROOT"
 }
 
+collector_status() {
+  printf '%s' "$1" | python3 -c '
+import json
+import sys
+
+payload = json.load(sys.stdin)
+print(payload.get("current_evidence_collector_status", "not_running"))
+'
+}
+
 describe_workspace() {
   printf '%s' "$1" | python3 -c '
 import json
@@ -109,10 +119,21 @@ if port_is_busy 5173; then
 fi
 
 if (( api_workspace_match && web_qap )); then
+  if [[ "$WORKSPACE_MODE" == "local_market" ]] \
+    && [[ "$(collector_status "$api_workspace")" != "running" ]]; then
+    printf 'QAP API/web are running, but the Local Market current-evidence collector is not healthy.\n' >&2
+    printf 'Stop the existing workbench and relaunch it so the collector is lifecycle-managed with this workspace.\n' >&2
+    exit 1
+  fi
   printf 'QAP workbench is already running.\n'
   printf '  Workspace: %s (%s)\n' "$WORKSPACE_MODE" "$RUN_ROOT"
   printf '  Web: http://localhost:5173\n'
   printf '  API: http://127.0.0.1:8000\n'
+  if [[ "$WORKSPACE_MODE" == "local_market" ]]; then
+    printf '  Current evidence collector: running\n'
+  else
+    printf '  Current evidence collector: disabled in Sample Workspace\n'
+  fi
   exit 0
 fi
 
@@ -158,17 +179,29 @@ fi
 
 api_pid=""
 web_pid=""
+collector_pid=""
+stop_group() {
+  local leader="$1"
+  [[ -z "$leader" ]] && return
+  kill -TERM -- "-$leader" 2>/dev/null
+  for _ in {1..70}; do
+    if ! kill -0 -- "-$leader" 2>/dev/null; then
+      break
+    fi
+    sleep 0.1
+  done
+  if kill -0 -- "-$leader" 2>/dev/null; then
+    kill -KILL -- "-$leader" 2>/dev/null
+  fi
+  wait "$leader" 2>/dev/null
+}
+
 cleanup() {
   trap - EXIT INT TERM
   set +e
-  if [[ -n "$web_pid" ]]; then
-    kill -TERM -- "-$web_pid" 2>/dev/null
-    wait "$web_pid" 2>/dev/null
-  fi
-  if [[ -n "$api_pid" ]]; then
-    kill -TERM -- "-$api_pid" 2>/dev/null
-    wait "$api_pid" 2>/dev/null
-  fi
+  stop_group "$collector_pid"
+  stop_group "$web_pid"
+  stop_group "$api_pid"
 }
 trap cleanup EXIT INT TERM
 
@@ -190,11 +223,24 @@ setsid bash -c '
 ' _ "$ROOT" &
 web_pid=$!
 
+if [[ "$WORKSPACE_MODE" == "local_market" ]]; then
+  setsid bash -c '
+    cd "$1"
+    exec uv run python -m qap.product_current_evidence_collector "$2"
+  ' _ "$ROOT" "$RUN_ROOT" &
+  collector_pid=$!
+fi
+
 printf 'QAP workbench starting...\n'
 printf '  Workspace: %s (%s)\n' "$WORKSPACE_MODE" "$RUN_ROOT"
 printf '  Web: http://localhost:5173\n'
 printf '  API: http://127.0.0.1:8000\n'
+if [[ "$WORKSPACE_MODE" == "local_market" ]]; then
+  printf '  Current evidence collector: enabled\n'
+else
+  printf '  Current evidence collector: disabled in Sample Workspace\n'
+fi
 printf '  Runs: %s\n' "$RUN_ROOT"
-printf 'Press Ctrl+C to stop both processes.\n\n'
+printf 'Press Ctrl+C to stop the workbench processes.\n\n'
 
 wait -n "$api_pid" "$web_pid"

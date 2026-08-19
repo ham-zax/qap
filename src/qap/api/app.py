@@ -19,6 +19,7 @@ from qap.api.routes import (
     pairs_router,
     paper_operations,
     portfolios_router,
+    product_current_evidence_router,
     product_market_data_router,
     product_research_router,
     research_universe_router,
@@ -29,6 +30,7 @@ from qap.api.scanner_views import ScannerArtifactReader
 from qap.api.schemas import ErrorDetailDto, ErrorEnvelopeDto
 from qap.api.settings import ApiSettings
 from qap.product_current_approved import CurrentApprovedResearch
+from qap.product_current_evidence import ProductCurrentEvidenceStore
 from qap.product_market_data import ProductMarketData
 from qap.product_market_data_prepare import ProductMarketDataPreparation
 from qap.product_universe import ProductUniverse
@@ -86,6 +88,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
         product_universe,
         product_market_data,
     )
+    app.state.product_current_evidence = ProductCurrentEvidenceStore(settings.run_root)
     app.state.operation_manager = OperationManager(settings)
     app.add_middleware(
         CORSMiddleware,
@@ -166,6 +169,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.include_router(research_universe_router)
     app.include_router(product_market_data_router)
     app.include_router(product_research_router)
+    app.include_router(product_current_evidence_router)
     app.include_router(experiments_router)
     app.include_router(portfolios_router)
     app.include_router(pairs_router)

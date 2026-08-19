@@ -31,6 +31,10 @@ class WorkspaceStatusDto(ApiDto):
     market_data_status: Literal["not_prepared", "catalog_detected"]
     market_data_catalog_updated_at: datetime | None
     product_maintenance_status: Literal["idle", "running", "failed"] = "idle"
+    current_evidence_collector_status: Literal["not_running", "running", "failed"] = (
+        "not_running"
+    )
+    current_evidence_collector_failure_reason: str | None = None
 
 
 class ErrorDetailDto(ApiDto):

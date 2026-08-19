@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request
 
 from qap.api.schemas import WorkspaceStatusDto
 from qap.api.settings import ApiSettings
+from qap.product_current_evidence import ProductCurrentEvidenceStore
 from qap.product_market_data import ProductMarketData
 
 router = APIRouter(tags=["workspace"])
@@ -35,12 +36,18 @@ def workspace_status(request: Request) -> WorkspaceStatusDto:
     settings: ApiSettings = request.app.state.settings
     market_data_status, catalog_updated_at = _market_data_status(settings)
     product_market_data: ProductMarketData = request.app.state.product_market_data
+    current_evidence: ProductCurrentEvidenceStore = (
+        request.app.state.product_current_evidence
+    )
+    collector = current_evidence.lease_state()
     return WorkspaceStatusDto(
         workspace_mode=settings.workspace_mode,
         workspace_root=str(settings.run_root),
         market_data_status=market_data_status,
         market_data_catalog_updated_at=catalog_updated_at,
         product_maintenance_status=product_market_data.maintenance_state().status,
+        current_evidence_collector_status=collector.status,
+        current_evidence_collector_failure_reason=collector.failure_reason,
     )
 
 

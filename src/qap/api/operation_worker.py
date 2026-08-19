@@ -13,6 +13,9 @@ from qap.api.operations import (
     OperationStatus,
     OperationStore,
 )
+from qap.api.product_current_evidence_schemas import (
+    ProductQualificationWorkerRequestDto,
+)
 from qap.api.product_research_schemas import ProductRunScanRequestDto
 from qap.api.scanner_schemas import (
     AdvanceForwardCohortRequestDto,
@@ -29,6 +32,10 @@ from qap.market.microstructure_storage import (
 from qap.market.public_capture import CaptureKind, capture_public_spot
 from qap.portfolio import AssetId
 from qap.product_current_approved import CurrentApprovedResearch
+from qap.product_current_evidence import (
+    ProductCurrentEvidenceStore,
+    resolve_frozen_instrument,
+)
 from qap.product_market_data import ProductMarketData
 from qap.product_universe import ProductUniverse
 from qap.scanner.basket_artifacts import read_basket_generation
@@ -198,6 +205,14 @@ def _qualify(
 ) -> dict[str, JsonValue]:
     run_root = _path(getattr(settings, "run_root"), field="run_root")
     data_root = _path(getattr(settings, "data_root"), field="data_root")
+    capture_evidence = None
+    if isinstance(request, ProductQualificationWorkerRequestDto):
+        target = resolve_frozen_instrument(
+            run_root,
+            active_cohort_id=request.cohort_id,
+            active_freeze_id=request.active_freeze_id,
+        )
+        capture_evidence = ProductCurrentEvidenceStore(run_root).evidence(target)
     path = qualify_forward_with_qap(
         cohort_root=run_root / "scanner-forward" / request.cohort_id,
         checkpoint_id=request.checkpoint_id,
@@ -210,6 +225,7 @@ def _qualify(
         repository_root=_path(
             getattr(settings, "repository_root"), field="repository_root"
         ),
+        capture_evidence=capture_evidence,
     )
     document = read_qualification(path)
     return {
@@ -288,7 +304,11 @@ def _execute(
             settings,
         )
     if kind is OperationKind.QUALIFY_CANDIDATE:
-        return _qualify(QualificationRequestDto.model_validate(payload), settings)
+        if payload.get("evidence_source") == "product_collector":
+            request = ProductQualificationWorkerRequestDto.model_validate(payload)
+        else:
+            request = QualificationRequestDto.model_validate(payload)
+        return _qualify(request, settings)
     if kind is OperationKind.RUN_BASKET:
         return _basket(BasketRunRequestDto.model_validate(payload), settings)
     raise RuntimeError(f"unsupported operation kind: {kind.value}")

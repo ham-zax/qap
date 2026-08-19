@@ -98,6 +98,7 @@ class MarketDataMaintenanceStore:
     def _connection(self) -> sqlite3.Connection:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         connection = sqlite3.connect(self.path)
+        connection.execute("PRAGMA busy_timeout = 5000")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS market_data_maintenance (

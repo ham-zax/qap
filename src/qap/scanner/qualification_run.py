@@ -17,6 +17,7 @@ from qap.market.microstructure_storage import (
     read_public_market_metadata_snapshots,
 )
 from qap.market.public_capture import CaptureKind, capture_file
+from qap.market.public_evidence import PublicEvidenceBundle
 from qap.portfolio._decimal import divide, exact_add, exact_multiply
 from qap.scanner.catalog import ScannerCatalog
 from qap.scanner.liquidity import BookSide, friction_evidence, walk_quote_notional
@@ -200,34 +201,55 @@ def _direct_context(
 def _capture_state(
     *,
     capture_root: Path,
-    venue: str,
-    venue_symbol: str,
+    instrument: VenueInstrument,
     as_of: datetime,
+    capture_evidence: PublicEvidenceBundle | None = None,
 ) -> tuple[
     tuple[PublicBookSnapshot, ...],
     tuple[PublicBookSnapshot, ...],
     PublicMarketMetadataSnapshot | None,
     bool,
 ]:
-    l1_path = capture_file(
-        capture_root, venue=venue, venue_symbol=venue_symbol, kind=CaptureKind.L1
-    )
-    depth_path = capture_file(
-        capture_root, venue=venue, venue_symbol=venue_symbol, kind=CaptureKind.DEPTH
-    )
-    metadata_path = capture_file(
-        capture_root,
-        venue=venue,
-        venue_symbol=venue_symbol,
-        kind=CaptureKind.METADATA,
-    )
-    l1 = read_public_book_snapshots(l1_path) if l1_path.is_file() else ()
-    depth = read_public_book_snapshots(depth_path) if depth_path.is_file() else ()
-    metadata_rows = (
-        read_public_market_metadata_snapshots(metadata_path)
-        if metadata_path.is_file()
-        else ()
-    )
+    if capture_evidence is None:
+        l1_path = capture_file(
+            capture_root,
+            venue=instrument.venue,
+            venue_symbol=instrument.venue_symbol,
+            kind=CaptureKind.L1,
+        )
+        depth_path = capture_file(
+            capture_root,
+            venue=instrument.venue,
+            venue_symbol=instrument.venue_symbol,
+            kind=CaptureKind.DEPTH,
+        )
+        metadata_path = capture_file(
+            capture_root,
+            venue=instrument.venue,
+            venue_symbol=instrument.venue_symbol,
+            kind=CaptureKind.METADATA,
+        )
+        l1 = read_public_book_snapshots(l1_path) if l1_path.is_file() else ()
+        depth = read_public_book_snapshots(depth_path) if depth_path.is_file() else ()
+        metadata_rows = (
+            read_public_market_metadata_snapshots(metadata_path)
+            if metadata_path.is_file()
+            else ()
+        )
+    else:
+        if any(item.instrument != instrument for item in capture_evidence.l1):
+            raise QualificationRunError("collector L1 evidence instrument mismatch")
+        if any(item.instrument != instrument for item in capture_evidence.depth):
+            raise QualificationRunError("collector depth evidence instrument mismatch")
+        if any(
+            item.metadata.instrument != instrument for item in capture_evidence.metadata
+        ):
+            raise QualificationRunError(
+                "collector metadata evidence instrument mismatch"
+            )
+        l1 = capture_evidence.l1
+        depth = capture_evidence.depth
+        metadata_rows = capture_evidence.metadata
     metadata = next(
         (item for item in reversed(metadata_rows) if item.observed_at <= as_of),
         None,
@@ -347,6 +369,7 @@ def qualify_forward_checkpoint(
     load_current_state: CurrentQapStateLoader,
     run_qualification: QualificationReplayRunner,
     run_timestamp: datetime | None = None,
+    capture_evidence: PublicEvidenceBundle | None = None,
 ) -> Path:
     """Qualify one completed forward checkpoint at explicit hypothetical capital."""
 
@@ -371,9 +394,9 @@ def qualify_forward_checkpoint(
     )
     l1, depth, metadata_snapshot, capture_satisfied = _capture_state(
         capture_root=Path(capture_root).resolve(),
-        venue=instrument.venue,
-        venue_symbol=instrument.venue_symbol,
+        instrument=instrument,
         as_of=qualification_as_of,
+        capture_evidence=capture_evidence,
     )
     metadata = None if metadata_snapshot is None else metadata_snapshot.metadata
     current_two_way = metadata is not None and _two_way(metadata)

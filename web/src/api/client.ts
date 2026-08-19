@@ -22,6 +22,10 @@ type ScanListDto = components['schemas']['ScanListDto']
 type ScanDetailDto = components['schemas']['ScanDetailDto']
 type CandidateListDto = components['schemas']['CandidateListDto']
 type CandidateDetailDto = components['schemas']['CandidateDetailDto']
+type ResearchIdeaCurrentEvidenceDto =
+  components['schemas']['ResearchIdeaCurrentEvidenceDto']
+type ProductAmountAssessmentRequestDto =
+  components['schemas']['ProductAmountAssessmentRequestDto']
 type ForwardCohortListDto = components['schemas']['ForwardCohortListDto']
 type ForwardCohortDetailDto = components['schemas']['ForwardCohortDetailDto']
 type CaptureReadinessDto = components['schemas']['CaptureReadinessDto']
@@ -181,6 +185,29 @@ export function createApiClient({
     getScanCandidate: (scanId: string, candidateId: string) =>
       request<CandidateDetailDto>(
         `/api/scans/${encodeURIComponent(scanId)}/candidates/${encodeURIComponent(candidateId)}`,
+      ),
+    getProductResearchIdeaCurrentEvidence: (scanId: string, candidateId: string) =>
+      request<ResearchIdeaCurrentEvidenceDto>(
+        `/api/product-research/${encodeURIComponent(scanId)}/ideas/${encodeURIComponent(candidateId)}/current-evidence`,
+      ),
+    startProductResearchIdeaCurrentEvidence: (scanId: string, candidateId: string) =>
+      request<ResearchIdeaCurrentEvidenceDto>(
+        `/api/product-research/${encodeURIComponent(scanId)}/ideas/${encodeURIComponent(candidateId)}/current-evidence`,
+        { method: 'POST' },
+      ),
+    stopProductResearchIdeaCurrentEvidence: (scanId: string, candidateId: string) =>
+      request<ResearchIdeaCurrentEvidenceDto>(
+        `/api/product-research/${encodeURIComponent(scanId)}/ideas/${encodeURIComponent(candidateId)}/current-evidence`,
+        { method: 'DELETE' },
+      ),
+    assessProductResearchIdeaAmount: (
+      scanId: string,
+      candidateId: string,
+      command: ProductAmountAssessmentRequestDto,
+    ) =>
+      request<OperationRefDto>(
+        `/api/product-research/${encodeURIComponent(scanId)}/ideas/${encodeURIComponent(candidateId)}/amount-assessments`,
+        { method: 'POST', body: JSON.stringify(command) },
       ),
     listForwardCohorts: () =>
       request<ForwardCohortListDto>('/api/forward/cohorts'),

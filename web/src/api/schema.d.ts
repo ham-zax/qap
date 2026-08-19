@@ -447,6 +447,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/product-research/{scan_id}/ideas/{candidate_id}/amount-assessments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assess Amount */
+        post: operations["assessProductResearchIdeaAmount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/product-research/{scan_id}/ideas/{candidate_id}/current-evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Current Evidence */
+        get: operations["getProductResearchIdeaCurrentEvidence"];
+        put?: never;
+        /** Start Current Evidence */
+        post: operations["startProductResearchIdeaCurrentEvidence"];
+        /** Stop Current Evidence */
+        delete: operations["stopProductResearchIdeaCurrentEvidence"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/qualifications": {
         parameters: {
             query?: never;
@@ -1261,6 +1297,15 @@ export interface components {
             horizon: "short" | "medium" | "swing";
             /** Readiness Id */
             readiness_id: string;
+        };
+        /** CurrentEvidenceSlotCountsDto */
+        CurrentEvidenceSlotCountsDto: {
+            /** Captured */
+            captured: number;
+            /** Missed */
+            missed: number;
+            /** Scheduled */
+            scheduled: number;
         };
         /**
          * DataRole
@@ -2506,6 +2551,11 @@ export interface components {
          * @enum {string}
          */
         PrimaryMetric: "hodl_relative_terminal_wealth" | "primary_control_relative_terminal_wealth";
+        /** ProductAmountAssessmentRequestDto */
+        ProductAmountAssessmentRequestDto: {
+            /** Requested Capital */
+            requested_capital: string;
+        };
         /** ProductFollowUpDto */
         ProductFollowUpDto: {
             /** Cohort Id */
@@ -2765,6 +2815,48 @@ export interface components {
              * @enum {string}
              */
             state: "research_only" | "small_capacity" | "tradable_now";
+        };
+        /** ResearchIdeaCurrentEvidenceDto */
+        ResearchIdeaCurrentEvidenceDto: {
+            /** Active Cohort Id */
+            active_cohort_id: string | null;
+            /** Active Freeze Id */
+            active_freeze_id: string | null;
+            /** Assessment Blocker */
+            assessment_blocker: string | null;
+            /** Collecting Since */
+            collecting_since: string | null;
+            /** Collector Failure Reason */
+            collector_failure_reason: string | null;
+            /**
+             * Collector Status
+             * @enum {string}
+             */
+            collector_status: "not_running" | "running" | "failed";
+            depth_slots: components["schemas"]["CurrentEvidenceSlotCountsDto"];
+            l1_slots: components["schemas"]["CurrentEvidenceSlotCountsDto"];
+            /** Latest Observation */
+            latest_observation: string | null;
+            /** Plan Id */
+            plan_id: string | null;
+            readiness: components["schemas"]["CaptureReadinessDto"] | null;
+            /** Readiness As Of */
+            readiness_as_of: string | null;
+            /**
+             * Schema Version
+             * @default qap.api.product_current_evidence.v1
+             * @constant
+             */
+            schema_version: "qap.api.product_current_evidence.v1";
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "not_collecting" | "collecting" | "coverage_incomplete" | "contract_ready" | "evidence_unavailable";
+            /** Venue */
+            venue: ("binance" | "gate") | null;
+            /** Venue Symbol */
+            venue_symbol: string | null;
         };
         /** ResearchIdeaFollowUpMembershipDto */
         ResearchIdeaFollowUpMembershipDto: {
@@ -3257,6 +3349,14 @@ export interface components {
         };
         /** WorkspaceStatusDto */
         WorkspaceStatusDto: {
+            /** Current Evidence Collector Failure Reason */
+            current_evidence_collector_failure_reason?: string | null;
+            /**
+             * Current Evidence Collector Status
+             * @default not_running
+             * @enum {string}
+             */
+            current_evidence_collector_status: "not_running" | "running" | "failed";
             /** Market Data Catalog Updated At */
             market_data_catalog_updated_at: string | null;
             /**
@@ -4072,6 +4172,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assessProductResearchIdeaAmount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scan_id: string;
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductAmountAssessmentRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getProductResearchIdeaCurrentEvidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scan_id: string;
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchIdeaCurrentEvidenceDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    startProductResearchIdeaCurrentEvidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scan_id: string;
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchIdeaCurrentEvidenceDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stopProductResearchIdeaCurrentEvidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scan_id: string;
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchIdeaCurrentEvidenceDto"];
                 };
             };
             /** @description Validation Error */

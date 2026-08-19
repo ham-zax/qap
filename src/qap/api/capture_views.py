@@ -10,6 +10,7 @@ from qap.experiment import read_run_artifacts
 from qap.market import MicrostructureStorageError, read_public_book_snapshots
 from qap.market.microstructure_storage import read_public_market_metadata_snapshots
 from qap.market.public_capture import CaptureKind, capture_file
+from qap.market.public_evidence import PublicEvidenceBundle
 from qap.scanner.liquidity_policy import evaluate_capture_contract
 from qap.scanner.prospective_protocol import (
     DAILY_COVERAGE_MINIMUM,
@@ -46,6 +47,7 @@ def forward_capture_readiness(
     capture_root: Path,
     checkpoint_id: str,
     as_of: datetime,
+    capture_evidence: PublicEvidenceBundle | None = None,
 ) -> CaptureReadinessDto:
     """Project finite capture work without moving capture policy into the API/UI."""
 
@@ -108,29 +110,45 @@ def forward_capture_readiness(
             raise ValueError("execution venue is not capture-supported")
         venue = cast(Literal["binance", "gate"], instrument.venue)
 
-        l1_observations = _capture_times(
-            capture_root.resolve(),
-            venue=instrument.venue,
-            venue_symbol=instrument.venue_symbol,
-            kind=CaptureKind.L1,
-        )
-        depth_observations = _capture_times(
-            capture_root.resolve(),
-            venue=instrument.venue,
-            venue_symbol=instrument.venue_symbol,
-            kind=CaptureKind.DEPTH,
-        )
-        metadata_path = capture_file(
-            capture_root.resolve(),
-            venue=instrument.venue,
-            venue_symbol=instrument.venue_symbol,
-            kind=CaptureKind.METADATA,
-        )
-        metadata_rows = (
-            read_public_market_metadata_snapshots(metadata_path)
-            if metadata_path.is_file()
-            else ()
-        )
+        if capture_evidence is None:
+            l1_observations = _capture_times(
+                capture_root.resolve(),
+                venue=instrument.venue,
+                venue_symbol=instrument.venue_symbol,
+                kind=CaptureKind.L1,
+            )
+            depth_observations = _capture_times(
+                capture_root.resolve(),
+                venue=instrument.venue,
+                venue_symbol=instrument.venue_symbol,
+                kind=CaptureKind.DEPTH,
+            )
+            metadata_path = capture_file(
+                capture_root.resolve(),
+                venue=instrument.venue,
+                venue_symbol=instrument.venue_symbol,
+                kind=CaptureKind.METADATA,
+            )
+            metadata_rows = (
+                read_public_market_metadata_snapshots(metadata_path)
+                if metadata_path.is_file()
+                else ()
+            )
+        else:
+            if any(item.instrument != instrument for item in capture_evidence.l1):
+                raise ValueError("collector L1 evidence instrument mismatch")
+            if any(item.instrument != instrument for item in capture_evidence.depth):
+                raise ValueError("collector depth evidence instrument mismatch")
+            if any(
+                item.metadata.instrument != instrument
+                for item in capture_evidence.metadata
+            ):
+                raise ValueError("collector metadata evidence instrument mismatch")
+            l1_observations = tuple(item.observed_at for item in capture_evidence.l1)
+            depth_observations = tuple(
+                item.observed_at for item in capture_evidence.depth
+            )
+            metadata_rows = capture_evidence.metadata
         coverage = evaluate_capture_contract(
             l1_observations,
             depth_observations,

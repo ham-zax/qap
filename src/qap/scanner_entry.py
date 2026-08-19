@@ -15,6 +15,7 @@ from qap.experiment.prospective_scanner_adapter import (
     run_prospective_qualification,
 )
 from qap.experiment.scanner_adapter import run_scanner_candidate_replay
+from qap.market.public_evidence import PublicEvidenceBundle
 from qap.scanner.artifacts import (
     ReplayAttemptRecord,
     ReplayAttemptStatus,
@@ -371,6 +372,7 @@ def qualify_forward_with_qap(
     run_root: str | Path,
     repository_root: str | Path | None = None,
     run_timestamp: datetime | None = None,
+    capture_evidence: PublicEvidenceBundle | None = None,
 ) -> Path:
     """Qualify explicit capital while delegating economics to ordinary QAP."""
 
@@ -435,6 +437,7 @@ def qualify_forward_with_qap(
         load_current_state=load_current_state,
         run_qualification=run_qualification,
         run_timestamp=run_timestamp,
+        capture_evidence=capture_evidence,
     )
 
 

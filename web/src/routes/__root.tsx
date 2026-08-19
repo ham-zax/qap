@@ -43,7 +43,10 @@ export const Route = createRootRouteWithContext<QapRouterContext>()({
 function RootLayout() {
   const workspace = Route.useLoaderData()
   return (
-    <AppShell workspaceMode={workspace.workspace_mode}>
+    <AppShell
+      workspaceMode={workspace.workspace_mode}
+      collectorStatus={workspace.current_evidence_collector_status}
+    >
       <Outlet />
     </AppShell>
   )

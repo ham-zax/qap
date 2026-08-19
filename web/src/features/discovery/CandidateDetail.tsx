@@ -5,6 +5,7 @@ import type { QapApiClient } from '../../api/client'
 import type { CandidateDetailDto, OperationRefDto } from '../../api/types'
 import { Badge, type BadgeTone } from '../../components/ui/Badge'
 import { LineageTrail } from '../lineage/LineageTrail'
+import { ProductCurrentEvidencePanel } from './ProductCurrentEvidencePanel'
 import { ProductFollowUpAction } from './ProductFollowUpAction'
 import { ResearchIdeaEvidenceLayers } from './ResearchIdeaEvidenceLayers'
 
@@ -129,6 +130,14 @@ export function CandidateDetail({ apiClient, data }: CandidateDetailProps) {
       ) : null}
 
       {isProductClaim ? <ResearchIdeaEvidenceLayers data={data.longitudinal} /> : null}
+
+      {isProductClaim && data.longitudinal.memberships.length > 0 ? (
+        <ProductCurrentEvidencePanel
+          apiClient={apiClient}
+          scanId={candidate.scan_id}
+          candidateId={candidate.candidate_id}
+        />
+      ) : null}
 
       <details className="mt-6 rounded-lg border border-border bg-panel p-5">
         <summary className="min-h-11 cursor-pointer py-2 text-lg font-semibold text-foreground">
