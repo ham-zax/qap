@@ -535,16 +535,126 @@ The investigation provides enough evidence to freeze these design constraints be
 11. Existing route URLs may remain stable while navigation/labels/shell change.
 12. A goal/resume-oriented root experience is required; the current Research Runs root is not the target IA.
 
-## 17. Decisions requiring a design checkpoint before code
+## 17. Milestone-1 terminology and IA checkpoint
 
-These should be validated with the stakeholder/user group before broad implementation:
+**Status:** `single-stakeholder provisional` and frozen as the Phase-16 implementation baseline on 2026-08-19.
 
-- final top-level labels (`Discover / Validate / Portfolios / Results / Activity` are the recommended starting hypothesis);
-- exact plain-language translations of `tradable_now` and related qualification states;
-- whether current-evidence capture remains guided sequential existing commands or gets a future backend aggregate application operation;
-- how much candidate-trial filtering/ranking belongs in the default Scan Detail without hiding negative evidence;
-- exact composition of the Home resume/dashboard surface;
-- whether Paper Operations belongs under Results or an Advanced/Research-tools disclosure.
+No additional moderated participants are available in this implementation session. Per the Phase-16 plan, the recommended IA/terminology therefore becomes the implementation baseline rather than blocking indefinitely. The freeze is deliberately provisional: later observed user confusion may revise presentation labels and grouping, but it does not reopen scientific/economic authority or the seven-command backend surface.
+
+### 17.1 Frozen primary destinations
+
+```text
+Home | Discover | Validate | Portfolios | Results | Activity
+```
+
+The primary task placement is:
+
+| User task | Primary destination | Boundary |
+|---|---|---|
+| Decide what to do / resume work | Home | Goal and resume surface only; not another analytical dashboard |
+| Find a research idea | Discover | Scanner initiation, completed scans, research-idea browsing |
+| Understand one relationship idea | Discover | Historical verdict first; technical candidate evidence remains available below |
+| Continue forward validation | Validate | Cross-session freeze → later evidence → current assessment journey |
+| Update current market evidence | Validate | Uses existing bounded capture operation; raw venue/symbol mechanics are advanced detail |
+| Evaluate a hypothetical capital amount | Validate | QAP classifies evidence; the user does not accept/reject the idea |
+| Build or analyze a 3–6 asset portfolio | Portfolios | Basket drafting plus authoritative post-QAP portfolio result |
+| Browse a finished research run | Results | Finished experiment/research evidence, not background task status |
+| Inspect paper execution evidence | Results | Secondary `Paper execution evidence` destination; not primary navigation |
+| Inspect a running/failed/completed background task | Activity | Operational lifecycle only; scientific outcome is linked, not inferred |
+
+Specialist evidence routes remain stable and contextual: Research Run detail, Portfolio Economics, Pair Evidence, Paper Execution Evidence, and exact Operation detail. Route-path renaming is not part of the freeze.
+
+### 17.2 Frozen terminology
+
+Primary copy uses the following labels. Internal terms remain available under Advanced research / Exact evidence.
+
+| Internal/domain term | Primary presentation | Clarifying rule |
+|---|---|---|
+| candidate | Research idea | A relationship/model idea, not a candidate asset |
+| candidate trial | Evaluated rule | Do not imply every valid rule was promoted |
+| deep replay survivor | Passed historical research checks | Exact `deep_replay_survivor` remains in audit detail |
+| deep replay rejected | Did not pass historical research checks | A valid negative research result, not an application failure |
+| model source unavailable | Required model evidence unavailable | Evidence availability state, not economic rejection |
+| prospective cohort | Forward validation | One frozen cross-session validation process |
+| freeze cohort | Start forward validation | The freeze/time boundary must be visible |
+| advance cohort | Update forward evidence | The user supplies an observation boundary, not an experiment duration |
+| checkpoint | Evidence update | Exact checkpoint identity remains in audit detail |
+| capture public evidence | Update current market evidence | Keep capture kind/venue/symbol mechanics behind Advanced by default |
+| qualification | Current capital assessment | QAP classifies the requested amount |
+| requested capital | Amount to evaluate | Hypothetical research amount, not an order |
+| `research_only` | Research only | Current evidence does not support an actionability claim; show the persisted reason |
+| `small_capacity` | Smaller amount supported | Show the persisted capacity ceiling and reason |
+| `tradable_now` | Current evidence supports this amount | Always pair with `Research assessment only — QAP does not place or authorize live trades.` |
+| basket | Portfolio research | User-facing object is a portfolio; `basket` remains an internal/artifact term |
+| run basket through QAP | Analyze portfolio | Authoritative opinions/targets still appear only after QAP completes |
+| operation | Activity / background task | Operational completion must not imply research success |
+| experiment | Research result | `Experiment/QAP run` remains technical evidence terminology |
+| forensic | Advanced research mode | Never a normal-path prerequisite |
+| manual replay candidate IDs | Re-evaluate specific research ideas | IDs belong in Advanced research controls |
+| HODL | Passive hold (HODL) benchmark | Preserve exact benchmark identity |
+| primary control | Simple rebalancing control | Preserve exact configured control in evidence detail |
+
+### 17.3 Qualification-state wording
+
+The three current-capital states are frozen as separate research conclusions:
+
+- `research_only` → **Research only**. Helper copy explains the persisted reason and never implies application failure.
+- `small_capacity` → **Smaller amount supported**. Helper copy states that the requested amount exceeds the current evidence-supported capacity and surfaces the backend ceiling.
+- `tradable_now` → **Current evidence supports this amount**. It must always be accompanied by: **Research assessment only — QAP does not place or authorize live trades.**
+
+Do not use `Buy`, `Trade`, `Approved`, `Safe to trade`, or equivalent live-authority language for any qualification state.
+
+### 17.4 Current-evidence capture decision
+
+Phase 16 does **not** add a backend aggregate capture command by default.
+
+The presentation layer should guide the existing `capture_public_evidence` command one bounded capture at a time, pre-populating venue/base/quote/symbol from the selected validation context wherever the current read model already supplies them. Raw capture type, venue symbol, base asset, and quote asset belong under Advanced research controls when user intervention is genuinely required.
+
+If implementation proves that a correct novice flow requires unreliable client-side orchestration across several mandatory captures, stop and propose the smallest backend composition change explicitly. Do not silently create a generic capture/job endpoint.
+
+### 17.5 Scan-detail disclosure decision
+
+Do not invent a frontend research score or hide negative evidence. The default Scan Detail should summarize backend-owned status groups before exposing the full trial ledger:
+
+1. passed historical research checks;
+2. evaluated/replayed but rejected;
+3. valid but not replayed/promoted;
+4. unavailable/invalid evidence.
+
+Counts for every group remain visible. The complete trial ledger remains available under **All evaluated rules**. Ordering/grouping may use persisted statuses only; React must not manufacture a new scientific ranking.
+
+### 17.6 Home composition decision
+
+Home is a goal/resume surface, not a metrics dashboard. Its first viewport should contain four primary actions:
+
+```text
+Find research ideas
+Continue validation
+Analyze a portfolio
+Review prior results
+```
+
+Below those actions, Home may show only compact resume context:
+
+- the single active background task, if one exists;
+- forward validations waiting for or ready for later evidence;
+- a short list of recent finished research results.
+
+Do not add aggregate performance charts, vanity metrics, scanner hit-rate percentages, or synthetic product scores to Home.
+
+### 17.7 Paper execution evidence decision
+
+`Paper Operations` leaves the primary novice navigation. Its stable routes remain available under **Results → Paper execution evidence** and through contextual links from relevant research results. This preserves the important reconciliation/fill/cost evidence without asking new users to distinguish `Operations` from `Paper Operations` at navigation time.
+
+### 17.8 Revisit triggers
+
+The M1 freeze should be reopened only when direct observation shows repeated misunderstanding of one of these contracts, especially:
+
+- users cannot predict whether a task belongs in Discover, Validate, Portfolios, Results, or Activity;
+- `Current evidence supports this amount` is interpreted as live-trading authorization despite the boundary note;
+- the guided capture flow cannot be completed without exposing raw venue mechanics in the normal path;
+- status grouping causes users to believe negative/unavailable evidence was hidden;
+- Results vs Activity remains systematically confused.
 
 ## 18. Recommended implementation boundary
 

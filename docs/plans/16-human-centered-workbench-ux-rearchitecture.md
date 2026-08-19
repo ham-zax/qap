@@ -6,6 +6,12 @@ Purpose: Re-architect the web presentation around user goals, research comprehen
 Impact: Adds a post-Slice-4 product phase. Runtime research contracts remain unchanged unless the explicit current-evidence capture checkpoint later proves a backend composition change is necessary.
 Evidence: `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`, current `main` at `62416cc`, completed Slice-4 results and rendered acceptance.
 
+Update context — 2026-08-19 (M1 freeze)
+Trigger: The current-state investigation and rendered walkthrough are complete; no additional moderated participants are available in this implementation session.
+Purpose: Resolve the terminology/information-architecture checkpoint so presentation implementation can proceed without inventing labels route-by-route.
+Impact: `Home / Discover / Validate / Portfolios / Results / Activity` and the presentation vocabulary in the investigation are frozen as a `single-stakeholder provisional` implementation baseline. No backend contract is changed.
+Evidence: `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md#17-milestone-1-terminology-and-ia-checkpoint`.
+
 **Goal:** Make the completed local QAP workbench understandable and efficient for non-developer, non-professional-trader stakeholders/users while preserving exact research evidence, negative outcomes, provenance, and all established authority boundaries.
 
 **Architecture:** Keep the existing FastAPI command/query boundary, React 19/TanStack application, immutable QAP/scanner artifacts, and existing evidence routes. Re-architect only the presentation hierarchy: a goal-oriented Home and primary navigation, plain-language task surfaces, visible causal/time boundaries, and progressive disclosure from user decision → contextual evidence → advanced research → exact audit.
@@ -189,6 +195,8 @@ Potential later boundary decision only:
 
 ## 7. Milestone 1 — Stakeholder terminology and IA checkpoint
 
+**Status:** complete — `single-stakeholder provisional` baseline frozen on 2026-08-19. Milestone 2 presentation work may proceed.
+
 **Files:**
 
 - Modify: `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`
@@ -201,11 +209,11 @@ Potential later boundary decision only:
 
 **Steps:**
 
-- [ ] Review the six proposed primary destinations with stakeholders/users: Home, Discover, Validate, Portfolios, Results, Activity.
-- [ ] Ask participants to place current tasks into destinations: find an idea, inspect historical result, continue forward validation, update current evidence, evaluate capital, build portfolio, inspect finished run, inspect running task, inspect paper evidence.
-- [ ] Record misplacements/confusing labels rather than inventing a quantitative score.
-- [ ] Review plain-language translations for survivor/rejected/research-only/limited-capacity/current-evidence-supported states.
-- [ ] Freeze the navigation and terminology table after resolving repeated confusion.
+- [x] Review the six proposed primary destinations against the stated stakeholder/user profile and current rendered workflows: Home, Discover, Validate, Portfolios, Results, Activity.
+- [x] Place current tasks into destinations: find/understand an idea → Discover; forward/current-capital work → Validate; portfolio work → Portfolios; finished research/paper evidence → Results; background execution → Activity; orient/resume → Home.
+- [x] Record the principal confusion boundaries qualitatively rather than inventing a score: Results vs Activity, candidate vs asset, prospective vs simulated future, user qualification vs QAP classification, Operations vs Paper Operations.
+- [x] Freeze plain-language translations for historical survivor/rejected and `research_only` / `small_capacity` / `tradable_now` states, including the explicit no-live-authority wording.
+- [x] Freeze the navigation and terminology table as `single-stakeholder provisional`, with explicit observation-based reopen triggers.
 
 **Acceptance criteria:**
 
@@ -213,7 +221,7 @@ Potential later boundary decision only:
 - `tradable_now` presentation wording cannot reasonably be read as live-trading authorization.
 - Advanced research terminology remains discoverable but is not required to navigate the core flow.
 
-If no additional participants are available, the recommended IA/terminology from the investigation becomes the default implementation baseline and is marked `single-stakeholder provisional` rather than blocking indefinitely.
+The no-additional-participant branch has been exercised: the recommended IA/terminology is now the `single-stakeholder provisional` implementation baseline. Reopen it only under the observation triggers recorded in the investigation.
 
 ## 8. Milestone 2 — Goal-oriented Home and shell
 
@@ -466,9 +474,9 @@ Phase 16 is complete when:
 ```text
 M0 current-state investigation                  ✅
         ↓
-M1 terminology + IA stakeholder checkpoint
+M1 terminology + IA stakeholder checkpoint      ✅ provisional freeze
         ↓
-DESIGN FREEZE
+DESIGN FREEZE                                   ✅
         ↓
 M2 Home + shell
         ↓
