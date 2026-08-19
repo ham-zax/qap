@@ -1,6 +1,6 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M5 are complete and integrated. The selective legacy-QAP salvage amendment is approved. M5 now provides the frozen primary IA `Home | Research | Portfolios | History`, M4-driven normal Product Research, backend-composed completed-stage counts, claim-aware Product/PIT evidence, and truthful negative/unavailable states while preserving strict historical PIT under Advanced Research. M6 longitudinal Research Idea + evidence-layer semantics/all-survivor follow-up is the current implementation frontier; M7 collector/state-ownership reconnaissance may proceed read-only in parallel.
+**Status:** M0-M6 are complete and integrated. The selective legacy-QAP salvage amendment is approved. M6 now provides one longitudinal Research Idea view with evidence-layer semantics, reselection-aware lineage, and backend-stamped all-survivor Product follow-up while preserving Scanner-V1/PROSPECTIVE_V1 authority. M7 persistent current public-evidence collection + qualification bridging is the current implementation frontier; M8 Portfolios/History/Activity reconnaissance may proceed read-only in parallel.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
@@ -793,7 +793,7 @@ Phase 17 is complete only when:
 
 ## 19. Fresh-agent implementation mission
 
-> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the Product Layer investigation/design, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M5 are complete and integrated; the current writable frontier is M6: compose claim-aware historical Research Ideas with existing all-survivor prospective follow-up, reselection lineage, later evidence, and time-specific current-capacity assessments without changing Scanner-V1/PROSPECTIVE_V1 scientific authority. Reuse the existing freeze operation through a Product generation-wide wrapper; do not ask normal users for raw `freeze_at`. Do not implement persistent M7 collection, Product basket compatibility, a generic workflow engine, CCXT, cloud infrastructure, or live/private exchange authority. Testing remains opt-in under the current execution policy.
+> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the Product Layer investigation/design, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M6 are complete and integrated; the current writable frontier is M7: add one workspace-local persistent current public-evidence collector with bounded stdlib SQLite operational state, exact scheduled-slot accounting, frozen-lineage instrument resolution, restart-safe missed-slot semantics, and a Product qualification bridge that reuses the existing capture-readiness and qualification authorities. Do not change Scanner-V1/PROSPECTIVE_V1, capture thresholds, qualification/capacity math, Product basket compatibility, introduce a generic workflow engine, CCXT, cloud infrastructure, or live/private exchange authority. Testing remains opt-in under the current execution policy.
 
 ## 20. One-screen status
 
@@ -810,11 +810,13 @@ Phase 17 M3 Product orchestration  COMPLETE
 Phase 17 M4 current-approved policy + explainable readiness/safe cutoff  COMPLETE
 Phase 17 M5 Research / truthful funnel / primary IA  COMPLETE
 
+Phase 17 M6 longitudinal Research Idea + evidence-layer semantics / all-survivor follow-up  COMPLETE
+
 NEXT
-Phase 17 M6 longitudinal Research Idea + evidence-layer semantics / all-survivor follow-up
+Phase 17 M7 persistent current-evidence collector / qualification bridge
 
 PARALLEL READ-ONLY
-Phase 17 M7 persistent current-evidence collector / state-ownership reconnaissance
+Phase 17 M8 Portfolios / History / Activity convergence reconnaissance
 
 CURRENT PRIMARY IA
 Home | Research | Portfolios | History
