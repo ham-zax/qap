@@ -142,7 +142,7 @@ def _warmup_bars(definition: BasketDefinition) -> int:
     )
     return max(
         *edge_windows,
-        pair_blind_window_returns(policy_config, definition.decision_resolution),
+        pair_blind_window_returns(policy_config, definition.decision_resolution) + 1,
     )
 
 

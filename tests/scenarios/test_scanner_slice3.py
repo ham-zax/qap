@@ -7,6 +7,8 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from qap.experiment.artifacts import read_run_artifacts
+from qap.experiment.basket_manifest import pair_blind_window_returns
+from qap.experiment.data import load_experiment_data
 from qap.experiment.manifest import DataRole
 from qap.market import (
     BarInterval,
@@ -21,6 +23,7 @@ from qap.market import (
     write_parquet_bar_series,
 )
 from qap.portfolio import AssetId
+from qap.relationship.models import cross_sectional_relative_observation
 from qap.scanner.artifacts import read_completed_scan
 from qap.scanner.asset_momentum_artifacts import read_asset_momentum_generation
 from qap.scanner.basket_artifacts import (
@@ -148,9 +151,51 @@ def _write_fixture(data_root: Path) -> None:
                 "interval": INTERVAL.label,
                 "expected_semantic_fingerprint": fingerprint_bar_series(series),
                 "lifecycle_evidence_ids": [event_ids[asset]],
-                "direct_pair_dataset_ids": [],
+                "direct_pair_dataset_ids": (
+                    ["aaa-bbb-1h"] if asset in {ASSETS[0], ASSETS[1]} else []
+                ),
             }
         )
+    direct_instrument = VenueInstrument(
+        venue="binance",
+        venue_symbol="AAABBB",
+        base=ASSETS[0],
+        quote=ASSETS[1],
+    )
+    direct_bars = []
+    for index in range(count):
+        candle_open = start + index * INTERVAL.duration
+        elapsed_hours = (candle_open - start).total_seconds() / 3600.0
+        close = _price(ASSETS[0], elapsed_hours) / _price(ASSETS[1], elapsed_hours)
+        direct_bars.append(
+            MarketBar(
+                instrument=direct_instrument,
+                interval=INTERVAL,
+                candle_open_time=candle_open,
+                open=close,
+                high=close,
+                low=close,
+                close=close,
+                volume=1000.0,
+            )
+        )
+    direct_series = validate_bar_series(tuple(direct_bars))
+    direct_relative_path = "market/aaa-bbb-1h.parquet"
+    write_parquet_bar_series(data_root / direct_relative_path, direct_series)
+    sources.append(
+        {
+            "dataset_id": "aaa-bbb-1h",
+            "relative_path": direct_relative_path,
+            "venue": "binance",
+            "venue_symbol": direct_instrument.venue_symbol,
+            "base_asset": ASSETS[0].key,
+            "quote_asset": ASSETS[1].key,
+            "interval": INTERVAL.label,
+            "expected_semantic_fingerprint": fingerprint_bar_series(direct_series),
+            "lifecycle_evidence_ids": [],
+            "direct_pair_dataset_ids": [],
+        }
+    )
     (data_root / "catalog.json").write_text(
         json.dumps(
             {
@@ -178,6 +223,19 @@ def test_slice3_completed_scan_momentum_and_manual_basket_reach_ordinary_qap(
         run_root=run_root,
     )
     _definition, tables = read_completed_scan(scan.artifact_directory)
+    attempts = {
+        str(row["candidate_id"]): row for row in tables["replay_attempts.parquet"]
+    }
+    direct_candidate = next(
+        row
+        for row in tables["scout_trials.parquet"]
+        if row["trial_status"] == "valid"
+        and row["resolution"] == "1h"
+        and row["template_id"] == "fast"
+        and row["model_family"] == "log_ratio_mean_reversion"
+        and attempts.get(str(row["candidate_id"]), {}).get("attempt_status")
+        == "completed"
+    )
     candidate = next(
         row
         for row in tables["scout_trials.parquet"]
@@ -185,6 +243,7 @@ def test_slice3_completed_scan_momentum_and_manual_basket_reach_ordinary_qap(
         and row["resolution"] == "1h"
         and row["template_id"] == "fast"
         and row["model_family"] == "log_ratio_mean_reversion"
+        and row["pair_id"] != "AAA/BBB"
     )
     negative_candidate = min(
         (
@@ -227,14 +286,69 @@ def test_slice3_completed_scan_momentum_and_manual_basket_reach_ordinary_qap(
     )
     basket, attempt, _manifest = read_basket_generation(basket_directory)
     assert basket.source_momentum_scan_id == momentum.momentum_scan_id
-    assert basket.selected_edges[0].deep_replay_status == "setup_failed"
-    assert (
-        basket.selected_edges[0].deep_replay_failure_reason
-        == "unsupported_direct_market"
-    )
+    assert basket.selected_edges[0].pair_id != "AAA/BBB"
+    assert basket.selected_edges[0].scout_status == "valid"
     assert attempt.status is BasketReplayStatus.COMPLETED
     assert attempt.qap_run_id is not None
     assert attempt.economic_gate_status is BasketEconomicGateStatus.DEVELOPMENT_SURVIVOR
+
+    qap = read_run_artifacts(run_root / attempt.qap_run_id)
+    evaluation_start = qap.manifest.effective_evaluation_window().start
+    loaded = load_experiment_data(qap.manifest, data_root=data_root)
+    window_returns = pair_blind_window_returns(
+        qap.manifest.policy.config,
+        qap.manifest.interval,
+    )
+    momentum_observation = cross_sectional_relative_observation(
+        loaded.aligned,
+        basket=tuple(qap.manifest.asset(key) for key in qap.manifest.basket),
+        window_returns=window_returns,
+        as_of=evaluation_start,
+    )
+    assert momentum_observation.coverage_returns == window_returns == 48
+    first_reasons: dict[str, str] = {}
+    for event in qap.events:
+        if (
+            event["event_type"] != "policy_decision"
+            or event["event_time"] != evaluation_start.isoformat()
+            or event["role"] not in {"strategy", "control:relative-momentum-short"}
+        ):
+            continue
+        payload = event["payload"]
+        assert isinstance(payload, dict)
+        first_reasons[str(event["role"])] = str(payload["reason"])
+    assert first_reasons.keys() == {"strategy", "control:relative-momentum-short"}
+    assert "insufficient_evidence" not in first_reasons.values()
+
+    mixed_directory = run_basket_with_qap(
+        scan_id=scan.scan_id,
+        venue="binance",
+        horizon=ScannerHorizon.SHORT,
+        decision_resolution="1h",
+        economic_assets=tuple(asset.key for asset in ASSETS),
+        candidate_ids=(
+            str(direct_candidate["candidate_id"]),
+            str(candidate["candidate_id"]),
+        ),
+        momentum_scan_id=momentum.momentum_scan_id,
+        data_root=data_root,
+        run_root=run_root,
+        repository_root=Path(__file__).resolve().parents[2],
+        run_timestamp=AS_OF + timedelta(days=1),
+    )
+    mixed_basket, mixed_attempt, _mixed_manifest = read_basket_generation(
+        mixed_directory
+    )
+    assert mixed_attempt.status is BasketReplayStatus.COMPLETED
+    assert mixed_attempt.qap_run_id is not None
+    assert {edge.deep_replay_status for edge in mixed_basket.selected_edges} == {
+        "completed",
+        None,
+    }
+    assert any(
+        edge.pair_id != "AAA/BBB" and edge.deep_replay_status is None
+        for edge in mixed_basket.selected_edges
+    )
 
     repeated = run_basket_with_qap(
         scan_id=scan.scan_id,
