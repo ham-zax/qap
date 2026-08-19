@@ -60,6 +60,13 @@ export function HomeWorkspace({
   const activeOperation = operations.items.find(
     (operation) => operation.status === 'running',
   )
+  const latestOperation = operations.items[0]
+  const attentionOperation =
+    !activeOperation &&
+    latestOperation &&
+    (latestOperation.status === 'failed' || latestOperation.status === 'interrupted')
+      ? latestOperation
+      : null
   const productResearchReady = readiness.some((item) => item.ready_for_research)
   const validations = forwardCohorts.items
     .filter((cohort) => cohort.artifact_status === 'valid')
@@ -171,6 +178,27 @@ export function HomeWorkspace({
               to="/operations/$operationId"
             >
               View in Activity
+            </Link>
+          </article>
+        ) : attentionOperation ? (
+          <article className="rounded-lg border border-warning/45 bg-panel p-5">
+            <Badge tone={attentionOperation.status === 'failed' ? 'negative' : 'warning'}>
+              {attentionOperation.status === 'failed' ? 'Failed' : 'Interrupted'}
+            </Badge>
+            <h3 className="mt-3 mb-2 text-base font-semibold text-foreground">
+              Background task needs attention
+            </h3>
+            <p className="m-0 text-sm leading-6 text-secondary">
+              {attentionOperation.failure?.message ??
+                'The latest background task did not complete normally.'}{' '}
+              This is an operational state, not a negative research result.
+            </p>
+            <Link
+              className="mt-4 inline-flex min-h-11 items-center font-semibold text-accent"
+              params={{ operationId: attentionOperation.operation_id }}
+              to="/operations/$operationId"
+            >
+              Review in Activity
             </Link>
           </article>
         ) : (

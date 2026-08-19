@@ -8,6 +8,7 @@ type CurrentApprovedResearchRequestDto =
 type IdentityMappingRequestDto = components['schemas']['IdentityMappingRequestDto']
 type AssetAdmissionRequestDto = components['schemas']['AssetAdmissionRequestDto']
 type ExperimentListDto = components['schemas']['ExperimentListDto']
+type HistoryDto = components['schemas']['HistoryDto']
 type ExperimentDetailDto = components['schemas']['ExperimentDetailDto']
 type PortfolioSnapshotDto = components['schemas']['PortfolioSnapshotDto']
 type PortfolioPerformanceDto = components['schemas']['PortfolioPerformanceDto']
@@ -132,6 +133,7 @@ export function createApiClient({
         body: JSON.stringify(command),
       }),
     listExperiments: () => request<ExperimentListDto>('/api/experiments'),
+    getHistory: () => request<HistoryDto>('/api/history'),
     getExperiment: (runId: string) =>
       request<ExperimentDetailDto>(`/api/experiments/${encodeURIComponent(runId)}`),
     getPortfolio: (runId: string) =>

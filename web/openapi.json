@@ -3333,6 +3333,126 @@
         "title": "HealthDto",
         "type": "object"
       },
+      "HistoryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "other_research_runs": {
+            "items": {
+              "$ref": "#/components/schemas/RunSummaryDto"
+            },
+            "title": "Other Research Runs",
+            "type": "array"
+          },
+          "paper_operations": {
+            "items": {
+              "$ref": "#/components/schemas/PaperOperationSummaryDto"
+            },
+            "title": "Paper Operations",
+            "type": "array"
+          },
+          "portfolio_research": {
+            "items": {
+              "$ref": "#/components/schemas/BasketSummaryDto"
+            },
+            "title": "Portfolio Research",
+            "type": "array"
+          },
+          "research_generations": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryResearchGenerationDto"
+            },
+            "title": "Research Generations",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "qap.api.history.v1",
+            "default": "qap.api.history.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "specialist_forward_evidence": {
+            "items": {
+              "$ref": "#/components/schemas/ForwardCohortSummaryDto"
+            },
+            "title": "Specialist Forward Evidence",
+            "type": "array"
+          }
+        },
+        "required": [
+          "research_generations",
+          "specialist_forward_evidence",
+          "portfolio_research",
+          "other_research_runs",
+          "paper_operations"
+        ],
+        "title": "HistoryDto",
+        "type": "object"
+      },
+      "HistoryResearchGenerationDto": {
+        "additionalProperties": false,
+        "properties": {
+          "research_ideas": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryResearchIdeaDto"
+            },
+            "title": "Research Ideas",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ScanSummaryDto"
+          }
+        },
+        "required": [
+          "summary",
+          "research_ideas"
+        ],
+        "title": "HistoryResearchGenerationDto",
+        "type": "object"
+      },
+      "HistoryResearchIdeaDto": {
+        "additionalProperties": false,
+        "properties": {
+          "basket_memberships": {
+            "items": {
+              "$ref": "#/components/schemas/BasketSummaryDto"
+            },
+            "title": "Basket Memberships",
+            "type": "array"
+          },
+          "candidate": {
+            "$ref": "#/components/schemas/CandidateSummaryDto"
+          },
+          "forward_cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Forward Cohort Ids",
+            "type": "array"
+          },
+          "latest_current_assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchIdeaCurrentAssessmentDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "longitudinal": {
+            "$ref": "#/components/schemas/ResearchIdeaLongitudinalDto"
+          }
+        },
+        "required": [
+          "candidate",
+          "longitudinal",
+          "latest_current_assessment",
+          "forward_cohort_ids",
+          "basket_memberships"
+        ],
+        "title": "HistoryResearchIdeaDto",
+        "type": "object"
+      },
       "HoldingDto": {
         "additionalProperties": false,
         "properties": {
@@ -8229,6 +8349,27 @@
         "summary": "Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/history": {
+      "get": {
+        "operationId": "getHistory",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "History",
+        "tags": [
+          "history"
         ]
       }
     },

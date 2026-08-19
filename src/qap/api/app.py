@@ -8,6 +8,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from qap.api.basket_views import BasketArtifactReader
 from qap.api.errors import ApiBoundaryError
+from qap.api.history_views import HistoryReader
 from qap.api.operations import OperationManager
 from qap.api.paper_operation_views import PaperOperationReader
 from qap.api.readers import RunArtifactReader
@@ -15,6 +16,7 @@ from qap.api.routes import (
     baskets_router,
     experiments_router,
     health_router,
+    history_router,
     operations_router,
     pairs_router,
     paper_operations,
@@ -64,15 +66,25 @@ def create_app(settings: ApiSettings) -> FastAPI:
         ),
     )
     app.state.settings = settings
-    app.state.run_reader = RunArtifactReader(
+    run_reader = RunArtifactReader(
         settings.run_root,
         market_data_root=settings.market_data_root,
     )
-    app.state.paper_operation_reader = PaperOperationReader(
+    paper_operation_reader = PaperOperationReader(
         settings.run_root / "paper-operations"
     )
-    app.state.scanner_reader = ScannerArtifactReader(settings.run_root)
-    app.state.basket_reader = BasketArtifactReader(settings.run_root)
+    scanner_reader = ScannerArtifactReader(settings.run_root)
+    basket_reader = BasketArtifactReader(settings.run_root)
+    app.state.run_reader = run_reader
+    app.state.paper_operation_reader = paper_operation_reader
+    app.state.scanner_reader = scanner_reader
+    app.state.basket_reader = basket_reader
+    app.state.history_reader = HistoryReader(
+        scanner=scanner_reader,
+        baskets=basket_reader,
+        runs=run_reader,
+        paper=paper_operation_reader,
+    )
     product_universe = ProductUniverse(settings.run_root)
     product_market_data = ProductMarketData(
         settings.run_root,
@@ -171,6 +183,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.include_router(product_research_router)
     app.include_router(product_current_evidence_router)
     app.include_router(experiments_router)
+    app.include_router(history_router)
     app.include_router(portfolios_router)
     app.include_router(pairs_router)
     app.include_router(paper_operations.router)

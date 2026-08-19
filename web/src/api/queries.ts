@@ -83,6 +83,11 @@ export function createQapQueries(client: QapApiClient) {
         queryKey: ['experiments'] as const,
         queryFn: () => client.listExperiments(),
       }),
+    history: () =>
+      queryOptions({
+        queryKey: ['history'] as const,
+        queryFn: () => client.getHistory(),
+      }),
     experiment: (runId: string) =>
       queryOptions({
         queryKey: ['experiment', runId] as const,

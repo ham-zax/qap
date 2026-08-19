@@ -192,6 +192,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** History */
+        get: operations["getHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/operations": {
         parameters: {
             query?: never;
@@ -1891,6 +1908,41 @@ export interface components {
              * @constant
              */
             status: "ok";
+        };
+        /** HistoryDto */
+        HistoryDto: {
+            /** Other Research Runs */
+            other_research_runs: components["schemas"]["RunSummaryDto"][];
+            /** Paper Operations */
+            paper_operations: components["schemas"]["PaperOperationSummaryDto"][];
+            /** Portfolio Research */
+            portfolio_research: components["schemas"]["BasketSummaryDto"][];
+            /** Research Generations */
+            research_generations: components["schemas"]["HistoryResearchGenerationDto"][];
+            /**
+             * Schema Version
+             * @default qap.api.history.v1
+             * @constant
+             */
+            schema_version: "qap.api.history.v1";
+            /** Specialist Forward Evidence */
+            specialist_forward_evidence: components["schemas"]["ForwardCohortSummaryDto"][];
+        };
+        /** HistoryResearchGenerationDto */
+        HistoryResearchGenerationDto: {
+            /** Research Ideas */
+            research_ideas: components["schemas"]["HistoryResearchIdeaDto"][];
+            summary: components["schemas"]["ScanSummaryDto"];
+        };
+        /** HistoryResearchIdeaDto */
+        HistoryResearchIdeaDto: {
+            /** Basket Memberships */
+            basket_memberships: components["schemas"]["BasketSummaryDto"][];
+            candidate: components["schemas"]["CandidateSummaryDto"];
+            /** Forward Cohort Ids */
+            forward_cohort_ids: string[];
+            latest_current_assessment: components["schemas"]["ResearchIdeaCurrentAssessmentDto"] | null;
+            longitudinal: components["schemas"]["ResearchIdeaLongitudinalDto"];
         };
         /** HoldingDto */
         HoldingDto: {
@@ -3752,6 +3804,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthDto"];
+                };
+            };
+        };
+    };
+    getHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryDto"];
                 };
             };
         };

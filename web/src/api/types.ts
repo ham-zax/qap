@@ -10,6 +10,7 @@ export type IdentityMappingRequestDto = components['schemas']['IdentityMappingRe
 export type AssetAdmissionRequestDto = components['schemas']['AssetAdmissionRequestDto']
 export type RunSummaryDto = components['schemas']['RunSummaryDto']
 export type ExperimentListDto = components['schemas']['ExperimentListDto']
+export type HistoryDto = components['schemas']['HistoryDto']
 export type ExperimentDetailDto = components['schemas']['ExperimentDetailDto']
 export type PortfolioSnapshotDto = components['schemas']['PortfolioSnapshotDto']
 export type PortfolioPerformanceDto = components['schemas']['PortfolioPerformanceDto']
