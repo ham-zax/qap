@@ -61,7 +61,15 @@ uv run python scripts/run_paper_operation.py \
 
 ## Start the local evidence workbench
 
-Start the local single-operator API from the repository root. Mutation-capable serving is intentionally loopback-only and uses exactly one Uvicorn worker:
+For normal local use, start the API and web app together from the repository root:
+
+```bash
+./scripts/start_workbench.sh
+```
+
+Then open `http://localhost:5173`. The launcher uses the repository `runs/` directory by default; set `QAP_RUN_ROOT=/path/to/runs` before invoking it if you want a different evidence root. Press `Ctrl+C` to stop both processes.
+
+For separate-process/manual startup, start the local single-operator API from the repository root. Mutation-capable serving is intentionally loopback-only and uses exactly one Uvicorn worker:
 
 ```bash
 QAP_API_RUN_ROOT="$QAP_RUN_ROOT" \
