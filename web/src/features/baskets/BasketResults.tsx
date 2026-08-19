@@ -1,5 +1,6 @@
 import type { BasketListDto } from '../../api/types'
 import { Badge } from '../../components/ui/Badge'
+import { formatResearchTimestamp } from '../../lib/format'
 
 interface BasketResultsProps {
   baskets: BasketListDto
@@ -37,6 +38,8 @@ export function BasketResults({ baskets }: BasketResultsProps) {
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           {baskets.items.map((basket) => {
             const gate = gatePresentation(basket.economic_gate_status)
+            const productSource =
+              basket.source_claim?.kind === 'current_approved_retrospective'
             return (
               <article
                 key={basket.basket_id}
@@ -49,6 +52,11 @@ export function BasketResults({ baskets }: BasketResultsProps) {
                     <Badge tone="negative">Research artifact invalid</Badge>
                   )}
                   {basket.forensic ? <Badge tone="warning">Forensic research</Badge> : null}
+                  {basket.source_claim ? (
+                    <Badge tone={productSource ? 'positive' : 'neutral'}>
+                      {basket.source_claim.label}
+                    </Badge>
+                  ) : null}
                 </div>
                 <h3 className="mt-4 mb-2 text-base font-semibold text-foreground">
                   {basket.economic_assets.join(' · ') || basket.basket_id.slice(0, 12)}
@@ -57,6 +65,12 @@ export function BasketResults({ baskets }: BasketResultsProps) {
                   {horizonLabel(basket.horizon)} ·{' '}
                   {basket.decision_resolution ?? 'resolution unavailable'}
                 </p>
+                {basket.source_as_of ? (
+                  <p className="mt-2 mb-0 text-xs text-muted">
+                    {productSource ? 'Data through' : 'Historical universe as of'}{' '}
+                    {formatResearchTimestamp(basket.source_as_of)}
+                  </p>
+                ) : null}
                 {basket.error ? (
                   <p className="mt-2 text-sm text-negative">{basket.error.message}</p>
                 ) : null}

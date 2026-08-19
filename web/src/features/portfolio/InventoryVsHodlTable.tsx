@@ -25,11 +25,12 @@ export function InventoryVsHodlTable({
       aria-labelledby="inventory-deltas-heading"
     >
       <h2 id="inventory-deltas-heading" className="mb-2 text-lg font-semibold text-foreground">
-        What changed vs HODL?
+        Terminal holdings differences vs HODL
       </h2>
       <p className="mt-0 mb-5 max-w-3xl text-sm leading-6 text-secondary">
         Same-mark value deltas are comparable across assets. Raw coin-unit deltas stay
-        in the audit table because heterogeneous quantities are not additive.
+        in the audit table because heterogeneous quantities are not additive. These are
+        terminal holdings/value differences, not causal asset-level profit attribution.
       </p>
 
       <div className="space-y-4">
@@ -68,7 +69,7 @@ export function InventoryVsHodlTable({
 
       <details className="mt-5 rounded-md border border-border bg-canvas/35 p-4">
         <summary className="cursor-pointer font-semibold text-foreground">
-          Exact HODL attribution
+          Exact terminal HODL differences
         </summary>
         <div className="mt-4">
           <TableScroll label="Strategy versus HODL terminal deltas">

@@ -25,6 +25,20 @@ function horizonLabel(horizon: Horizon) {
   return 'Swing horizon'
 }
 
+function scanOptionLabel(scan: ScanListDto['items'][number]) {
+  if (scan.claim?.kind === 'current_approved_retrospective') {
+    return scan.eligible_information_end
+      ? `${scan.claim.label} · Data through ${formatResearchTimestamp(scan.eligible_information_end)}`
+      : scan.claim.label
+  }
+  if (scan.claim?.kind === 'historical_pit') {
+    return scan.as_of
+      ? `${scan.claim.label} · As of ${formatResearchTimestamp(scan.as_of)}`
+      : scan.claim.label
+  }
+  return scan.claim?.label ?? `Research ${scan.scan_id.slice(0, 8)}`
+}
+
 export function BasketScopeControls({
   scans,
   scanId,
@@ -39,30 +53,62 @@ export function BasketScopeControls({
   onHorizonChange,
   onResolutionChange,
 }: BasketScopeControlsProps) {
+  const productScans = scans.filter(
+    (scan) => scan.claim?.kind === 'current_approved_retrospective',
+  )
+  const pitScans = scans.filter((scan) => scan.claim?.kind === 'historical_pit')
+  const otherScans = scans.filter(
+    (scan) =>
+      scan.claim?.kind !== 'current_approved_retrospective' &&
+      scan.claim?.kind !== 'historical_pit',
+  )
+
   return (
     <details className="mt-6 rounded-md border border-border bg-canvas/35 p-4">
       <summary className="cursor-pointer text-sm font-semibold text-secondary">
-        Advanced source scope
+        Research source and advanced scope
       </summary>
       <p className="text-xs leading-5 text-muted">
-        QAP constrains these choices to scopes already present in the selected discovery
-        evidence. Changing scope clears the portfolio draft.
+        Current Approved Market Research is the normal Product source. Strict Historical
+        Point-in-Time Research remains an Advanced source. QAP constrains all choices to
+        scopes already present in the selected research evidence; changing scope clears the
+        portfolio draft.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-xs font-semibold text-secondary">
-          Research snapshot
+          Research source
           <select
             className="mt-1 min-h-11 w-full rounded-md border border-border bg-canvas px-3 text-sm text-foreground"
             value={scanId}
             onChange={(event) => onScanChange(event.target.value)}
           >
-            {scans.map((scan) => (
-              <option key={scan.scan_id} value={scan.scan_id}>
-                {scan.as_of
-                  ? `Research as of ${formatResearchTimestamp(scan.as_of)}`
-                  : `Research ${scan.scan_id.slice(0, 8)}`}
-              </option>
-            ))}
+            {productScans.length ? (
+              <optgroup label="Product · Current Approved Market Research">
+                {productScans.map((scan) => (
+                  <option key={scan.scan_id} value={scan.scan_id}>
+                    {scanOptionLabel(scan)}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null}
+            {pitScans.length ? (
+              <optgroup label="Advanced · Historical Point-in-Time Research">
+                {pitScans.map((scan) => (
+                  <option key={scan.scan_id} value={scan.scan_id}>
+                    {scanOptionLabel(scan)}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null}
+            {otherScans.length ? (
+              <optgroup label="Advanced · Other versioned research">
+                {otherScans.map((scan) => (
+                  <option key={scan.scan_id} value={scan.scan_id}>
+                    {scanOptionLabel(scan)}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null}
           </select>
         </label>
         <label className="text-xs font-semibold text-secondary">

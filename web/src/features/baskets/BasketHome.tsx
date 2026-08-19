@@ -9,6 +9,7 @@ import type {
   ScanListDto,
 } from '../../api/types'
 import { Badge } from '../../components/ui/Badge'
+import { formatResearchTimestamp } from '../../lib/format'
 import { BasketGraph } from './BasketGraph'
 import { BasketResults } from './BasketResults'
 import { BasketScopeControls } from './BasketScopeControls'
@@ -54,8 +55,26 @@ function relationshipLabel(candidate: {
   return 'Admitted relationship'
 }
 
+function isProductSource(scan: ScanListDto['items'][number]) {
+  return scan.claim?.kind === 'current_approved_retrospective'
+}
+
+function sourceBoundary(scan: ScanListDto['items'][number] | undefined) {
+  if (!scan) return 'Research boundary unavailable'
+  if (isProductSource(scan)) {
+    return scan.eligible_information_end
+      ? `Data through ${formatResearchTimestamp(scan.eligible_information_end)}`
+      : 'Data boundary unavailable'
+  }
+  return scan.as_of
+    ? `Historical universe as of ${formatResearchTimestamp(scan.as_of)}`
+    : 'Historical boundary unavailable'
+}
+
 export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
-  const validScans = scans.items.filter((item) => item.artifact_status === 'valid')
+  const validScans = scans.items
+    .filter((item) => item.artifact_status === 'valid')
+    .sort((left, right) => Number(isProductSource(right)) - Number(isProductSource(left)))
   const [scanId, setScanId] = useState(validScans[0]?.scan_id ?? '')
   const [venueOverride, setVenueOverride] = useState<Venue | ''>('')
   const [horizonOverride, setHorizonOverride] = useState<Horizon | ''>('')
@@ -63,6 +82,9 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
   const [assets, setAssets] = useState<string[]>([])
   const [selectedEdges, setSelectedEdges] = useState<Record<string, string>>({})
   const [operation, setOperation] = useState<OperationRefDto | null>(null)
+  const selectedScan = validScans.find((item) => item.scan_id === scanId)
+  const selectedClaim = selectedScan?.claim
+  const productSource = selectedClaim?.kind === 'current_approved_retrospective'
 
   const scanQuery = useQuery({
     queryKey: ['basket-draft-scan', scanId],
@@ -174,9 +196,11 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
       : 'Relationship evidence available',
   }))
   const selectedCandidateIds = Object.values(selectedEdges).filter(Boolean)
-  const momentum = scanQuery.data?.momentum_generations.find(
-    (item) => item.venue === effectiveVenue && item.horizon === effectiveHorizon,
-  )
+  const momentum = productSource
+    ? undefined
+    : scanQuery.data?.momentum_generations.find(
+        (item) => item.venue === effectiveVenue && item.horizon === effectiveHorizon,
+      )
 
   const mutation = useMutation({
     mutationFn: (command: BasketRunRequestDto) => apiClient.runBasket(command),
@@ -215,7 +239,7 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
       decision_resolution: effectiveResolution,
       economic_assets: assets,
       candidate_ids: selectedCandidateIds,
-      momentum_scan_id: momentum?.momentum_scan_id ?? null,
+      momentum_scan_id: productSource ? null : (momentum?.momentum_scan_id ?? null),
     })
   }
 
@@ -243,11 +267,36 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
 
       {validScans.length === 0 ? (
         <p className="rounded-lg border border-border bg-panel p-5 text-secondary">
-          No valid discovery research is available yet. Find research ideas in Discover
+          No valid research is available yet. Find relationship evidence in Research
           before building a portfolio.
         </p>
       ) : (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
+        <>
+          <section className="mb-6 rounded-lg border border-border bg-panel p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="max-w-3xl">
+                <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+                  Portfolio research source
+                </p>
+                <h2 className="mt-2 mb-2 text-lg font-semibold text-foreground">
+                  {selectedClaim?.label ?? 'Versioned Research Claim'}
+                </h2>
+                <p className="m-0 text-sm leading-6 text-secondary">
+                  {sourceBoundary(selectedScan)}.{' '}
+                  {productSource
+                    ? 'This is the frozen data boundary of Current Approved Market Research; it is not a historical point-in-time universe claim.'
+                    : selectedClaim?.kind === 'historical_pit'
+                      ? 'This Advanced source preserves the strict historical point-in-time universe claim.'
+                      : 'This source keeps its backend-declared research claim unchanged.'}
+                </p>
+              </div>
+              <Badge tone={productSource ? 'positive' : 'warning'}>
+                {productSource ? 'Product source' : 'Advanced source'}
+              </Badge>
+            </div>
+          </section>
+
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
           <section className="rounded-lg border border-border bg-panel p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -422,9 +471,13 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
           <aside className="rounded-lg border border-border bg-panel p-5">
             <div className="flex flex-wrap gap-2">
               <Badge tone="info">Pre-run topology only</Badge>
-              <Badge tone="info">
-                {momentum ? 'Pair-blind context available' : 'No pair-blind context artifact'}
-              </Badge>
+              {productSource ? (
+                <Badge tone="neutral">Product momentum not required</Badge>
+              ) : (
+                <Badge tone="info">
+                  {momentum ? 'Pair-blind context available' : 'No pair-blind context artifact'}
+                </Badge>
+              )}
             </div>
             <h2 className="mt-4 text-lg font-semibold text-foreground">
               Relationship availability
@@ -439,7 +492,18 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
               {selectedCandidateIds.length} selected for analysis.
             </p>
 
-            {momentum ? (
+            {productSource ? (
+              <div className="mt-4 border-t border-border pt-4">
+                <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+                  Product source boundary
+                </p>
+                <p className="mt-2 mb-0 text-xs leading-5 text-muted">
+                  Product portfolio creation uses the selected research scan and its frozen
+                  execution generations. Product asset-momentum lineage is deliberately not
+                  required or submitted for basket creation.
+                </p>
+              </div>
+            ) : momentum ? (
               <div className="mt-4 border-t border-border pt-4">
                 <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                   Pair-blind market context
@@ -464,6 +528,7 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
             ) : null}
           </aside>
         </div>
+        </>
       )}
 
       <BasketResults baskets={baskets} />
