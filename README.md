@@ -69,9 +69,9 @@ For normal local use, start the API and web app together from the repository roo
 ./scripts/start_workbench.sh
 ```
 
-Then open `http://localhost:5173`. The launcher starts a `local_market` workspace by default and uses the resolved run root as its local workspace identity. Set `QAP_RUN_ROOT=/path/to/runs` before invoking it to select a different workspace root, or set `QAP_API_WORKSPACE_MODE=sample` for an intentional Sample Workspace. Press `Ctrl+C` to stop both processes.
+Then open `http://localhost:5173` after the launcher prints `QAP workbench ready.`. The launcher starts a `local_market` workspace by default and uses the resolved run root as its local workspace identity. Local Market starts the API, web app, and one workspace current-evidence collector; an intentional Sample Workspace (`QAP_API_WORKSPACE_MODE=sample`) starts only the API and web app. Set `QAP_RUN_ROOT=/path/to/runs` before invoking the launcher to select a different workspace root. Press `Ctrl+C` to stop the launcher-owned API/web/collector processes. Already-started scientific operation workers have their own durable lifecycle and are not implicitly cancelled by closing the interactive workbench.
 
-Before starting anything, the launcher verifies the backend workspace mode and root. It reports an already-running intended workspace separately from another/sample QAP workspace, an unrelated port occupant, or a partial API/web startup instead of treating port occupancy alone as proof that the intended workspace is running.
+Before starting anything, the launcher verifies the backend workspace mode and root. On a new start it also waits for API health, exact workspace identity, the QAP web app, and—only in Local Market—a running collector lease before declaring the workbench ready. It reports an already-running intended workspace separately from another/sample QAP workspace, an unrelated port occupant, a partial API/web startup, or an unhealthy initial collector instead of treating port occupancy or process creation alone as proof that the intended workspace is ready.
 
 For separate-process/manual startup, start the local single-operator API from the repository root. Mutation-capable serving is intentionally loopback-only and uses exactly one Uvicorn worker:
 

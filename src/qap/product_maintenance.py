@@ -1,5 +1,6 @@
 """Bounded SQLite state for Product market-data maintenance."""
 
+import os
 import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -13,6 +14,8 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+
+from qap.process_identity import process_start_marker
 
 MaintenanceKind = Literal["prepare_market_data", "refresh_market_data"]
 MaintenanceStatus = Literal["idle", "running", "failed"]
@@ -38,6 +41,8 @@ class MarketDataMaintenanceState(BaseModel):
     started_at: datetime | None = None
     finished_at: datetime | None = None
     failure_reason: str | None = None
+    owner_pid: int | None = None
+    owner_process_start_marker: str | None = None
 
     @field_validator("started_at", "finished_at")
     @classmethod
@@ -60,6 +65,23 @@ class MarketDataMaintenanceState(BaseModel):
             raise ValueError("failure_reason must not be empty")
         return normalized
 
+    @field_validator("owner_pid")
+    @classmethod
+    def validate_owner_pid(cls, value: int | None) -> int | None:
+        if value is not None and value <= 0:
+            raise ValueError("owner_pid must be positive")
+        return value
+
+    @field_validator("owner_process_start_marker")
+    @classmethod
+    def validate_owner_process_start_marker(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("owner_process_start_marker must not be empty")
+        return normalized
+
     @model_validator(mode="after")
     def validate_state(self) -> Self:
         if self.status == "idle":
@@ -68,6 +90,8 @@ class MarketDataMaintenanceState(BaseModel):
                 or self.started_at is not None
                 or self.finished_at is not None
                 or self.failure_reason is not None
+                or self.owner_pid is not None
+                or self.owner_process_start_marker is not None
             ):
                 raise ValueError("idle maintenance state must not describe active work")
             return self
@@ -77,10 +101,18 @@ class MarketDataMaintenanceState(BaseModel):
             self.finished_at is not None or self.failure_reason is not None
         ):
             raise ValueError("running maintenance state cannot be finished or failed")
+        if self.status == "running" and (
+            self.owner_pid is None or self.owner_process_start_marker is None
+        ):
+            raise ValueError("running maintenance state requires process ownership")
         if self.status == "failed" and (
             self.finished_at is None or self.failure_reason is None
         ):
             raise ValueError("failed maintenance state requires finish time and reason")
+        if self.status == "failed" and (
+            self.owner_pid is not None or self.owner_process_start_marker is not None
+        ):
+            raise ValueError("failed maintenance state cannot retain process ownership")
         if self.finished_at is not None and self.finished_at < self.started_at:
             raise ValueError("maintenance finish time cannot precede start time")
         return self
@@ -94,6 +126,61 @@ class MarketDataMaintenanceStore:
             workspace_root.expanduser().resolve() / "product" / "product-state.sqlite3"
         )
         self._lock = Lock()
+        self._reconcile_interrupted_owner()
+
+    @staticmethod
+    def _ensure_owner_columns(connection: sqlite3.Connection) -> None:
+        columns = {
+            str(row[1])
+            for row in connection.execute("PRAGMA table_info(market_data_maintenance)")
+        }
+        if "owner_pid" not in columns:
+            connection.execute(
+                "ALTER TABLE market_data_maintenance ADD COLUMN owner_pid INTEGER"
+            )
+        if "owner_process_start_marker" not in columns:
+            connection.execute(
+                "ALTER TABLE market_data_maintenance "
+                "ADD COLUMN owner_process_start_marker TEXT"
+            )
+
+    def _reconcile_interrupted_owner(self) -> None:
+        if not self.path.is_file():
+            return
+        with self._lock, sqlite3.connect(self.path) as connection:
+            connection.execute("PRAGMA busy_timeout = 5000")
+            table = connection.execute(
+                "SELECT 1 FROM sqlite_master "
+                "WHERE type = 'table' AND name = 'market_data_maintenance'"
+            ).fetchone()
+            if table is None:
+                return
+            self._ensure_owner_columns(connection)
+            row = connection.execute(
+                "SELECT status, owner_pid, owner_process_start_marker "
+                "FROM market_data_maintenance WHERE singleton = 1"
+            ).fetchone()
+            if row is None or str(row[0]) != "running":
+                return
+            owner_pid = None if row[1] is None else int(row[1])
+            owner_marker = None if row[2] is None else str(row[2])
+            if (
+                owner_pid is not None
+                and owner_marker is not None
+                and process_start_marker(owner_pid) == owner_marker
+            ):
+                return
+            connection.execute(
+                "UPDATE market_data_maintenance "
+                "SET status = 'failed', finished_at = ?, failure_reason = ?, "
+                "owner_pid = NULL, owner_process_start_marker = NULL "
+                "WHERE singleton = 1",
+                (
+                    datetime.now(UTC).isoformat(),
+                    "Market-data maintenance was interrupted because its owning API "
+                    "process is no longer running.",
+                ),
+            )
 
     def _connection(self) -> sqlite3.Connection:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -107,30 +194,52 @@ class MarketDataMaintenanceStore:
                 kind TEXT,
                 started_at TEXT,
                 finished_at TEXT,
-                failure_reason TEXT
+                failure_reason TEXT,
+                owner_pid INTEGER,
+                owner_process_start_marker TEXT
             )
             """
         )
+        self._ensure_owner_columns(connection)
         return connection
 
     def read(self) -> MarketDataMaintenanceState:
         if not self.path.is_file():
             return MarketDataMaintenanceState()
         with sqlite3.connect(self.path) as connection:
+            connection.execute("PRAGMA busy_timeout = 5000")
             table = connection.execute(
                 "SELECT 1 FROM sqlite_master "
                 "WHERE type = 'table' AND name = 'market_data_maintenance'"
             ).fetchone()
             if table is None:
                 return MarketDataMaintenanceState()
+            self._ensure_owner_columns(connection)
             row = connection.execute(
-                "SELECT status, kind, started_at, finished_at, failure_reason "
+                "SELECT status, kind, started_at, finished_at, failure_reason, "
+                "owner_pid, owner_process_start_marker "
                 "FROM market_data_maintenance WHERE singleton = 1"
             ).fetchone()
         if row is None:
             return MarketDataMaintenanceState()
-        status, kind, started_at, finished_at, failure_reason = cast(
-            tuple[str, str | None, str | None, str | None, str | None],
+        (
+            status,
+            kind,
+            started_at,
+            finished_at,
+            failure_reason,
+            owner_pid,
+            owner_process_start_marker,
+        ) = cast(
+            tuple[
+                str,
+                str | None,
+                str | None,
+                str | None,
+                str | None,
+                int | None,
+                str | None,
+            ],
             row,
         )
         try:
@@ -144,6 +253,8 @@ class MarketDataMaintenanceStore:
                     None if finished_at is None else datetime.fromisoformat(finished_at)
                 ),
                 failure_reason=failure_reason,
+                owner_pid=owner_pid,
+                owner_process_start_marker=owner_process_start_marker,
             )
         except (TypeError, ValueError, ValidationError) as exc:
             raise ProductMaintenanceError(
@@ -155,14 +266,17 @@ class MarketDataMaintenanceStore:
             connection.execute(
                 """
                 INSERT INTO market_data_maintenance
-                    (singleton, status, kind, started_at, finished_at, failure_reason)
-                VALUES (1, ?, ?, ?, ?, ?)
+                    (singleton, status, kind, started_at, finished_at, failure_reason,
+                     owner_pid, owner_process_start_marker)
+                VALUES (1, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(singleton) DO UPDATE SET
                     status = excluded.status,
                     kind = excluded.kind,
                     started_at = excluded.started_at,
                     finished_at = excluded.finished_at,
-                    failure_reason = excluded.failure_reason
+                    failure_reason = excluded.failure_reason,
+                    owner_pid = excluded.owner_pid,
+                    owner_process_start_marker = excluded.owner_process_start_marker
                 """,
                 (
                     state.status,
@@ -172,6 +286,8 @@ class MarketDataMaintenanceStore:
                     if state.finished_at is None
                     else state.finished_at.isoformat(),
                     state.failure_reason,
+                    state.owner_pid,
+                    state.owner_process_start_marker,
                 ),
             )
 
@@ -189,6 +305,12 @@ class MarketDataMaintenanceStore:
                 field="started_at",
             )
         )
+        owner_pid = os.getpid()
+        owner_marker = process_start_marker(owner_pid)
+        if owner_marker is None:
+            raise ProductMaintenanceError(
+                "Market-data maintenance process identity is unavailable."
+            )
         with self._lock:
             if self.read().status == "running":
                 raise ProductMaintenanceError(
@@ -198,6 +320,8 @@ class MarketDataMaintenanceStore:
                 status="running",
                 kind=kind,
                 started_at=timestamp,
+                owner_pid=owner_pid,
+                owner_process_start_marker=owner_marker,
             )
             self._write(state)
             return state

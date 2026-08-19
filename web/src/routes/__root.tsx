@@ -1,4 +1,4 @@
-import type { QueryClient } from '@tanstack/react-query'
+import { useQuery, type QueryClient } from '@tanstack/react-query'
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 
 import type { QapApiClient } from '../api/client'
@@ -41,7 +41,13 @@ export const Route = createRootRouteWithContext<QapRouterContext>()({
 })
 
 function RootLayout() {
-  const workspace = Route.useLoaderData()
+  const initialWorkspace = Route.useLoaderData()
+  const { queries } = Route.useRouteContext()
+  const workspaceQuery = useQuery({
+    ...queries.workspaceStatus(),
+    initialData: initialWorkspace,
+  })
+  const workspace = workspaceQuery.data ?? initialWorkspace
   return (
     <AppShell
       workspaceMode={workspace.workspace_mode}

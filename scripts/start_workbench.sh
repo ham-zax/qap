@@ -71,6 +71,16 @@ print(payload.get("current_evidence_collector_status", "not_running"))
 '
 }
 
+collector_failure_reason() {
+  printf '%s' "$1" | python3 -c '
+import json
+import sys
+
+payload = json.load(sys.stdin)
+print(payload.get("current_evidence_collector_failure_reason") or "")
+'
+}
+
 describe_workspace() {
   printf '%s' "$1" | python3 -c '
 import json
@@ -84,6 +94,36 @@ print(f"  Running workspace: {payload['"'"'workspace_mode'"'"']} ({payload['"'"'
 web_is_qap() {
   curl -fsS --max-time 1 http://127.0.0.1:5173/ 2>/dev/null \
     | grep -q '<title>QAP Research Workbench</title>'
+}
+
+startup_workspace=""
+wait_for_startup() {
+  local status=""
+  local collector=""
+  for _ in {1..300}; do
+    if ! kill -0 "$api_pid" 2>/dev/null \
+      || ! kill -0 "$web_pid" 2>/dev/null; then
+      return 1
+    fi
+    if api_is_qap && web_is_qap \
+      && status="$(api_workspace_status)" \
+      && workspace_status_is_valid "$status" \
+      && workspace_matches_intent "$status"; then
+      startup_workspace="$status"
+      if [[ "$WORKSPACE_MODE" == "sample" ]]; then
+        return 0
+      fi
+      collector="$(collector_status "$status")"
+      if [[ "$collector" == "running" ]]; then
+        return 0
+      fi
+      if [[ "$collector" == "failed" ]]; then
+        return 2
+      fi
+    fi
+    sleep 0.1
+  done
+  return 1
 }
 
 port_is_busy() {
@@ -233,14 +273,37 @@ fi
 
 printf 'QAP workbench starting...\n'
 printf '  Workspace: %s (%s)\n' "$WORKSPACE_MODE" "$RUN_ROOT"
-printf '  Web: http://localhost:5173\n'
-printf '  API: http://127.0.0.1:8000\n'
 if [[ "$WORKSPACE_MODE" == "local_market" ]]; then
-  printf '  Current evidence collector: enabled\n'
+  printf '  Current evidence collector: starting\n'
 else
   printf '  Current evidence collector: disabled in Sample Workspace\n'
 fi
-printf '  Runs: %s\n' "$RUN_ROOT"
-printf 'Press Ctrl+C to stop the workbench processes.\n\n'
+
+if wait_for_startup; then
+  printf 'QAP workbench ready.\n'
+  printf '  Web: http://localhost:5173\n'
+  printf '  API: http://127.0.0.1:8000\n'
+  if [[ "$WORKSPACE_MODE" == "local_market" ]]; then
+    printf '  Current evidence collector: running\n'
+  else
+    printf '  Current evidence collector: disabled in Sample Workspace\n'
+  fi
+  printf '  Runs: %s\n' "$RUN_ROOT"
+  printf 'Press Ctrl+C to stop the launcher-owned workbench processes.\n\n'
+else
+  startup_code=$?
+  if [[ "$WORKSPACE_MODE" == "local_market" ]] \
+    && [[ -n "$startup_workspace" ]] \
+    && [[ "$(collector_status "$startup_workspace")" == "failed" ]]; then
+    collector_reason="$(collector_failure_reason "$startup_workspace")"
+    printf 'QAP workbench startup failed: the current-evidence collector is not healthy.\n' >&2
+    if [[ -n "$collector_reason" ]]; then
+      printf '  Collector failure: %s\n' "$collector_reason" >&2
+    fi
+  else
+    printf 'QAP workbench startup failed before API/web/workspace readiness was established.\n' >&2
+  fi
+  exit "$startup_code"
+fi
 
 wait -n "$api_pid" "$web_pid"

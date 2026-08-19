@@ -15,6 +15,7 @@ from qap.api.errors import ApiBoundaryError
 from qap.api.scanner_schemas import OperationDto, OperationListDto, OperationRefDto
 from qap.api.schemas import ErrorDetailDto
 from qap.api.settings import ApiSettings
+from qap.process_identity import process_start_marker
 
 _REQUEST_FILE = "request.json"
 _STATUS_FILE = "status.json"
@@ -88,23 +89,6 @@ def _atomic_write(path: Path, payload: bytes) -> None:
         handle.flush()
         os.fsync(handle.fileno())
     os.replace(temporary, path)
-
-
-def process_start_marker(pid: int) -> str | None:
-    """Return Linux process start ticks, avoiding PID-only liveness checks."""
-
-    try:
-        raw = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
-    except OSError:
-        return None
-    closing = raw.rfind(")")
-    if closing < 0:
-        return None
-    fields = raw[closing + 2 :].split()
-    if len(fields) <= 19:
-        return None
-    marker = fields[19].strip()
-    return marker or None
 
 
 class OperationStore:

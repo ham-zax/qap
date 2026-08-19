@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import cast
 
+from qap.process_identity import process_start_marker
 from qap.product_current_evidence import (
     CollectorLeaseState,
     CollectorStatus,
@@ -25,21 +26,6 @@ def _utc(value: datetime, *, field: str) -> datetime:
 
 def _timestamp(value: str | None) -> datetime | None:
     return None if value is None else datetime.fromisoformat(value).astimezone(UTC)
-
-
-def _process_start_marker(pid: int) -> str | None:
-    try:
-        raw = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
-    except OSError:
-        return None
-    closing = raw.rfind(")")
-    if closing < 0:
-        return None
-    fields = raw[closing + 2 :].split()
-    if len(fields) <= 19:
-        return None
-    marker = fields[19].strip()
-    return marker or None
 
 
 class ProductCurrentEvidenceLease:
@@ -66,7 +52,7 @@ class ProductCurrentEvidenceLease:
         started_at: datetime | None = None,
     ) -> CollectorLeaseState:
         process_id = os.getpid() if pid is None else pid
-        marker = _process_start_marker(process_id)
+        marker = process_start_marker(process_id)
         if marker is None:
             raise ProductCurrentEvidenceError(
                 "Collector process identity is unavailable."
@@ -84,7 +70,7 @@ class ProductCurrentEvidenceLease:
             ).fetchone()
             if row is not None and str(row[0]) == "running" and row[1] is not None:
                 existing_pid = int(row[1])
-                if _process_start_marker(existing_pid) == str(row[2]):
+                if process_start_marker(existing_pid) == str(row[2]):
                     raise ProductCurrentEvidenceError(
                         "Another current-evidence collector already owns this "
                         "workspace."
@@ -108,7 +94,7 @@ class ProductCurrentEvidenceLease:
         now: datetime | None = None,
     ) -> None:
         process_id = os.getpid() if pid is None else pid
-        marker = _process_start_marker(process_id)
+        marker = process_start_marker(process_id)
         timestamp = datetime.now(UTC) if now is None else _utc(now, field="now")
         with self._connect() as connection:
             row = connection.execute(
@@ -130,7 +116,7 @@ class ProductCurrentEvidenceLease:
 
     def release(self, *, pid: int | None = None) -> None:
         process_id = os.getpid() if pid is None else pid
-        marker = _process_start_marker(process_id)
+        marker = process_start_marker(process_id)
         with self._connect() as connection:
             row = connection.execute(
                 "SELECT pid, process_start_marker, status "
@@ -188,7 +174,7 @@ class ProductCurrentEvidenceLease:
             alive = (
                 pid is not None
                 and marker is not None
-                and _process_start_marker(pid) == marker
+                and process_start_marker(pid) == marker
             )
             heartbeat_fresh = (
                 heartbeat is not None and current - heartbeat <= _LEASE_TIMEOUT

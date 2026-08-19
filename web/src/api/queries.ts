@@ -8,6 +8,7 @@ export function createQapQueries(client: QapApiClient) {
       queryOptions({
         queryKey: ['workspace-status'] as const,
         queryFn: () => client.getWorkspaceStatus(),
+        refetchInterval: 5_000,
       }),
     researchUniverse: () =>
       queryOptions({
