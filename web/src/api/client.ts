@@ -1,6 +1,9 @@
 import type { components } from './schema'
 
 type WorkspaceStatusDto = components['schemas']['WorkspaceStatusDto']
+type ResearchUniverseDto = components['schemas']['ResearchUniverseDto']
+type IdentityMappingRequestDto = components['schemas']['IdentityMappingRequestDto']
+type AssetAdmissionRequestDto = components['schemas']['AssetAdmissionRequestDto']
 type ExperimentListDto = components['schemas']['ExperimentListDto']
 type ExperimentDetailDto = components['schemas']['ExperimentDetailDto']
 type PortfolioSnapshotDto = components['schemas']['PortfolioSnapshotDto']
@@ -90,6 +93,21 @@ export function createApiClient({
 
   return {
     getWorkspaceStatus: () => request<WorkspaceStatusDto>('/api/workspace'),
+    getResearchUniverse: () => request<ResearchUniverseDto>('/api/research-universe'),
+    refreshResearchUniverseDirectory: () =>
+      request<ResearchUniverseDto>('/api/research-universe/directory-refresh', {
+        method: 'POST',
+      }),
+    setResearchUniverseIdentityMapping: (command: IdentityMappingRequestDto) =>
+      request<ResearchUniverseDto>('/api/research-universe/identity-mappings', {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }),
+    setResearchUniverseAdmission: (command: AssetAdmissionRequestDto) =>
+      request<ResearchUniverseDto>('/api/research-universe/admission', {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }),
     listExperiments: () => request<ExperimentListDto>('/api/experiments'),
     getExperiment: (runId: string) =>
       request<ExperimentDetailDto>(`/api/experiments/${encodeURIComponent(runId)}`),

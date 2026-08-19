@@ -206,6 +206,25 @@
         "title": "ArtifactSeriesMetadataDto",
         "type": "object"
       },
+      "AssetAdmissionRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "approved": {
+            "title": "Approved",
+            "type": "boolean"
+          },
+          "canonical_asset_id": {
+            "title": "Canonical Asset Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "canonical_asset_id",
+          "approved"
+        ],
+        "title": "AssetAdmissionRequestDto",
+        "type": "object"
+      },
       "AssetDeltaDto": {
         "additionalProperties": false,
         "properties": {
@@ -1486,6 +1505,40 @@
         "title": "DatasetFingerprint",
         "type": "object"
       },
+      "DirectorySourceDto": {
+        "additionalProperties": false,
+        "properties": {
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "source_fingerprint": {
+            "title": "Source Fingerprint",
+            "type": "string"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "venue",
+          "observed_at",
+          "source_id",
+          "source_fingerprint"
+        ],
+        "title": "DirectorySourceDto",
+        "type": "object"
+      },
       "ErrorDetailDto": {
         "additionalProperties": false,
         "properties": {
@@ -2749,6 +2802,70 @@
           "holdings"
         ],
         "title": "HoldingsSnapshotDto",
+        "type": "object"
+      },
+      "IdentityMappingRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_identity_version": {
+            "title": "Asset Identity Version",
+            "type": "string"
+          },
+          "canonical_asset_id": {
+            "title": "Canonical Asset Id",
+            "type": "string"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_asset_code": {
+            "title": "Venue Asset Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "venue",
+          "venue_asset_code",
+          "canonical_asset_id",
+          "asset_identity_version"
+        ],
+        "title": "IdentityMappingRequestDto",
+        "type": "object"
+      },
+      "IdentityReviewDto": {
+        "additionalProperties": false,
+        "properties": {
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_asset_code": {
+            "title": "Venue Asset Code",
+            "type": "string"
+          },
+          "venue_symbols": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Venue Symbols",
+            "type": "array"
+          }
+        },
+        "required": [
+          "venue",
+          "venue_asset_code",
+          "venue_symbols"
+        ],
+        "title": "IdentityReviewDto",
         "type": "object"
       },
       "InstrumentSpec": {
@@ -4876,6 +4993,179 @@
         "title": "RelationshipEvidenceSeriesDto",
         "type": "object"
       },
+      "ResearchUniverseAssetDto": {
+        "additionalProperties": false,
+        "properties": {
+          "approved": {
+            "title": "Approved",
+            "type": "boolean"
+          },
+          "asset_identity_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asset Identity Version"
+          },
+          "canonical_asset_id": {
+            "title": "Canonical Asset Id",
+            "type": "string"
+          },
+          "data_state": {
+            "enum": [
+              "not_approved",
+              "needs_data"
+            ],
+            "title": "Data State",
+            "type": "string"
+          },
+          "identity_reason": {
+            "enum": [
+              "resolved",
+              "mapping_unavailable",
+              "identity_version_conflict"
+            ],
+            "title": "Identity Reason",
+            "type": "string"
+          },
+          "identity_state": {
+            "enum": [
+              "resolved",
+              "review_required"
+            ],
+            "title": "Identity State",
+            "type": "string"
+          },
+          "venues": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchUniverseVenueDto"
+            },
+            "title": "Venues",
+            "type": "array"
+          }
+        },
+        "required": [
+          "canonical_asset_id",
+          "approved",
+          "identity_state",
+          "identity_reason",
+          "asset_identity_version",
+          "data_state",
+          "venues"
+        ],
+        "title": "ResearchUniverseAssetDto",
+        "type": "object"
+      },
+      "ResearchUniverseDto": {
+        "additionalProperties": false,
+        "properties": {
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchUniverseAssetDto"
+            },
+            "title": "Assets",
+            "type": "array"
+          },
+          "directory_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Directory Id"
+          },
+          "directory_observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Directory Observed At"
+          },
+          "directory_status": {
+            "enum": [
+              "not_refreshed",
+              "observed"
+            ],
+            "title": "Directory Status",
+            "type": "string"
+          },
+          "identity_reviews": {
+            "items": {
+              "$ref": "#/components/schemas/IdentityReviewDto"
+            },
+            "title": "Identity Reviews",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "qap.api.research_universe.v1",
+            "default": "qap.api.research_universe.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/DirectorySourceDto"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "directory_status",
+          "directory_id",
+          "directory_observed_at",
+          "sources",
+          "assets",
+          "identity_reviews"
+        ],
+        "title": "ResearchUniverseDto",
+        "type": "object"
+      },
+      "ResearchUniverseVenueDto": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "trading": {
+            "title": "Trading",
+            "type": "boolean"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "title": "Venue Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "venue",
+          "venue_symbol",
+          "status",
+          "trading"
+        ],
+        "title": "ResearchUniverseVenueDto",
+        "type": "object"
+      },
       "ResultStatus": {
         "description": "Economic classification against one predeclared threshold.",
         "enum": [
@@ -6771,6 +7061,130 @@
         "summary": "Qualify Candidate",
         "tags": [
           "scanner"
+        ]
+      }
+    },
+    "/api/research-universe": {
+      "get": {
+        "operationId": "getResearchUniverse",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchUniverseDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Research Universe",
+        "tags": [
+          "research-universe"
+        ]
+      }
+    },
+    "/api/research-universe/admission": {
+      "post": {
+        "operationId": "setResearchUniverseAdmission",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetAdmissionRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchUniverseDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Asset Admission",
+        "tags": [
+          "research-universe"
+        ]
+      }
+    },
+    "/api/research-universe/directory-refresh": {
+      "post": {
+        "operationId": "refreshResearchUniverseDirectory",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchUniverseDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Refresh Directory",
+        "tags": [
+          "research-universe"
+        ]
+      }
+    },
+    "/api/research-universe/identity-mappings": {
+      "post": {
+        "operationId": "setResearchUniverseIdentityMapping",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityMappingRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchUniverseDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Identity Mapping",
+        "tags": [
+          "research-universe"
         ]
       }
     },

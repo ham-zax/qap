@@ -17,6 +17,12 @@ interface HomeWorkspaceProps {
   operations: OperationListDto
 }
 
+const researchUniverseGoal = {
+  title: 'Choose research assets',
+  description: 'Approve canonical assets and review their current Binance/Gate availability.',
+  to: '/universe' as const,
+}
+
 const goals = [
   {
     title: 'Find research ideas',
@@ -53,6 +59,10 @@ export function HomeWorkspace({
     .filter((cohort) => cohort.artifact_status === 'valid')
     .slice(0, 3)
   const recentResults = experiments.items.slice(0, 3)
+  const availableGoals =
+    workspace.workspace_mode === 'local_market'
+      ? [researchUniverseGoal, ...goals]
+      : goals
 
   return (
     <div className="min-w-0">
@@ -91,11 +101,17 @@ export function HomeWorkspace({
               data. No prepared Local Market data is available in this workspace yet,
               and Sample Workspace data is never treated as your local market state.
             </p>
+            <Link
+              className="mt-4 inline-flex min-h-11 items-center font-semibold text-accent"
+              to="/universe"
+            >
+              Choose research assets →
+            </Link>
           </section>
         ) : null}
 
         <div className="grid gap-4 md:grid-cols-2">
-          {goals.map((goal) => (
+          {availableGoals.map((goal) => (
             <Link
               key={goal.to}
               className="group flex min-h-40 flex-col justify-between rounded-lg border border-border bg-panel p-5 text-foreground no-underline transition-[background-color,border-color] duration-150 hover:border-border-strong hover:bg-subtle"

@@ -1,0 +1,429 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
+
+import type { QapApiClient } from '../../api/client'
+import type {
+  IdentityMappingRequestDto,
+  ResearchUniverseDto,
+  WorkspaceStatusDto,
+} from '../../api/types'
+import { Badge } from '../../components/ui/Badge'
+import { formatResearchTimestamp } from '../../lib/format'
+
+interface ResearchUniverseProps {
+  apiClient: QapApiClient
+  workspace: WorkspaceStatusDto
+  data: ResearchUniverseDto
+}
+
+type IdentityReview = ResearchUniverseDto['identity_reviews'][number]
+
+function dataStateLabel(state: ResearchUniverseDto['assets'][number]['data_state']) {
+  return state === 'needs_data' ? 'Needs market data' : 'Not in research scope'
+}
+
+function identityReasonLabel(
+  reason: ResearchUniverseDto['assets'][number]['identity_reason'],
+) {
+  if (reason === 'identity_version_conflict') return 'Identity versions conflict'
+  if (reason === 'mapping_unavailable') return 'Identity mapping unavailable'
+  return 'Identity resolved'
+}
+
+export function ResearchUniverse({
+  apiClient,
+  workspace,
+  data,
+}: ResearchUniverseProps) {
+  const queryClient = useQueryClient()
+  const [universe, setUniverse] = useState(data)
+  const [search, setSearch] = useState('')
+  const [identityDraft, setIdentityDraft] = useState<
+    (IdentityMappingRequestDto & { key: string }) | null
+  >(null)
+
+  const acceptUniverse = (next: ResearchUniverseDto) => {
+    setUniverse(next)
+    queryClient.setQueryData(['research-universe'], next)
+  }
+
+  const refresh = useMutation({
+    mutationFn: () => apiClient.refreshResearchUniverseDirectory(),
+    onSuccess: acceptUniverse,
+  })
+  const identity = useMutation({
+    mutationFn: (command: IdentityMappingRequestDto) =>
+      apiClient.setResearchUniverseIdentityMapping(command),
+    onSuccess: (next) => {
+      acceptUniverse(next)
+      setIdentityDraft(null)
+    },
+  })
+  const admission = useMutation({
+    mutationFn: (command: { canonical_asset_id: string; approved: boolean }) =>
+      apiClient.setResearchUniverseAdmission(command),
+    onSuccess: acceptUniverse,
+  })
+
+  const quoteReviews = universe.identity_reviews.filter(
+    (item) => item.venue_asset_code === 'USDT',
+  )
+  const matchingReviews = useMemo(() => {
+    const query = search.trim().toUpperCase()
+    if (!query) return []
+    return universe.identity_reviews
+      .filter(
+        (item) =>
+          item.venue_asset_code !== 'USDT' &&
+          (item.venue_asset_code.includes(query) || item.venue.includes(query.toLowerCase())),
+      )
+      .slice(0, 50)
+  }, [search, universe.identity_reviews])
+
+  const startIdentityReview = (item: IdentityReview) => {
+    setIdentityDraft({
+      key: `${item.venue}:${item.venue_asset_code}`,
+      venue: item.venue,
+      venue_asset_code: item.venue_asset_code,
+      canonical_asset_id: '',
+      asset_identity_version: '',
+    })
+  }
+
+  const submitIdentity = () => {
+    if (
+      identityDraft === null ||
+      !identityDraft.canonical_asset_id.trim() ||
+      !identityDraft.asset_identity_version.trim()
+    ) {
+      return
+    }
+    identity.mutate({
+      venue: identityDraft.venue,
+      venue_asset_code: identityDraft.venue_asset_code,
+      canonical_asset_id: identityDraft.canonical_asset_id,
+      asset_identity_version: identityDraft.asset_identity_version,
+    })
+  }
+
+  if (workspace.workspace_mode === 'sample') {
+    return (
+      <section className="min-w-0">
+        <header className="mb-8 max-w-4xl">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
+            Research Universe
+          </p>
+          <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+            Local Market asset setup
+          </h1>
+        </header>
+        <div className="rounded-lg border border-info/45 bg-panel p-5">
+          <Badge tone="info">Sample Workspace</Badge>
+          <h2 className="mt-3 mb-2 text-xl font-semibold text-foreground">
+            Asset admission is read-only here
+          </h2>
+          <p className="m-0 max-w-3xl text-sm leading-6 text-secondary">
+            Sample Workspace keeps its deterministic evidence separate. Start the Local
+            Market workspace to refresh public markets, resolve asset identity, or change
+            which economic assets QAP is allowed to research.
+          </p>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="min-w-0">
+      <header className="mb-8 max-w-4xl">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
+          Research Universe
+        </p>
+        <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+          Choose what QAP is allowed to research
+        </h1>
+        <p className="m-0 text-sm leading-6 text-secondary md:text-base">
+          Exchange listings are discovery input only. An economic asset enters Local
+          Market research only after you explicitly approve its canonical identity.
+          Matching ticker text by itself is never treated as identity evidence.
+        </p>
+      </header>
+
+      <section
+        className="rounded-lg border border-border bg-panel p-5"
+        aria-labelledby="directory-heading"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 id="directory-heading" className="m-0 text-xl font-semibold text-foreground">
+              Current supported markets
+            </h2>
+            <p className="mt-2 mb-0 text-sm leading-6 text-secondary">
+              Refreshes read only public Binance and Gate Spot metadata. Refreshing the
+              directory never changes your approved asset set.
+            </p>
+          </div>
+          <button
+            className="min-h-11 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-canvas disabled:opacity-50"
+            type="button"
+            disabled={refresh.isPending}
+            onClick={() => refresh.mutate()}
+          >
+            {refresh.isPending
+              ? 'Refreshing…'
+              : universe.directory_status === 'observed'
+                ? 'Refresh markets'
+                : 'Load current markets'}
+          </button>
+        </div>
+
+        {refresh.isError ? (
+          <p className="mt-3 text-sm text-negative">{refresh.error.message}</p>
+        ) : null}
+
+        {universe.directory_status === 'observed' && universe.directory_observed_at ? (
+          <div className="mt-4 rounded-md border border-border bg-subtle p-4 text-sm text-secondary">
+            <p className="m-0">
+              Last observed {formatResearchTimestamp(universe.directory_observed_at)} ·{' '}
+              {universe.sources.length} public sources
+            </p>
+            <details className="mt-2">
+              <summary className="min-h-11 cursor-pointer py-2 font-semibold text-accent">
+                Source provenance
+              </summary>
+              <ul className="m-0 space-y-2 pl-5 text-xs text-muted">
+                {universe.sources.map((source) => (
+                  <li key={source.venue}>
+                    {source.venue} · {source.source_id} · observed{' '}
+                    {formatResearchTimestamp(source.observed_at)} · fingerprint{' '}
+                    <code>{source.source_fingerprint.slice(0, 12)}…</code>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </div>
+        ) : (
+          <p className="mt-4 rounded-md border border-warning/40 bg-subtle p-4 text-sm text-secondary">
+            No current market directory has been observed in this Local Market workspace.
+          </p>
+        )}
+      </section>
+
+      <section className="mt-8" aria-labelledby="approved-assets-heading">
+        <div className="mb-4">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
+            Operator-controlled scope
+          </p>
+          <h2 id="approved-assets-heading" className="m-0 text-xl font-semibold text-foreground">
+            Canonical assets
+          </h2>
+        </div>
+
+        {universe.assets.length ? (
+          <div className="space-y-4">
+            {universe.assets.map((asset) => (
+              <article
+                key={asset.canonical_asset_id}
+                className="rounded-lg border border-border bg-panel p-5"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={asset.approved ? 'positive' : 'neutral'}>
+                        {asset.approved ? 'Approved' : 'Not approved'}
+                      </Badge>
+                      <Badge tone={asset.identity_state === 'resolved' ? 'info' : 'warning'}>
+                        {identityReasonLabel(asset.identity_reason)}
+                      </Badge>
+                    </div>
+                    <h3 className="mt-3 mb-1 text-lg font-semibold text-foreground">
+                      {asset.canonical_asset_id}
+                    </h3>
+                    <p className="m-0 text-sm text-secondary">
+                      {dataStateLabel(asset.data_state)}
+                      {asset.asset_identity_version
+                        ? ` · identity ${asset.asset_identity_version}`
+                        : ''}
+                    </p>
+                  </div>
+                  <button
+                    className="min-h-11 rounded-md border border-border px-4 text-sm font-semibold text-foreground disabled:opacity-50"
+                    type="button"
+                    disabled={admission.isPending}
+                    onClick={() =>
+                      admission.mutate({
+                        canonical_asset_id: asset.canonical_asset_id,
+                        approved: !asset.approved,
+                      })
+                    }
+                  >
+                    {asset.approved ? 'Remove approval' : 'Approve asset'}
+                  </button>
+                </div>
+
+                {asset.venues.length ? (
+                  <details className="mt-4 border-t border-border pt-3">
+                    <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-accent">
+                      {asset.venues.length} current supported venue
+                      {asset.venues.length === 1 ? '' : 's'}
+                    </summary>
+                    <ul className="m-0 space-y-2 pl-5 text-sm text-secondary">
+                      {asset.venues.map((venue) => (
+                        <li key={`${venue.venue}:${venue.venue_symbol}`}>
+                          {venue.venue} · {venue.trading ? 'Trading' : venue.status} · symbol{' '}
+                          <code>{venue.venue_symbol}</code>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                ) : (
+                  <p className="mt-4 mb-0 text-sm text-muted">
+                    No currently resolved USDT market is available on Binance or Gate.
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-lg border border-border bg-panel p-5 text-sm leading-6 text-secondary">
+            No canonical research assets are resolved yet. Load current markets, then
+            confirm the identity of the assets you are willing to consider.
+          </p>
+        )}
+        {admission.isError ? (
+          <p className="mt-3 text-sm text-negative">{admission.error.message}</p>
+        ) : null}
+      </section>
+
+      {universe.directory_status === 'observed' ? (
+        <details className="mt-8 rounded-lg border border-border bg-panel p-5">
+          <summary className="min-h-11 cursor-pointer py-2 text-lg font-semibold text-accent">
+            Identity review
+          </summary>
+          <div className="mt-3 max-w-4xl">
+            <p className="text-sm leading-6 text-secondary">
+              Venue asset codes are not canonical economic identity. Confirm a mapping
+              only when you have independent reason to treat that venue code as the same
+              economic asset and identity version. QAP does not infer this from matching
+              ticker text.
+            </p>
+
+            {quoteReviews.length ? (
+              <div className="mt-5 rounded-md border border-warning/40 bg-subtle p-4">
+                <h3 className="m-0 text-base font-semibold text-foreground">
+                  Quote identity required
+                </h3>
+                <p className="mt-2 text-sm text-secondary">
+                  Resolve the venue&apos;s USDT quote coordinate before an asset/USDT market
+                  can become a canonical current instrument.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {quoteReviews.map((item) => (
+                    <button
+                      key={`${item.venue}:${item.venue_asset_code}`}
+                      className="min-h-11 rounded-md border border-border px-3 text-sm font-semibold text-foreground"
+                      type="button"
+                      onClick={() => startIdentityReview(item)}
+                    >
+                      Review {item.venue} {item.venue_asset_code}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <label className="mt-5 block text-sm font-medium text-secondary">
+              Find a venue asset code to review
+              <input
+                className="mt-2 min-h-11 w-full rounded-md border border-border bg-canvas px-3 text-foreground"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search BTC, ETH, SOL…"
+              />
+            </label>
+
+            {matchingReviews.length ? (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {matchingReviews.map((item) => (
+                  <button
+                    key={`${item.venue}:${item.venue_asset_code}`}
+                    className="min-h-11 rounded-md border border-border px-3 text-left text-sm text-foreground"
+                    type="button"
+                    onClick={() => startIdentityReview(item)}
+                  >
+                    <strong>{item.venue_asset_code}</strong> · {item.venue} ·{' '}
+                    {item.venue_symbols.length} current market
+                    {item.venue_symbols.length === 1 ? '' : 's'}
+                  </button>
+                ))}
+              </div>
+            ) : search.trim() ? (
+              <p className="mt-3 text-sm text-muted">No unresolved matching asset code.</p>
+            ) : null}
+
+            {identityDraft ? (
+              <div className="mt-5 rounded-md border border-border bg-subtle p-4">
+                <h3 className="m-0 text-base font-semibold text-foreground">
+                  Confirm {identityDraft.venue} {identityDraft.venue_asset_code}
+                </h3>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="text-sm font-medium text-secondary">
+                    Canonical economic asset
+                    <input
+                      className="mt-2 min-h-11 w-full rounded-md border border-border bg-canvas px-3 text-foreground"
+                      value={identityDraft.canonical_asset_id}
+                      onChange={(event) =>
+                        setIdentityDraft({
+                          ...identityDraft,
+                          canonical_asset_id: event.target.value.toUpperCase(),
+                        })
+                      }
+                      placeholder="Confirmed QAP asset key"
+                    />
+                  </label>
+                  <label className="text-sm font-medium text-secondary">
+                    Identity version
+                    <input
+                      className="mt-2 min-h-11 w-full rounded-md border border-border bg-canvas px-3 text-foreground"
+                      value={identityDraft.asset_identity_version}
+                      onChange={(event) =>
+                        setIdentityDraft({
+                          ...identityDraft,
+                          asset_identity_version: event.target.value,
+                        })
+                      }
+                      placeholder="Confirmed token/contract version"
+                    />
+                  </label>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    className="min-h-11 rounded-md bg-accent px-4 text-sm font-semibold text-canvas disabled:opacity-50"
+                    type="button"
+                    disabled={
+                      identity.isPending ||
+                      !identityDraft.canonical_asset_id.trim() ||
+                      !identityDraft.asset_identity_version.trim()
+                    }
+                    onClick={submitIdentity}
+                  >
+                    {identity.isPending ? 'Saving…' : 'Confirm identity mapping'}
+                  </button>
+                  <button
+                    className="min-h-11 rounded-md border border-border px-4 text-sm font-semibold text-foreground"
+                    type="button"
+                    onClick={() => setIdentityDraft(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {identity.isError ? (
+                  <p className="mt-3 text-sm text-negative">{identity.error.message}</p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </details>
+      ) : null}
+    </section>
+  )
+}

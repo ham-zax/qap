@@ -9,6 +9,11 @@ export function createQapQueries(client: QapApiClient) {
         queryKey: ['workspace-status'] as const,
         queryFn: () => client.getWorkspaceStatus(),
       }),
+    researchUniverse: () =>
+      queryOptions({
+        queryKey: ['research-universe'] as const,
+        queryFn: () => client.getResearchUniverse(),
+      }),
     scannerProtocol: () =>
       queryOptions({
         queryKey: ['scanner-protocol'] as const,

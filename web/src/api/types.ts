@@ -1,6 +1,9 @@
 import type { components } from './schema'
 
 export type WorkspaceStatusDto = components['schemas']['WorkspaceStatusDto']
+export type ResearchUniverseDto = components['schemas']['ResearchUniverseDto']
+export type IdentityMappingRequestDto = components['schemas']['IdentityMappingRequestDto']
+export type AssetAdmissionRequestDto = components['schemas']['AssetAdmissionRequestDto']
 export type RunSummaryDto = components['schemas']['RunSummaryDto']
 export type ExperimentListDto = components['schemas']['ExperimentListDto']
 export type ExperimentDetailDto = components['schemas']['ExperimentDetailDto']

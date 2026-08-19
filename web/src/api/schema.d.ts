@@ -362,6 +362,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/research-universe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Research Universe */
+        get: operations["getResearchUniverse"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/research-universe/admission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Asset Admission */
+        post: operations["setResearchUniverseAdmission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/research-universe/directory-refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Directory */
+        post: operations["refreshResearchUniverseDirectory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/research-universe/identity-mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Identity Mapping */
+        post: operations["setResearchUniverseIdentityMapping"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/scanner/protocol": {
         parameters: {
             query?: never;
@@ -558,6 +626,13 @@ export interface components {
             row_count: number;
             /** Schema Version */
             schema_version: string;
+        };
+        /** AssetAdmissionRequestDto */
+        AssetAdmissionRequestDto: {
+            /** Approved */
+            approved: boolean;
+            /** Canonical Asset Id */
+            canonical_asset_id: string;
         };
         /** AssetDeltaDto */
         AssetDeltaDto: {
@@ -1023,6 +1098,23 @@ export interface components {
             /** Fingerprint */
             fingerprint: string;
         };
+        /** DirectorySourceDto */
+        DirectorySourceDto: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Source Fingerprint */
+            source_fingerprint: string;
+            /** Source Id */
+            source_id: string;
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+        };
         /** ErrorDetailDto */
         ErrorDetailDto: {
             /** Code */
@@ -1487,6 +1579,32 @@ export interface components {
              * Format: date-time
              */
             timestamp: string;
+        };
+        /** IdentityMappingRequestDto */
+        IdentityMappingRequestDto: {
+            /** Asset Identity Version */
+            asset_identity_version: string;
+            /** Canonical Asset Id */
+            canonical_asset_id: string;
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+            /** Venue Asset Code */
+            venue_asset_code: string;
+        };
+        /** IdentityReviewDto */
+        IdentityReviewDto: {
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+            /** Venue Asset Code */
+            venue_asset_code: string;
+            /** Venue Symbols */
+            venue_symbols: string[];
         };
         /** InstrumentSpec */
         InstrumentSpec: {
@@ -2229,6 +2347,70 @@ export interface components {
             points: components["schemas"]["RelationshipEvidencePointDto"][];
             /** Quote Source Fingerprint */
             quote_source_fingerprint: string;
+        };
+        /** ResearchUniverseAssetDto */
+        ResearchUniverseAssetDto: {
+            /** Approved */
+            approved: boolean;
+            /** Asset Identity Version */
+            asset_identity_version: string | null;
+            /** Canonical Asset Id */
+            canonical_asset_id: string;
+            /**
+             * Data State
+             * @enum {string}
+             */
+            data_state: "not_approved" | "needs_data";
+            /**
+             * Identity Reason
+             * @enum {string}
+             */
+            identity_reason: "resolved" | "mapping_unavailable" | "identity_version_conflict";
+            /**
+             * Identity State
+             * @enum {string}
+             */
+            identity_state: "resolved" | "review_required";
+            /** Venues */
+            venues: components["schemas"]["ResearchUniverseVenueDto"][];
+        };
+        /** ResearchUniverseDto */
+        ResearchUniverseDto: {
+            /** Assets */
+            assets: components["schemas"]["ResearchUniverseAssetDto"][];
+            /** Directory Id */
+            directory_id: string | null;
+            /** Directory Observed At */
+            directory_observed_at: string | null;
+            /**
+             * Directory Status
+             * @enum {string}
+             */
+            directory_status: "not_refreshed" | "observed";
+            /** Identity Reviews */
+            identity_reviews: components["schemas"]["IdentityReviewDto"][];
+            /**
+             * Schema Version
+             * @default qap.api.research_universe.v1
+             * @constant
+             */
+            schema_version: "qap.api.research_universe.v1";
+            /** Sources */
+            sources: components["schemas"]["DirectorySourceDto"][];
+        };
+        /** ResearchUniverseVenueDto */
+        ResearchUniverseVenueDto: {
+            /** Status */
+            status: string;
+            /** Trading */
+            trading: boolean;
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+            /** Venue Symbol */
+            venue_symbol: string;
         };
         /**
          * ResultStatus
@@ -3196,6 +3378,112 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getResearchUniverse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchUniverseDto"];
+                };
+            };
+        };
+    };
+    setResearchUniverseAdmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssetAdmissionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchUniverseDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refreshResearchUniverseDirectory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchUniverseDto"];
+                };
+            };
+        };
+    };
+    setResearchUniverseIdentityMapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentityMappingRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchUniverseDto"];
                 };
             };
             /** @description Validation Error */

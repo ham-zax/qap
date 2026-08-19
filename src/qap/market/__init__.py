@@ -7,6 +7,7 @@ from qap.market.alignment import (
     align_bar_series,
 )
 from qap.market.bars import BarInterval, MarketBar
+from qap.market.directory import CurrentSpotDirectoryObservation, CurrentSpotMarket
 from qap.market.fingerprint import fingerprint_bar_series
 from qap.market.instruments import VenueInstrument
 from qap.market.lifecycle import (
@@ -48,6 +49,8 @@ __all__ = [
     "BarAlignmentError",
     "BarSeriesValidationError",
     "CompletedBarHistory",
+    "CurrentSpotDirectoryObservation",
+    "CurrentSpotMarket",
     "InstrumentLifecycleEvent",
     "InstrumentLifecycleEvidence",
     "LifecycleConfidence",

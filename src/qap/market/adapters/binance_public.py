@@ -16,9 +16,14 @@ from typing import Self, cast
 import httpx
 
 from qap.market.bars import BarInterval, MarketBar
+from qap.market.directory import CurrentSpotDirectoryObservation, CurrentSpotMarket
 from qap.market.instruments import VenueInstrument
 from qap.market.metadata import MarketMetadata
-from qap.market.microstructure import PublicBookSnapshot, public_book_snapshot_from_rows
+from qap.market.microstructure import (
+    PublicBookSnapshot,
+    public_book_snapshot_from_rows,
+    public_payload_fingerprint,
+)
 from qap.market.validation import ValidatedBarSeries, validate_bar_series
 from qap.portfolio import AssetId
 
@@ -259,6 +264,63 @@ class BinancePublicAdapter:
             quote=quote,
             venue_base_asset=venue_base_asset,
             venue_quote_asset=venue_quote_asset,
+        )
+
+    def fetch_spot_directory(
+        self,
+        *,
+        observed_at: datetime | None = None,
+    ) -> CurrentSpotDirectoryObservation:
+        """Fetch current Spot symbols without assigning canonical asset identity."""
+
+        payload = self._get_json("/api/v3/exchangeInfo", params={})
+        return self.spot_directory_from_payload(payload, observed_at=observed_at)
+
+    @staticmethod
+    def spot_directory_from_payload(
+        payload: object,
+        *,
+        observed_at: datetime | None = None,
+    ) -> CurrentSpotDirectoryObservation:
+        """Normalize raw exchangeInfo rows while preserving venue-local codes."""
+
+        document = _as_mapping(payload, field="exchangeInfo response")
+        symbols = _as_list(document.get("symbols"), field="exchangeInfo symbols")
+        markets: list[CurrentSpotMarket] = []
+        for raw_symbol in symbols:
+            item = _as_mapping(raw_symbol, field="exchangeInfo symbol")
+            symbol = _normalized_symbol(item.get("symbol"))
+            status = _as_string(item.get("status"), field="symbol status")
+            spot_allowed = _as_bool(
+                item.get("isSpotTradingAllowed"),
+                field="isSpotTradingAllowed",
+            )
+            markets.append(
+                CurrentSpotMarket(
+                    venue="binance",
+                    venue_symbol=symbol,
+                    venue_base_asset=_as_string(
+                        item.get("baseAsset"), field="baseAsset"
+                    ),
+                    venue_quote_asset=_as_string(
+                        item.get("quoteAsset"), field="quoteAsset"
+                    ),
+                    status=status,
+                    trading=status == "TRADING" and spot_allowed,
+                )
+            )
+
+        timestamp = (
+            datetime.now(UTC)
+            if observed_at is None
+            else _validated_utc(observed_at, field="observed_at")
+        )
+        return CurrentSpotDirectoryObservation(
+            venue="binance",
+            observed_at=timestamp,
+            source_id="binance:/api/v3/exchangeInfo",
+            source_fingerprint=public_payload_fingerprint(payload),
+            markets=tuple(markets),
         )
 
     def fetch_market_metadata(

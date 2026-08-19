@@ -19,12 +19,14 @@ from qap.api.routes import (
     pairs_router,
     paper_operations,
     portfolios_router,
+    research_universe_router,
     scanner_router,
     workspace_router,
 )
 from qap.api.scanner_views import ScannerArtifactReader
 from qap.api.schemas import ErrorDetailDto, ErrorEnvelopeDto
 from qap.api.settings import ApiSettings
+from qap.product_universe import ProductUniverse
 
 
 def _error_response(
@@ -64,6 +66,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
     )
     app.state.scanner_reader = ScannerArtifactReader(settings.run_root)
     app.state.basket_reader = BasketArtifactReader(settings.run_root)
+    app.state.product_universe = ProductUniverse(settings.run_root)
     app.state.operation_manager = OperationManager(settings)
     app.add_middleware(
         CORSMiddleware,
@@ -141,6 +144,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(workspace_router)
+    app.include_router(research_universe_router)
     app.include_router(experiments_router)
     app.include_router(portfolios_router)
     app.include_router(pairs_router)
