@@ -1,10 +1,16 @@
 # QAP Plan Map
 
-**Status:** Implementation authorized. Execute these plans phase-by-phase subject to their sequencing, verification, and stop conditions.
+**Status:** Implementation authorized for completed/approved phases; Phase 16 is at the human-centered terminology/IA checkpoint before presentation-code execution.
+
+Update context — 2026-08-19
+Trigger: Slice 4 is complete, and rendered/current-state investigation shows the next problem is user comprehension and information architecture rather than missing research capability.
+Purpose: Add the post-Slice-4 human-centered workbench re-architecture wave without reopening scientific/economic authority.
+Impact: Phase 16 current-state investigation is complete; runtime implementation begins only after its terminology/IA checkpoint.
+Evidence: `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`; `docs/plans/16-human-centered-workbench-ux-rearchitecture.md`; `main` at `62416cc`.
 
 ## Current wave
 
-Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is implemented and its integrated rendered acceptance is green. **Phase 15 — Research Scanner and Basket Backend** is complete through Scanner V1 Slice 3, including the post-review remediation handoff at `142a18d`; Slice-3 results are in `docs/research/2026-08-18-qap-scanner-slice3-results.md`. The former Slice-3 Candidate Workbench milestone was explicitly superseded by the post-Phase-15 **Slice 4 Unified QAP Workbench**, which is now complete and repository/browser-verified at final rendered executable state `6961937`; results are in `docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`. The current full repository gate is green at 672 passed / 1 skipped. Later dependent work still begins only after predecessor exit criteria are green or the user explicitly approves a documented exception.
+Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is implemented and its integrated rendered acceptance is green. **Phase 15 — Research Scanner and Basket Backend** is complete through Scanner V1 Slice 3, including the post-review remediation handoff at `142a18d`; Slice-3 results are in `docs/research/2026-08-18-qap-scanner-slice3-results.md`. The former Slice-3 Candidate Workbench milestone was explicitly superseded by the post-Phase-15 **Slice 4 Unified QAP Workbench**, which is complete and repository/browser-verified; its final rendered executable state is `6961937`, followed by the review-closure state on `main` at `62416cc`. Results are in `docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`. **Phase 16 — Human-Centered Workbench UX Re-architecture** is now the active product-design wave: current-state investigation is complete, while presentation-code implementation is gated on the Phase-16 terminology/information-architecture checkpoint. Later dependent work still begins only after predecessor exit criteria are green or the user explicitly approves a documented exception.
 
 ## Implementation waves
 
@@ -20,6 +26,7 @@ Phases 00–13 produced the financial/research core, paper hardening, readiness 
 | 8 | Make evidence understandable | 14 | Workbench is verdict/visual-first, preserves exact audit truth, and passes integrated desktop/mobile/browser acceptance |
 | 9 | Make research generation explicit | 15 | A bounded scanner/candidate/basket backend can enumerate, evaluate, rank, combine, freeze, and replay research candidates without bypassing QAP economics or holdout discipline |
 | 10 | Make QAP human-operable | Slice 4 | One local web application can initiate and inspect the admitted Slice-1/2/3 workflows while immutable QAP/scanner artifacts remain authoritative |
+| 11 | Make QAP understandable without internal expertise | 16 | Goal-oriented navigation, plain-language task flows, progressive disclosure, and human-centered acceptance preserve the same authoritative evidence while reducing implementation vocabulary from the primary UX |
 
 ## Phase plans
 
@@ -40,8 +47,9 @@ Phases 00–13 produced the financial/research core, paper hardening, readiness 
 15. `14-analytical-workbench-ux-redesign.md` (overview; detailed route/design plans are under `docs/plans/14/`)
 16. `15-research-scanner-and-candidate-workbench.md` (historical filename; Phase 15 now closes the scanner/basket backend and its former Candidate Workbench is superseded)
 17. Slice 4: `docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md`
+18. `16-human-centered-workbench-ux-rearchitecture.md` (post-Slice-4 presentation/IA phase; current-state evidence is in `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`)
 
-The cross-phase master implementation plan is at `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md`.
+The original cross-phase master implementation plan at `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md` closes the 00–15 mission. Phase 16 is a post-master product refinement and does not alter the original economic/research completion definition.
 
 Decision records that affect multiple phases:
 
