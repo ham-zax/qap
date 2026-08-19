@@ -6,6 +6,8 @@ Purpose: Replace implementation-oriented UX assumptions with an evidence-backed 
 Impact: Establishes the design input for Phase 16. It does not change QAP scientific/economic authority, the seven-command mutation surface, artifact semantics, or live-capital boundaries.
 Evidence: `main` at `62416cc`; Slice-4 result record; current React routes/components; deterministic local fixture rendered through agent-browser; existing Phase-14/15/Slice-4 plans.
 
+Later design authority — 2026-08-19: the user explicitly authorized the Phase-17 Product Layer design after a second investigation of clean-install operation, market-data acquisition, asset admission, longitudinal refresh, current-evidence collection, and real-user product comprehension. The Phase-16 IA/terminology in this document remains important historical evidence, but its `Home / Discover / Validate / Portfolios / Results / Activity` baseline is superseded for future Product Layer implementation by `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md` and `docs/plans/17-product-layer-market-data-and-research-lifecycle.md`.
+
 ## 1. Investigation scope
 
 This investigation treats the completed Slice-4 application as the current truth and evaluates it from the perspective of a user who:

@@ -1,6 +1,12 @@
 # QAP Plan Map
 
-**Status:** Implementation complete through Phase 16. The Phase-16 `single-stakeholder provisional` terminology/IA baseline remains the current presentation contract unless later observation triggers justify reopening it.
+**Status:** Implementation is complete through Phase 16. Phase 17 Product Layer M0 is now design-frozen; runtime implementation has not started. The completed Phase-16 workbench remains the current executable UI until Phase-17 milestones deliberately supersede it.
+
+Update context — 2026-08-19 (Phase-17 design freeze)
+Trigger: post-Phase-16 investigation of clean-install operation showed that the remaining product problem is not another visual pass: QAP lacks an explicit operator-approved research universe, production market-data preparation/refresh, immutable source generations/provenance, honest current-approved versus historical-PIT claim separation, and persistent current-evidence collection.
+Purpose: freeze the Product Layer architecture before implementation so market-data/onboarding work cannot silently weaken historical-universe, asset-admission, prospective, capacity, portfolio, or live-capital boundaries.
+Impact: Phase 17 is explicitly authorized at M0. The frozen future primary IA is `Home / Research / Portfolios / History`; Phase-16 `Validate`, `Results`, and `Activity` become longitudinal/History/utility concepts rather than equal-weight primary destinations as later milestones land. Product V1 stays Binance/Gate public Spot, uses explicit operator asset admission, prefers existing adapters before CCXT, and introduces stdlib SQLite only for bounded Product operational state/current scheduled collection. QAP/scanner artifacts remain scientific/economic authority.
+Evidence: `docs/research/2026-08-19-qap-product-layer-investigation.md`; `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`; `docs/plans/17-product-layer-market-data-and-research-lifecycle.md`.
 
 Update context — 2026-08-19
 Trigger: Slice 4 is complete, and rendered/current-state investigation shows the next problem is user comprehension and information architecture rather than missing research capability.
@@ -10,7 +16,7 @@ Evidence: `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigatio
 
 ## Current wave
 
-Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is implemented and its integrated rendered acceptance is green. **Phase 15 — Research Scanner and Basket Backend** is complete through Scanner V1 Slice 3, including the post-review remediation handoff at `142a18d`; Slice-3 results are in `docs/research/2026-08-18-qap-scanner-slice3-results.md`. The former Slice-3 Candidate Workbench milestone was explicitly superseded by the post-Phase-15 **Slice 4 Unified QAP Workbench**, which is complete and repository/browser-verified; its final rendered executable state is `6961937`, followed by the review-closure state on `main` at `62416cc`. Results are in `docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`. **Phase 16 — Human-Centered Workbench UX Re-architecture** is complete through M8. The frozen `Home / Discover / Validate / Portfolios / Results / Activity` IA and plain-language vocabulary now govern the implemented workbench, while the original scientific/economic ownership, exact evidence, stable specialist routes, and live-capital `NO-GO` boundary remain intact. The deterministic browser closure exercised `research_only`; `small_capacity` and `tradable_now` presentation branches are implemented but remain explicitly outside current deterministic browser-fixture coverage. Any later product wave begins only after explicit scope is defined; Phase 16 itself is closed.
+Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is implemented and its integrated rendered acceptance is green. **Phase 15 — Research Scanner and Basket Backend** is complete through Scanner V1 Slice 3, including the post-review remediation handoff at `142a18d`; Slice-3 results are in `docs/research/2026-08-18-qap-scanner-slice3-results.md`. The former Slice-3 Candidate Workbench milestone was explicitly superseded by the post-Phase-15 **Slice 4 Unified QAP Workbench**, which is complete and repository/browser-verified; its final rendered executable state is `6961937`, followed by the review-closure state on `main` at `62416cc`. Results are in `docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`. **Phase 16 — Human-Centered Workbench UX Re-architecture** is complete through M8. Its implemented `Home / Discover / Validate / Portfolios / Results / Activity` IA remains the current executable shell and its negative-evidence/progressive-disclosure/scientific-authority boundaries remain protected. **Phase 17 — Product Layer** is explicitly authorized at M0 design freeze. It will make a clean local workspace operational by adding explicit operator asset admission, public market-data preparation/refresh, immutable source generations/provenance, a separately-versioned current-approved retrospective research claim, backend-owned readiness/safe cutoffs, longitudinal Research Ideas, and persistent current public-evidence collection. Its frozen future primary IA is `Home / Research / Portfolios / History`. Runtime implementation starts at M1; do not replay Phase 16.
 
 ## Implementation waves
 
@@ -27,6 +33,7 @@ Phases 00–13 produced the financial/research core, paper hardening, readiness 
 | 9 | Make research generation explicit | 15 | A bounded scanner/candidate/basket backend can enumerate, evaluate, rank, combine, freeze, and replay research candidates without bypassing QAP economics or holdout discipline |
 | 10 | Make QAP human-operable | Slice 4 | One local web application can initiate and inspect the admitted Slice-1/2/3 workflows while immutable QAP/scanner artifacts remain authoritative |
 | 11 | Make QAP understandable without internal expertise | 16 | Goal-oriented navigation, plain-language task flows, progressive disclosure, and human-centered acceptance preserve the same authoritative evidence while reducing implementation vocabulary from the primary UX |
+| 12 | Make a clean local workspace product-operational | 17 | Explicit asset admission, honest market-data/readiness ownership, immutable refreshable inputs, longitudinal research evidence, and persistent current-evidence collection make the existing research engine usable without expert fixture/catalog preparation |
 
 ## Phase plans
 
@@ -48,8 +55,9 @@ Phases 00–13 produced the financial/research core, paper hardening, readiness 
 16. `15-research-scanner-and-candidate-workbench.md` (historical filename; Phase 15 now closes the scanner/basket backend and its former Candidate Workbench is superseded)
 17. Slice 4: `docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md`
 18. `16-human-centered-workbench-ux-rearchitecture.md` (post-Slice-4 presentation/IA phase; current-state evidence is in `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`; fresh-agent execution handoff is `docs/research/2026-08-19-qap-phase16-implementation-handoff.md`)
+19. `17-product-layer-market-data-and-research-lifecycle.md` (explicitly authorized Product Layer phase; investigation is `docs/research/2026-08-19-qap-product-layer-investigation.md`; canonical frozen design is `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`; M0 complete, M1 next)
 
-The original cross-phase master implementation plan at `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md` closes the 00–15 mission. Phase 16 is a post-master product refinement and does not alter the original economic/research completion definition.
+The original cross-phase master implementation plan at `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md` closes the 00–15 research-engine mission. Phases 16 and 17 are explicitly authorized post-master product phases and do not alter the original economic/research completion definition.
 
 Decision records that affect multiple phases:
 

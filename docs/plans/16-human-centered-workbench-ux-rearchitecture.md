@@ -6,6 +6,8 @@ Purpose: Re-architect the web presentation around user goals, research comprehen
 Impact: Adds a post-Slice-4 product phase. Runtime research contracts remain unchanged unless the explicit current-evidence capture checkpoint later proves a backend composition change is necessary.
 Evidence: `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`, current `main` at `62416cc`, completed Slice-4 results and rendered acceptance.
 
+Later design authority — 2026-08-19: Phase 16 is closed and remains the record of the implemented human-centered presentation wave. After clean-install/product-operation investigation, the user explicitly authorized Phase 17. Future Product Layer work follows `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md` and `docs/plans/17-product-layer-market-data-and-research-lifecycle.md`. Those documents deliberately supersede this phase's provisional primary IA for future implementation while preserving the scientific/economic and negative-evidence boundaries proved here.
+
 Update context — 2026-08-19 (M1 freeze)
 Trigger: The current-state investigation and rendered walkthrough are complete; no additional moderated participants are available in this implementation session.
 Purpose: Resolve the terminology/information-architecture checkpoint so presentation implementation can proceed without inventing labels route-by-route.

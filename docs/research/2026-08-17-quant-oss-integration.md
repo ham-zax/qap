@@ -33,7 +33,7 @@ The goal is aggressive reuse without surrendering economic truth. A package may 
 | pyvinecopulib | ADOPT WHEN COPULA FAMILY IS TESTED | copula fitting/selection, h-functions, simulation | model evidence only |
 | skfolio | EVALUATE WITH SPIKE | long-only candidate allocation, walk-forward/CV, turnover/cost experiments | target-weight candidate only |
 | QuantStats | ADOPT WHEN ANALYTICS STARTS | standard return/drawdown diagnostics and tear sheets | diagnostics only |
-| CCXT | ADOPT AT EXCHANGE BOUNDARY | current spot metadata and later exchange adapter primitives | no accounting ownership |
+| CCXT | DEFER FOR PRODUCT V1; ADOPT WHEN EXCHANGE BOUNDARY EARNS IT | later current-spot transport/metadata normalization when a third venue or demonstrated duplicated adapter work justifies it | never historical-universe, identity, provenance, admission, or accounting authority |
 | Binance Public Data | ADOPT FOR BINANCE HISTORICAL INGEST | official spot archives/checksums | raw source only |
 | NautilusTrader | DIFFERENTIAL ORACLE ONLY | event/fill model study and selected replay parity tests | never QAP authority |
 | vectorbt Community | EVALUATE WITH SPIKE, RESEARCH ONLY | broad parameter/signal screening | never final economic verdict |
@@ -109,7 +109,7 @@ Do not infer a point-in-time historical universe from today's `exchangeInfo` or 
 
 QAP therefore still owns source manifests, file checksums/fingerprints, symbol lifecycle evidence, listing/delisting/rename provenance where known, daily/monthly/API reconciliation policy for suspect data, and point-in-time universe admission.
 
-CCXT is useful for current market metadata and later live spot exchange adaptation. It is not historical-universe authority. CoinGecko or other aggregators may provide supplementary metadata only.
+Phase-17 Product V1 reuses QAP's existing explicit Binance/Gate public adapters and does not require CCXT. CCXT remains useful for later current-market transport/metadata normalization if a third venue or demonstrated duplicated adapter work earns the dependency. It is never historical-universe, canonical-identity, provenance, Spot-admission, or accounting authority. CoinGecko or other aggregators may provide supplementary metadata only.
 
 Do not introduce `cryptofeed` as a new dependency: its upstream repository was archived in July 2026. Study patterns only if useful.
 

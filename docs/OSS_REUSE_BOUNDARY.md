@@ -82,6 +82,6 @@ QAP uses a two-speed quant workflow: mature OSS may accelerate exploratory scree
 - **skfolio:** optional target-weight/CV spike only after transparent rebalancing controls exist. QAP still owns target admission, execution, inventory, and accounting.
 - **QuantStats:** diagnostic/tear-sheet consumer of QAP-produced wealth/return series only; it cannot redefine benchmark or accounting semantics.
 - **NautilusTrader:** differential/reference oracle for deliberately simple replay parity cases, never QAP's portfolio/accounting owner.
-- **Binance Public Data / CCXT:** use public historical archives/checksums and current market metadata where appropriate, while QAP retains historical-universe, provenance, and Spot-admissibility semantics.
+- **Binance Public Data / CCXT:** Phase-17 Product V1 should prefer official Binance/Gate public sources plus QAP's existing explicit adapters. CCXT stays deferred until a third venue or demonstrated duplicated adapter work earns it; if later admitted it may normalize transport/metadata only, while QAP retains canonical identity, historical-universe, provenance, Spot-admission, and accounting semantics.
 
 Detailed decision record: `docs/research/2026-08-17-quant-oss-integration.md`.

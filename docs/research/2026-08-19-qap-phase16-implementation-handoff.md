@@ -1,6 +1,8 @@
 # QAP Phase 16 — Implementation Summary and Handoff
 
 > Closed handoff: Phase 16 is complete through M8. The M4 backend capture-readiness boundary fired, was resolved by the smallest bounded read composition, and the remaining milestones were completed without reopening QAP scientific/economic authority. The guidance below is retained as implementation history, not as an instruction to continue Phase 16.
+>
+> Later authority — 2026-08-19: the user subsequently authorized the Phase-17 Product Layer design freeze. Future product implementation must read `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md` and `docs/plans/17-product-layer-market-data-and-research-lifecycle.md`. Phase 17 deliberately supersedes the provisional Phase-16 primary IA while preserving the scientific/economic boundaries recorded here.
 
 Update context — 2026-08-19
 Trigger: Phase 16 current-state UX investigation, implementation, and M8 human-centered closure are complete.
@@ -518,14 +520,14 @@ For implementation work on the connected WSL/Linux repository:
 7. Keep each milestone coherent and checkpoint it before starting the next one.
 8. If an implementation fact refutes an assumption, update the plan/evidence and make the smallest contract-safe correction; do not silently work around it.
 9. Do not broaden the mission into backend research changes unless a documented Phase-16 boundary checkpoint actually fires.
-10. Stop at M8 closure. Do not invent a Phase 17 automatically.
+10. Historical Phase-16 instruction: stop at M8 closure and do not invent Phase 17 automatically. That instruction was satisfied; the user later explicitly authorized the Phase-17 Product Layer design freeze recorded above.
 
 ## 17. What the next agent must not do
 
 Do not:
 
 - re-run a broad UX discovery exercise before M2;
-- reopen `Home / Discover / Validate / Portfolios / Results / Activity` because another label feels nicer;
+- reopen the completed Phase-16 IA ad hoc; Phase 17 may supersede it only according to the explicitly frozen Product Layer design;
 - make `tradable_now` look like trade authorization;
 - hide rejected/invalid/unavailable evidence;
 - collapse freeze and later evidence into one wizard;
@@ -544,7 +546,7 @@ Do not:
 
 If a fresh agent needs to inspect or extend the workbench later, use the following guardrail:
 
-> Work in `/home/hamza/repo/qap` on `main`. Start by checking current HEAD/working-tree state and preserve any legitimate concurrent changes. Read `docs/research/2026-08-19-qap-phase16-implementation-handoff.md`, `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`, and `docs/plans/16-human-centered-workbench-ux-rearchitecture.md`. Phase 16 M0–M8 are complete. Preserve the implemented IA `Home / Discover / Validate / Portfolios / Results / Activity`, progressive-disclosure vocabulary, stable specialist routes, negative evidence, and backend-owned scientific/economic authority. Do not treat this handoff as authorization for Phase 17 or another redesign. Any new implementation requires an explicitly scoped request and must respect the Phase-16 boundaries unless the user deliberately changes them.
+> Work in `/home/hamza/repo/qap` on `main`. Start by checking current HEAD/working-tree state and preserve any legitimate concurrent changes. Phase 16 M0-M8 are complete and must not be replayed. Read this handoff for historical boundaries, then read `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md` and `docs/plans/17-product-layer-market-data-and-research-lifecycle.md`. The user has explicitly authorized Phase-17 Product Layer design; its future primary IA is `Home / Research / Portfolios / History`. Preserve stable specialist routes, negative evidence, progressive disclosure, and backend-owned scientific/economic authority. Phase-17 implementation starts at M1 and must not silently change protected research semantics.
 
 ## 19. One-screen status summary
 
@@ -561,10 +563,13 @@ Phase 16 M7 visual convergence    ✅ complete
 Phase 16 M8 closure               ✅ complete
 
 NEXT
-No Phase-16 work. Define new scope explicitly.
+No Phase-16 work. Phase-17 Product Layer M1 is the next authorized implementation milestone.
 
-PRIMARY IA
+PHASE-16 IMPLEMENTED IA (historical)
 Home | Discover | Validate | Portfolios | Results | Activity
+
+PHASE-17 FROZEN FUTURE PRIMARY IA
+Home | Research | Portfolios | History
 
 CORE RULE
 Simplify presentation, not research truth.

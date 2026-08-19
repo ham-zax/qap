@@ -8,7 +8,7 @@ Repository:
 
 Your mission is to take QAP from its current repository state to the complete,
 verified local end product defined by the approved implementation program across
-Phases 00 through 15.
+Phases 00 through 15 plus any explicitly authorized post-master product phases.
 
 Update context — 2026-08-18
 Trigger: user approval of the bounded Scanner-V1 architecture, Slice 1 corrections,
@@ -39,6 +39,27 @@ docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-desig
 docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md;
 docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md;
 docs/research/2026-08-19-qap-slice4-unified-workbench-results.md.
+
+Update context — 2026-08-19 (Phase-17 Product Layer design freeze)
+Trigger: after Phase-16 closure, the user explicitly requested a product-layer design
+freeze based on investigation of clean-install operation, market-data acquisition,
+operator asset admission, longitudinal refresh, current public-evidence collection,
+and non-expert product comprehension.
+Purpose: authorize Phase-17 Product Layer implementation in the frozen dependency
+order without reopening QAP scientific/economic authority or treating another visual
+redesign as the solution.
+Impact: M0 is complete. The canonical design is
+`docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`; the executable plan
+is `docs/plans/17-product-layer-market-data-and-research-lifecycle.md`; investigation
+support is `docs/research/2026-08-19-qap-product-layer-investigation.md`. The future
+primary IA is `Home / Research / Portfolios / History`. Product V1 uses explicit
+operator-approved assets, current Binance/Gate public Spot data, immutable data
+generations/provenance, a separately-versioned current-approved retrospective claim,
+backend-owned readiness/safe cutoffs, longitudinal Research Ideas, and persistent
+current public-evidence collection. CCXT is deferred unless a concrete later
+exchange-boundary need earns it. SQLite is admitted only for bounded Product
+operational/collector state; immutable QAP research artifacts remain authoritative.
+Phase-12 live-capital authority remains `NO-GO`.
 
 Steering override — 2026-08-18: this mission uses no delegated/external coding or
 review model. Do not invoke Codex, subagents, reviewer agents, second-opinion models,
@@ -1392,8 +1413,9 @@ DO NOT end the mission because:
 
 The mission is complete only when ALL of the following are true:
 
-1. Phases 00 through 15 have reached their stated exit criteria, including
-   legitimate documented negative/NO-GO outcomes where the phase allows them.
+1. Phases 00 through 15 and any explicitly authorized post-master product phases
+   have reached their stated exit criteria, including legitimate documented
+   negative/NO-GO outcomes where the phase allows them.
 
 2. Required cross-phase contracts are coherent.
 
@@ -1413,7 +1435,9 @@ The mission is complete only when ALL of the following are true:
    one-inventory QAP path. The former Slice-3 Candidate Workbench is superseded by
    the completed Slice-4 unified workbench; Slice 4 provides the local human-operated
    command/query product layer and remains separate from the Phase-15 research-kernel
-   exit requirement.
+   exit requirement. Phase 16 is closed. The explicitly authorized Phase-17 Product
+   Layer is governed by its frozen design/plan and must reach its own exit criteria
+   before the post-master product mission is complete.
 
 8. Agent-browser product inspection has been performed when applicable and material
    UI/integration defects found there have been addressed or documented.
