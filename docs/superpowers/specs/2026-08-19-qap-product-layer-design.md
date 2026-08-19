@@ -1,6 +1,6 @@
 # QAP Product Layer Design Freeze
 
-**Status:** FROZEN IMPLEMENTATION BASELINE - 2026-08-19
+**Status:** FROZEN IMPLEMENTATION BASELINE - 2026-08-19; SELECTIVE LEGACY-SALVAGE AMENDMENT APPROVED - 2026-08-19
 
 **Phase:** 17 - Product Layer: Market Universe, Data Workspace, and Research Lifecycle
 
@@ -9,6 +9,39 @@
 **Primary rule:** Simplify operation and presentation without weakening research truth.
 
 **Investigation evidence:** `docs/research/2026-08-19-qap-product-layer-investigation.md`
+
+**Legacy salvage evidence:** `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`
+
+### Selective legacy-salvage amendment
+
+The user explicitly authorized the Phase-17 plan to learn from the earlier `tradingview_ratio` QAP repository after a read-only forensic review.
+
+This amendment freezes one rule:
+
+> Mine proven patterns and failure lessons from the legacy repository, but re-derive them inside current QAP owners. Never treat the existence of legacy runtime code as authority to port it.
+
+Approved conceptual salvage:
+
+- gap-aware historical prepare/refresh planning;
+- bounded public-API pressure/retry discipline;
+- first-class readiness/freshness reasons;
+- truthful discovery-funnel/progress counts;
+- stage purpose/authority explanations and backend-authorized next actions;
+- evidence-layer outcome semantics for Research Ideas/History;
+- focused ownership/hidden-state audits for long-lived operational/process state;
+- inventory/HODL-relative product-intent evidence for Portfolio/History presentation.
+
+Explicitly rejected legacy architecture:
+
+- monolithic fetch/cache/exchange owners;
+- CCXT fallback as Product truth;
+- synthetic direct-market execution;
+- presenter/frontend-derived verdict authority;
+- live/grid/rotation runtime machinery;
+- global mutable API-guardian/process-manager patterns;
+- wholesale legacy module organization.
+
+The amendment does not change any frozen economic, historical-PIT, asset-admission, prospective, portfolio/accounting, or live-capital authority boundary.
 
 ## 1. Why this phase exists
 
@@ -182,7 +215,15 @@ Acquisition order:
 
 Do not silently mix source families when their semantics disagree.
 
+Before requesting a historical window, Product preparation should compare the desired window with the current immutable generation for the same logical dataset. Reuse already-admitted contiguous coverage where the current generation/derivation contract can do so without weakening provenance, and acquire only the missing head/tail when safe.
+
+Do not recreate the legacy mutable cache/gap registry. Current published generations are already contiguous by validation; an internal source gap remains an explicit acquisition failure. Missing/earliest retrievable bars are availability evidence only and must never be promoted into historical PIT eligibility evidence.
+
+Public request pressure is an acquisition concern, not an exchange-global singleton. Use bounded per-operation/per-venue retry/backoff based on current response status/headers where needed. Do not copy stale legacy quota constants. If realistic Product preparation does not demonstrate meaningful rate pressure, do not manufacture a larger throttle framework.
+
 Binance daily official public data is preferred over blindly trusting monthly files when source reconciliation shows a discrepancy.
+
+The current daily-archive path must nevertheless be evaluated for request amplification at realistic approved-universe scale. Monthly archive support is admitted only as a measured optimization for complete historical months when it materially reduces request count/latency without weakening checksums, reconciliation, exact provenance, or bar semantics.
 
 Gate bulk data may accelerate supported intervals, but a missing native interval such as a Product-required 15m series may be derived only through a documented deterministic aggregation contract from an admitted lower interval. The resulting dataset must retain exact source-generation lineage.
 
@@ -266,6 +307,10 @@ A backend Product Layer read model must compose at least:
 - excluded/not-ready reasons;
 - active market-data maintenance state.
 
+Readiness reasons remain structured. The backend must preserve distinctions between operator scope, identity/current-market preconditions, historical coverage, direct-market evidence, and maintenance state. A rejected candidate or unavailable direct market must not become evidence that the economic asset itself is invalid or should be removed from operator admission.
+
+Legacy eligibility thresholds are not admitted. Historical bar availability cannot substitute for strict historical lifecycle evidence.
+
 The primary UI may say:
 
 ```text
@@ -301,6 +346,8 @@ Multi-timeframe runs, forensic modes, manual pins, manual replay IDs, explicit h
 
 Normal users do not supply `as_of`. The backend supplies the latest safe cutoff for the selected ready scope.
 
+Research progress should use truthful backend/scanner stage counts rather than an opaque spinner or invented percentage/ETA. Each major state should explain what QAP is doing, what that stage can and cannot conclude, and the valid next action. Backend state owns the action; React may translate stable state into plain language but may not derive verdicts from raw metrics.
+
 ## 16. Research Idea as the longitudinal product object
 
 The normal user should experience one Research Idea whose evidence evolves through distinct stages:
@@ -313,6 +360,10 @@ Original historical research
 ```
 
 These evidence classes remain distinct in the backend and in advanced/audit presentation. The Product Layer may compose them into one page; it must not merge their authority or time semantics.
+
+The Product must also identify which evidence layer changed. A later failure or weakening must not rewrite an earlier valid historical claim. Product language should distinguish, as current QAP evidence supports, relationship evidence, economic/replay implementation evidence, later forward evidence, current public/capacity evidence, and portfolio-expression evidence.
+
+The legacy Research Operating System's distinction between economic truth, mechanism truth, portfolio-expression truth, and strategy truth is adopted only as research-method guidance for explanation/History. It does not create new scientific identities or Product navigation stages.
 
 `Validate` therefore becomes part of the Research Idea lifecycle rather than a primary navigation concept.
 
@@ -383,6 +434,8 @@ SQLite may own only:
 Immutable QAP research/economic artifacts remain Parquet/JSON and remain authoritative.
 
 No Postgres, Redis, Celery, Kafka, cloud queue, microservice, or generic workflow engine is authorized.
+
+Before adding or moving long-lived collector/process state, use a focused ownership/hidden-state review that records the state owner, allowed mutator(s), consumers, lifetime, recovery rule, failure mode, and authority impact. This legacy planning discipline is required only for stateful operational boundaries such as M7/M9; do not create repository-wide ledgers for ordinary changes.
 
 ## 22. Product maintenance versus research operations
 
@@ -481,6 +534,10 @@ Do not treat port occupancy alone as proof the intended QAP workspace is running
 
 History is the primary completed-work archive for normal users. It may compose scans, forward evidence, basket research, experiments, and paper evidence while retaining links to their authoritative specialist views.
 
+History must preserve the distinction between operator approval, market/data readiness, relationship/candidate evidence, economic replay evidence, later/current evidence, and portfolio evidence. Temporary data unavailability does not remove operator approval; candidate rejection does not make an asset invalid; later evidence does not rewrite the original artifact.
+
+Where supported by authoritative artifacts, History should help users understand what was tested, what was learned, what was falsified, what remains uncertain, and the valid next action.
+
 Activity remains available as a utility for running/completed/failed operational tasks.
 
 An operational failure must never overwrite or reinterpret an existing scientific result.
@@ -496,6 +553,8 @@ Phase-16 portfolio authority boundaries remain frozen:
 - QAP policy/execution/accounting remains the sole financial authority.
 
 The Product Layer may simplify labels and navigation but may not add automatic graph-to-basket discovery or optimizer-driven portfolios.
+
+The legacy inventory/HODL objective is product-intent evidence only. Portfolio presentation should preserve the current run's declared matched HODL/control frame, asset/relationship contribution, concentration, turnover, and cost where authoritative evidence exists. It must not replace the current experiment objective with a generic headline return.
 
 ## 28. Performance/readiness boundary
 
@@ -530,6 +589,8 @@ M1-M8 must work as a reliable local product first.
 
 A desktop shell may be evaluated in the packaging milestone only when it removes a demonstrated local-operability burden such as keeping long-lived processes/collector state alive. Tauri remains a candidate, not a frozen dependency.
 
+Before choosing a packaging/process solution, map the mature local process/state owners, allowed mutators, consumers, lifetimes, restart/recovery rules, and failure modes. Reuse the legacy ownership-boundary audit discipline, not the legacy process/runtime architecture.
+
 Packaging may not introduce private exchange credentials or live-trading authority.
 
 ## 30. Human-comprehension acceptance
@@ -545,6 +606,9 @@ Representative-user acceptance must check whether users can correctly explain, i
 - historical versus later versus current evidence;
 - research rejection versus task failure;
 - what a hypothetical amount assessment means;
+- approved asset versus data-ready asset;
+- data/readiness failure versus valid negative/neutral research;
+- which evidence layer weakened or failed without rewriting earlier evidence;
 - that QAP is **not** recommending or authorizing a live trade.
 
 If representative users systematically misunderstand one of those protected concepts, that is evidence for a design review. It is not permission for the frontend to conceal or change the underlying research truth.
@@ -567,6 +631,10 @@ Phase 17 does not authorize:
 - cloud/distributed infrastructure;
 - archived-depth retro-certification of current capacity;
 - frontend capacity/coverage/economic math;
+- monolithic legacy fetch/cache/exchange ownership;
+- global mutable legacy API-guardian/request-manager architecture;
+- presenter/frontend-derived research or trading authority;
+- importing legacy eligibility thresholds as current Product policy;
 - a frontend framework or component-library rewrite;
 - route migrations solely for prettier URLs.
 
@@ -591,16 +659,16 @@ Implementation proceeds in this order:
 
 ```text
 M0  Product Layer design freeze                    COMPLETE
-M1  Workspace identity + clean zero-state
-M2  Market directory + explicit asset admission
-M3  Historical market-data acquisition + generations/provenance
-M4  Current-approved research claim + readiness + safe cutoff
-M5  Self-explanatory Research experience + new primary IA
-M6  Longitudinal Research Idea + all-survivor follow-up
-M7  Persistent current-evidence collector
-M8  Portfolio + History + utility Activity convergence
-M9  Local packaging / process-lifecycle decision
-M10 Representative-user comprehension closure
+M1  Workspace identity + clean zero-state          COMPLETE
+M2  Market directory + explicit asset admission    COMPLETE
+M3  Adaptive historical prepare/refresh + generations/provenance + request-pressure discipline  CURRENT
+M4  Current-approved research claim + explainable readiness + safe cutoff
+M5  Self-explanatory Research experience + truthful discovery funnel + new primary IA
+M6  Longitudinal Research Idea + evidence-layer semantics + all-survivor follow-up
+M7  Ownership-safe persistent current-evidence collector
+M8  Objective-aware Portfolio + History + utility Activity convergence
+M9  Process/state ownership + local packaging decision
+M10 Representative-user comprehension / authority closure
 ```
 
 Do not skip directly to M5 React work. The UI cannot honestly simplify states that the backend Product Layer does not yet own.

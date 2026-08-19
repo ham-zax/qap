@@ -61,6 +61,23 @@ exchange-boundary need earns it. SQLite is admitted only for bounded Product
 operational/collector state; immutable QAP research artifacts remain authoritative.
 Phase-12 live-capital authority remains `NO-GO`.
 
+Update context — 2026-08-19 (selective legacy-QAP salvage amendment)
+Trigger: the user requested a forensic review of the earlier `/home/hamza/repo/tradingview_ratio`
+QAP and then explicitly authorized upgrading the Phase-17 plan with the useful salvage.
+Purpose: preserve hard-earned acquisition, readiness, comprehension, research-lifecycle,
+and state-ownership lessons without merging repositories or restoring the legacy runtime
+architecture.
+Impact: read `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`
+alongside the amended Phase-17 design/plan. M3 now includes current-coverage-aware
+prepare/refresh plus measured request-pressure/source-efficiency decisions. M4-M10 now
+include structured readiness reasons, truthful discovery-funnel/next-action UX,
+evidence-layer outcome semantics, focused state/process ownership audits,
+objective-aware Portfolio/History presentation, and stronger comprehension gates.
+Do not port the legacy monolithic fetch/cache owner, global API guardian, CCXT-as-truth,
+synthetic execution, presenter-derived verdict authority, live/grid runtime, or legacy
+eligibility thresholds. Missing/earliest retrievable bars remain acquisition evidence,
+not historical PIT eligibility evidence.
+
 Steering override — 2026-08-18: this mission uses no delegated/external coding or
 review model. Do not invoke Codex, subagents, reviewer agents, second-opinion models,
 or other model CLIs for implementation, investigation, debugging, or review. All

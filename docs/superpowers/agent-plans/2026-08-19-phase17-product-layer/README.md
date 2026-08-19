@@ -4,6 +4,7 @@
 **Source design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 **Source plan:** `docs/plans/17-product-layer-market-data-and-research-lifecycle.md`
 **Investigation evidence:** `docs/research/2026-08-19-qap-product-layer-investigation.md`
+**Legacy salvage evidence:** `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`
 **Frozen design base:** `1bb6e78`
 **Execution shape:** one final writable M3 Product orchestration/exit pass plus one concurrent read-only combined-state cross-check; M4 starts only after M3 exit is verified
 **Current wave:** 4b
@@ -12,8 +13,8 @@
 
 | Mission | Type | Status | Can start | Workspace | Isolation reason | Blocked by |
 |---|---|---|---|---|---|---|
-| Agent 1 — M3 combined Product orchestration / exit | mixed executable | ready | now | `/home/hamza/repo/qap/.worktrees/phase17-m3-orchestration` on branch `phase17-m3-orchestration` | sole final M3 writer while main stays stable for Agent 2 cross-check | integrated Binance `f1fab24` + Gate integration on main + Wave-4b coordination base |
-| Agent 2 — M3 combined integration / exit cross-check | read-only | ready | now | `/home/hamza/repo/qap` read-only | no writable worktree; must not race Agent 1 | integrated combined M3 venue state |
+| Agent 1 — M3 combined Product orchestration / exit | mixed executable | **plan upgraded; workspace refresh required before launch** | after plan-upgrade base | `/home/hamza/repo/qap/.worktrees/phase17-m3-orchestration` on branch `phase17-m3-orchestration` is still pinned to pre-upgrade `5db2e8a` | must be safely refreshed/recreated before becoming the sole final M3 writer | integrated Binance `f1fab24` + Gate integration + selective legacy-salvage amendment |
+| Agent 2 — M3 combined integration / exit cross-check | read-only | ready after plan-upgrade commit | after plan-upgrade base | `/home/hamza/repo/qap` read-only | no writable worktree; must not race Agent 1 | integrated combined M3 venue state + upgraded plan |
 
 ## Dependency map
 
@@ -50,7 +51,7 @@ prepare/refresh across both venues    combined owners / exit / M4 handoff
                 M5+ Product UI/lifecycle work
 ```
 
-M3 shared foundation, Binance acquisition, and Gate acquisition are integrated. Agent 2's M4 reconnaissance is complete and provides the executable M4 policy/readiness contract, but M4 implementation remains blocked until complete M3. The sole remaining writable M3 work is the bounded Product orchestration/exit pass that connects captured approved scope + Scanner-V1 timeframe requirements to both venue acquirers and the shared immutable publisher through Product prepare/refresh operations.
+M3 shared foundation, Binance acquisition, and Gate acquisition are integrated. Agent 2's M4 reconnaissance is complete and provides the executable M4 policy/readiness contract, but M4 implementation remains blocked until complete M3. The sole remaining writable M3 work is the bounded Product orchestration/exit pass that connects captured approved scope + Scanner-V1 timeframe requirements to both venue acquirers and the shared immutable publisher through Product prepare/refresh operations. The selective `tradingview_ratio` salvage overlay now also requires this pass to compare desired windows with current immutable coverage, measure request amplification, decide the smallest bounded API-pressure behavior, and keep acquisition availability separate from strict historical PIT evidence.
 
 ## Milestone progress
 
@@ -59,14 +60,14 @@ M3 shared foundation, Binance acquisition, and Gate acquisition are integrated. 
 | M0 design freeze | complete | — |
 | M1 workspace identity + clean zero-state | complete / integrated at `461a33c` | Agent 1 finished |
 | M2 market directory + explicit asset admission | complete / integrated at `8e45c36` | Agent 2 finished |
-| M3 historical acquisition + provenance/generations | foundation + Binance + Gate integrated; combined Product orchestration/exit is the only remaining M3 work | Agent 1 writer + Agent 2 read-only cross-check |
-| M4 current-approved policy + readiness/safe cutoff | reconnaissance complete; implementation blocked by complete M3 | unassigned until M3 exit |
-| M5 self-explanatory Research + primary IA | blocked by M4 | unassigned |
-| M6 longitudinal Research Idea | blocked by M5 | unassigned |
-| M7 persistent current-evidence collector | blocked by M6 | unassigned |
-| M8 Portfolios + History + utility Activity | blocked | unassigned |
-| M9 packaging/process-lifecycle decision | blocked | unassigned |
-| M10 representative-user comprehension closure | final acceptance / blocked | unassigned |
+| M3 adaptive historical prepare/refresh + provenance/generations | foundation + Binance + Gate integrated; combined orchestration/coverage reuse/request-pressure exit is the only remaining M3 work | Agent 1 writer + Agent 2 read-only cross-check after workspace refresh |
+| M4 current-approved policy + explainable readiness/safe cutoff | reconnaissance complete; implementation blocked by complete M3 | unassigned until M3 exit |
+| M5 self-explanatory Research + truthful discovery funnel/primary IA | blocked by M4 | unassigned |
+| M6 longitudinal Research Idea + evidence-layer semantics | blocked by M5 | unassigned |
+| M7 ownership-safe persistent current-evidence collector | blocked by M6 | unassigned |
+| M8 objective-aware Portfolios + History + utility Activity | blocked | unassigned |
+| M9 process/state ownership + packaging decision | blocked | unassigned |
+| M10 representative-user comprehension/authority closure | final acceptance / blocked | unassigned |
 
 ## Shared contracts
 
@@ -77,11 +78,13 @@ M3 shared foundation, Binance acquisition, and Gate acquisition are integrated. 
 - Negative, invalid, incomplete, unavailable, and rejected research evidence remains first-class.
 - The existing seven-command research mutation vocabulary remains protected; Product maintenance is a separate bounded owner.
 - CCXT is not required for Product V1. Existing Binance/Gate public adapters are preferred until a concrete insufficiency is demonstrated.
+- Legacy `tradingview_ratio` is conceptual evidence only: no monolithic fetcher/cache owner, global mutable API guardian, synthetic execution, presenter-derived verdict authority, or legacy eligibility thresholds may be ported into Phase 17.
+- Acquisition availability/earliest history is not strict historical PIT eligibility evidence.
 - Tests are opt-in. This coordination wave does not authorize creating, modifying, or running tests. Use direct evidence and the smallest relevant non-test/static/build checks instead.
 
 ## Workspace policy
 
-Agent 1 is the sole writable autonomous process for the final M3 pass and receives `/home/hamza/repo/qap/.worktrees/phase17-m3-orchestration`. Agent 2 is read-only on stable `main` and must not edit, stage, commit, switch branches, create worktrees, or run mutating Product/API commands.
+The existing Agent-1 orchestration worktree is still pinned to the pre-salvage-plan base `5db2e8a`. Do **not** launch a writer from it until writer ownership is checked and the worktree is safely refreshed/recreated from the plan-upgrade coordination base. After that refresh, Agent 1 is the sole writable autonomous process for the final M3 pass. Agent 2 is read-only on stable `main` and must not edit, stage, commit, switch branches, create worktrees, or run mutating Product/API commands.
 
 The former M1/M2/M3-foundation/Binance/Gate worktrees are historical integrated milestone state and must not be reused as additional writers for Wave 4b.
 
@@ -105,11 +108,11 @@ Both sessions should load and use `persistent-agent-loop` because the user inten
 
 ### Agent 1 — M3 orchestration / exit
 
-Prove a clean explicitly approved Local Market scope can initiate bounded Product preparation/refresh across both integrated venue drivers, publish immutable generations with complete provenance, preserve old generations on refresh, and expose truthful Product maintenance state without implementing M4 readiness. Do not create/run tests unless separately authorized.
+Prove a clean explicitly approved Local Market scope can initiate bounded Product preparation/refresh across both integrated venue drivers, compare requested windows with current immutable coverage, avoid unnecessary reacquisition where current contracts safely allow it, publish immutable generations with complete provenance, preserve old generations on refresh, measure realistic request amplification/API pressure, and expose truthful Product maintenance state without implementing M4 readiness. Do not create/run tests unless separately authorized.
 
 ### Agent 2 — read-only M3 cross-check
 
-Verify combined owner/caller composition, timeframe/window ownership, logical-ID compatibility, prepare/refresh invariants, exact M3 exit evidence, and M4 handoff completeness. No tests or mutations.
+Verify combined owner/caller composition, timeframe/window ownership, logical-ID compatibility, current-coverage reuse, request amplification/API-pressure decision, acquisition-availability versus PIT separation, prepare/refresh invariants, exact M3 exit evidence, and M4 handoff completeness. No tests or mutations.
 
 ## Future / blocked work
 
@@ -121,13 +124,13 @@ The whole Phase-17 implementation is decomposed at low resolution below. Detaile
 | **2 — complete** | **Read-only M3 reconnaissance** | **Write M2:** current market directory + explicit asset admission | M2 integrated at `8e45c36`; M3 reconnaissance complete and found a foundation-then-fan-out seam |
 | **3 — complete** | **Write M3 foundation:** immutable dataset-generation/provenance contract + shared publication/read seam + scan-refresh-freeze ownership repair | **Read-only M4 reconnaissance:** current-approved policy/readiness/safe cutoff | foundation integrated at `1a476db`; M4 reconnaissance complete |
 | **4 — complete** | **Write M3 Binance path** in isolated worktree | **Write M3 Gate path** in isolated worktree | both venue paths integrated without shared-contract conflict |
-| **4b — current** | **Write M3 combined Product orchestration/exit pass** | **Read-only combined M3 integration/exit cross-check** | full M3 exit must be proven before M4 |
-| **5** | **Write M4:** current-approved research policy + backend readiness/safe cutoff | **Read-only M5 Research/IA reconnaissance** | M5 stays blocked until M1-M4 truth is integrated |
-| **6** | **Write M5:** self-explanatory Research experience + primary IA | **Read-only M6 longitudinal-idea reconnaissance** | frontend product composition may begin only after M4 |
-| **7** | **Write M6:** longitudinal Research Idea + all-survivor follow-up | **Read-only M7 collector reconnaissance** | keeps prospective semantics owned by existing QAP/scanner contracts |
-| **8** | **Write M7:** persistent current-evidence collector/qualification bridge | **Read-only M8 convergence reconnaissance** | SQLite stays bounded to Product operational/collector state |
-| **9** | **Write M8-A:** History + utility Activity composition | **Write M8-B:** Portfolio presentation convergence | parallel only after a tiny shared shell/navigation seam is verified stable; otherwise serialize |
-| **10** | **M9 process-lifecycle/packaging decision** | **M10 comprehension-study preparation/read-only acceptance support** | M9 may conclude no desktop shell is needed; M10 cannot fabricate representative-user evidence |
+| **4b — current** | **Write M3 combined Product orchestration/exit:** gap-aware coverage reuse + measured request pressure + both venues | **Read-only combined M3 integration/exit cross-check** | refresh writer workspace from plan-upgrade base; full M3 exit must be proven before M4 |
+| **5** | **Write M4:** current-approved policy + explainable backend readiness/safe cutoff | **Read-only M5 Research/funnel/IA reconnaissance** | readiness preserves structured reasons and does not import legacy eligibility thresholds |
+| **6** | **Write M5:** self-explanatory Research + truthful discovery funnel + backend-owned next actions + primary IA | **Read-only M6 evidence-layer/longitudinal reconnaissance** | frontend product composition begins only after M4 truth is integrated |
+| **7** | **Write M6:** longitudinal Research Idea + evidence-layer semantics + all-survivor follow-up | **Read-only M7 collector ownership reconnaissance** | later/negative evidence must identify its layer without rewriting earlier claims |
+| **8** | **Write M7:** ownership-safe persistent current-evidence collector/qualification bridge | **Read-only M8 objective-aware convergence reconnaissance** | focused hidden-state audit; SQLite stays bounded to Product operational/collector state |
+| **9** | **Write M8-A:** History + utility Activity with research-learning semantics | **Write M8-B:** objective-aware Portfolio presentation convergence | preserve current HODL/control/economic authority; parallel only after stable shared shell seam |
+| **10** | **M9 process/state ownership + packaging decision** | **M10 comprehension-study preparation/read-only acceptance support** | packaging follows explicit ownership/recovery analysis; M10 cannot fabricate representative-user evidence |
 | **11 — closure** | integration/final Product Layer verification as assigned by planner | independent read-only cross-check only if useful and authorized | Phase 17 closes only when canonical exit criteria are actually met |
 
 This map is a dependency plan, not permission to start future writers early. The planner must re-evaluate each wave from returned commits/reports and may collapse or reshape later waves when repository reality makes the original split unnecessary.
@@ -147,3 +150,4 @@ Important blocked work now:
 
 - `2026-08-19` — M3 shared foundation `1a476db` verified and fast-forward integrated. M4 reconnaissance completed the separate current-approved policy/readiness design. Wave 4 materialized as parallel Binance/Gate historical-acquisition writers on the frozen shared generation/provenance seam; full M3 still requires central combined orchestration/exit verification after both return.
 - `2026-08-19` — Binance `f1fab24` and Gate `30297cd` returned clean with disjoint venue-only diffs and no shared-contract change; both were integrated on main. Wave 4b materialized with Agent 1 owning the bounded combined Product orchestration/exit pass and Agent 2 performing a read-only M3 exit/M4-handoff cross-check.
+- `2026-08-19` — `tradingview_ratio` legacy-salvage report reviewed and selectively adopted as a Phase-17 planning amendment. M3 gains gap-aware coverage reuse/request-pressure evaluation; M4-M10 gain explainable readiness, truthful funnel/next-action UX, evidence-layer semantics, focused state-ownership audits, objective-aware History/Portfolio presentation, and stronger comprehension gates. Legacy runtime architecture remains rejected. The pre-amendment M3 orchestration worktree at `5db2e8a` is stale until safely refreshed/recreated.

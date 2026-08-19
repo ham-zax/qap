@@ -4,8 +4,8 @@
 **Artifact type:** read-only
 **Workspace:** `/home/hamza/repo/qap` read-only
 **Isolation reason:** Agent 1 is the sole writer in the M3 orchestration worktree
-**Can start:** immediately after the Wave-5 coordination base lands
-**Depends on:** integrated Binance and Gate venue branches on `main`
+**Can start:** after the legacy-salvage plan-upgrade coordination base lands on `main`
+**Depends on:** integrated Binance and Gate venue branches on `main` plus the selective legacy-salvage amendment
 **Execution lifetime:** persistent-agent-loop required
 **Wake strategy:** none unless a genuine external wait arises
 
@@ -13,7 +13,8 @@
 
 - `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`
 - `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/agent-1-m3-product-orchestration-exit.md`
-- frozen Product Layer design and Phase-17 plan
+- frozen/amended Product Layer design and upgraded Phase-17 plan
+- `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md` — conceptual evidence only
 - combined integrated M2/M3 owners on `main`
 
 ## Objective
@@ -32,6 +33,10 @@ Do not implement anything.
 6. Which existing Product maintenance/app/API owners can be reused without adding an eighth research operation or a generic queue?
 7. What combined end-to-end evidence is necessary and sufficient to declare the M3 exit criteria true?
 8. Does the integrated state expose every field M4 reconnaissance requires through `ProductMarketData.projection()` and `ProductUniverse` after the central pass, or is one shared M3 read-field genuinely missing?
+9. Can an already-satisfied/head/tail requested window be identified from current immutable generation coverage without a new mutable gap registry, and what is the smallest safe refresh behavior?
+10. What request amplification does the current Binance daily-archive path imply for realistic timeframe windows, and is monthly support actually earned or merely speculative?
+11. What bounded API-pressure behavior is necessary for M3 exit evidence, given current 429/transient handling, without creating a global legacy-style request guardian?
+12. Where must the plan explicitly prevent acquisition availability/earliest history from becoming historical PIT eligibility evidence?
 
 ## Boundaries
 
@@ -49,6 +54,9 @@ Return a concise repository-grounded M3 exit checklist that identifies:
 - minimum Product operation/API seam;
 - data-window/timeframe ownership;
 - prepare/refresh publication invariants;
+- gap-aware/current-coverage reuse decision and measured request amplification;
+- bounded API-pressure decision;
+- explicit acquisition-availability versus historical-PIT boundary;
 - exact M3 → M4 handoff completeness;
 - any blocker Agent 1 must resolve before M3 can close.
 

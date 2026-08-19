@@ -1,10 +1,12 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M2, the M3 shared generation/provenance/freeze-lineage foundation, and both Binance/Gate historical acquisition paths are complete and integrated. The bounded combined Product preparation/orchestration and M3 exit pass is the current frontier; M4 starts only after full M3 exit verification.
+**Status:** M0-M2, the M3 shared generation/provenance/freeze-lineage foundation, and both Binance/Gate historical acquisition paths are complete and integrated. The selective legacy-QAP salvage amendment is approved. The upgraded combined Product preparation/orchestration and M3 exit pass is the current frontier; M4 starts only after full M3 exit verification.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
 **Investigation evidence:** `docs/research/2026-08-19-qap-product-layer-investigation.md`
+
+**Legacy salvage evidence:** `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`
 
 **Trigger:** Phase 16 is complete, but a clean QAP workspace still depends on expert/manual preparation of admissible assets, scanner market-data catalog state, longitudinal refreshes, and current public-evidence collection. That makes the application understandable only after hidden operational prerequisites have already been satisfied.
 
@@ -28,6 +30,41 @@
 - Product operational persistence may use stdlib SQLite only within the frozen scope in the canonical design.
 - CCXT is not required for Product V1; prefer existing Binance/Gate adapters until a concrete later requirement justifies it.
 - Tests remain opt-in under the repository execution policy. This plan does not independently authorize creating, modifying, or running tests.
+
+## Legacy-QAP salvage overlay - approved planning input
+
+The legacy `tradingview_ratio` repository is a source of accumulated engineering and research knowledge, not a runtime architecture to transplant.
+
+Phase 17 selectively adopts the following patterns inside current QAP owners:
+
+- **M3:** gap-aware prepare/refresh planning, bounded API-pressure handling, and request-amplification measurement;
+- **M4:** first-class freshness/readiness reasons rather than opaque ready/not-ready state;
+- **M5:** truthful discovery-funnel counts, phase purpose/authority explanations, and backend-authorized next actions;
+- **M6:** explicit separation of which evidence layer survived, weakened, or failed;
+- **M7:** ownership/hidden-state review before adding long-lived collector state;
+- **M8:** inventory/HODL-relative product-intent evidence in Portfolio/History presentation, without changing current QAP economics;
+- **M9:** explicit process/state ownership and recovery analysis before any packaging decision;
+- **M10:** comprehension checks for authority, evidence layer, negative results, and approval/readiness distinctions.
+
+The following legacy patterns are explicitly rejected for Phase 17:
+
+- monolithic `DataFetcher`-style ownership;
+- CCXT-driven fallback as Product truth;
+- presentation-derived research/trading authority;
+- synthetic direct-market execution semantics;
+- live/grid/rotation runtime machinery;
+- global mutable API-guardian architecture or stale hard-coded exchange quotas;
+- a universal translator/authority-metadata framework without a demonstrated current consumer.
+
+Legacy absence/availability evidence is **not** historical-universe authority:
+
+```text
+earliest retrievable bar / missing historical range
+    !=
+historical point-in-time eligibility evidence
+```
+
+This overlay refines implementation and acceptance criteria only. It does not reopen the frozen economic, scientific, admission, or live-capital boundaries.
 
 ## 1. Product architecture
 
@@ -222,6 +259,38 @@ Prefer, in order:
 
 Do not add CCXT in this milestone unless the existing adapters are demonstrably insufficient for the required Binance/Gate operations.
 
+### Gap-aware prepare and refresh
+
+Before acquiring a requested Product window, compare the desired interval/window with the currently published immutable generation for the same logical dataset.
+
+Use the smallest truthful acquisition plan that current owners can support:
+
+```text
+desired window
+    + current validated coverage
+    -> already covered / missing head / missing tail / unavailable
+    -> acquire only what is actually required when safe
+    -> publish one new complete immutable generation
+```
+
+Current published generations are already validated as contiguous; do not invent a second internal-gap registry merely to copy legacy `AdaptiveFetcher`. If an upstream page/archive contains an internal gap, fail acquisition explicitly under the current validation contract.
+
+When only a head/tail extension is missing, reuse the existing immutable generation as source lineage where the current QAP generation/derivation contract can compose it safely instead of reflexively downloading the full history again. If the current implementation cannot do that without weakening provenance or validation, bounded full reacquisition is acceptable for V1, but the M3 exit report must quantify the request amplification and record the upgrade trigger.
+
+Do not infer listing history or PIT eligibility from a missing head range.
+
+### API pressure and source-efficiency policy
+
+Historical preparation may involve many public requests across approved assets and intervals. M3 must therefore establish a bounded operational policy for exchange pressure without reviving the legacy global `APIGuardian`.
+
+- use current venue responses/status/headers such as `Retry-After` when available rather than legacy constants;
+- bound retries/backoff and fail explicitly after the declared retry budget;
+- do not hold synchronization locks while waiting;
+- do not create a global mutable singleton or generic request scheduler;
+- if realistic M3 exit evidence does not encounter meaningful rate pressure, keep the implementation minimal and record the stronger throttle as deferred rather than manufacturing infrastructure.
+
+Binance's daily-archive implementation must be evaluated for realistic request amplification. Monthly archive support is **not automatically required**; add it only if measured preparation shows that complete historical months materially reduce request count/latency without weakening source reconciliation, checksums, or provenance. Daily archives remain suitable for exact-day/tail behavior where appropriate.
+
 ### Provenance
 
 Each new generation records exact acquisition/derivation provenance defined by the design freeze.
@@ -247,6 +316,9 @@ Do not synthesize direct crosses from USDT legs.
 - a clean approved universe can become research-ready through Product operations;
 - every generated dataset has exact source provenance;
 - refreshing data creates immutable generations rather than overwriting research inputs;
+- prepare/refresh does not blindly reacquire an already-satisfied window, or explicitly records why bounded full reacquisition remains the V1 choice;
+- realistic multi-asset preparation either stays within bounded public API pressure or demonstrates bounded retry/failure behavior without a global request framework;
+- acquisition availability remains separate from historical PIT eligibility;
 - completed historical research remains freezeable after an unrelated later refresh;
 - unsupported direct markets remain explicit unavailable evidence.
 
@@ -284,13 +356,30 @@ It owns:
 - scope size;
 - active acquisition state.
 
+Readiness should preserve structured reasons/gates rather than collapse everything into one boolean. At minimum the backend must be able to distinguish operator scope, identity/current-market preconditions, required historical coverage, direct-market evidence, and Product-maintenance state.
+
+Examples of distinct meanings include:
+
+```text
+not approved                 -> outside Product research scope
+identity review required     -> Product identity precondition unresolved
+approved but no current path -> current supported-market limitation
+history missing/insufficient -> evidence incomplete
+refresh running/failed       -> Product maintenance state
+direct market unavailable    -> replay limitation, not asset invalidity
+```
+
+Do not import legacy eligibility thresholds or promotion labels. Do not use historical bar availability as a substitute for Scanner-V1 PIT lifecycle evidence.
+
+The readiness contract may carry an internal authority declaration such as `DATA_READINESS_ONLY` when it materially prevents misuse, but do not add authority metadata to every DTO by convention.
+
 ### Safe cutoff
 
 Normal Product research uses the backend-selected latest safe cutoff. No primary `as_of` input.
 
 ### M4 exit
 
-The user can see exactly what would be researched and through what date before pressing the primary research action.
+The user can see exactly what would be researched, through what date, and why any approved asset/path is excluded before pressing the primary research action.
 
 ## 8. Milestone 5 - Self-explanatory Research experience
 
@@ -307,6 +396,33 @@ The normal Research page shows, in order:
 5. plain-language result summary;
 6. prioritized Research Ideas;
 7. complete ledger and protocol/audit data under progressive disclosure.
+
+### Truthful discovery funnel and progress
+
+Reuse the legacy discovery-funnel idea, but source every count from current authoritative backend/scanner state.
+
+The Product may explain progress using concrete stage counts such as:
+
+```text
+24 approved assets
+276 possible relationships
+83 passed the first relationship check
+12 received deeper historical evaluation
+3 produced Research Ideas
+```
+
+Exact stage labels must reflect the current scanner implementation. Do not expose legacy cointegration terminology merely because it existed, and do not invent percentages or ETAs that the backend cannot measure.
+
+Each major Research state should answer:
+
+```text
+What is happening?
+What can this stage conclude?
+What can it not conclude?
+What valid action comes next?
+```
+
+Valid next actions must come from authoritative backend state. React may translate stable enums/states into plain language, but it may not infer scientific/economic conclusions from raw metrics.
 
 ### No-primary-internals rule
 
@@ -334,7 +450,7 @@ Keep these presentation states separate:
 
 ### M5 exit
 
-A non-expert can answer "what did QAP research?" and "through what date?" from the primary surface without opening audit details.
+A non-expert can answer "what is QAP researching?", "how far did it get?", "what did QAP research?", "through what date?", and "what can I do next?" from the primary surface without opening audit details.
 
 ## 9. Milestone 6 - Longitudinal Research Idea and all-survivor follow-up
 
@@ -353,6 +469,36 @@ Hypothetical-capital assessment
 
 Keep exact evidence classes and timestamps visible under deeper disclosure.
 
+The Product must identify **which layer** a negative or weakening result belongs to. Do not collapse all failures into "the pair failed" or rewrite earlier evidence after later evidence changes.
+
+Use current QAP evidence classes to preserve distinctions equivalent to:
+
+```text
+historical relationship evidence
+economic/replay implementation evidence
+later forward evidence
+current public-market/capacity evidence
+portfolio-expression evidence
+```
+
+Examples of acceptable semantics:
+
+```text
+Historical relationship evidence was present, but the declared economic replay did not survive its checks.
+
+The original historical Research Idea survived, but later prospective evidence weakened it.
+```
+
+This adopts the legacy Research Operating System's separation of economic/mechanism/expression/strategy truth as research-method guidance only; it does not create a new Product navigation hierarchy or scientific authority.
+
+Where useful, History/Idea detail may summarize:
+
+- what was tested;
+- what was learned;
+- what was falsified;
+- what remains uncertain;
+- the next valid action.
+
 ### Follow-up action
 
 When historical survivors exist, the normal action must enroll all surviving ideas from the relevant generation/horizon according to existing prospective rules.
@@ -367,7 +513,7 @@ Remove `Validate` as a primary mental-model destination once the integrated Rese
 
 ### M6 exit
 
-The user can distinguish original, later, and current evidence while experiencing them as one longitudinal research object.
+The user can distinguish original, later, and current evidence, explain which layer weakened or failed, and still experience the evidence as one longitudinal research object without earlier evidence being rewritten.
 
 ## 10. Milestone 7 - Persistent current public-evidence collection
 
@@ -383,6 +529,20 @@ Use stdlib SQLite for the bounded Product operational state frozen by the design
 - maintenance task/recovery state.
 
 Do not move completed scientific/economic artifacts into SQLite.
+
+Before expanding collector persistence/process ownership, apply a focused ownership/hidden-state audit covering only this stateful boundary:
+
+```text
+state owner
+allowed mutator(s)
+consumers
+lifetime
+recovery behavior
+failure mode
+authority impact
+```
+
+Do not create repository-wide ledgers for ordinary changes; the legacy ownership/hidden-state methodology is required here only because M7 introduces long-lived mutable operational state.
 
 ### Collector
 
@@ -421,7 +581,7 @@ Do not invent a completion ETA.
 
 ### M7 exit
 
-A real workspace can accumulate the existing qualification evidence over time and recover after restart without pretending missed observations occurred.
+A real workspace can accumulate the existing qualification evidence over time, expose measured slot/window progress, and recover after restart without pretending missed observations occurred or creating ambiguous mutable-state ownership.
 
 ## 11. Milestone 8 - Portfolios, History, and utility Activity convergence
 
@@ -432,6 +592,17 @@ A real workspace can accumulate the existing qualification evidence over time an
 Keep the existing 3-6 asset manual basket and exact-edge selection semantics. Simplify labels around the current Research Idea model where helpful.
 
 Do not preview resolver targets or turn the basket builder into an optimizer.
+
+Use the legacy inventory/HODL thesis only as product-intent evidence for explanation. Current experiment/evaluation manifests remain authoritative for the actual economic objective.
+
+Portfolio presentation should continue to answer, where the authoritative run supports it:
+
+- how the declared result compares with matched passive holding/controls;
+- which assets/relationships contributed;
+- whether the result is concentrated;
+- how much turnover/cost was required.
+
+Do not replace the declared objective with a generic headline USD return.
 
 ### History
 
@@ -445,13 +616,27 @@ Compose completed:
 
 History is a navigation/composition layer; exact specialist artifacts remain authoritative.
 
+History should preserve the distinction between:
+
+```text
+operator asset approval
+market/data readiness
+relationship/candidate evidence
+economic replay evidence
+portfolio evidence
+```
+
+Therefore a temporarily unavailable dataset must not remove operator approval, a rejected candidate must not imply an asset is invalid, and a later-stage failure must not rewrite the original research artifact.
+
+For completed work, History should make it possible to understand what was tested, what was learned, what was falsified, what remains uncertain, and the valid next action without promoting those summaries above the authoritative artifacts.
+
 ### Activity
 
 Move Activity to contextual/utility navigation. Running and failed tasks should remain easy to reach from Home and affected workflows.
 
 ### M8 exit
 
-The primary shell is `Home | Research | Portfolios | History` and operational status remains available without competing with user goals.
+The primary shell is `Home | Research | Portfolios | History`; operational status remains available without competing with user goals; Portfolio/History language preserves the declared HODL/control economic frame and distinguishes asset approval from downstream research outcomes.
 
 ## 12. Milestone 9 - Local packaging/process lifecycle decision
 
@@ -464,6 +649,21 @@ Decision gate:
 - if the reliable launcher plus local background product service is sufficient, stop there;
 - if keeping long-lived collector/API/web processes reliable for nontechnical users remains a demonstrated burden, evaluate the smallest supported desktop shell;
 - Tauri is the current candidate, not a preapproved dependency.
+
+Before selecting a packaging/process solution, produce a focused process/state ownership matrix for the mature local runtime:
+
+```text
+process/state
+current owner
+allowed mutator
+consumer
+lifetime
+restart/recovery rule
+failure mode
+first safe packaging move
+```
+
+This is the appropriate place to reuse the legacy ownership-boundary/hidden-state audit discipline. Do not import legacy process managers or runtime module organization.
 
 Packaging must preserve loopback/local authority and the live-capital `NO-GO` boundary.
 
@@ -481,6 +681,13 @@ Representative users should complete realistic tasks without developer coaching 
 - difference between task failure, incomplete evidence, and negative research;
 - what a hypothetical-capital assessment means;
 - whether QAP recommends or can place a live trade.
+
+They must also be able to distinguish:
+
+- approved asset versus data-ready asset;
+- data/readiness failure versus valid negative research;
+- relationship evidence versus economic implementation versus later/current evidence;
+- a valid zero/neutral result versus application failure.
 
 The final answer to the last question must be **no**.
 
@@ -505,6 +712,8 @@ Product consequences:
 - show scope/readiness before launch;
 - do not make all-current-venue-ticker search the novice default;
 - optimize only a measured bottleneck and preserve research semantics.
+
+Market-data preparation follows the same rule: optimize request/source strategy only after measuring realistic approved-universe acquisition. Daily-versus-monthly archive choice, gap-aware incremental refresh, and pacing/backoff are operational optimizations; they may not change admitted bar semantics, provenance, or research scope.
 
 ## 15. Verification policy for this phase
 
@@ -532,22 +741,25 @@ Stop and return to design review before:
 - adding a generic job/queue framework;
 - moving economic/capacity/readiness math into React;
 - adding CCXT or another dependency without a concrete Product-V1 need;
+- treating missing/earliest retrievable bars as historical eligibility proof;
+- recreating a global mutable legacy API guardian, cache/fetcher monolith, or presentation-derived verdict authority;
 - introducing automatic portfolio discovery/optimization.
 
 ## 17. Execution order
 
 ```text
-M0  design freeze                                  COMPLETE
-M1  workspace identity + clean zero-state          NEXT
-M2  market directory + explicit asset admission
-M3  market-data acquisition + provenance/generations
-M4  current-approved policy + readiness/safe cutoff
-M5  Research experience + primary IA
-M6  longitudinal idea + all-survivor follow-up
-M7  current-evidence collector
-M8  Portfolios + History + utility Activity
-M9  packaging/process-lifecycle decision
-M10 representative-user comprehension closure
+M0  design freeze                                           COMPLETE
+M1  workspace identity + clean zero-state                   COMPLETE
+M2  market directory + explicit asset admission             COMPLETE
+M3  adaptive market-data prepare/refresh + provenance       CURRENT
+    + immutable generations + request-pressure discipline
+M4  current-approved policy + explainable readiness/cutoff
+M5  Research experience + truthful discovery funnel/IA
+M6  longitudinal idea + evidence-layer semantics/follow-up
+M7  ownership-safe persistent current-evidence collector
+M8  objective-aware Portfolios + History + utility Activity
+M9  process/state ownership + packaging decision
+M10 representative-user comprehension/authority closure
 ```
 
 Do not start M5 visual/React restructuring before M1-M4 make workspace/universe/data/readiness state authoritative.
@@ -560,14 +772,20 @@ Phase 17 is complete only when:
 - assets enter automatic Product research only through explicit operator admission;
 - current market availability and canonical identity are backend-owned and fail closed;
 - required historical market data can be prepared/refreshed with immutable generation/provenance records;
+- preparation avoids unnecessary reacquisition where current immutable coverage already satisfies the requested window, or records the bounded V1 limitation and measured upgrade trigger;
+- sustained public acquisition has bounded request-pressure behavior and does not rely on stale legacy quota constants/global mutable request state;
+- acquisition availability/earliest history never substitutes for strict historical PIT eligibility evidence;
 - later data refresh does not invalidate freezing legitimate earlier research merely because the current generation changed;
 - default research explicitly uses the current-approved retrospective claim rather than pretending to be historical PIT discovery;
 - strict historical PIT research remains available only under its existing evidence rules;
 - Research shows backend-owned scope/readiness/safe cutoff before launch;
+- Research exposes truthful scanner funnel counts/progress and backend-authorized next actions without fake ETAs;
 - Research Ideas integrate historical, forward, and current evidence without collapsing their semantics;
+- negative/later evidence identifies the affected evidence layer rather than rewriting earlier claims;
 - prospective follow-up preserves all-survivor anti-cherry-picking behavior;
 - current public evidence can accumulate persistently for the real 14-day contract without fabricated backfill;
 - Portfolios preserve existing QAP target/execution/accounting authority;
+- History preserves approval/readiness/research/economic-stage distinctions and explains what was learned/falsified/uncertain without becoming scientific authority;
 - primary IA is `Home | Research | Portfolios | History` with Activity as a utility;
 - negative research remains first-class evidence;
 - representative users can explain the protected meanings in M10;
@@ -575,7 +793,7 @@ Phase 17 is complete only when:
 
 ## 19. Fresh-agent implementation mission
 
-> Work in `/home/hamza/repo/qap` on `main`. Preserve legitimate concurrent changes. Read `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md` first for the live coordination frontier, then the Product Layer investigation/design and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M2, the M3 shared generation/provenance/freeze-lineage foundation, and both Binance/Gate historical acquisition paths are complete and integrated; the current writable frontier is the bounded combined M3 Product preparation/orchestration/exit pass, followed by M4. Preserve the strict historical-PIT policy, explicit operator asset admission, immutable evidence, negative research, all-survivor prospective follow-up, QAP financial authority, and the Phase-12 live-capital `NO-GO`. Do not add CCXT, a generic job system, cloud infrastructure, or live/private exchange authority without a concrete separately authorized need. Testing remains opt-in under the current execution policy.
+> Work in `/home/hamza/repo/qap` on `main`. Preserve legitimate concurrent changes. Read `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md` first for the live coordination frontier, then the Product Layer investigation/design, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M2, the M3 shared generation/provenance/freeze-lineage foundation, and both Binance/Gate historical acquisition paths are complete and integrated; the current writable frontier is the bounded combined M3 Product preparation/orchestration/exit pass with the approved legacy-salvage overlay: gap-aware refresh planning, measured request amplification, bounded API-pressure behavior, and strict separation of acquisition availability from historical PIT eligibility. Preserve the strict historical-PIT policy, explicit operator asset admission, immutable evidence, negative research, all-survivor prospective follow-up, QAP financial authority, and the Phase-12 live-capital `NO-GO`. Do not port legacy runtime architecture, add CCXT, a generic job system, cloud infrastructure, or live/private exchange authority without a concrete separately authorized need. Testing remains opt-in under the current execution policy.
 
 ## 20. One-screen status
 
@@ -590,7 +808,8 @@ Phase 17 M3 Binance acquisition    COMPLETE
 Phase 17 M3 Gate acquisition       COMPLETE
 
 NEXT
-Phase 17 M3 combined Product orchestration / exit
+Phase 17 M3 adaptive Product orchestration / exit
+(gap-aware coverage reuse + request-pressure/source-efficiency decision)
 
 FUTURE PRIMARY IA
 Home | Research | Portfolios | History
