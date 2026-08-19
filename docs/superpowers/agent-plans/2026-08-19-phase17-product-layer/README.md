@@ -6,15 +6,15 @@
 **Investigation evidence:** `docs/research/2026-08-19-qap-product-layer-investigation.md`
 **Legacy salvage evidence:** `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`
 **Frozen design base:** `1bb6e78`
-**Execution shape:** one writable M7 persistent current-evidence collector/qualification-bridge mission plus one concurrent read-only M8 Portfolios/History/Activity reconnaissance mission
-**Current wave:** 8
+**Execution shape:** one writable M8-0 Product basket provenance/source-binding foundation plus one concurrent read-only M9 process/state ownership reconnaissance mission
+**Current wave:** 9
 
 ## Current frontier
 
 | Mission | Type | Status | Can start | Workspace | Isolation reason | Blocked by |
 |---|---|---|---|---|---|---|
-| Agent 1 — M7 persistent current public-evidence collector + Product qualification bridge | mixed executable | ready after Wave-8 coordination commit | immediately | `/home/hamza/repo/qap/.worktrees/phase17-m7-current-evidence` on branch `phase17-m7-current-evidence` | sole M7 writer; SQLite schema, scheduler, collector lease/process, evidence reader, launcher lifecycle, Product qualification wrapper, and Research Idea collection state share one contract | M6 integrated at `c1db648` |
-| Agent 2 — M8 Portfolios / History / Activity convergence reconnaissance | read-only | ready | immediately | `/home/hamza/repo/qap` read-only | no writable worktree; M8 executable topology depends on Product-basket compatibility and old-scan/current-catalog coupling findings | M6 integrated + frozen M7 mission contract |
+| Agent 1 — M8-0 Product basket compatibility foundation | mixed executable | ready after Wave-9 coordination commit | immediately | `/home/hamza/repo/qap/.worktrees/phase17-m8-basket-foundation` on branch `phase17-m8-basket-foundation` | sole shared basket-provenance writer before later M8-A/M8-B fan-out | M7 integrated at `d5fbddc` |
+| Agent 2 — M9 process/state ownership + packaging reconnaissance | read-only | ready | immediately | `/home/hamza/repo/qap` read-only | M7 has established the mature long-lived process topology; M8 is forbidden from adding another service/store | M7 integrated + M8-0 mission contract |
 
 ## Dependency map
 
@@ -42,23 +42,27 @@ M5 Research / truthful funnel / primary IA (complete at 6b40028)
         v
 M6 longitudinal Research Idea / all-survivor follow-up (complete at c1db648)
         |
+        v
+M7 persistent current-evidence collector (complete at d5fbddc)
+        |
         +--------------------------------------+
         |                                      |
         v                                      v
-Agent 1: M7 writer                    Agent 2: M8 read-only reconnaissance
-SQLite + collector process            Product basket compatibility / History
-slot/restart + qualification bridge   old-scan catalog coupling / Activity
-        |                                      |
-        +------------------+-------------------+
+Agent 1: M8-0 writer                  Agent 2: M9 read-only reconnaissance
+Product basket claim/provenance       mature process/state ownership map
+exact immutable generation binding    packaging decision evidence
+        |
+        v
+planner verifies/integrates M8-0
+        |
+        +------------------+
                            |
                            v
-                 planner verifies/integrates M7
-                           |
-                           v
-                  M8 executable convergence
+              M8-A History/Activity + M8-B Portfolio
+                     genuine two-writer fan-out
 ```
 
-M6 is complete and integrated at `c1db648`. Product Research Ideas now compose immutable historical, later prospective, reselection, and persisted current-capacity evidence, and current-approved Product generations can start backend-stamped all-survivor follow-up through the existing `FREEZE_FORWARD_COHORT`/`PROSPECTIVE_V1` path. M7 reconnaissance is complete and freezes the next boundary: one Local Market collector process, bounded Product SQLite operational state, exact scheduled-slot accounting, restart-safe missed-slot semantics, frozen-lineage instrument resolution, and reuse of existing capture-readiness/qualification authorities. In parallel, M8 may be investigated read-only, including Product-basket compatibility and the deferred old-scan/current-catalog basket coupling.
+M7 is complete and integrated at `d5fbddc`. A Local Market workspace can now accumulate the existing current public-evidence contract through bounded Product SQLite operational state, exact scheduled slots, one restart-safe collector process, immutable frozen-instrument lineage, and the existing capture-readiness/qualification authorities. M8 reconnaissance is also complete and found that Product-v1 preserves existing basket economics but cannot truthfully use the current strict basket source protocol/current-catalog binding. The current writer frontier is therefore M8-0: separately version Product basket source provenance and seal exact immutable M3 execution generations before later M8 presentation fan-out. In parallel, M9 process/state reconnaissance may start because M8 is not allowed to add another long-lived service or mutable Product store.
 
 ## Milestone progress
 
@@ -71,9 +75,10 @@ M6 is complete and integrated at `c1db648`. Product Research Ideas now compose i
 | M4 current-approved policy + explainable readiness/safe cutoff | complete / integrated through `c3c81ca` | — |
 | M5 self-explanatory Research + truthful discovery funnel/primary IA | complete / integrated at `6b40028` | — |
 | M6 longitudinal Research Idea + evidence-layer semantics | complete / integrated at `c1db648` | — |
-| M7 ownership-safe persistent current-evidence collector | reconnaissance complete; executable work ready | Agent 1 writer |
-| M8 objective-aware Portfolios + History + utility Activity | executable work blocked by M7; reconnaissance ready | Agent 2 read-only |
-| M9 process/state ownership + packaging decision | blocked | unassigned |
+| M7 ownership-safe persistent current-evidence collector | complete / integrated at `d5fbddc` | — |
+| M8-0 Product basket claim/provenance + immutable source binding | reconnaissance complete; executable work ready | Agent 1 writer |
+| M8-A History + utility Activity / M8-B Portfolio presentation | blocked by M8-0 | future two-writer fan-out |
+| M9 process/state ownership + packaging decision | executable decision blocked by M8; read-only reconnaissance ready | Agent 2 read-only |
 | M10 representative-user comprehension/authority closure | final acceptance / blocked | unassigned |
 
 ## Shared contracts
@@ -91,33 +96,33 @@ M6 is complete and integrated at `c1db648`. Product Research Ideas now compose i
 
 ## Workspace policy
 
-Agent 1 is the sole writable autonomous process for M7 in `/home/hamza/repo/qap/.worktrees/phase17-m7-current-evidence`. Agent 2 remains read-only on stable `main` for M8 reconnaissance and must not edit, stage, commit, switch branches, create worktrees, or run mutating Product/API commands.
+Agent 1 is the sole writable autonomous process for M8-0 in `/home/hamza/repo/qap/.worktrees/phase17-m8-basket-foundation`. Agent 2 remains read-only on stable `main` for M9 reconnaissance and must not edit, stage, commit, switch branches, create worktrees, or run mutating Product/API commands.
 
-Former M1-M6 worktrees are historical integrated milestone state and must not be reused as concurrent writers for Wave 8.
+Former M1-M7 worktrees are historical integrated milestone state and must not be reused as concurrent writers for Wave 9.
 
 ## Integration policy
 
-M1 is integrated at `461a33c`, M2 at `8e45c36`, the M3 shared foundation at `1a476db`, Binance at `f1fab24`, Gate is integrated from original venue commit `30297cd`, the final adaptive Product orchestration/exit at `c1d97eb`, M4 at `d49e597` plus planner review closure `c3c81ca`, M5 at `6b40028`, and M6 at `c1db648`.
+M1 is integrated at `461a33c`, M2 at `8e45c36`, the M3 shared foundation at `1a476db`, Binance at `f1fab24`, Gate is integrated from original venue commit `30297cd`, the final adaptive Product orchestration/exit at `c1d97eb`, M4 at `d49e597` plus planner review closure `c3c81ca`, M5 at `6b40028`, M6 at `c1db648`, and M7 at `d5fbddc`.
 
-The planner integrates Agent 1's M7 branch only after verifying SQLite remains operational rather than scientific authority, scheduled-slot uniqueness and restart misses are exact, frozen instruments resolve from immutable M6 lineage, collector process ownership is restart-safe, existing capture-readiness/qualification policies remain authoritative, and no Product basket compatibility or M9 packaging work is absorbed. Agent 2's M8 reconnaissance is advisory planning evidence and does not unlock executable M8 until M7 is integrated.
+The planner integrates Agent 1's M8-0 branch only after verifying Product-v1 receives a separately truthful basket source/protocol identity, strict PIT basket behavior remains unchanged, Product execution inputs are sealed to exact immutable M3 paths/fingerprints, replay/recovery does not substitute the current catalog, and no M8-A/M8-B presentation or M9 packaging work is absorbed. Agent 2's M9 reconnaissance is advisory planning evidence only; executable M9 remains blocked until M8 is complete.
 
 ## Execution lifetime policy
 
 Both sessions should load and use `persistent-agent-loop` because the user intends to steer long-running work.
 
-- Agent 1 M7 writer: persistent loop required; use Terminal + event wait for the genuinely persistent collector/process verification where appropriate.
-- Agent 2 M8 read-only reconnaissance: persistent loop for continuity only; do not manufacture waits/processes.
+- Agent 1 M8-0 writer: persistent loop required; use Terminal + event wait only if a genuinely persistent verification process is needed.
+- Agent 2 M9 read-only reconnaissance: persistent loop for continuity only; do not manufacture waits/processes.
 - Status/progress questions are steering events, not stop commands, unless the user explicitly stops/replaces a mission.
 
 ## Verification policy
 
-### Agent 1 — M7 persistent current-evidence collector
+### Agent 1 — M8-0 Product basket compatibility foundation
 
-Prove a real Local Market workspace can accumulate the existing 14-day public-evidence contract through exact scheduled slots, survive restart without fabricating observations, preserve frozen-lineage instrument identity, feed the existing readiness/qualification authorities, and expose Product collection/amount-assessment state without changing scientific policy. Do not create/run tests unless separately authorized.
+Prove a current-approved Product-v1 scan can source the existing manual basket economics under a separately truthful Product basket protocol/source claim, with exact immutable M3 execution-generation binding that survives current-catalog refresh. Strict PIT behavior, manual 3–6 selection, exact-edge authority, and all basket economics must remain unchanged. Do not create/run tests unless separately authorized.
 
-### Agent 2 — M8 read-only reconnaissance
+### Agent 2 — M9 read-only reconnaissance
 
-Determine the exact Product current-approved basket compatibility boundary, the deferred old-scan/current-catalog basket coupling, the smallest objective-aware Portfolio/History read/presentation convergence, Activity utility role, and whether M8 can safely fan out after a shared compatibility seam. No tests/builds/mutations.
+Map the mature web/API/collector/scientific-worker/launcher process ownership, mutable/immutable state ownership, launcher recovery/failure behavior, and evidence-based packaging decision criteria. Do not install or choose a desktop framework during reconnaissance. No tests/builds/mutations.
 
 ## Future / blocked work
 
@@ -133,18 +138,20 @@ The whole Phase-17 implementation is decomposed at low resolution below. Detaile
 | **5 — complete** | **Write M4:** current-approved policy + explainable backend readiness/safe cutoff | **Read-only M5 Research/funnel/IA reconnaissance** | M4 integrated through `c3c81ca`; M5 reconnaissance complete |
 | **6 — complete** | **Write M5:** self-explanatory Research + truthful discovery funnel + backend-owned next actions + primary IA | **Read-only M6 evidence-layer/longitudinal reconnaissance** | M5 integrated at `6b40028`; M6 reconnaissance found Product-v1 prospective compatibility already exists |
 | **7 — complete** | **Write M6:** longitudinal Research Idea + evidence-layer semantics + all-survivor follow-up | **Read-only M7 collector ownership reconnaissance** | M6 integrated at `c1db648`; M7 state/process contract frozen |
-| **8 — current** | **Write M7:** ownership-safe persistent current-evidence collector/qualification bridge | **Read-only M8 objective-aware convergence reconnaissance** | focused hidden-state audit; SQLite stays bounded to Product operational/collector state |
-| **9** | **Write M8-A:** History + utility Activity with research-learning semantics | **Write M8-B:** objective-aware Portfolio presentation convergence | preserve current HODL/control/economic authority; parallel only after stable shared shell seam |
-| **10** | **M9 process/state ownership + packaging decision** | **M10 comprehension-study preparation/read-only acceptance support** | packaging follows explicit ownership/recovery analysis; M10 cannot fabricate representative-user evidence |
+| **8 — complete** | **Write M7:** ownership-safe persistent current-evidence collector/qualification bridge | **Read-only M8 objective-aware convergence reconnaissance** | M7 integrated at `d5fbddc`; M8 reconnaissance found a serial basket-provenance foundation is required |
+| **9 — current** | **Write M8-0:** Product basket source/provenance + immutable M3 generation binding | **Read-only M9 process/state ownership reconnaissance** | shared basket authority lands before any M8 UI fan-out; M9 recon may use mature M7 process topology |
+| **9b** | **Write M8-A:** History + utility Activity with research-learning semantics | **Write M8-B:** objective-aware Portfolio presentation convergence | genuine two-writer fan-out after M8-0 stable API/source claim integrates |
+| **10** | **M9 executable process/state ownership + packaging decision** | **M10 comprehension-study preparation/read-only acceptance support** | packaging follows explicit ownership/recovery analysis; M10 cannot fabricate representative-user evidence |
 | **11 — closure** | integration/final Product Layer verification as assigned by planner | independent read-only cross-check only if useful and authorized | Phase 17 closes only when canonical exit criteria are actually met |
 
 This map is a dependency plan, not permission to start future writers early. The planner must re-evaluate each wave from returned commits/reports and may collapse or reshape later waves when repository reality makes the original split unnecessary.
 
 Important blocked work now:
 
-- M7 persistent collector/qualification bridge — current writable frontier.
-- M8 Portfolios/History/Activity implementation — blocked by integrated M7; read-only reconnaissance is current.
-- M9-M10 remain blocked by the sequential Product lifecycle chain; detailed briefs remain intentionally unmaterialized until their prerequisite contracts are real.
+- M8-0 Product basket provenance/source binding — current writable frontier.
+- M8-A History/Activity and M8-B Portfolio presentation — blocked by integrated M8-0.
+- M9 executable packaging/process decision remains blocked by full M8; read-only process/state reconnaissance is current.
+- M10 remains final acceptance / blocked.
 
 ## Status log
 
@@ -159,3 +166,4 @@ Important blocked work now:
 - `2026-08-19` — M4 `d49e597` returned complete. Planner review found one reachable Product replay-recovery binding seam and closed it at `c3c81ca` without changing strict PIT behavior; M4 was then fast-forward integrated. M5 reconnaissance confirmed that `candidate_count` is rule/trial rows rather than relationships and recommended backend-composed completed stage counts, claim-aware reads, a normal one-timeframe Product flow, and `Home | Research | Portfolios | History`. Wave 6 materialized with Agent 1 writing M5 and Agent 2 on read-only M6 longitudinal/follow-up reconnaissance.
 - `2026-08-19` — M5 `6b40028` returned complete and was verified/fast-forward integrated. It delivers the frozen primary IA, M4-driven Product Research, backend-composed completed-stage counts, claim-aware Product/PIT reads, truthful negative/unavailable states, and Advanced strict PIT preservation. M6 reconnaissance established that Product-v1 survivors already work with the existing prospective/qualification scientific contracts; the missing seams are reselection-aware longitudinal reads and a Product generation-wide follow-up wrapper. Wave 7 materialized with Agent 1 writing M6 and Agent 2 on read-only M7 collector/state-ownership reconnaissance.
 - `2026-08-19` — M6 `c1db648` returned complete and was verified/fast-forward integrated. It adds a pure longitudinal Research Idea composition, reselection-aware active-freeze lineage, backend-owned evidence-layer states, and a Product generation-wide follow-up wrapper reusing the existing freeze/prospective scientific path. M7 reconnaissance froze one-process/SQLite/slot/restart/frozen-instrument ownership and reuse of existing readiness/qualification authority. Wave 8 materialized with Agent 1 writing M7 and Agent 2 on read-only M8 Portfolios/History/Activity reconnaissance.
+- `2026-08-20` — M7 `d5fbddc` returned complete and was verified/fast-forward integrated. It adds bounded Product SQLite current-evidence state, exact slot/restart semantics, a Local Market collector process, M6 frozen-lineage instrument resolution, existing readiness/qualification reuse, Product amount assessment, and launcher lifecycle integration without changing scientific policy. M8 reconnaissance found Product-v1 basket economics compatible but provenance/current-catalog source binding incompatible; Wave 9 therefore materialized a serial M8-0 basket foundation before later M8-A/M8-B fan-out, with Agent 2 moving to read-only M9 process/state reconnaissance.
