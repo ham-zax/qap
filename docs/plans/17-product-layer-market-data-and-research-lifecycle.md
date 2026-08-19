@@ -1,6 +1,6 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0 design freeze complete; implementation has not started.
+**Status:** M0-M2 are complete and integrated. M3 shared generation/provenance foundation is the current implementation frontier; venue-specific M3 acquisition follows after that seam is integrated.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
@@ -575,7 +575,7 @@ Phase 17 is complete only when:
 
 ## 19. Fresh-agent implementation mission
 
-> Work in `/home/hamza/repo/qap` on `main`. Preserve legitimate concurrent changes. Read `docs/research/2026-08-19-qap-product-layer-investigation.md`, then `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`, then this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0 design freeze is complete and M1 workspace identity/clean zero-state is next. Follow the milestone order because M1-M4 establish backend Product truth before M5 changes the primary React IA. Preserve the strict historical-PIT policy, explicit operator asset admission, immutable evidence, negative research, all-survivor prospective follow-up, QAP financial authority, and the Phase-12 live-capital `NO-GO`. Do not add CCXT, a generic job system, cloud infrastructure, or live/private exchange authority without a concrete separately authorized need. Testing remains opt-in under the current execution policy.
+> Work in `/home/hamza/repo/qap` on `main`. Preserve legitimate concurrent changes. Read `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md` first for the live coordination frontier, then the Product Layer investigation/design and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M2 are complete and integrated; the current writable frontier is the M3 shared generation/provenance foundation, followed by venue-specific acquisition and then M4. Preserve the strict historical-PIT policy, explicit operator asset admission, immutable evidence, negative research, all-survivor prospective follow-up, QAP financial authority, and the Phase-12 live-capital `NO-GO`. Do not add CCXT, a generic job system, cloud infrastructure, or live/private exchange authority without a concrete separately authorized need. Testing remains opt-in under the current execution policy.
 
 ## 20. One-screen status
 
@@ -583,9 +583,11 @@ Phase 17 is complete only when:
 Research engine / Slices 1-4      COMPLETE
 Phase 16 M0-M8                    COMPLETE / CLOSED
 Phase 17 M0 design freeze         COMPLETE
+Phase 17 M1 workspace identity    COMPLETE
+Phase 17 M2 research universe     COMPLETE
 
 NEXT
-Phase 17 M1 workspace identity + clean zero-state
+Phase 17 M3 shared generation/provenance foundation
 
 FUTURE PRIMARY IA
 Home | Research | Portfolios | History

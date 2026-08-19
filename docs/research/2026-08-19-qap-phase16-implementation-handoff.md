@@ -546,7 +546,7 @@ Do not:
 
 If a fresh agent needs to inspect or extend the workbench later, use the following guardrail:
 
-> Work in `/home/hamza/repo/qap` on `main`. Start by checking current HEAD/working-tree state and preserve any legitimate concurrent changes. Phase 16 M0-M8 are complete and must not be replayed. Read this handoff for historical boundaries, then read `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md` and `docs/plans/17-product-layer-market-data-and-research-lifecycle.md`. The user has explicitly authorized Phase-17 Product Layer design; its future primary IA is `Home / Research / Portfolios / History`. Preserve stable specialist routes, negative evidence, progressive disclosure, and backend-owned scientific/economic authority. Phase-17 implementation starts at M1 and must not silently change protected research semantics.
+> Work in `/home/hamza/repo/qap` on `main`. Start by checking current HEAD/working-tree state and preserve any legitimate concurrent changes. Phase 16 M0-M8 are complete and must not be replayed. Read this handoff for historical boundaries, then read `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md` for the live Phase-17 frontier plus the canonical Product Layer design/plan. Phase-17 M1 workspace identity and M2 Research Universe/admission are already complete and integrated; continue only from the current coordination frontier. Preserve stable specialist routes, negative evidence, progressive disclosure, and backend-owned scientific/economic authority.
 
 ## 19. One-screen status summary
 
@@ -563,7 +563,7 @@ Phase 16 M7 visual convergence    ✅ complete
 Phase 16 M8 closure               ✅ complete
 
 NEXT
-No Phase-16 work. Phase-17 Product Layer M1 is the next authorized implementation milestone.
+No Phase-16 work. Phase-17 is already underway; follow `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md` for the current authorized milestone and agent ownership.
 
 PHASE-16 IMPLEMENTED IA (historical)
 Home | Discover | Validate | Portfolios | Results | Activity
