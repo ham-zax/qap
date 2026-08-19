@@ -42,28 +42,44 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
     onSuccess: setOperation,
   })
 
-  const validCandidates = candidates.items.filter(
-    (candidate) => candidate.trial_status === 'valid',
+  const survivors = candidates.items.filter(
+    (candidate) => candidate.economic_gate_status === 'deep_replay_survivor',
   )
-  const failures = candidates.items.filter(
-    (candidate) => candidate.trial_status !== 'valid',
+  const rejected = candidates.items.filter(
+    (candidate) => candidate.economic_gate_status === 'deep_replay_rejected',
+  )
+  const unavailable = candidates.items.filter(
+    (candidate) =>
+      candidate.trial_status !== 'valid' ||
+      candidate.deep_replay_status === 'setup_failed' ||
+      candidate.deep_replay_status === 'replay_failed',
+  )
+  const validNotReplayed = candidates.items.filter(
+    (candidate) =>
+      candidate.trial_status === 'valid' &&
+      candidate.economic_gate_status !== 'deep_replay_survivor' &&
+      candidate.economic_gate_status !== 'deep_replay_rejected' &&
+      candidate.deep_replay_status !== 'setup_failed' &&
+      candidate.deep_replay_status !== 'replay_failed',
   )
 
   return (
     <section className="min-w-0">
       <header className="mb-8 max-w-4xl">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
-          Discovery evidence
+          Historical discovery
         </p>
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          Scan {shortId(data.summary.scan_id)}
+          Research ideas
         </h1>
         <div className="flex flex-wrap gap-2">
           <Badge tone={data.summary.artifact_status === 'valid' ? 'positive' : 'negative'}>
-            {data.summary.artifact_status}
+            {data.summary.artifact_status === 'valid'
+              ? 'Evidence available'
+              : 'Evidence unavailable'}
           </Badge>
-          <Badge tone="info">{candidates.items.length} trials</Badge>
-          <Badge tone="info">{data.summary.survivor_count ?? 0} survivors</Badge>
+          <Badge tone="info">{candidates.items.length} evaluated rules</Badge>
+          <Badge tone="info">{survivors.length} passed historical checks</Badge>
         </div>
         {data.summary.as_of ? (
           <p className="mt-3 mb-0 text-sm text-secondary">
@@ -71,6 +87,12 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
             {data.summary.venues.join(' / ')} · {data.summary.horizons.join(' / ')}
           </p>
         ) : null}
+        <details className="mt-4 text-sm text-secondary">
+          <summary className="min-h-11 cursor-pointer py-2 font-semibold text-accent">
+            Exact scan evidence
+          </summary>
+          <p className="m-0 break-all">Scan ID: {data.summary.scan_id}</p>
+        </details>
       </header>
 
       <div className="grid gap-5 lg:grid-cols-3">
@@ -89,6 +111,77 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
           </article>
         ))}
       </div>
+
+      <section className="mt-8" aria-labelledby="research-summary-heading">
+        <h2 id="research-summary-heading" className="text-xl font-semibold text-foreground">
+          Historical research summary
+        </h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <article className="rounded-lg border border-positive/45 bg-panel p-4">
+            <p className="m-0 text-2xl font-semibold text-positive">{survivors.length}</p>
+            <p className="mt-2 mb-0 text-sm text-secondary">
+              Passed historical research checks
+            </p>
+          </article>
+          <article className="rounded-lg border border-warning/45 bg-panel p-4">
+            <p className="m-0 text-2xl font-semibold text-warning">{rejected.length}</p>
+            <p className="mt-2 mb-0 text-sm text-secondary">
+              Evaluated but did not pass
+            </p>
+          </article>
+          <article className="rounded-lg border border-border bg-panel p-4">
+            <p className="m-0 text-2xl font-semibold text-foreground">
+              {validNotReplayed.length}
+            </p>
+            <p className="mt-2 mb-0 text-sm text-secondary">
+              Valid rules not replayed
+            </p>
+          </article>
+          <article className="rounded-lg border border-negative/45 bg-panel p-4">
+            <p className="m-0 text-2xl font-semibold text-negative">
+              {unavailable.length}
+            </p>
+            <p className="mt-2 mb-0 text-sm text-secondary">
+              Invalid or unavailable evidence
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section className="mt-8" aria-labelledby="research-ideas-heading">
+        <h2 id="research-ideas-heading" className="text-xl font-semibold text-foreground">
+          Research ideas
+        </h2>
+        {survivors.length ? (
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            {survivors.map((candidate) => (
+              <article
+                key={candidate.candidate_id}
+                className="rounded-lg border border-positive/45 bg-panel p-5"
+              >
+                <Badge tone="positive">Passed historical research checks</Badge>
+                <h3 className="mt-4 mb-2 text-lg font-semibold text-foreground">
+                  {candidate.pair_id}
+                </h3>
+                <p className="m-0 text-sm text-secondary">
+                  {candidate.venue} · {candidate.horizon} timeframe
+                </p>
+                <a
+                  className="mt-4 inline-flex min-h-11 items-center font-semibold text-accent"
+                  href={`/candidate/${data.summary.scan_id}/${candidate.candidate_id}`}
+                >
+                  Understand this idea
+                </a>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-4 rounded-lg border border-border bg-panel p-5 text-secondary">
+            No evaluated rule passed the declared historical research checks. This is
+            a valid negative research result, not an application failure.
+          </p>
+        )}
+      </section>
 
       <section className="mt-8 rounded-lg border border-border bg-panel p-5" aria-labelledby="momentum-heading">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -180,11 +273,10 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
         )}
       </section>
 
-      <section className="mt-8" aria-labelledby="candidate-heading">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 id="candidate-heading" className="text-xl font-semibold text-foreground">Candidate trials</h2>
-          <span className="text-sm text-muted">{validCandidates.length} valid · {failures.length} invalid/failed</span>
-        </div>
+      <details className="mt-8 rounded-lg border border-border bg-panel p-5">
+        <summary className="min-h-11 cursor-pointer py-2 text-xl font-semibold text-foreground">
+          All evaluated rules · {candidates.items.length}
+        </summary>
         <div className="mt-4 overflow-x-auto rounded-lg border border-border bg-panel">
           <table className="w-full min-w-[52rem] text-left text-sm">
             <thead className="bg-subtle text-xs uppercase tracking-[0.06em] text-muted">
@@ -220,14 +312,14 @@ export function ScanDetail({ apiClient, data, candidates }: ScanDetailProps) {
                     {candidate.economic_gate_status ? <p className="mt-1 mb-0 text-xs text-muted">{candidate.economic_gate_status}</p> : null}
                   </td>
                   <td className="px-4 py-3">
-                    <a className="font-semibold text-accent" href={`/candidate/${data.summary.scan_id}/${candidate.candidate_id}`}>Inspect lineage</a>
+                    <a className="font-semibold text-accent" href={`/candidate/${data.summary.scan_id}/${candidate.candidate_id}`}>Review idea</a>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </section>
+      </details>
 
       <section className="mt-8" aria-labelledby="universe-heading">
         <h2 id="universe-heading" className="text-xl font-semibold text-foreground">Point-in-time universe</h2>

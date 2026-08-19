@@ -22,10 +22,6 @@ interface DiscoveryHomeProps {
 
 const HORIZONS: Horizon[] = ['short', 'medium', 'swing']
 
-function shortId(value: string) {
-  return value.length <= 18 ? value : `${value.slice(0, 10)}…${value.slice(-6)}`
-}
-
 export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps) {
   const [asOf, setAsOf] = useState('')
   const [horizons, setHorizons] = useState<Horizon[]>(['short'])
@@ -86,15 +82,14 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
     <section className="min-w-0">
       <header className="mb-8 max-w-4xl">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
-          Scanner V1
+          Research ideas
         </p>
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          Discovery
+          Discover
         </h1>
         <p className="m-0 text-sm leading-6 text-secondary md:text-base">
-          Run the frozen point-in-time scanner, inspect every candidate outcome, and
-          generate asset-native momentum without changing model windows, thresholds,
-          costs, or promotion rules.
+          Choose when and how far ahead to research. QAP applies the frozen market
+          universe, models, costs, and historical checks.
         </p>
       </header>
 
@@ -107,10 +102,10 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
             id="scan-command-heading"
             className="mt-0 text-lg font-semibold text-foreground"
           >
-            Run bounded scan
+            Find research ideas
           </h2>
           <label className="mt-4 block text-sm font-medium text-secondary">
-            UTC as-of
+            Analysis date and time (UTC)
             <input
               className="mt-2 min-h-11 w-full rounded-md border border-border bg-canvas px-3 text-foreground"
               value={asOf}
@@ -121,7 +116,9 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
           </label>
 
           <fieldset className="mt-5 border-0 p-0">
-            <legend className="text-sm font-medium text-secondary">Horizons</legend>
+            <legend className="text-sm font-medium text-secondary">
+              Research timeframe
+            </legend>
             <div className="mt-2 flex flex-wrap gap-3">
               {HORIZONS.map((horizon) => (
                 <label
@@ -133,16 +130,20 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
                     checked={horizons.includes(horizon)}
                     onChange={() => toggleHorizon(horizon)}
                   />
-                  {horizon}
+                  {horizon.charAt(0).toUpperCase() + horizon.slice(1)}
                 </label>
               ))}
             </div>
           </fieldset>
 
-          <div className="mt-6 border-t border-border pt-5">
+          <details className="mt-6 border-t border-border pt-5">
+            <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-accent">
+              Advanced research controls
+            </summary>
+            <div className="mt-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="m-0 text-sm font-semibold text-foreground">
-                Optional manual pin
+                Re-evaluate a manually selected pair
               </h3>
               <span className="text-xs text-muted">
                 Forensic/manual lineage remains explicit
@@ -221,7 +222,7 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
             ) : null}
 
             <label className="mt-5 block text-sm font-medium text-secondary">
-              Optional manual replay candidate IDs
+              Re-evaluate specific research idea IDs
               <input
                 className="mt-2 min-h-11 w-full rounded-md border border-border bg-canvas px-3 text-foreground"
                 value={manualReplayIds}
@@ -230,7 +231,8 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
                 aria-label="Manual replay candidate IDs"
               />
             </label>
-          </div>
+            </div>
+          </details>
 
           <button
             className="mt-6 min-h-11 rounded-md bg-accent px-5 py-2 font-semibold text-canvas disabled:opacity-50"
@@ -238,28 +240,31 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
             disabled={!asOf || horizons.length === 0 || mutation.isPending}
             onClick={submit}
           >
-            {mutation.isPending ? 'Starting…' : 'Run scan'}
+            {mutation.isPending ? 'Starting…' : 'Find research ideas'}
           </button>
           {mutation.isError ? (
             <p className="mt-3 text-sm text-negative">{mutation.error.message}</p>
           ) : null}
           {operation ? (
             <p className="mt-4 rounded-md border border-positive/40 bg-subtle p-3 text-sm text-secondary">
-              Operation started.{' '}
+              Background analysis started.{' '}
               <a
                 className="font-semibold text-accent"
                 href={`/operations/${operation.operation_id}`}
               >
-                Track {shortId(operation.operation_id)}
+                View in Activity
               </a>
             </p>
           ) : null}
         </section>
 
-        <section
+        <details
           className="rounded-lg border border-border bg-panel p-5"
-          aria-labelledby="protocol-heading"
         >
+          <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-accent">
+            Scanner protocol details
+          </summary>
+          <div className="mt-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="info">Frozen protocol</Badge>
             <span className="text-xs text-muted">{protocol.protocol_id}</span>
@@ -297,7 +302,8 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
               )
             })}
           </div>
-        </section>
+          </div>
+        </details>
       </div>
 
       <section className="mt-8" aria-labelledby="completed-scans-heading">
@@ -305,7 +311,7 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
           id="completed-scans-heading"
           className="text-xl font-semibold text-foreground"
         >
-          Completed scans
+          Previous discovery research
         </h2>
         {scans.items.length === 0 ? (
           <p className="text-secondary">No completed scan generations are available yet.</p>
@@ -318,10 +324,14 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
               >
                 <div className="flex flex-wrap gap-2">
                   <Badge tone={scan.artifact_status === 'valid' ? 'positive' : 'negative'}>
-                    {scan.artifact_status}
+                    {scan.artifact_status === 'valid'
+                      ? 'Evidence available'
+                      : 'Evidence unavailable'}
                   </Badge>
                   {scan.survivor_count !== null ? (
-                    <Badge tone="info">{scan.survivor_count} survivors</Badge>
+                    <Badge tone="info">
+                      {scan.survivor_count} ideas passed
+                    </Badge>
                   ) : null}
                 </div>
                 <h3 className="mt-3 mb-2 text-base font-semibold text-foreground">
@@ -334,8 +344,8 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
                   </p>
                 ) : null}
                 <p className="mt-2 mb-0 text-sm text-secondary">
-                  {scan.candidate_count ?? 0} trials ·{' '}
-                  {scan.selected_replay_count ?? 0} replay selections
+                  {scan.candidate_count ?? 0} evaluated rules ·{' '}
+                  {scan.selected_replay_count ?? 0} selected for historical checks
                 </p>
                 {scan.error ? (
                   <p className="mt-2 text-sm text-negative">{scan.error.message}</p>
@@ -344,7 +354,7 @@ export function DiscoveryHome({ apiClient, protocol, scans }: DiscoveryHomeProps
                   className="mt-4 inline-flex min-h-11 items-center font-semibold text-accent"
                   href={`/scanner/${scan.scan_id}`}
                 >
-                  Inspect scan
+                  Review research ideas
                 </a>
               </article>
             ))}
