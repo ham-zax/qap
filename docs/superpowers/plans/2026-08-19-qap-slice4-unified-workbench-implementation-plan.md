@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-19
 
-**Status:** implementation started 2026-08-19 after the user explicitly authorized Slice 4. Milestone 0 reconciled the frozen architecture against the completed Slice-3/Phase-15 handoff at `f8ef3e4`; the original Slice-3 M9 full repository gate was green at `a79bd4d`, and the post-review Slice-3 remediation handoff is `142a18d`. Do not reopen the architecture unless an explicit Milestone-2 implementation refutation below fails or a protected product/scientific boundary changes.
+**Status:** complete and repository/browser-verified 2026-08-19. The user explicitly authorized Slice 4 after the completed Slice-3/Phase-15 handoff. Milestones 0–6 are implemented through `54f07a3`; the M7 bridge/control integration fix is `04a5e89`, application/E2E closure is `4bc214c`, and the final rendered-accessibility executable state is `6961937`. Verified results are recorded in `docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`. Do not replay this plan or reopen the architecture without new product authority or evidence that a protected boundary has changed.
 
 **Goal:** make the completed Slice-1 discovery, Slice-2 prospective/actionability, and Slice-3 basket-research workflows operable and inspectable from one local web application without moving scientific or financial authority into FastAPI or React.
 
@@ -186,10 +186,10 @@ Do not pre-create route/component files before the milestone that needs them.
 
 ### Steps
 
-- [ ] Confirm Slice 3 is backend-complete and its final results document names the authoritative basket application function and persisted basket result identity.
-- [ ] Freeze the command vocabulary below; remove any command whose owner does not actually exist at the handoff.
-- [ ] Freeze the read-model identity joins: scan -> candidate -> QAP run; candidate -> freeze/checkpoint/qualification; candidate -> basket edge; basket -> ordinary-QAP run.
-- [ ] Confirm browser requests never need filesystem paths, repository paths, protocol internals, or financial constants.
+- [x] Confirm Slice 3 is backend-complete and its final results document names the authoritative basket application function and persisted basket result identity.
+- [x] Freeze the command vocabulary below; remove any command whose owner does not actually exist at the handoff.
+- [x] Freeze the read-model identity joins: scan -> candidate -> QAP run; candidate -> freeze/checkpoint/qualification; candidate -> basket edge; basket -> ordinary-QAP run.
+- [x] Confirm browser requests never need filesystem paths, repository paths, protocol internals, or financial constants.
 
 ### Command vocabulary
 
@@ -255,12 +255,12 @@ A manual/pinned Slice-1 investigation is represented through the admitted scan/p
 
 ### Steps
 
-- [ ] Add backend-authoritative projections for Scanner-V1 protocol, scan summaries, PIT universe, candidates, promotions/manual lineage, replay status, asset momentum, forward cohorts/checkpoints, qualifications, terminal basket generations/attempts, selected edges, and QAP run references. Resolver opinions/audit/target are exposed only when authoritative QAP replay evidence exists; they are never synthesized for an unrun browser draft.
-- [ ] Reuse existing artifact validators/readers. A view must fail closed on invalid artifacts rather than parse filenames or partially trust unvalidated tables.
-- [ ] Preserve negative/invalid/failed rows and explicit automatic/manual lineage.
-- [ ] Return identifiers and routeable references, not arbitrary absolute filesystem paths.
-- [ ] Keep pair qualification evidence candidate-local and label basket actionability/capacity as unavailable rather than synthesizing it.
-- [ ] Add read resources around the existing hierarchy, such as:
+- [x] Add backend-authoritative projections for Scanner-V1 protocol, scan summaries, PIT universe, candidates, promotions/manual lineage, replay status, asset momentum, forward cohorts/checkpoints, qualifications, terminal basket generations/attempts, selected edges, and QAP run references. Resolver opinions/audit/target are exposed only when authoritative QAP replay evidence exists; they are never synthesized for an unrun browser draft.
+- [x] Reuse existing artifact validators/readers. A view must fail closed on invalid artifacts rather than parse filenames or partially trust unvalidated tables.
+- [x] Preserve negative/invalid/failed rows and explicit automatic/manual lineage.
+- [x] Return identifiers and routeable references, not arbitrary absolute filesystem paths.
+- [x] Keep pair qualification evidence candidate-local and label basket actionability/capacity as unavailable rather than synthesizing it.
+- [x] Add read resources around the existing hierarchy, such as:
 
 ```text
 GET /api/scanner/protocol
@@ -339,14 +339,14 @@ Persist operation state under the configured run root in a separate operational 
 
 ### Worker boundary
 
-- [ ] Enforce one active mutating worker globally in V1. Run one mutation-capable API process and use one process-local lock around active-operation check, operation reservation, and worker spawn so concurrent/double-submit HTTP requests cannot both launch. This serializes scan/forward/capture/qualification/momentum/basket mutations and therefore prevents concurrent read-modify-write capture streams without changing Slice-2 storage.
-- [ ] Launch the local worker with `subprocess.Popen([...])` using `sys.executable`, an importable Python module, `start_new_session=True`, no shell, and no CLI invocation.
-- [ ] Redirect worker stdout/stderr to operation-local operational logs/files rather than inheriting the HTTP process streams.
-- [ ] Persist internal worker identity as `(pid, process_start_marker)` after successful spawn. On the supported Linux/WSL local runtime, derive the start marker from the process start time exposed by `/proc/<pid>/stat` using standard-library file reads; never treat PID existence alone as proof that the original worker is still alive. A spawn failure immediately records `failed`; it must not leave an operation indefinitely active.
-- [ ] Worker reads the internal operation request and calls the existing Python owner directly.
-- [ ] API restart must not erase completed/failed/interrupted operation history. A worker process may continue independently of the HTTP process.
-- [ ] On startup/read reconciliation, consider a previously `running` operation live only when both PID and persisted process-start marker match the current process identity. If the PID is absent or has been reused for a different start marker, transition the operation to `interrupted` with an explicit operational reason rather than pretending completion or auto-resuming it.
-- [ ] Scientific/application exceptions become operation failure state; they do not mutate completed evidence or convert fatal research-integrity failures into ordinary positive results.
+- [x] Enforce one active mutating worker globally in V1. Run one mutation-capable API process and use one process-local lock around active-operation check, operation reservation, and worker spawn so concurrent/double-submit HTTP requests cannot both launch. This serializes scan/forward/capture/qualification/momentum/basket mutations and therefore prevents concurrent read-modify-write capture streams without changing Slice-2 storage.
+- [x] Launch the local worker with `subprocess.Popen([...])` using `sys.executable`, an importable Python module, `start_new_session=True`, no shell, and no CLI invocation.
+- [x] Redirect worker stdout/stderr to operation-local operational logs/files rather than inheriting the HTTP process streams.
+- [x] Persist internal worker identity as `(pid, process_start_marker)` after successful spawn. On the supported Linux/WSL local runtime, derive the start marker from the process start time exposed by `/proc/<pid>/stat` using standard-library file reads; never treat PID existence alone as proof that the original worker is still alive. A spawn failure immediately records `failed`; it must not leave an operation indefinitely active.
+- [x] Worker reads the internal operation request and calls the existing Python owner directly.
+- [x] API restart must not erase completed/failed/interrupted operation history. A worker process may continue independently of the HTTP process.
+- [x] On startup/read reconciliation, consider a previously `running` operation live only when both PID and persisted process-start marker match the current process identity. If the PID is absent or has been reused for a different start marker, transition the operation to `interrupted` with an explicit operational reason rather than pretending completion or auto-resuming it.
+- [x] Scientific/application exceptions become operation failure state; they do not mutate completed evidence or convert fatal research-integrity failures into ordinary positive results.
 
 ### Implementation-time refutation checks
 
@@ -422,14 +422,14 @@ GET  /api/operations/{operation_id}
 
 ### Steps
 
-- [ ] Add one Discovery entry route with venue/horizon/UTC `as_of` intent and bounded `ScannerPinSpec` inputs.
-- [ ] Present the frozen Scanner-V1 protocol rather than editable generator/model/template/threshold fields.
-- [ ] Launch the scan as an operation and navigate to/track that operation while it runs.
-- [ ] From a completed scan, allow explicit asset-momentum generation for one admitted venue/horizon. The browser submits only scan/venue/horizon intent; the backend derives the frozen resolution/formation contract.
-- [ ] Show completed scan context: PIT universe state, graph/candidate counts, selection lineage, failures/no-survivor outcomes, and any persisted asset-native momentum generation.
-- [ ] Candidate detail must explain why the candidate exists: PIT admission -> graph/neighbor evidence -> fixed trial/template/orientation -> scout -> promotion/manual lineage -> authoritative QAP result.
-- [ ] Manual/pinned research remains visibly labeled and separate from automatic-selection evidence.
-- [ ] Reuse existing Experiment/Portfolio/Pair navigation for economic/relationship detail instead of duplicating those views.
+- [x] Add one Discovery entry route with venue/horizon/UTC `as_of` intent and bounded `ScannerPinSpec` inputs.
+- [x] Present the frozen Scanner-V1 protocol rather than editable generator/model/template/threshold fields.
+- [x] Launch the scan as an operation and navigate to/track that operation while it runs.
+- [x] From a completed scan, allow explicit asset-momentum generation for one admitted venue/horizon. The browser submits only scan/venue/horizon intent; the backend derives the frozen resolution/formation contract.
+- [x] Show completed scan context: PIT universe state, graph/candidate counts, selection lineage, failures/no-survivor outcomes, and any persisted asset-native momentum generation.
+- [x] Candidate detail must explain why the candidate exists: PIT admission -> graph/neighbor evidence -> fixed trial/template/orientation -> scout -> promotion/manual lineage -> authoritative QAP result.
+- [x] Manual/pinned research remains visibly labeled and separate from automatic-selection evidence.
+- [x] Reuse existing Experiment/Portfolio/Pair navigation for economic/relationship detail instead of duplicating those views.
 
 ### Acceptance criteria
 
@@ -459,14 +459,14 @@ GET  /api/operations/{operation_id}
 
 ### Steps
 
-- [ ] From an eligible candidate/scan, allow the operator to freeze a cohort at an explicit UTC timestamp.
-- [ ] Show each freeze's horizon/resolution-specific forward window and checkpoint maturity rather than implying all members share one bar boundary.
-- [ ] Allow explicit `advance --through` intent through the operation API and show candidate-specific partial/final/invalid outcomes.
-- [ ] Expose one-shot Binance/Gate L1/depth/metadata capture actions. Do not add automatic cadence scheduling.
-- [ ] Show causal capture coverage and distinguish missing evidence from economic failure.
-- [ ] Qualification input is only explicit current UTC `as_of` + positive hypothetical capital; the backend derives current QAP state, coverage window, directional capacity, costs, and frozen protocol details.
-- [ ] Present `research_only`, `small_capacity`, or `tradable_now` with the exact reasons/evidence references that justify the state.
-- [ ] Keep automatic cohort scoreboard economics separate from manual/pinned evidence.
+- [x] From an eligible candidate/scan, allow the operator to freeze a cohort at an explicit UTC timestamp.
+- [x] Show each freeze's horizon/resolution-specific forward window and checkpoint maturity rather than implying all members share one bar boundary.
+- [x] Allow explicit `advance --through` intent through the operation API and show candidate-specific partial/final/invalid outcomes.
+- [x] Expose one-shot Binance/Gate L1/depth/metadata capture actions. Do not add automatic cadence scheduling.
+- [x] Show causal capture coverage and distinguish missing evidence from economic failure.
+- [x] Qualification input is only explicit current UTC `as_of` + positive hypothetical capital; the backend derives current QAP state, coverage window, directional capacity, costs, and frozen protocol details.
+- [x] Present `research_only`, `small_capacity`, or `tradable_now` with the exact reasons/evidence references that justify the state.
+- [x] Keep automatic cohort scoreboard economics separate from manual/pinned evidence.
 
 ### Acceptance criteria
 
@@ -497,18 +497,18 @@ GET  /api/operations/{operation_id}
 
 ### Steps
 
-- [ ] Keep basket draft state in browser memory/URL-local form only until submission. Do not persist or expose a server-side authoritative basket draft.
-- [ ] Let the operator select one source scan, one venue, one horizon, one decision resolution, and 3–6 admitted economic assets.
-- [ ] Show candidate rules available for each unordered relationship and allow at most one admitted candidate ID per unordered pair.
-- [ ] Keep scout-only/indirect/manual evidence visibly attributed rather than hiding it behind a generic edge state.
-- [ ] Show asset-native momentum as contextual pair-blind evidence, not an automatic basket optimizer.
-- [ ] Before submission, render only the bounded 3–6 node topology, selected candidate edges/orientations, and existing candidate evidence with native SVG. Do not show current edge opinions, resolver pressures, or a final target because those do not exist authoritatively before ordinary QAP replay.
-- [ ] Submit the complete basket intent through the single authoritative basket-run operation; the Slice-3 application owner creates `BasketDefinition`, enumerates/persists the attempt, and runs QAP atomically from the browser's point of view.
-- [ ] After terminal basket evidence exists, overlay backend-provided edge opinions/resolver audit/target history from the authoritative QAP result. The frontend never recomputes pressure or target weights.
-- [ ] Show the post-run backend target and execution-only USDT bridge separately from the economic basket.
-- [ ] Present the required benchmark ladder through existing QAP run data: strategy, HODL, band-5pct-half, pair-blind relative momentum, and the declared adverse roles.
-- [ ] Link to existing Portfolio Economics, Experiment Detail, and Pair Workbench routes for fills, costs, holdings, relative wealth, and relationship series.
-- [ ] Show negative baskets and comparator failures as first-class outcomes.
+- [x] Keep basket draft state in browser memory/URL-local form only until submission. Do not persist or expose a server-side authoritative basket draft.
+- [x] Let the operator select one source scan, one venue, one horizon, one decision resolution, and 3–6 admitted economic assets.
+- [x] Show candidate rules available for each unordered relationship and allow at most one admitted candidate ID per unordered pair.
+- [x] Keep scout-only/indirect/manual evidence visibly attributed rather than hiding it behind a generic edge state.
+- [x] Show asset-native momentum as contextual pair-blind evidence, not an automatic basket optimizer.
+- [x] Before submission, render only the bounded 3–6 node topology, selected candidate edges/orientations, and existing candidate evidence with native SVG. Do not show current edge opinions, resolver pressures, or a final target because those do not exist authoritatively before ordinary QAP replay.
+- [x] Submit the complete basket intent through the single authoritative basket-run operation; the Slice-3 application owner creates `BasketDefinition`, enumerates/persists the attempt, and runs QAP atomically from the browser's point of view.
+- [x] After terminal basket evidence exists, overlay backend-provided edge opinions/resolver audit/target history from the authoritative QAP result. The frontend never recomputes pressure or target weights.
+- [x] Show the post-run backend target and execution-only USDT bridge separately from the economic basket.
+- [x] Present the required benchmark ladder through existing QAP run data: strategy, HODL, band-5pct-half, pair-blind relative momentum, and the declared adverse roles.
+- [x] Link to existing Portfolio Economics, Experiment Detail, and Pair Workbench routes for fills, costs, holdings, relative wealth, and relationship series.
+- [x] Show negative baskets and comparator failures as first-class outcomes.
 
 ### Acceptance criteria
 
@@ -540,9 +540,9 @@ GET  /api/operations/{operation_id}
 
 ### Steps
 
-- [ ] Add an Operation Center showing running/completed/failed/interrupted work with type, requested time, duration, safe failure reason, and authoritative result links. V1 has no queued state.
-- [ ] Do not show operation state as research success/failure; distinguish operational completion from scientific/economic outcome.
-- [ ] Add a compact lineage view that can traverse:
+- [x] Add an Operation Center showing running/completed/failed/interrupted work with type, requested time, duration, safe failure reason, and authoritative result links. V1 has no queued state.
+- [x] Do not show operation state as research success/failure; distinguish operational completion from scientific/economic outcome.
+- [x] Add a compact lineage view that can traverse:
 
 ```text
 scan
@@ -554,8 +554,8 @@ scan
  -> basket QAP run
 ```
 
-- [ ] Keep existing Experiment/Portfolio/Pair/Paper Operation routes in the main AppShell; Slice 4 adds Discovery, Prospective, Baskets, and Operations rather than replacing the established evidence workbenches.
-- [ ] Preserve typed failure/recovery presentation through existing `QapApiError`, error boundary, and status components.
+- [x] Keep existing Experiment/Portfolio/Pair/Paper Operation routes in the main AppShell; Slice 4 adds Discovery, Prospective, Baskets, and Operations rather than replacing the established evidence workbenches.
+- [x] Preserve typed failure/recovery presentation through existing `QapApiError`, error boundary, and status components.
 
 ### Acceptance criteria
 

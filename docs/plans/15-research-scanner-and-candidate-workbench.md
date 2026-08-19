@@ -13,11 +13,11 @@
 > **Implementation status — 2026-08-18**
 > **Slice 1:** complete and remediation-verified; results in `docs/research/2026-08-18-qap-scanner-slice1-results.md`.
 > **Slice 2:** complete and repository-verified at tested commit `809431c`; results in `docs/research/2026-08-18-qap-scanner-slice2-results.md`.
-> **Slice 3:** complete. Milestone-6 integrity closure is `dd9df14`, the Milestone-7 application vertical is `0a15506`, the original M9 full repository gate was green at `a79bd4d`, and the post-review remediation handoff is `142a18d`. The remediation's Slice-3 scenario and static repository gates are green; the current whole-repository pytest gate is blocked only by two later Slice-4 OpenAPI contract-test mismatches. The former Milestone-8 Candidate Workbench is superseded by Slice 4; Milestone-9 backend/Phase-15 research-kernel closure remains complete. Results: `docs/research/2026-08-18-qap-scanner-slice3-results.md`.
+> **Slice 3:** complete. Milestone-6 integrity closure is `dd9df14`, the Milestone-7 application vertical is `0a15506`, the original M9 full repository gate was green at `a79bd4d`, and the post-review remediation handoff is `142a18d`. Slice-4 closure subsequently updated the stale OpenAPI assertions that had temporarily blocked the whole-repository suite; the current final repository gate is green at 672 passed / 1 skipped. The former Milestone-8 Candidate Workbench is superseded by the now-complete Slice 4; Milestone-9 backend/Phase-15 research-kernel closure remains complete. Results: `docs/research/2026-08-18-qap-scanner-slice3-results.md`.
 
 > **Product-boundary amendment — 2026-08-19**
-> The standalone Slice-3 read-only Candidate Workbench is intentionally not implemented. One unified Slice-4 QAP application/workbench will expose the completed Slice-1 discovery, Slice-2 prospective/actionability, and Slice-3 basket-research operations instead of duplicating API DTOs, route hierarchies, navigation, and frontend evidence views across two consecutive workbenches.
-> **Slice-4 plan:** `docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md`.
+> The standalone Slice-3 read-only Candidate Workbench is intentionally not implemented. The unified Slice-4 QAP application/workbench now exposes the completed Slice-1 discovery, Slice-2 prospective/actionability, and Slice-3 basket-research operations instead of duplicating API DTOs, route hierarchies, navigation, and frontend evidence views across two consecutive workbenches.
+> **Slice-4 plan:** `docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md`. **Verified results:** `docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`; final rendered executable state `6961937`.
 
 ## 1. Authoritative slice map
 
@@ -205,7 +205,7 @@ Formal SPA/Reality Check/Romano-Wolf/DSR/PBO methods may be used later at resear
 
 Phase 15 no longer implements a scanner-specific browser/API surface. Its job is to leave Slices 1–3 with stable Python application operations, immutable evidence, and authoritative QAP result references.
 
-Slice 4 owns the unified human-operated application. Its bounded command vocabulary may initiate admitted discovery, prospective, capture/qualification, and basket-research operations, while its query/read models expose the resulting immutable evidence.
+Slice 4 now owns the implemented unified human-operated application. Its bounded command vocabulary initiates admitted discovery, prospective, capture/qualification, and basket-research operations, while its query/read models expose the resulting immutable evidence.
 
 The Slice-4 browser still does not:
 
@@ -245,7 +245,7 @@ Backend coverage across the slices must prove:
 - incomplete microstructure cannot graduate a candidate from `research_only`;
 - basket combination eventually goes through one QAP target/inventory.
 
-Frontend/E2E coverage is deferred to Slice 4, where one unified workbench is admitted over the completed Slice-1/2/3 backend operations.
+Frontend/E2E coverage is implemented and verified in Slice 4. Its unified workbench exercises the completed Slice-1/2/3 backend operations through deterministic no-network browser workflows while preserving the existing Phase-14 analytical routes.
 
 ## 12. Exit criteria
 

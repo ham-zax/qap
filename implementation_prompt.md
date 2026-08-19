@@ -19,13 +19,26 @@ Impact: Phases 14 and 15 are explicit mission scope. Scanner V1 Slices 1–3 are
 complete; Slice-3's original M9 full repository gate was green at `a79bd4d`, and
 the post-review remediation handoff is `142a18d`. Results are recorded in
 `docs/research/2026-08-18-qap-scanner-slice3-results.md`.
-The frozen Slice-4 unified-workbench plan is post-Phase-15 product work and must not
-begin merely because Phase 15 is complete; require an explicit user start for Slice 4.
+
+Update context — 2026-08-19
+Trigger: the user explicitly authorized the separately frozen Slice-4 unified-workbench
+plan after Slice-3 backend closure.
+Purpose: record that the human-operability product layer has now been implemented and
+verified rather than leaving future agents at the former authorization boundary.
+Impact: Slice 4 is complete through final rendered executable state `6961937`; the
+full repository gate is 672 passed / 1 skipped, the frontend gate is 49/49, the
+four critical Playwright flows are green, and desktop/mobile rendered acceptance is
+green. Results are recorded in
+`docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`. Do not replay
+Slice-4 M0-M7 without explicit new product authority or evidence that a protected
+contract has changed.
 Evidence: docs/plans/15-research-scanner-and-candidate-workbench.md;
 docs/superpowers/specs/2026-08-18-qap-scanner-slice1-design.md;
 docs/superpowers/specs/2026-08-18-qap-scanner-slice2-prospective-evidence-liquidity-design.md;
 docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-design.md;
-docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md.
+docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md;
+docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md;
+docs/research/2026-08-19-qap-slice4-unified-workbench-results.md.
 
 Steering override — 2026-08-18: this mission uses no delegated/external coding or
 review model. Do not invoke Codex, subagents, reviewer agents, second-opinion models,
@@ -416,14 +429,15 @@ Slice 3 is complete and repository-verified. Its detailed authority remains:
 Those documents freeze the O(N) asset-native momentum stream, manual same-venue
 3-6 asset BasketDefinition, exact ternary graph resolver, pair-blind momentum
 control, and ordinary-QAP multi-fill/multi-asset replay integration. The former
-Slice-3 Candidate Workbench is explicitly superseded by the frozen Slice-4 unified
-workbench plan. Automatic basket discovery, learned weights, cross-venue inventory,
+Slice-3 Candidate Workbench is explicitly superseded by the implemented Slice-4
+unified workbench. Automatic basket discovery, learned weights, cross-venue inventory,
 basket capacity, and live action remain deferred.
 
 Slice-3 implementation and the integrated Phase-15 exit criteria are complete. A
 negative/no-survivor scanner or basket result remains valid research evidence; never
-loosen rules to force a candidate. Do not proceed into Slice 4 without an explicit
-user start for the separately frozen Slice-4 plan.
+loosen rules to force a candidate. The user subsequently authorized Slice 4 and that
+product layer is now complete at final rendered executable state `6961937`; do not
+replay it without explicit new scope.
 
 
 ======================================================================
@@ -1397,8 +1411,9 @@ The mission is complete only when ALL of the following are true:
    Phase 15 includes verified Slice-1 bounded discovery, Slice-2 prospective/
    liquidity behavior, and the completed Slice-3 asset-momentum/manual-basket
    one-inventory QAP path. The former Slice-3 Candidate Workbench is superseded by
-   the separately frozen Slice-4 unified-workbench plan and is not a Phase-15 exit
-   requirement.
+   the completed Slice-4 unified workbench; Slice 4 provides the local human-operated
+   command/query product layer and remains separate from the Phase-15 research-kernel
+   exit requirement.
 
 8. Agent-browser product inspection has been performed when applicable and material
    UI/integration defects found there have been addressed or documented.

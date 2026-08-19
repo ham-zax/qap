@@ -1,7 +1,7 @@
 # QAP Scanner V1 Slice-3 Results
 
 Date: 2026-08-19
-Status: asset-native momentum and manual one-inventory basket research are complete. The original M9 full repository gate was green at `a79bd4d`; post-review remediation is complete at `142a18d` with the Slice-3 scenario and static repository gates green. The current whole-repository pytest gate is blocked only by two later Slice-4 OpenAPI contract-test mismatches. This is development evidence only, not final-OOS evidence, basket capacity evidence, or a trading recommendation.
+Status: asset-native momentum and manual one-inventory basket research are complete. The original M9 full repository gate was green at `a79bd4d`; post-review remediation is complete at `142a18d` with the Slice-3 scenario and static repository gates green. The two later Slice-4 OpenAPI contract-test mismatches were subsequently corrected during Slice-4 closure, and the current full repository suite is green at 672 passed / 1 skipped. This is development evidence only, not final-OOS evidence, basket capacity evidence, or a trading recommendation.
 
 ## Verified source state
 
@@ -13,7 +13,7 @@ Status: asset-native momentum and manual one-inventory basket research are compl
 - Original M9 repository-verified Slice-3 source/test state: `a79bd4d`
 - Post-review Slice-3 remediation handoff: `142a18d` (`fix: close slice3 basket review findings`)
 - Slice-1 historical discovery and Slice-2 prospective/current qualification contracts remain prerequisites and were not reopened.
-- The former Slice-3 Milestone-8 Candidate Workbench is intentionally superseded by the separately frozen Slice-4 unified-workbench plan; Slice 4 was not implemented during this closure.
+- The former Slice-3 Milestone-8 Candidate Workbench is intentionally superseded by the separately authorized Slice-4 unified-workbench plan. Slice 4 was not part of this Slice-3 closure, but it has since been implemented and verified; see `docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`.
 
 ## Scope closed by Slice 3
 
@@ -195,7 +195,7 @@ git diff --check
 passed
 ```
 
-The current whole-repository `uv run pytest -q` result after `142a18d` was `665 passed, 1 skipped, 2 failed`. Both failures are in `tests/contract/api/test_openapi.py` and are caused by later Slice-4 API work: the test still expects the former read-only operation-ID set and the former `QAP Research Evidence API` title while the current application exposes the new Slice-4 command/query surface and `QAP Research Application API` title. Neither failure touches the Slice-3 remediation files or invalidates the targeted Slice-3 scenario above.
+Immediately after `142a18d`, a whole-repository `uv run pytest -q` run reported `665 passed, 1 skipped, 2 failed`; both failures were stale `tests/contract/api/test_openapi.py` expectations introduced by the later Slice-4 API evolution. Slice-4 closure updated those operation-ID/title expectations, and the final repository suite subsequently passed at `672 passed, 1 skipped`. The temporary OpenAPI test failures did not touch or invalidate the Slice-3 remediation evidence above.
 
 The 500-700 line source-size warnings remain review tripwires only. No current hand-written source file exceeds the repository hard limit; the new basket scanner adapter is 495 lines.
 
@@ -209,4 +209,4 @@ Reserved final OOS remains sealed. `basket_graph` manifest admission requires `D
 
 The following remain explicitly deferred: automatic basket discovery/optimization, learned reliability weights, basket-level prospective machinery, joint multi-leg capacity, cross-venue inventory/transfer modeling, cross-horizon signal blending, private exchange credentials, live scheduling, and deployment authority.
 
-The next product layer is the frozen Slice-4 Unified QAP Workbench plan. It has not been implemented as part of Slice-3/Phase-15 closure.
+Slice 4 remained outside the Slice-3/Phase-15 closure itself. It was subsequently explicitly authorized, implemented, and repository/browser-verified; see `docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`.
