@@ -6,65 +6,52 @@
 **Investigation evidence:** `docs/research/2026-08-19-qap-product-layer-investigation.md`
 **Legacy salvage evidence:** `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`
 **Frozen design base:** `1bb6e78`
-**Execution shape:** two genuinely parallel M8 presentation writers on the now-stable basket/read contracts
-**Current wave:** 10
+**Execution shape:** M0-M9 are integrated; the remaining M10 gate is human-led representative-user comprehension/authority acceptance, not another autonomous implementation writer
+**Current wave:** 11 — final acceptance
 
 ## Current frontier
 
 | Mission | Type | Status | Can start | Workspace | Isolation reason | Blocked by |
 |---|---|---|---|---|---|---|
-| Agent 1 — M8-A History + utility Activity convergence | mixed executable | ready after Wave-10 coordination commit | immediately | `/home/hamza/repo/qap/.worktrees/phase17-m8-history` on branch `phase17-m8-history` | owns History composition/UI and Home activity attention only; no basket science/presentation files | M8-0 integrated at `01e8d3e` |
-| Agent 2 — M8-B Product Portfolio presentation convergence | mixed executable | ready after Wave-10 coordination commit | immediately | `/home/hamza/repo/qap/.worktrees/phase17-m8-portfolio` on branch `phase17-m8-portfolio` | consumes stable M8-0 basket read contract; owns basket/Portfolio presentation only | M8-0 integrated at `01e8d3e` |
+| M10 representative-user comprehension / authority closure | human-led acceptance | ready for representative participants | when representative users are available | stable integrated Product V1 on `main` | acceptance evidence must come from actual/likely users; an autonomous coding agent cannot fabricate it | none — M0-M9 integrated |
 
 ## Dependency map
 
 ```text
-M0 design freeze (1bb6e78)
+M0 design freeze
         |
         v
-M1 workspace identity / zero-state (461a33c, integrated)
+M1 workspace identity / zero-state
         |
         v
-M2 directory / identity / admission (8e45c36, integrated)
+M2 directory / identity / admission
         |
         v
-M3 shared generation/provenance foundation (1a476db, integrated)
+M3 immutable/adaptive market-data preparation
         |
         v
-M3 Binance + Gate + Product adaptive orchestration (complete at c1d97eb)
+M4 current-approved claim/readiness/safe cutoff
         |
         v
-M4 current-approved claim/readiness/safe cutoff (complete through c3c81ca)
+M5 self-explanatory Research / truthful funnel / primary IA
         |
         v
-M5 Research / truthful funnel / primary IA (complete at 6b40028)
+M6 longitudinal Research Idea / all-survivor follow-up
         |
         v
-M6 longitudinal Research Idea / all-survivor follow-up (complete at c1db648)
+M7 persistent current public-evidence collection / qualification bridge
         |
         v
-M7 persistent current-evidence collector (complete at d5fbddc)
+M8 Product basket provenance + History/Activity + Portfolio convergence
         |
         v
-M8-0 Product basket provenance / immutable source binding (complete at 01e8d3e)
+M9 process/state lifecycle hardening / no-desktop-shell decision
         |
-        +--------------------------------------+
-        |                                      |
-        v                                      v
-Agent 1: M8-A writer                  Agent 2: M8-B writer
-History + utility Activity            Product Portfolio presentation
-longitudinal read composition         claim-aware source/result UX
-        |                                      |
-        +------------------+-------------------+
-                           |
-                           v
-                  planner integrates full M8
-                           |
-                           v
-                  M9 lifecycle hardening
+        v
+M10 representative-user comprehension / authority closure   CURRENT
 ```
 
-M8-0 is complete and integrated at `01e8d3e`. Product current-approved baskets now have a separately truthful source/basket protocol identity, exact immutable M3 execution-generation bindings, and catalog-independent replay/recovery while strict PIT basket behavior remains unchanged. This stabilizes the shared basket/read seam, so M8 now genuinely fans out: Agent 1 owns longitudinal History + utility Activity convergence, while Agent 2 owns claim-aware Product Portfolio presentation. M9 reconnaissance is complete and recommends no desktop shell for Product V1; executable M9 remains blocked until full M8 completion.
+Full M8 is integrated through `3b7c32d`: M8-A adds backend-composed longitudinal History and utility Activity attention, while M8-B makes current-approved Product research the normal manual Portfolio source without changing basket science. M9 is integrated at `d9cb44e`: stale market-data maintenance now has exact process-owner recovery, the launcher proves API/workspace/web/collector readiness before declaring success, the UI refreshes collector health, and current evidence still does not justify Tauri. M10 is the only remaining Phase-17 gate and requires real representative-user evidence.
 
 ## Milestone progress
 
@@ -79,10 +66,10 @@ M8-0 is complete and integrated at `01e8d3e`. Product current-approved baskets n
 | M6 longitudinal Research Idea + evidence-layer semantics | complete / integrated at `c1db648` | — |
 | M7 ownership-safe persistent current-evidence collector | complete / integrated at `d5fbddc` | — |
 | M8-0 Product basket claim/provenance + immutable source binding | complete / integrated at `01e8d3e` | — |
-| M8-A History + utility Activity | ready | Agent 1 writer |
-| M8-B Product Portfolio presentation | ready | Agent 2 writer |
-| M9 process/state ownership + packaging decision | reconnaissance complete; executable lifecycle hardening blocked by full M8 | — |
-| M10 representative-user comprehension/authority closure | final acceptance / blocked | unassigned |
+| M8-A History + utility Activity | complete / integrated at `2aa60ea` | — |
+| M8-B Product Portfolio presentation | complete / integrated through `0efd728` plus claim-wording closure `3b7c32d` | — |
+| M9 process/state ownership + packaging decision | complete / integrated at `d9cb44e`; no desktop shell selected | — |
+| M10 representative-user comprehension/authority closure | current / requires representative participants | human-led acceptance |
 
 ## Shared contracts
 
@@ -99,33 +86,23 @@ M8-0 is complete and integrated at `01e8d3e`. Product current-approved baskets n
 
 ## Workspace policy
 
-Agent 1 is the sole writer in `/home/hamza/repo/qap/.worktrees/phase17-m8-history`. Agent 2 is the sole writer in `/home/hamza/repo/qap/.worktrees/phase17-m8-portfolio`. They may run concurrently because M8-0 has frozen the shared basket provenance/read contract and the missions have disjoint primary ownership.
-
-Former M1-M8-0 worktrees are historical integrated milestone state and must not be reused as concurrent writers for Wave 10.
+No autonomous writer is currently required. M0-M9 are integrated on `main`; former Phase-17 worktrees are historical milestone state. M10 acceptance should exercise the stable integrated Product V1 rather than a feature branch. Any remediation triggered by an observed protected-concept misunderstanding must return through normal single-writer planning rather than editing scientific meaning during the study.
 
 ## Integration policy
 
-M1 is integrated at `461a33c`, M2 at `8e45c36`, the M3 shared foundation at `1a476db`, Binance at `f1fab24`, Gate is integrated from original venue commit `30297cd`, the final adaptive Product orchestration/exit at `c1d97eb`, M4 at `d49e597` plus planner review closure `c3c81ca`, M5 at `6b40028`, M6 at `c1db648`, M7 at `d5fbddc`, and M8-0 at `01e8d3e`.
+M1 is integrated at `461a33c`, M2 at `8e45c36`, the M3 shared foundation at `1a476db`, Binance at `f1fab24`, Gate is integrated from original venue commit `30297cd`, final adaptive M3 orchestration at `c1d97eb`, M4 at `d49e597` plus planner closure `c3c81ca`, M5 at `6b40028`, M6 at `c1db648`, M7 at `d5fbddc`, M8-0 at `01e8d3e`, M8-A at `2aa60ea`, M8-B centrally at `0efd728` plus claim-wording closure `3b7c32d`, and M9 at `d9cb44e`.
 
-The planner verifies/integrates M8-A and M8-B independently, then reconciles any shared generated/client artifacts centrally if needed. M8-A must not alter basket science/provenance. M8-B must not alter the M8-0 basket source/replay contract. Full M8 closes only when both branches are integrated and the primary `Home | Research | Portfolios | History` experience is coherent.
+Full M8 and M9 are closed. No generated-contract conflict remained after M8 integration, and the combined OpenAPI/type/build contract was revalidated centrally. M10 does not unlock another implementation branch by default; it unlocks Phase-17 closure only when representative-user evidence satisfies the protected comprehension criteria.
 
 ## Execution lifetime policy
 
-Both sessions should load and use `persistent-agent-loop` because the user intends to steer long-running work.
-
-- Agent 1 M8-A writer: persistent loop required; use Terminal + event wait only if a genuinely persistent browser/build process is needed.
-- Agent 2 M8-B writer: persistent loop required; use Terminal + event wait only if a genuinely persistent browser/build process is needed.
-- Status/progress questions are steering events, not stop commands, unless the user explicitly stops/replaces a mission.
+M10 is human-led acceptance rather than a persistent coding mission. If the study spans sessions, preserve participant-independent notes, scenario coverage, observed misunderstandings, and exact evidence paths; never record secrets or fabricate participant reactions. Status/progress questions remain steering events unless the user explicitly stops/replaces the acceptance effort.
 
 ## Verification policy
 
-### Agent 1 — M8-A History + utility Activity
+### M10 — representative-user comprehension / authority closure
 
-Prove History composes longitudinal Research Idea evidence from backend authority, preserves time-specific current assessments and specialist evidence links, keeps paper/operational evidence separate, and surfaces failed/interrupted background work as operational attention rather than research outcome. Do not create/run tests unless separately authorized.
-
-### Agent 2 — M8-B Product Portfolio presentation
-
-Prove Product current-approved research is the normal portfolio source experience, strict PIT remains Advanced, manual 3–6/exact-edge authority is unchanged, and Portfolio results explain only persisted HODL/control/cost/concentration evidence while consuming M8-0 claim/provenance truth. Do not create/run tests unless separately authorized.
+Use actual/likely users, including limited technical/trading expertise and low digital skill/accessibility where possible. Ask them to complete realistic Product tasks without developer coaching and then explain the protected concepts in their own words. Record qualitative evidence only; do not fabricate quantitative usability metrics. A misunderstanding of a protected scientific/authority concept triggers design review and, if needed, a separately scoped remediation cycle rather than redefining the concept in the acceptance notes.
 
 ## Future / blocked work
 
@@ -143,17 +120,16 @@ The whole Phase-17 implementation is decomposed at low resolution below. Detaile
 | **7 — complete** | **Write M6:** longitudinal Research Idea + evidence-layer semantics + all-survivor follow-up | **Read-only M7 collector ownership reconnaissance** | M6 integrated at `c1db648`; M7 state/process contract frozen |
 | **8 — complete** | **Write M7:** ownership-safe persistent current-evidence collector/qualification bridge | **Read-only M8 objective-aware convergence reconnaissance** | M7 integrated at `d5fbddc`; M8 reconnaissance found a serial basket-provenance foundation is required |
 | **9 — complete** | **Write M8-0:** Product basket source/provenance + immutable M3 generation binding | **Read-only M9 process/state ownership reconnaissance** | M8-0 integrated at `01e8d3e`; M9 recon recommends no desktop shell for Product V1 |
-| **10 — current** | **Write M8-A:** History + utility Activity with research-learning semantics | **Write M8-B:** objective-aware Product Portfolio presentation convergence | genuine two-writer fan-out on stable M8-0 basket/read contract |
-| **11** | **M9 executable lifecycle hardening:** maintenance recovery + startup readiness + status freshness + operator wording | **M10 comprehension-study preparation/read-only acceptance support** | no desktop dependency on current evidence; M10 cannot fabricate representative-user evidence |
-| **12 — closure** | integration/final Product Layer verification as assigned by planner | independent read-only cross-check only if useful and authorized | Phase 17 closes only when canonical exit criteria are actually met |
+| **10 — complete** | **Write M8-A:** History + utility Activity with research-learning semantics | **Write M8-B:** objective-aware Product Portfolio presentation convergence | full M8 integrated through `3b7c32d` |
+| **11 — current/final** | **M9 lifecycle hardening complete at `d9cb44e`** | **M10 human-led comprehension/authority acceptance** | no desktop dependency on current evidence; Phase 17 closes only after real representative-user evidence satisfies M10 |
 
 This map is a dependency plan, not permission to start future writers early. The planner must re-evaluate each wave from returned commits/reports and may collapse or reshape later waves when repository reality makes the original split unnecessary.
 
-Important blocked work now:
+Important remaining work now:
 
-- M8-A History/Activity and M8-B Product Portfolio presentation — current parallel writable frontier.
-- M9 executable lifecycle hardening remains blocked by full M8; reconnaissance is complete and does not justify Tauri for Product V1.
-- M10 remains final acceptance / blocked.
+- M10 representative-user comprehension/authority closure is the sole remaining Phase-17 gate.
+- No additional autonomous implementation writer is justified before actual M10 evidence identifies a concrete remediation need.
+- Tauri/desktop packaging remains deferred; current Product-V1 evidence supports the hardened launcher/browser model.
 
 ## Status log
 
@@ -170,3 +146,5 @@ Important blocked work now:
 - `2026-08-19` — M6 `c1db648` returned complete and was verified/fast-forward integrated. It adds a pure longitudinal Research Idea composition, reselection-aware active-freeze lineage, backend-owned evidence-layer states, and a Product generation-wide follow-up wrapper reusing the existing freeze/prospective scientific path. M7 reconnaissance froze one-process/SQLite/slot/restart/frozen-instrument ownership and reuse of existing readiness/qualification authority. Wave 8 materialized with Agent 1 writing M7 and Agent 2 on read-only M8 Portfolios/History/Activity reconnaissance.
 - `2026-08-20` — M7 `d5fbddc` returned complete and was verified/fast-forward integrated. It adds bounded Product SQLite current-evidence state, exact slot/restart semantics, a Local Market collector process, M6 frozen-lineage instrument resolution, existing readiness/qualification reuse, Product amount assessment, and launcher lifecycle integration without changing scientific policy. M8 reconnaissance found Product-v1 basket economics compatible but provenance/current-catalog source binding incompatible; Wave 9 therefore materialized a serial M8-0 basket foundation before later M8-A/M8-B fan-out, with Agent 2 moving to read-only M9 process/state reconnaissance.
 - `2026-08-20` — M8-0 `01e8d3e` returned complete and was verified/fast-forward integrated. Product baskets now seal separately truthful Product source provenance and exact immutable M3 execution generations, while strict PIT basket behavior remains unchanged. M9 reconnaissance found no current evidence for a desktop shell and identified one later lifecycle correctness repair: ownerless stale `market_data_maintenance=running`. Wave 10 materialized the intended genuine fan-out: Agent 1 on History/Activity and Agent 2 on Product Portfolio presentation.
+- `2026-08-20` — M8-A `2aa60ea` and M8-B `291f2f3` returned complete on clean disjoint branches. Central review found one M8-B unknown-versioned-claim wording seam and closed it before integration; full M8 is integrated through `3b7c32d`. A fresh combined OpenAPI export, generated TypeScript contract, Ruff/format/Pyright/import-contract, typecheck, build, and diff-hygiene pass were green; no tests were run.
+- `2026-08-20` — M9 lifecycle hardening completed centrally at `d9cb44e`. Market-data maintenance now persists PID/start-marker ownership and recovers orphaned `running` state as explicit failure; the launcher waits for exact API/workspace/web/collector readiness before declaring success; the shell refreshes collector status while open. A real Local Market launcher smoke reached `QAP workbench ready.` with the collector running and cleaned its ports on shutdown. Tauri remains deferred. M10 representative-user comprehension/authority closure is now the sole remaining Phase-17 gate.

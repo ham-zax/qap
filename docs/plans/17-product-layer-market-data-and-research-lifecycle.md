@@ -1,6 +1,6 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M7 and M8-0 are complete and integrated. The selective legacy-QAP salvage amendment is approved. M8-0 now gives current-approved Product baskets separately truthful provenance plus exact immutable M3 execution-generation binding while preserving strict PIT basket behavior and existing economics. The current implementation frontier is the genuine M8-A/M8-B fan-out: longitudinal History + utility Activity and claim-aware Product Portfolio presentation. M9 reconnaissance is complete and does not justify a desktop shell for Product V1; executable M9 lifecycle hardening remains blocked until full M8 completion.
+**Status:** M0-M9 are complete and integrated. The selective legacy-QAP salvage amendment is approved. Full M8 now provides longitudinal History/utility Activity plus claim-aware manual Portfolio presentation over the immutable Product basket provenance/source-binding foundation. M9 closes the demonstrated local lifecycle gaps with exact maintenance-owner recovery, bounded launcher startup readiness, live collector-status refresh, and operator wording; current evidence does not justify Tauri or another desktop shell for Product V1. M10 representative-user comprehension/authority closure is the sole remaining Phase-17 acceptance gate.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
@@ -695,6 +695,10 @@ This is the appropriate place to reuse the legacy ownership-boundary/hidden-stat
 
 Packaging must preserve loopback/local authority and the live-capital `NO-GO` boundary.
 
+### M9 outcome
+
+M9 completed without a desktop dependency. The mature Product-V1 runtime remains launcher + loopback API + web + one Local Market collector + detached bounded scientific workers. Product market-data maintenance now persists exact PID/process-start ownership and converts an orphaned `running` row into explicit failed/interrupted operational evidence on owner restart. The launcher proves API health, exact workspace identity, web readiness, and Local Market collector health before printing `QAP workbench ready.`; the open shell refreshes workspace/collector health periodically. Tauri remains deferred because no representative-user or runtime evidence currently shows that a desktop shell is the smallest required solution.
+
 ## 13. Milestone 10 - Representative-user comprehension closure
 
 **Purpose:** Validate that the Product Layer is understandable, not merely clickable.
@@ -779,15 +783,15 @@ Stop and return to design review before:
 M0  design freeze                                           COMPLETE
 M1  workspace identity + clean zero-state                   COMPLETE
 M2  market directory + explicit asset admission             COMPLETE
-M3  adaptive market-data prepare/refresh + provenance       CURRENT
+M3  adaptive market-data prepare/refresh + provenance       COMPLETE
     + immutable generations + request-pressure discipline
-M4  current-approved policy + explainable readiness/cutoff
-M5  Research experience + truthful discovery funnel/IA
-M6  longitudinal idea + evidence-layer semantics/follow-up
-M7  ownership-safe persistent current-evidence collector
-M8  objective-aware Portfolios + History + utility Activity
-M9  process/state ownership + packaging decision
-M10 representative-user comprehension/authority closure
+M4  current-approved policy + explainable readiness/cutoff  COMPLETE
+M5  Research experience + truthful discovery funnel/IA      COMPLETE
+M6  longitudinal idea + evidence-layer semantics/follow-up  COMPLETE
+M7  ownership-safe persistent current-evidence collector    COMPLETE
+M8  objective-aware Portfolios + History + utility Activity COMPLETE
+M9  process/state ownership + packaging decision            COMPLETE
+M10 representative-user comprehension/authority closure     CURRENT
 ```
 
 Do not start M5 visual/React restructuring before M1-M4 make workspace/universe/data/readiness state authoritative.
@@ -821,7 +825,7 @@ Phase 17 is complete only when:
 
 ## 19. Fresh-agent implementation mission
 
-> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the Product Layer investigation/design, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M7 and M8-0 are complete and integrated. The current writable frontier is the two-writer M8 convergence fan-out: M8-A composes longitudinal History/utility Activity from existing authoritative artifacts, while M8-B makes the manual 3-6 asset/exact-edge Portfolio experience claim-aware using the already-frozen M8-0 basket provenance/read contract. Do not reopen basket economics/provenance, M7 collector authority, generic workflow infrastructure, CCXT, cloud infrastructure, packaging, or live/private exchange authority. Testing remains opt-in under the current execution policy.
+> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the Product Layer investigation/design, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M9 are complete and integrated. The only remaining milestone is M10 representative-user comprehension/authority closure. Do not fabricate user-study evidence or convert a misunderstanding into changed scientific meaning. Preserve `Home | Research | Portfolios | History`, strict PIT as Advanced Research, current-approved Product claim semantics, longitudinal evidence-layer distinctions, manual Portfolio authority, local-only/no-live-trade authority, and the M9 launcher/process ownership model. Testing remains opt-in under the current execution policy.
 
 ## 20. One-screen status
 
@@ -841,13 +845,12 @@ Phase 17 M6 longitudinal Research Idea + evidence-layer semantics / all-survivor
 Phase 17 M7 persistent current-evidence collector / qualification bridge  COMPLETE
 
 Phase 17 M8-0 Product basket provenance / immutable source binding  COMPLETE
+Phase 17 M8-A History / utility Activity                           COMPLETE
+Phase 17 M8-B Product Portfolio presentation                      COMPLETE
+Phase 17 M9 process / state ownership + lifecycle hardening        COMPLETE
 
-NEXT — PARALLEL
-Phase 17 M8-A History / utility Activity
-Phase 17 M8-B Product Portfolio presentation
-
-RECON COMPLETE / EXECUTION BLOCKED UNTIL FULL M8
-Phase 17 M9 process / state ownership + lifecycle hardening
+NEXT / FINAL ACCEPTANCE
+Phase 17 M10 representative-user comprehension / authority closure
 
 CURRENT PRIMARY IA
 Home | Research | Portfolios | History
