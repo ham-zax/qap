@@ -345,10 +345,14 @@ If authoritative existing read models do not provide enough information for Reac
 
 ## 11. Milestone 5 — Portfolio builder and result experience
 
+**Status:** complete.
+
 **Files:**
 
 - Modify: `web/src/features/baskets/BasketHome.tsx`
 - Modify: `web/src/features/baskets/BasketDetail.tsx`
+- Create: `web/src/features/baskets/BasketScopeControls.tsx`
+- Create: `web/src/features/baskets/BasketResults.tsx`
 - Modify only if needed: `web/src/features/baskets/BasketGraph.tsx`
 
 **Interfaces:**
@@ -358,15 +362,15 @@ If authoritative existing read models do not provide enough information for Reac
 
 **Steps:**
 
-- [ ] Present the builder around selecting 3–6 assets/research ideas, not around source scan/configuration first.
-- [ ] Use authoritative evidence to derive or constrain compatible source scope; keep source scan/horizon/resolution available in advanced details.
-- [ ] Show relationship availability directly on the topology as assets are selected.
-- [ ] Describe admissible relationship rules in plain language first; exact model/template/orientation/manual/indirect status remains available in details.
-- [ ] Keep momentum explicitly contextual/pair-blind rather than implying it is relationship evidence.
-- [ ] Keep pre-run state topology-only; never preview resolver opinion or target.
-- [ ] Rename the primary action to `Analyze portfolio`.
-- [ ] On Basket Detail, lead with economic/research verdict and benchmark comparison, then authoritative graph opinions/target explanation, then execution/audit evidence.
-- [ ] Preserve HODL/control/basket semantics exactly; React must not calculate a substitute research score.
+- [x] Present the builder around selecting 3–6 assets/research ideas, not around source scan/configuration first.
+- [x] Use authoritative evidence to derive or constrain compatible source scope; keep source scan/horizon/resolution available in advanced details.
+- [x] Show relationship availability directly on the topology as assets are selected.
+- [x] Describe admissible relationship rules in plain language first; exact model/template/orientation/manual/indirect status remains available in details.
+- [x] Keep momentum explicitly contextual/pair-blind rather than implying it is relationship evidence.
+- [x] Keep pre-run state topology-only; never preview resolver opinion or target.
+- [x] Rename the primary action to `Analyze portfolio`.
+- [x] On Basket Detail, lead with economic/research verdict and benchmark comparison, then authoritative graph opinions/target explanation, then execution/audit evidence.
+- [x] Preserve HODL/control/basket semantics exactly; React must not calculate a substitute research score.
 
 **Acceptance criteria:**
 

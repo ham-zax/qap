@@ -2,9 +2,16 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 
 import type { QapApiClient } from '../../api/client'
-import type { BasketListDto, OperationRefDto, ScanListDto } from '../../api/types'
+import type {
+  BasketListDto,
+  BasketRunRequestDto,
+  OperationRefDto,
+  ScanListDto,
+} from '../../api/types'
 import { Badge } from '../../components/ui/Badge'
 import { BasketGraph } from './BasketGraph'
+import { BasketResults } from './BasketResults'
+import { BasketScopeControls } from './BasketScopeControls'
 
 interface BasketHomeProps {
   apiClient: QapApiClient
@@ -15,12 +22,44 @@ interface BasketHomeProps {
 type Venue = 'binance' | 'gate'
 type Horizon = 'short' | 'medium' | 'swing'
 
+function isVenue(value: string): value is Venue {
+  return value === 'binance' || value === 'gate'
+}
+
+function isHorizon(value: string): value is Horizon {
+  return value === 'short' || value === 'medium' || value === 'swing'
+}
+
+function scopeLabel(horizon: Horizon | undefined) {
+  if (horizon === 'short') return 'Short horizon'
+  if (horizon === 'medium') return 'Medium horizon'
+  if (horizon === 'swing') return 'Swing horizon'
+  return 'Scope unavailable'
+}
+
+function relationshipLabel(candidate: {
+  automatic_neighbor_selected: boolean
+  manual_pinned: boolean
+  deep_replay_status?: string | null
+  replay_failure_reason?: string | null
+}) {
+  if (candidate.manual_pinned) return 'Manual research relationship'
+  if (
+    candidate.deep_replay_status === 'setup_failed' &&
+    candidate.replay_failure_reason === 'unsupported_direct_market'
+  ) {
+    return 'Indirect research relationship'
+  }
+  if (candidate.automatic_neighbor_selected) return 'Scanner-neighbor relationship'
+  return 'Admitted relationship'
+}
+
 export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
   const validScans = scans.items.filter((item) => item.artifact_status === 'valid')
   const [scanId, setScanId] = useState(validScans[0]?.scan_id ?? '')
-  const [venue, setVenue] = useState<Venue>('binance')
-  const [horizon, setHorizon] = useState<Horizon>('short')
-  const [resolution, setResolution] = useState('1h')
+  const [venueOverride, setVenueOverride] = useState<Venue | ''>('')
+  const [horizonOverride, setHorizonOverride] = useState<Horizon | ''>('')
+  const [resolutionOverride, setResolutionOverride] = useState('')
   const [assets, setAssets] = useState<string[]>([])
   const [selectedEdges, setSelectedEdges] = useState<Record<string, string>>({})
   const [operation, setOperation] = useState<OperationRefDto | null>(null)
@@ -36,26 +75,78 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
     enabled: Boolean(scanId),
   })
 
+  const availableVenues = useMemo(
+    () =>
+      [...new Set((scanQuery.data?.graph_scopes ?? []).map((item) => item.venue))]
+        .filter(isVenue)
+        .sort(),
+    [scanQuery.data?.graph_scopes],
+  )
+  const effectiveVenue = availableVenues.includes(venueOverride as Venue)
+    ? (venueOverride as Venue)
+    : availableVenues[0]
+
+  const availableHorizons = useMemo(
+    () =>
+      [
+        ...new Set(
+          (scanQuery.data?.graph_scopes ?? [])
+            .filter((item) => item.venue === effectiveVenue)
+            .map((item) => item.horizon),
+        ),
+      ]
+        .filter(isHorizon)
+        .sort(),
+    [effectiveVenue, scanQuery.data?.graph_scopes],
+  )
+  const effectiveHorizon = availableHorizons.includes(horizonOverride as Horizon)
+    ? (horizonOverride as Horizon)
+    : availableHorizons[0]
+
+  const availableResolutions = useMemo(
+    () =>
+      [
+        ...new Set(
+          (candidateQuery.data?.items ?? [])
+            .filter(
+              (item) =>
+                item.venue === effectiveVenue &&
+                item.horizon === effectiveHorizon &&
+                item.trial_status === 'valid',
+            )
+            .map((item) => item.resolution),
+        ),
+      ].sort(),
+    [candidateQuery.data?.items, effectiveHorizon, effectiveVenue],
+  )
+  const effectiveResolution = availableResolutions.includes(resolutionOverride)
+    ? resolutionOverride
+    : availableResolutions[0]
+
   const scopeAssets = useMemo(
     () =>
-      (scanQuery.data?.universe ?? [])
-        .filter(
-          (item) =>
-            item.venue === venue &&
-            item.horizon === horizon &&
-            (item.automatic_eligible || item.forensic_research_allowed),
-        )
-        .map((item) => item.asset_id),
-    [horizon, scanQuery.data?.universe, venue],
+      [
+        ...new Set(
+          (scanQuery.data?.universe ?? [])
+            .filter(
+              (item) =>
+                item.venue === effectiveVenue &&
+                item.horizon === effectiveHorizon &&
+                (item.automatic_eligible || item.forensic_research_allowed),
+            )
+            .map((item) => item.asset_id),
+        ),
+      ].sort(),
+    [effectiveHorizon, effectiveVenue, scanQuery.data?.universe],
   )
 
   const candidates = useMemo(
     () =>
       (candidateQuery.data?.items ?? []).filter(
         (item) =>
-          item.venue === venue &&
-          item.horizon === horizon &&
-          item.resolution === resolution &&
+          item.venue === effectiveVenue &&
+          item.horizon === effectiveHorizon &&
+          item.resolution === effectiveResolution &&
           item.trial_status === 'valid' &&
           item.deep_replay_status !== 'replay_failed' &&
           (item.deep_replay_status !== 'setup_failed' ||
@@ -63,35 +154,41 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
           assets.includes(item.pair_id.split('/')[0] ?? '') &&
           assets.includes(item.pair_id.split('/')[1] ?? ''),
       ),
-    [assets, candidateQuery.data?.items, horizon, resolution, venue],
+    [
+      assets,
+      candidateQuery.data?.items,
+      effectiveHorizon,
+      effectiveResolution,
+      effectiveVenue,
+    ],
   )
 
   const pairs = useMemo(
     () => [...new Set(candidates.map((item) => item.pair_id))].sort(),
     [candidates],
   )
-  const graphEdges = pairs
-    .filter((pair) => selectedEdges[pair])
-    .map((pair) => ({ pair, label: selectedEdges[pair] }))
+  const topologyEdges = pairs.map((pair) => ({
+    pair,
+    label: selectedEdges[pair]
+      ? 'Selected relationship evidence'
+      : 'Relationship evidence available',
+  }))
+  const selectedCandidateIds = Object.values(selectedEdges).filter(Boolean)
   const momentum = scanQuery.data?.momentum_generations.find(
-    (item) => item.venue === venue && item.horizon === horizon,
+    (item) => item.venue === effectiveVenue && item.horizon === effectiveHorizon,
   )
 
   const mutation = useMutation({
-    mutationFn: () =>
-      apiClient.runBasket({
-        scan_id: scanId,
-        venue,
-        horizon,
-        decision_resolution: resolution,
-        economic_assets: assets,
-        candidate_ids: Object.values(selectedEdges).filter(Boolean),
-        momentum_scan_id: momentum?.momentum_scan_id ?? null,
-      }),
+    mutationFn: (command: BasketRunRequestDto) => apiClient.runBasket(command),
     onSuccess: setOperation,
   })
 
-  const toggleAsset = (asset: string) => {
+  function resetSelection() {
+    setAssets([])
+    setSelectedEdges({})
+  }
+
+  function toggleAsset(asset: string) {
     setAssets((current) => {
       if (current.includes(asset)) {
         const next = current.filter((item) => item !== asset)
@@ -109,113 +206,267 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
     })
   }
 
-  const canRun = assets.length >= 3 && assets.length <= 6 && graphEdges.length > 0
+  function analyzePortfolio() {
+    if (!effectiveVenue || !effectiveHorizon || !effectiveResolution) return
+    mutation.mutate({
+      scan_id: scanId,
+      venue: effectiveVenue,
+      horizon: effectiveHorizon,
+      decision_resolution: effectiveResolution,
+      economic_assets: assets,
+      candidate_ids: selectedCandidateIds,
+      momentum_scan_id: momentum?.momentum_scan_id ?? null,
+    })
+  }
+
+  const canAnalyze =
+    Boolean(effectiveVenue && effectiveHorizon && effectiveResolution) &&
+    assets.length >= 3 &&
+    assets.length <= 6 &&
+    selectedCandidateIds.length > 0
 
   return (
     <section className="min-w-0">
       <header className="mb-8 max-w-4xl">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">Slice 3 portfolio research</p>
-        <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">Baskets</h1>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
+          Portfolios
+        </p>
+        <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+          Analyze a portfolio
+        </h1>
         <p className="m-0 text-sm leading-6 text-secondary md:text-base">
-          Draft 3–6 asset baskets locally, select admitted candidate edges, and submit one authoritative QAP basket run. No target is previewed before replay.
+          Select 3–6 assets, connect only relationships backed by admitted research
+          evidence, then let ordinary QAP produce the portfolio result. No target or
+          resolver opinion is previewed before replay.
         </p>
       </header>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
-        <section className="rounded-lg border border-border bg-panel p-5">
-          <h2 className="mt-0 text-lg font-semibold text-foreground">Local basket draft</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <select className="min-h-11 rounded-md border border-border bg-canvas px-3 text-sm text-foreground" value={scanId} onChange={(event) => { setScanId(event.target.value); setAssets([]); setSelectedEdges({}) }} aria-label="Source scan">
-              <option value="">Select scan</option>
-              {validScans.map((scan) => <option key={scan.scan_id} value={scan.scan_id}>{scan.horizons.join('/')} · {scan.scan_id.slice(0, 8)}</option>)}
-            </select>
-            <select className="min-h-11 rounded-md border border-border bg-canvas px-3 text-sm text-foreground" value={venue} onChange={(event) => { setVenue(event.target.value as Venue); setAssets([]); setSelectedEdges({}) }} aria-label="Venue">
-              <option value="binance">binance</option><option value="gate">gate</option>
-            </select>
-            <select className="min-h-11 rounded-md border border-border bg-canvas px-3 text-sm text-foreground" value={horizon} onChange={(event) => { setHorizon(event.target.value as Horizon); setAssets([]); setSelectedEdges({}) }} aria-label="Horizon">
-              <option value="short">short</option><option value="medium">medium</option><option value="swing">swing</option>
-            </select>
-            <input className="min-h-11 rounded-md border border-border bg-canvas px-3 text-foreground" value={resolution} onChange={(event) => { setResolution(event.target.value); setSelectedEdges({}) }} aria-label="Decision resolution" placeholder="1h" />
-          </div>
+      {validScans.length === 0 ? (
+        <p className="rounded-lg border border-border bg-panel p-5 text-secondary">
+          No valid discovery research is available yet. Find research ideas in Discover
+          before building a portfolio.
+        </p>
+      ) : (
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
+          <section className="rounded-lg border border-border bg-panel p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="mt-0 mb-1 text-lg font-semibold text-foreground">
+                  Select portfolio assets
+                </h2>
+                <p className="m-0 text-sm text-secondary">
+                  {scopeLabel(effectiveHorizon)} · {effectiveVenue ?? 'venue unavailable'} ·{' '}
+                  {effectiveResolution ?? 'resolution unavailable'} evidence
+                </p>
+              </div>
+              <Badge tone="info">3–6 assets</Badge>
+            </div>
 
-          <h3 className="mt-6 text-sm font-semibold text-foreground">Economic assets</h3>
-          <div className="flex flex-wrap gap-2">
-            {scopeAssets.map((asset) => (
-              <label key={asset} className="flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-sm">
-                <input type="checkbox" checked={assets.includes(asset)} onChange={() => toggleAsset(asset)} />{asset}
-              </label>
-            ))}
-          </div>
-          <p className="mt-2 text-xs text-muted">{assets.length}/6 selected; minimum 3.</p>
+            {scanQuery.isError || candidateQuery.isError ? (
+              <p className="mt-4 text-sm text-negative">
+                The selected research evidence could not be loaded.
+              </p>
+            ) : null}
 
-          <h3 className="mt-6 text-sm font-semibold text-foreground">One admitted rule per relationship</h3>
-          {pairs.length === 0 ? <p className="text-sm text-secondary">Select assets with admitted candidate evidence at this scope/resolution.</p> : (
-            <div className="space-y-3">
-              {pairs.map((pair) => {
-                const options = candidates.filter((item) => item.pair_id === pair)
-                return (
-                  <label key={pair} className="grid gap-2 rounded-md border border-border p-3 text-sm sm:grid-cols-[8rem_1fr] sm:items-center">
-                    <span className="font-semibold text-foreground">{pair}</span>
-                    <select className="min-h-11 rounded-md border border-border bg-canvas px-3 text-sm text-foreground" value={selectedEdges[pair] ?? ''} onChange={(event) => setSelectedEdges((current) => ({ ...current, [pair]: event.target.value }))}>
-                      <option value="">No edge selected</option>
-                      {options.map((candidate) => (
-                        <option key={candidate.candidate_id} value={candidate.candidate_id}>
-                          {candidate.model_family} · {candidate.template_id} · {candidate.orientation}{candidate.manual_pinned ? ' · manual' : ''}{candidate.deep_replay_status === 'setup_failed' && candidate.replay_failure_reason === 'unsupported_direct_market' ? ' · indirect' : ''}
-                        </option>
-                      ))}
-                    </select>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {scopeAssets.length === 0 ? (
+                <p className="text-sm text-secondary">
+                  No eligible assets exist in this compatible research scope.
+                </p>
+              ) : (
+                scopeAssets.map((asset) => (
+                  <label
+                    key={asset}
+                    className="flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={assets.includes(asset)}
+                      onChange={() => toggleAsset(asset)}
+                    />
+                    <span className="font-semibold text-foreground">{asset}</span>
                   </label>
-                )
-              })}
+                ))
+              )}
             </div>
-          )}
+            <p className="mt-2 text-xs text-muted">
+              {assets.length}/6 selected; choose at least 3.
+            </p>
 
-          <button type="button" className="mt-6 min-h-11 rounded-md bg-accent px-5 font-semibold text-canvas disabled:opacity-50" disabled={!canRun || mutation.isPending} onClick={() => mutation.mutate()}>
-            {mutation.isPending ? 'Starting…' : 'Run basket through QAP'}
-          </button>
-          {mutation.isError ? <p className="mt-3 text-sm text-negative">{mutation.error.message}</p> : null}
-          {operation ? <p className="mt-3 text-sm text-secondary">Operation started. <a className="font-semibold text-accent" href={`/operations/${operation.operation_id}`}>Track operation</a></p> : null}
-        </section>
+            <section className="mt-7" aria-labelledby="relationships-heading">
+              <h2 id="relationships-heading" className="text-lg font-semibold text-foreground">
+                Choose relationship evidence
+              </h2>
+              <p className="text-sm leading-6 text-secondary">
+                Each line in the topology means QAP has admitted relationship evidence for
+                that selected pair. Choose one admitted rule for any relationship you want
+                QAP to use; missing lines mean no admitted relationship exists in this scope.
+              </p>
 
-        <aside className="rounded-lg border border-border bg-panel p-5">
-          <div className="flex flex-wrap gap-2"><Badge tone="info">Pre-run topology only</Badge>{momentum ? <Badge tone="positive">Momentum available</Badge> : <Badge tone="warning">No momentum artifact</Badge>}</div>
-          <h2 className="mt-4 text-lg font-semibold text-foreground">Selected topology</h2>
-          <BasketGraph assets={assets} edges={graphEdges} />
-          <p className="text-sm leading-6 text-secondary">
-            This preview shows only selected assets and candidate relationships. Current edge opinions, resolver pressure, and final target weights do not exist authoritatively until ordinary QAP replay.
-          </p>
-          {momentum ? (
-            <div className="mt-4 border-t border-border pt-4">
-              <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">Pair-blind context</p>
-              <ul className="mt-2 space-y-1 pl-5 text-sm text-secondary">
-                {momentum.observations.filter((item) => assets.includes(item.asset_id) && item.status === 'valid').sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999)).map((item) => <li key={item.asset_id}>{item.asset_id}: rank {item.rank ?? '—'} · {item.relative_momentum?.toFixed(5) ?? '—'}</li>)}
-              </ul>
-            </div>
-          ) : null}
-        </aside>
-      </div>
-
-      <section className="mt-8" aria-labelledby="completed-baskets-heading">
-        <h2 id="completed-baskets-heading" className="text-xl font-semibold text-foreground">Completed baskets</h2>
-        {baskets.items.length === 0 ? (
-          <p className="text-sm text-secondary">No terminal basket evidence yet.</p>
-        ) : (
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            {baskets.items.map((basket) => (
-              <article key={basket.basket_id} className="rounded-lg border border-border bg-panel p-5">
-                <div className="flex flex-wrap gap-2">
-                  <Badge tone={basket.artifact_status === 'valid' ? 'positive' : 'negative'}>{basket.artifact_status}</Badge>
-                  {basket.economic_gate_status ? <Badge tone={basket.economic_gate_status.includes('survivor') ? 'positive' : 'warning'}>{basket.economic_gate_status}</Badge> : null}
+              {pairs.length === 0 ? (
+                <p className="text-sm text-secondary">
+                  Select assets that share admitted relationship evidence.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {pairs.map((pair) => {
+                    const options = candidates.filter((item) => item.pair_id === pair)
+                    const selected = options.find(
+                      (item) => item.candidate_id === selectedEdges[pair],
+                    )
+                    return (
+                      <article key={pair} className="rounded-md border border-border p-3">
+                        <label className="grid gap-2 text-sm sm:grid-cols-[8rem_1fr] sm:items-center">
+                          <span className="font-semibold text-foreground">{pair}</span>
+                          <select
+                            className="min-h-11 rounded-md border border-border bg-canvas px-3 text-sm text-foreground"
+                            value={selectedEdges[pair] ?? ''}
+                            onChange={(event) =>
+                              setSelectedEdges((current) => ({
+                                ...current,
+                                [pair]: event.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">Evidence available — do not use</option>
+                            {options.map((candidate) => (
+                              <option
+                                key={candidate.candidate_id}
+                                value={candidate.candidate_id}
+                              >
+                                {relationshipLabel(candidate)} · {candidate.model_family}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        {selected ? (
+                          <details className="mt-2 text-xs text-muted">
+                            <summary className="cursor-pointer font-semibold">
+                              Exact relationship rule
+                            </summary>
+                            <p className="mb-0 break-all font-mono">
+                              {selected.model_family} · {selected.template_id} ·{' '}
+                              {selected.orientation} · candidate {selected.candidate_id}
+                              {selected.manual_pinned ? ' · manual pin' : ''}
+                              {selected.deep_replay_status === 'setup_failed' &&
+                              selected.replay_failure_reason === 'unsupported_direct_market'
+                                ? ' · indirect/scout-only'
+                                : ''}
+                            </p>
+                          </details>
+                        ) : null}
+                      </article>
+                    )
+                  })}
                 </div>
-                <h3 className="mt-4 mb-2 text-base font-semibold text-foreground">{basket.economic_assets.join(' · ') || basket.basket_id.slice(0, 12)}</h3>
-                <p className="m-0 text-sm text-secondary">{basket.venue ?? '—'} / {basket.horizon ?? '—'} · {basket.decision_resolution ?? '—'}</p>
-                {basket.error ? <p className="mt-2 text-sm text-negative">{basket.error.message}</p> : null}
-                <a className="mt-4 inline-flex min-h-11 items-center font-semibold text-accent" href={`/baskets/${basket.basket_id}`}>Inspect basket</a>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
+              )}
+            </section>
+
+            <button
+              type="button"
+              className="mt-6 min-h-11 rounded-md bg-accent px-5 font-semibold text-canvas disabled:opacity-50"
+              disabled={!canAnalyze || mutation.isPending}
+              onClick={analyzePortfolio}
+            >
+              {mutation.isPending ? 'Starting…' : 'Analyze portfolio'}
+            </button>
+            {mutation.isError ? (
+              <p className="mt-3 text-sm text-negative">{mutation.error.message}</p>
+            ) : null}
+            {operation ? (
+              <p className="mt-3 text-sm text-secondary">
+                Portfolio analysis started.{' '}
+                <a
+                  className="font-semibold text-accent"
+                  href={`/operations/${operation.operation_id}`}
+                >
+                  Track it in Activity
+                </a>
+              </p>
+            ) : null}
+
+            <BasketScopeControls
+              scans={validScans}
+              scanId={scanId}
+              availableVenues={availableVenues}
+              venue={effectiveVenue}
+              availableHorizons={availableHorizons}
+              horizon={effectiveHorizon}
+              availableResolutions={availableResolutions}
+              resolution={effectiveResolution}
+              onScanChange={(nextScanId) => {
+                setScanId(nextScanId)
+                setVenueOverride('')
+                setHorizonOverride('')
+                setResolutionOverride('')
+                resetSelection()
+              }}
+              onVenueChange={(nextVenue) => {
+                setVenueOverride(nextVenue)
+                setHorizonOverride('')
+                setResolutionOverride('')
+                resetSelection()
+              }}
+              onHorizonChange={(nextHorizon) => {
+                setHorizonOverride(nextHorizon)
+                setResolutionOverride('')
+                resetSelection()
+              }}
+              onResolutionChange={(nextResolution) => {
+                setResolutionOverride(nextResolution)
+                resetSelection()
+              }}
+            />
+          </section>
+
+          <aside className="rounded-lg border border-border bg-panel p-5">
+            <div className="flex flex-wrap gap-2">
+              <Badge tone="info">Pre-run topology only</Badge>
+              <Badge tone="info">
+                {momentum ? 'Pair-blind context available' : 'No pair-blind context artifact'}
+              </Badge>
+            </div>
+            <h2 className="mt-4 text-lg font-semibold text-foreground">
+              Relationship availability
+            </h2>
+            <BasketGraph assets={assets} edges={topologyEdges} />
+            <p className="text-sm leading-6 text-secondary">
+              Lines show only admitted relationship evidence among the selected assets.
+              They do not preview direction, resolver pressure, or target weights.
+            </p>
+            <p className="text-xs text-muted">
+              {pairs.length} admitted relationship{pairs.length === 1 ? '' : 's'} available ·{' '}
+              {selectedCandidateIds.length} selected for analysis.
+            </p>
+
+            {momentum ? (
+              <div className="mt-4 border-t border-border pt-4">
+                <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+                  Pair-blind market context
+                </p>
+                <p className="mt-2 text-xs leading-5 text-muted">
+                  Context only — momentum is asset-level and is not relationship evidence.
+                </p>
+                <ul className="mt-2 space-y-1 pl-5 text-sm text-secondary">
+                  {momentum.observations
+                    .filter(
+                      (item) => assets.includes(item.asset_id) && item.status === 'valid',
+                    )
+                    .sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999))
+                    .map((item) => (
+                      <li key={item.asset_id}>
+                        {item.asset_id}: rank {item.rank ?? '—'} · relative momentum{' '}
+                        {item.relative_momentum?.toFixed(5) ?? '—'}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            ) : null}
+          </aside>
+        </div>
+      )}
+
+      <BasketResults baskets={baskets} />
     </section>
   )
 }

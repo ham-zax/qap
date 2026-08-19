@@ -17,47 +17,87 @@ function shortId(value: string) {
   return value.length <= 18 ? value : `${value.slice(0, 10)}…${value.slice(-6)}`
 }
 
+function gatePresentation(
+  artifactStatus: string,
+  economicGateStatus: string | null | undefined,
+): {
+  label: string
+  tone: 'positive' | 'info' | 'negative'
+  explanation: string
+} {
+  if (artifactStatus !== 'valid') {
+    return {
+      label: 'Research artifact invalid',
+      tone: 'negative',
+      explanation:
+        'QAP could not publish a valid portfolio research artifact. The recorded error remains authoritative.',
+    }
+  }
+  if (economicGateStatus === 'basket_development_survivor') {
+    return {
+      label: 'Passed basket development gates',
+      tone: 'positive',
+      explanation:
+        'QAP completed the portfolio replay and the persisted basket development gate classified it as a survivor.',
+    }
+  }
+  if (economicGateStatus === 'basket_development_rejected') {
+    return {
+      label: 'Did not pass basket development gates',
+      tone: 'info',
+      explanation:
+        'QAP completed the portfolio replay, but the persisted basket development gate rejected it. This is completed negative research, not an application error.',
+    }
+  }
+  return {
+    label: 'Portfolio research result',
+    tone: 'info',
+    explanation:
+      'QAP published portfolio research evidence. The exact persisted gate status is available in the audit disclosure below.',
+  }
+}
+
+function roleLabel(role: string) {
+  if (role === 'strategy') return 'Portfolio strategy'
+  if (role === 'hodl') return 'Buy-and-hold benchmark'
+  return role.replaceAll('_', ' ')
+}
+
+function relationshipLabel(edge: BasketDetailDto['selected_edges'][number]) {
+  if (edge.manual_pinned) return 'Manual research relationship'
+  if (edge.deep_replay_status === 'setup_failed') return 'Indirect research relationship'
+  if (edge.automatic_neighbor_selected) return 'Scanner-neighbor relationship'
+  return 'Selected research relationship'
+}
+
 export function BasketDetail({ basket, experiment, portfolio }: BasketDetailProps) {
   const summary = basket.summary
   const graphAudits = (portfolio?.rebalance_audit ?? []).filter((audit) =>
     audit.evidence_ids.some((id) => id.startsWith('basket-')),
   )
   const lastGraphAudit = graphAudits.at(-1) ?? null
-  const bridgeHoldings = portfolio?.terminal.holdings.filter(
-    (holding) => !summary.economic_assets.includes(holding.asset),
-  ) ?? []
-  const edges = basket.selected_edges.map((edge) => ({
+  const bridgeHoldings =
+    portfolio?.terminal.holdings.filter(
+      (holding) => !summary.economic_assets.includes(holding.asset),
+    ) ?? []
+  const graphEdges = basket.selected_edges.map((edge) => ({
     pair: edge.pair_id,
-    label: `${edge.model_family} · ${edge.template_id} · ${edge.candidate_orientation}`,
+    label: relationshipLabel(edge),
   }))
+  const verdict = gatePresentation(summary.artifact_status, summary.economic_gate_status)
 
   return (
     <section className="min-w-0">
       <header className="mb-8 max-w-4xl">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
-          Terminal basket evidence
+          Portfolio research result
         </p>
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          {summary.economic_assets.join(' · ') || `Basket ${shortId(summary.basket_id)}`}
+          {summary.economic_assets.join(' · ') || `Portfolio ${shortId(summary.basket_id)}`}
         </h1>
-        <div className="flex flex-wrap gap-2">
-          <Badge tone={summary.artifact_status === 'valid' ? 'positive' : 'negative'}>
-            {summary.artifact_status}
-          </Badge>
-          {summary.economic_gate_status ? (
-            <Badge
-              tone={summary.economic_gate_status.includes('survivor') ? 'positive' : 'warning'}
-            >
-              {summary.economic_gate_status}
-            </Badge>
-          ) : null}
-          {summary.forensic ? <Badge tone="warning">forensic basket</Badge> : null}
-        </div>
-        <p className="mt-3 mb-0 text-sm text-secondary">
-          {summary.venue} / {summary.horizon} · {summary.decision_resolution} · source scan{' '}
-          <a className="text-accent" href={`/scanner/${summary.source_scan_id}`}>
-            {summary.source_scan_id ? shortId(summary.source_scan_id) : 'unknown'}
-          </a>
+        <p className="m-0 text-sm leading-6 text-secondary md:text-base">
+          Read the persisted economic verdict first, compare the authoritative QAP
+          benchmark roles, then inspect the graph decision and execution evidence.
         </p>
       </header>
 
@@ -66,17 +106,17 @@ export function BasketDetail({ basket, experiment, portfolio }: BasketDetailProp
           ...(summary.source_scan_id
             ? [
                 {
-                  label: 'scan',
+                  label: 'historical research',
                   value: summary.source_scan_id,
                   href: `/scanner/${summary.source_scan_id}`,
                 },
               ]
             : []),
-          { label: 'basket', value: summary.basket_id },
+          { label: 'portfolio research', value: summary.basket_id },
           ...(summary.qap_run_id
             ? [
                 {
-                  label: 'QAP',
+                  label: 'QAP result',
                   value: summary.qap_run_id,
                   href: `/experiments/${summary.qap_run_id}`,
                 },
@@ -85,71 +125,53 @@ export function BasketDetail({ basket, experiment, portfolio }: BasketDetailProp
         ]}
       />
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(20rem,0.8fr)_minmax(0,1.2fr)]">
-        <article className="rounded-lg border border-border bg-panel p-5">
-          <h2 className="mt-0 text-lg font-semibold text-foreground">Relationship graph</h2>
-          <BasketGraph assets={[...summary.economic_assets]} edges={edges} />
-          <ul className="mt-4 space-y-3 pl-5 text-sm text-secondary">
-            {basket.selected_edges.map((edge) => (
-              <li key={edge.candidate_id}>
-                <a
-                  className="font-semibold text-accent"
-                  href={`/candidate/${summary.source_scan_id}/${edge.candidate_id}`}
-                >
-                  {edge.pair_id}
-                </a>{' '}
-                · {edge.model_family} / {edge.template_id} · {edge.candidate_orientation}
-                {edge.manual_pinned ? ' · manual pin' : ''}
-                {edge.deep_replay_status === 'setup_failed' ? ' · scout-only indirect' : ''}
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article className="rounded-lg border border-border bg-panel p-5">
-          <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-            Authoritative resolver state
-          </p>
-          <h2 className="mt-2 text-lg font-semibold text-foreground">Latest QAP graph decision</h2>
-          {lastGraphAudit ? (
-            <>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {Object.entries(lastGraphAudit.target_weights ?? {}).map(([asset, weight]) => (
-                  <div key={asset} className="rounded-md border border-border p-3">
-                    <p className="m-0 text-xs text-muted">{asset} target</p>
-                    <p className="mt-1 mb-0 font-semibold tabular-nums text-foreground">{weight}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 rounded-md border border-border bg-subtle p-4">
-                <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">Decision evidence</p>
-                <ul className="mt-2 space-y-1 pl-5 text-xs text-secondary">
-                  {lastGraphAudit.evidence_ids.filter((id) => id.startsWith('basket-')).map((id) => (
-                    <li key={id} className="break-all">{id}</li>
-                  ))}
-                </ul>
-              </div>
-              <p className="mt-4 mb-0 text-xs text-muted">
-                These opinions/resolver inputs/targets are read from the authoritative QAP decision event. React does not recompute them.
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-secondary">
-              No graph decision audit is available for this terminal run.
-            </p>
-          )}
-        </article>
-      </div>
+      <article className="mt-6 rounded-lg border border-border bg-panel p-5">
+        <div className="flex flex-wrap gap-2">
+          <Badge tone={verdict.tone}>{verdict.label}</Badge>
+          {summary.forensic ? <Badge tone="warning">Forensic research</Badge> : null}
+        </div>
+        <h2 className="mt-4 mb-2 text-xl font-semibold text-foreground">
+          Research verdict
+        </h2>
+        <p className="m-0 max-w-4xl text-sm leading-6 text-secondary">
+          {verdict.explanation}
+        </p>
+        {summary.error ? (
+          <p className="mt-3 mb-0 text-sm text-negative">{summary.error.message}</p>
+        ) : null}
+        <p className="mt-4 mb-0 text-xs leading-5 text-muted">
+          Research result only — QAP does not place or authorize live trades.
+        </p>
+      </article>
 
       <section className="mt-8" aria-labelledby="benchmark-heading">
-        <h2 id="benchmark-heading" className="text-xl font-semibold text-foreground">Benchmark ladder</h2>
+        <div className="max-w-3xl">
+          <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+            Authoritative QAP comparison
+          </p>
+          <h2 id="benchmark-heading" className="mt-2 text-xl font-semibold text-foreground">
+            Benchmark comparison
+          </h2>
+          <p className="text-sm leading-6 text-secondary">
+            These terminal values and modeled costs come directly from persisted QAP
+            result roles. The browser does not calculate a substitute portfolio score.
+          </p>
+        </div>
         {experiment ? (
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {experiment.result.roles.map((role) => (
               <article key={role.role} className="rounded-lg border border-border bg-panel p-4">
-                <p className="m-0 text-xs text-muted">{role.role}</p>
-                <p className="mt-2 mb-0 text-lg font-semibold tabular-nums text-foreground">{role.terminal_value}</p>
-                <p className="mt-1 mb-0 text-xs text-secondary">fees {role.fees_value} · slippage {role.slippage_value} · fills {role.fill_count}</p>
+                <p className="m-0 text-sm font-semibold text-foreground">
+                  {roleLabel(role.role)}
+                </p>
+                <p className="mt-1 mb-0 font-mono text-[11px] text-muted">{role.role}</p>
+                <p className="mt-3 mb-0 text-lg font-semibold tabular-nums text-foreground">
+                  {role.terminal_value}
+                </p>
+                <p className="mt-1 mb-0 text-xs leading-5 text-secondary">
+                  fees {role.fees_value} · slippage {role.slippage_value} · fills{' '}
+                  {role.fill_count}
+                </p>
               </article>
             ))}
           </div>
@@ -158,22 +180,173 @@ export function BasketDetail({ basket, experiment, portfolio }: BasketDetailProp
         )}
       </section>
 
+      <section className="mt-8" aria-labelledby="decision-heading">
+        <h2 id="decision-heading" className="text-xl font-semibold text-foreground">
+          Why QAP chose this portfolio state
+        </h2>
+        <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(20rem,0.9fr)_minmax(0,1.1fr)]">
+          <article className="rounded-lg border border-border bg-panel p-5">
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+              Authoritative graph decision
+            </p>
+            {lastGraphAudit ? (
+              <>
+                <p className="mt-3 text-sm leading-6 text-secondary">
+                  {lastGraphAudit.reason}
+                </p>
+                <h3 className="mt-5 text-sm font-semibold text-foreground">
+                  Persisted target weights
+                </h3>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {Object.entries(lastGraphAudit.target_weights ?? {}).map(([asset, weight]) => (
+                    <div key={asset} className="rounded-md border border-border p-3">
+                      <p className="m-0 text-xs text-muted">{asset}</p>
+                      <p className="mt-1 mb-0 font-semibold tabular-nums text-foreground">
+                        {weight}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-4 mb-0 text-xs leading-5 text-muted">
+                  Resolver opinion and targets are shown only after ordinary QAP replay.
+                  React does not recompute them.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-secondary">
+                No graph decision audit is available for this terminal run.
+              </p>
+            )}
+          </article>
+
+          <article className="rounded-lg border border-border bg-panel p-5">
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+              Relationships used
+            </p>
+            <BasketGraph assets={[...summary.economic_assets]} edges={graphEdges} />
+            <div className="mt-4 space-y-3">
+              {basket.selected_edges.map((edge) => (
+                <details key={edge.candidate_id} className="rounded-md border border-border p-3">
+                  <summary className="cursor-pointer text-sm font-semibold text-foreground">
+                    {edge.pair_id} · {relationshipLabel(edge)}
+                  </summary>
+                  <p className="mt-3 mb-0 text-xs leading-5 text-secondary">
+                    Exact rule: <span className="font-mono">{edge.model_family}</span> ·{' '}
+                    <span className="font-mono">{edge.template_id}</span> · orientation{' '}
+                    <span className="font-mono">{edge.candidate_orientation}</span>
+                    {edge.manual_pinned ? ' · manual pin' : ''}
+                    {edge.deep_replay_status === 'setup_failed'
+                      ? ' · indirect/scout-only'
+                      : ''}
+                  </p>
+                  <a
+                    className="mt-2 inline-flex text-xs font-semibold text-accent"
+                    href={`/candidate/${summary.source_scan_id}/${edge.candidate_id}`}
+                  >
+                    Open relationship evidence
+                  </a>
+                </details>
+              ))}
+            </div>
+          </article>
+        </div>
+      </section>
+
       {bridgeHoldings.length ? (
-        <section className="mt-8 rounded-lg border border-border bg-panel p-5" aria-labelledby="bridge-heading">
-          <h2 id="bridge-heading" className="mt-0 text-lg font-semibold text-foreground">Execution-only bridge residue</h2>
-          <p className="text-sm text-secondary">Bridge holdings are shown separately from the declared economic basket.</p>
+        <section
+          className="mt-8 rounded-lg border border-border bg-panel p-5"
+          aria-labelledby="bridge-heading"
+        >
+          <h2 id="bridge-heading" className="mt-0 text-lg font-semibold text-foreground">
+            Execution-only bridge residue
+          </h2>
+          <p className="text-sm text-secondary">
+            Bridge holdings remain separate from the declared economic portfolio.
+          </p>
           {bridgeHoldings.map((holding) => (
             <p key={holding.asset} className="mb-0 text-sm text-secondary">
-              <strong className="text-foreground">{holding.asset}</strong> · quantity {holding.quantity} · value {holding.value}
+              <strong className="text-foreground">{holding.asset}</strong> · quantity{' '}
+              {holding.quantity} · value {holding.value}
             </p>
           ))}
         </section>
       ) : null}
 
+      <details className="mt-8 rounded-lg border border-border bg-panel p-5">
+        <summary className="cursor-pointer font-semibold text-foreground">
+          Exact research and execution audit
+        </summary>
+        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <dt className="text-xs text-muted">Source research</dt>
+            <dd className="m-0 mt-1 break-all font-mono text-xs text-secondary">
+              {summary.source_scan_id ?? 'unknown'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">Scope</dt>
+            <dd className="m-0 mt-1 text-secondary">
+              {summary.venue ?? '—'} · {summary.horizon ?? '—'} ·{' '}
+              {summary.decision_resolution ?? '—'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">Exact economic gate</dt>
+            <dd className="m-0 mt-1 font-mono text-xs text-secondary">
+              {summary.economic_gate_status ?? 'none'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">Attempt status</dt>
+            <dd className="m-0 mt-1 font-mono text-xs text-secondary">
+              {summary.attempt_status ?? 'none'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">QAP run</dt>
+            <dd className="m-0 mt-1 break-all font-mono text-xs text-secondary">
+              {summary.qap_run_id ?? 'none'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">Basket ID</dt>
+            <dd className="m-0 mt-1 break-all font-mono text-xs text-secondary">
+              {summary.basket_id}
+            </dd>
+          </div>
+        </dl>
+        {lastGraphAudit ? (
+          <div className="mt-5 border-t border-border pt-4">
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+              Decision evidence IDs
+            </p>
+            <ul className="mt-2 space-y-1 pl-5 text-xs text-secondary">
+              {lastGraphAudit.evidence_ids
+                .filter((id) => id.startsWith('basket-'))
+                .map((id) => (
+                  <li key={id} className="break-all font-mono">
+                    {id}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ) : null}
+      </details>
+
       {summary.qap_run_id ? (
-        <nav className="mt-8 flex flex-wrap gap-3" aria-label="Basket evidence links">
-          <a className="inline-flex min-h-11 items-center rounded-md bg-accent px-4 font-semibold text-canvas" href={`/experiments/${summary.qap_run_id}`}>Experiment detail</a>
-          <a className="inline-flex min-h-11 items-center rounded-md border border-border px-4 font-semibold text-accent" href={`/portfolio/${summary.qap_run_id}`}>Portfolio economics</a>
+        <nav className="mt-8 flex flex-wrap gap-3" aria-label="Portfolio evidence links">
+          <a
+            className="inline-flex min-h-11 items-center rounded-md bg-accent px-4 font-semibold text-canvas"
+            href={`/experiments/${summary.qap_run_id}`}
+          >
+            Full research result
+          </a>
+          <a
+            className="inline-flex min-h-11 items-center rounded-md border border-border px-4 font-semibold text-accent"
+            href={`/portfolio/${summary.qap_run_id}`}
+          >
+            Portfolio economics
+          </a>
         </nav>
       ) : null}
     </section>
