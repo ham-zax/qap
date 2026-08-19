@@ -1,13 +1,19 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { ExperimentList } from '../features/experiments/ExperimentList'
+import { HomeWorkspace } from '../features/home/HomeWorkspace'
 
 export const Route = createFileRoute('/')({
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(context.queries.experiments()),
+  loader: async ({ context }) => {
+    const [experiments, operations, forwardCohorts] = await Promise.all([
+      context.queryClient.ensureQueryData(context.queries.experiments()),
+      context.queryClient.ensureQueryData(context.queries.operations()),
+      context.queryClient.ensureQueryData(context.queries.forwardCohorts()),
+    ])
+    return { experiments, forwardCohorts, operations }
+  },
   component: HomeRoute,
 })
 
 function HomeRoute() {
-  return <ExperimentList data={Route.useLoaderData()} />
+  return <HomeWorkspace {...Route.useLoaderData()} />
 }

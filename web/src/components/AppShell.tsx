@@ -27,23 +27,23 @@ export function AppShell({ children }: AppShellProps) {
           className="flex w-full flex-row flex-wrap gap-2 md:w-auto md:flex-nowrap"
           aria-label="Primary navigation"
         >
+          <Link activeOptions={{ exact: true }} className={navLinkClass} to="/">
+            Home
+          </Link>
           <Link className={navLinkClass} to="/scanner">
-            Discovery
+            Discover
           </Link>
           <Link className={navLinkClass} to="/prospective">
-            Prospective
+            Validate
           </Link>
           <Link className={navLinkClass} to="/baskets">
-            Baskets
+            Portfolios
           </Link>
           <Link className={navLinkClass} to="/experiments">
-            Research runs
+            Results
           </Link>
           <Link className={navLinkClass} to="/operations">
-            Operations
-          </Link>
-          <Link className={navLinkClass} to="/paper-operations">
-            Paper operations
+            Activity
           </Link>
         </nav>
       </header>
