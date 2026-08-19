@@ -1,12 +1,12 @@
 # QAP Phase 16 — Implementation Summary and Handoff
 
-> Current continuation: M2 and M3 are complete; M4 stopped at its backend capture-readiness boundary. Continue from [the M4 boundary handoff](2026-08-19-qap-phase16-m4-boundary-stop-handoff.md), not from the older M2 start instructions below.
+> Closed handoff: Phase 16 is complete through M8. The M4 backend capture-readiness boundary fired, was resolved by the smallest bounded read composition, and the remaining milestones were completed without reopening QAP scientific/economic authority. The guidance below is retained as implementation history, not as an instruction to continue Phase 16.
 
 Update context — 2026-08-19
-Trigger: Phase 16 current-state UX investigation and terminology/information-architecture checkpoint are complete.
-Purpose: Give a fresh implementation agent one authoritative starting point for executing the human-centered workbench re-architecture without replaying prior design work or reopening scientific/backend contracts.
-Impact: Documentation-only handoff. No runtime contract changes.
-Evidence: `main` at `d5f362e`; `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`; `docs/plans/16-human-centered-workbench-ux-rearchitecture.md`.
+Trigger: Phase 16 current-state UX investigation, implementation, and M8 human-centered closure are complete.
+Purpose: Preserve the implemented contracts, milestone history, and boundary decisions so future work does not replay Phase 16 or accidentally reopen scientific/backend authority.
+Impact: Closed implementation handoff. Any later product wave requires explicit new scope.
+Evidence: milestone commits `eb40327`, `b1cce7a`, `6c6dc57`, `fdc661e`, `7841a50`, and `75d832a`; `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`; `docs/plans/16-human-centered-workbench-ux-rearchitecture.md`.
 
 ## 1. Start here
 
@@ -32,7 +32,7 @@ fc14d29 docs: define phase16 human-centered workbench
 
 The executable Slice-4 application is complete. Phase 16 is a **presentation/information-architecture re-architecture over that completed application**, not a new research-engine slice.
 
-Do not restart Slice 4. Do not repeat M0/M1. Begin at **Phase 16 M2 — Goal-oriented Home and shell**.
+Do not restart Slice 4 or Phase 16. M0–M8 are complete; use this document only to preserve the frozen presentation and authority boundaries unless a later explicitly scoped phase supersedes them.
 
 ## 2. Read these documents in this order
 
@@ -216,7 +216,7 @@ raw enum/status names
 
 Do not delete any of this evidence. Move it below the information required for the user's immediate decision.
 
-## 8. Immediate next milestone — M2 Home + shell
+## 8. Historical M2 guidance — Home + shell
 
 ### Existing code reality
 
@@ -540,11 +540,11 @@ Do not:
 - introduce route migrations without a demonstrated navigation requirement;
 - polish the whole visual system before M2–M6 information hierarchy is correct.
 
-## 18. Copy-paste mission for a fresh agent
+## 18. Closed-state mission for a fresh agent
 
-Use the following as the starting mission:
+If a fresh agent needs to inspect or extend the workbench later, use the following guardrail:
 
-> Work in `/home/hamza/repo/qap` on `main`. Start by checking current HEAD/working-tree state and preserve any legitimate concurrent changes. Read `docs/research/2026-08-19-qap-phase16-implementation-handoff.md`, `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`, and `docs/plans/16-human-centered-workbench-ux-rearchitecture.md`. Phase 16 M0 and M1 are complete; the IA `Home / Discover / Validate / Portfolios / Results / Activity` and terminology contract are frozen as the current provisional baseline. Do not redo UX discovery or reopen those decisions without contradictory user evidence. Before source mutation invoke Causal Coding, Ponytail, and MCP Harness Router. Implement Phase 16 sequentially starting at M2 Home + shell, using existing React/TanStack/FastAPI contracts and stable routes, preserving all scientific/economic authority and negative evidence. Checkpoint each milestone before proceeding. Only consider a backend composition change if the explicit M4 current-evidence capture boundary fails. Continue through M8 closure, then stop; do not invent new product scope.
+> Work in `/home/hamza/repo/qap` on `main`. Start by checking current HEAD/working-tree state and preserve any legitimate concurrent changes. Read `docs/research/2026-08-19-qap-phase16-implementation-handoff.md`, `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`, and `docs/plans/16-human-centered-workbench-ux-rearchitecture.md`. Phase 16 M0–M8 are complete. Preserve the implemented IA `Home / Discover / Validate / Portfolios / Results / Activity`, progressive-disclosure vocabulary, stable specialist routes, negative evidence, and backend-owned scientific/economic authority. Do not treat this handoff as authorization for Phase 17 or another redesign. Any new implementation requires an explicitly scoped request and must respect the Phase-16 boundaries unless the user deliberately changes them.
 
 ## 19. One-screen status summary
 
@@ -552,17 +552,16 @@ Use the following as the starting mission:
 Research engine / Slices 1–4     ✅ complete
 Phase 16 M0 UX investigation     ✅ complete
 Phase 16 M1 IA/terminology       ✅ frozen provisional baseline
+Phase 16 M2 Home + shell          ✅ complete
+Phase 16 M3 Discover + Idea       ✅ complete
+Phase 16 M4 Validate + Capital    ✅ complete
+Phase 16 M5 Portfolio flow        ✅ complete
+Phase 16 M6 Results + Activity    ✅ complete
+Phase 16 M7 visual convergence    ✅ complete
+Phase 16 M8 closure               ✅ complete
 
 NEXT
-Phase 16 M2 Home + shell
-
-THEN
-M3 Discover + Research Idea
-M4 Forward Validation + Capital
-M5 Portfolio builder + result
-M6 Results + Activity
-M7 visual-system convergence
-M8 human-centered closure
+No Phase-16 work. Define new scope explicitly.
 
 PRIMARY IA
 Home | Discover | Validate | Portfolios | Results | Activity

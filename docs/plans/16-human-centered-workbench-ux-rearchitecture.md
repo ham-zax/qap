@@ -446,16 +446,29 @@ If authoritative existing read models do not provide enough information for Reac
 
 ## 14. Milestone 8 — Human-centered acceptance and closure
 
+**Status:** complete on 2026-08-19.
+
 This phase is not complete merely because the redesigned pages render.
 
 **Required evaluation:**
 
-- walk the four canonical journeys from the investigation;
-- perform a cognitive walkthrough from a novice perspective;
-- confirm the user can distinguish operation failure from scientific rejection;
-- confirm the user can distinguish historical, forward, and current evidence;
-- confirm no user-facing wording implies live-trading authority;
-- confirm advanced/audit evidence remains discoverable.
+- [x] Walk the four canonical journeys from the investigation.
+- [x] Perform a cognitive walkthrough from a novice perspective.
+- [x] Confirm the user can distinguish operation failure from scientific rejection.
+- [x] Confirm the user can distinguish historical, forward, and current evidence.
+- [x] Confirm no user-facing wording implies live-trading authority.
+- [x] Confirm advanced/audit evidence remains discoverable.
+
+**Closure evidence:**
+
+- Discover → Research Idea was walked with deterministic survivor evidence: the historical verdict and comparison context precede protocol/audit details, and forward validation is the next valid action.
+- Forward Validation was walked across the freeze/later/current-evidence boundaries. An intentionally failed background operation remained visibly operational rather than being converted into a research rejection. Backend-owned capture readiness supplied the authoritative BTC/ETH venue identity and complete L1/depth/metadata readiness before the current-capital step was enabled.
+- Portfolio analysis was walked with a persisted rejected result. Pre-run presentation exposed relationship availability/topology without resolver targets; post-run presentation led with the negative economic verdict and retained authoritative HODL/control/resolver evidence. The rejection remained valid completed research rather than an application failure.
+- Home → Activity/Results resume and audit was walked with both failed operational work and persisted positive/neutral/negative research evidence. Exact operation kinds, request IDs, and scientific lineage remained discoverable under disclosure.
+- Desktop and 390×844 mobile rendered checks found no horizontal document overflow on the sampled canonical surfaces and no axe WCAG A/AA violations. The portfolio SVG labels remained an axe manual-review item because the tool cannot resolve the SVG/current-color combination; the rendered labels use the high-contrast foreground token on the panel node fill.
+- The production frontend build and source-size gate were green after the final executable Phase-16 changes. No tests were created, modified, or run during this closure because testing was not independently authorized.
+
+**Capital-assessment coverage note:** the deterministic browser fixture currently live-exercises `research_only`. The state owner and `ProspectiveAssessmentResults` presenter implement all three authoritative states — `research_only`, `small_capacity`, and `tradable_now` — including the smaller-capacity ceiling and the mandatory no-live-authority text for `tradable_now`; however, `small_capacity` and `tradable_now` do not currently have deterministic browser-fixture coverage. Phase 16 records that limitation rather than fabricating end-to-end evidence.
 
 When real stakeholder/user sessions are available, record observations using the metrics defined in the investigation rather than inventing conversion targets.
 
@@ -512,19 +525,19 @@ M1 terminology + IA stakeholder checkpoint      ✅ provisional freeze
         ↓
 DESIGN FREEZE                                   ✅
         ↓
-M2 Home + shell
+M2 Home + shell                                 ✅
         ↓
-M3 Discover + Research Idea
+M3 Discover + Research Idea                     ✅
         ↓
-M4 Forward Validation + Capital Assessment
+M4 Forward Validation + Capital Assessment      ✅
         ↓
-M5 Portfolio builder + result
+M5 Portfolio builder + result                   ✅
         ↓
-M6 Results + Activity
+M6 Results + Activity                           ✅
         ↓
-M7 visual-system convergence
+M7 visual-system convergence                    ✅
         ↓
-M8 human-centered + repository/browser closure
+M8 human-centered + repository/browser closure  ✅
 ```
 
 Do not begin broad visual polish before M2–M6 have established the information hierarchy. Do not reopen QAP research-engine architecture merely because an internal term is hard to explain; solve presentation first, then escalate only if the existing application boundary truly cannot support the user task safely.
