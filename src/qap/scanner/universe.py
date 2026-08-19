@@ -15,6 +15,7 @@ from qap.market import (
     lifecycle_source_priority,
 )
 from qap.scanner.catalog import ScannerSourceSpec
+from qap.scanner.current_scope import CURRENT_APPROVED_UNIVERSE_POLICY_VERSION
 from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon, ScannerProtocol
 from qap.scanner.slices import EvaluatedSeries
 
@@ -23,6 +24,7 @@ class HistoricalEligibilityState(StrEnum):
     KNOWN_ELIGIBLE = "known_eligible"
     KNOWN_INELIGIBLE = "known_ineligible"
     HISTORICAL_ELIGIBILITY_UNKNOWN = "historical_eligibility_unknown"
+    CURRENT_APPROVED = "current_approved_current_survivor"
 
 
 @dataclass(frozen=True, slots=True)
@@ -335,12 +337,26 @@ def build_venue_horizon_universe(
             )
         seen_assets.add(source.base_asset)
 
-        decision = classify_historical_eligibility(
-            lifecycle,
-            required_start=evaluated.window_start,
-            required_end=evaluated.eligible_information_end,
+        current_approved = (
+            protocol.universe_policy_version == CURRENT_APPROVED_UNIVERSE_POLICY_VERSION
         )
-        automatic = decision.state is HistoricalEligibilityState.KNOWN_ELIGIBLE
+        decision = (
+            EligibilityDecision(
+                state=HistoricalEligibilityState.CURRENT_APPROVED,
+                reason="current_approved_scope",
+                evidence_ids=(),
+            )
+            if current_approved
+            else classify_historical_eligibility(
+                lifecycle,
+                required_start=evaluated.window_start,
+                required_end=evaluated.eligible_information_end,
+            )
+        )
+        automatic = decision.state in {
+            HistoricalEligibilityState.KNOWN_ELIGIBLE,
+            HistoricalEligibilityState.CURRENT_APPROVED,
+        }
         reason = decision.reason
         if source.quote_asset != protocol.quote_asset:
             automatic = False

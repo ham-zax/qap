@@ -92,7 +92,7 @@ def _canonical_json_bytes(payload: object) -> bytes:
 
 
 def _definition_bytes(definition: ScanDefinition) -> bytes:
-    payload = definition.model_dump(mode="json")
+    payload = definition.model_dump(mode="json", exclude_none=True)
     payload["scan_id"] = definition.scan_id
     return _canonical_json_bytes(payload)
 

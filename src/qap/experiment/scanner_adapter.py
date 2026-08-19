@@ -149,6 +149,8 @@ def _validate_candidate_contract(
 def _direct_source_spec(
     catalog: ScannerCatalog,
     trial: ScannerTrial,
+    *,
+    allowed_dataset_ids: frozenset[str] | None = None,
 ) -> ScannerSourceSpec:
     candidate_assets = {trial.asset_a.key, trial.asset_b.key}
     matches = tuple(
@@ -157,6 +159,7 @@ def _direct_source_spec(
         if source.venue == trial.venue
         and source.interval == trial.resolution.label
         and {source.base_asset, source.quote_asset} == candidate_assets
+        and (allowed_dataset_ids is None or source.dataset_id in allowed_dataset_ids)
     )
     if not matches:
         raise ScannerReplaySetupError(
@@ -276,6 +279,7 @@ def prepare_scanner_replay_manifest(
     catalog: ScannerCatalog,
     data_root: str | Path,
     protocol: ScannerProtocol = SCANNER_V1_SLICE1,
+    allowed_direct_dataset_ids: frozenset[str] | None = None,
 ) -> PreparedScannerReplay:
     """Build one direct-market development manifest from a durably enumerated trial."""
 
@@ -288,7 +292,11 @@ def prepare_scanner_replay_manifest(
     _require_enumerated_attempt(generation, attempt_id=attempt_id, trial=trial)
     _validate_candidate_contract(generation, trial, catalog, protocol)
 
-    direct_spec = _direct_source_spec(catalog, trial)
+    direct_spec = _direct_source_spec(
+        catalog,
+        trial,
+        allowed_dataset_ids=allowed_direct_dataset_ids,
+    )
     try:
         direct = resolve_catalog_source(
             catalog,
@@ -509,6 +517,7 @@ def run_scanner_candidate_replay(
     run_root: str | Path,
     run_timestamp: datetime | None = None,
     protocol: ScannerProtocol = SCANNER_V1_SLICE1,
+    allowed_direct_dataset_ids: frozenset[str] | None = None,
 ) -> ScannerReplayOutcome:
     """Execute one eligible scanner candidate through ordinary QAP artifacts."""
 
@@ -520,6 +529,7 @@ def run_scanner_candidate_replay(
             catalog=catalog,
             data_root=data_root,
             protocol=protocol,
+            allowed_direct_dataset_ids=allowed_direct_dataset_ids,
         )
     except ScannerReplaySetupError as exc:
         return _setup_failure_outcome(

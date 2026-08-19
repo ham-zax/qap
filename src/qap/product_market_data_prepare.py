@@ -121,7 +121,7 @@ def _binance_dataset_id(
     )
 
 
-def _dataset_id(
+def product_dataset_id(
     instrument: ResolvedProductInstrument,
     interval: BarInterval,
 ) -> str:
@@ -365,7 +365,9 @@ class ProductMarketDataPreparation:
                             now=operation_now,
                         )
                         start = end_exclusive - requirement.lookback
-                        dataset_id = _dataset_id(instrument, requirement.interval)
+                        dataset_id = product_dataset_id(
+                            instrument, requirement.interval
+                        )
                         generation = self._extended_generation(
                             scope=scope,
                             instrument=instrument,
@@ -420,4 +422,5 @@ __all__ = [
     "ProductMarketDataPreparationError",
     "ProductMarketDataRequirement",
     "market_data_requirements",
+    "product_dataset_id",
 ]

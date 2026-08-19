@@ -20,6 +20,7 @@ from qap.api.routes import (
     paper_operations,
     portfolios_router,
     product_market_data_router,
+    product_research_router,
     research_universe_router,
     scanner_router,
     workspace_router,
@@ -27,6 +28,7 @@ from qap.api.routes import (
 from qap.api.scanner_views import ScannerArtifactReader
 from qap.api.schemas import ErrorDetailDto, ErrorEnvelopeDto
 from qap.api.settings import ApiSettings
+from qap.product_current_approved import CurrentApprovedResearch
 from qap.product_market_data import ProductMarketData
 from qap.product_market_data_prepare import ProductMarketDataPreparation
 from qap.product_universe import ProductUniverse
@@ -77,6 +79,10 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.state.product_universe = product_universe
     app.state.product_market_data = product_market_data
     app.state.product_market_data_preparation = ProductMarketDataPreparation(
+        product_universe,
+        product_market_data,
+    )
+    app.state.current_approved_research = CurrentApprovedResearch(
         product_universe,
         product_market_data,
     )
@@ -159,6 +165,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.include_router(workspace_router)
     app.include_router(research_universe_router)
     app.include_router(product_market_data_router)
+    app.include_router(product_research_router)
     app.include_router(experiments_router)
     app.include_router(portfolios_router)
     app.include_router(pairs_router)

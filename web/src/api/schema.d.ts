@@ -396,6 +396,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/product-research": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Current Approved Research */
+        post: operations["runCurrentApprovedResearch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/product-research/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Current Approved Readiness */
+        get: operations["getCurrentApprovedResearchReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/qualifications": {
         parameters: {
             query?: never;
@@ -1113,6 +1147,67 @@ export interface components {
             /** Turnover Value */
             turnover_value: string;
         };
+        /** CurrentApprovedReadinessDto */
+        CurrentApprovedReadinessDto: {
+            /** Approved Asset Count */
+            approved_asset_count: number;
+            /** Assets */
+            assets: components["schemas"]["ResearchAssetReadinessDto"][];
+            /** Catalog Identity */
+            catalog_identity: string | null;
+            /** Claim Id */
+            claim_id: string;
+            /** Claim Identity */
+            claim_identity: string;
+            /** Claim Label */
+            claim_label: string;
+            /** Direct Markets */
+            direct_markets: components["schemas"]["DirectMarketReadinessDto"][];
+            /** Directory Id */
+            directory_id: string | null;
+            /** Directory Observed At */
+            directory_observed_at: string | null;
+            /**
+             * Horizon
+             * @enum {string}
+             */
+            horizon: "short" | "medium" | "swing";
+            maintenance: components["schemas"]["MarketDataMaintenanceDto"];
+            /** Readiness Id */
+            readiness_id: string;
+            /** Ready Asset Count */
+            ready_asset_count: number;
+            /** Ready For Research */
+            ready_for_research: boolean;
+            /** Ready Path Count */
+            ready_path_count: number;
+            /** Ready Venues */
+            ready_venues: ("binance" | "gate")[];
+            /** Reasons */
+            reasons: components["schemas"]["ReadinessReasonDto"][];
+            /** Safe Cutoff */
+            safe_cutoff: string | null;
+            /** Scanner Protocol Id */
+            scanner_protocol_id: string;
+            /** Scanner Protocol Identity */
+            scanner_protocol_identity: string;
+            /**
+             * Schema Version
+             * @default qap.api.current_approved_readiness.v1
+             * @constant
+             */
+            schema_version: "qap.api.current_approved_readiness.v1";
+        };
+        /** CurrentApprovedResearchRequestDto */
+        CurrentApprovedResearchRequestDto: {
+            /**
+             * Horizon
+             * @enum {string}
+             */
+            horizon: "short" | "medium" | "swing";
+            /** Readiness Id */
+            readiness_id: string;
+        };
         /**
          * DataRole
          * @enum {string}
@@ -1148,6 +1243,29 @@ export interface components {
             dataset_id: string;
             /** Fingerprint */
             fingerprint: string;
+        };
+        /** DirectMarketReadinessDto */
+        DirectMarketReadinessDto: {
+            /** Asset A */
+            asset_a: string;
+            /** Asset B */
+            asset_b: string;
+            /** Generations */
+            generations: components["schemas"]["GenerationBindingDto"][];
+            /** Reasons */
+            reasons: components["schemas"]["ReadinessReasonDto"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "unavailable" | "history_missing" | "history_insufficient";
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+            /** Venue Symbol */
+            venue_symbol: string | null;
         };
         /** DirectorySourceDto */
         DirectorySourceDto: {
@@ -1570,6 +1688,15 @@ export interface components {
             horizon: "short" | "medium" | "swing";
             /** Scan Id */
             scan_id: string;
+        };
+        /** GenerationBindingDto */
+        GenerationBindingDto: {
+            /** Dataset Id */
+            dataset_id: string;
+            /** Interval */
+            interval: string;
+            /** Semantic Fingerprint */
+            semantic_fingerprint: string;
         };
         /** GraphScopeDto */
         GraphScopeDto: {
@@ -2367,6 +2494,18 @@ export interface components {
             /** Requested Capital */
             requested_capital: string;
         };
+        /** ReadinessReasonDto */
+        ReadinessReasonDto: {
+            /** Blocking */
+            blocking: boolean;
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "not_approved" | "identity_review_required" | "current_market_unavailable" | "history_missing" | "history_insufficient" | "refresh_running" | "refresh_failed" | "direct_market_unavailable" | "insufficient_ready_scope";
+            /** Detail */
+            detail: string;
+        };
         /** RebalanceDecisionAuditDto */
         RebalanceDecisionAuditDto: {
             /** Baseline Target Weights */
@@ -2463,6 +2602,44 @@ export interface components {
             points: components["schemas"]["RelationshipEvidencePointDto"][];
             /** Quote Source Fingerprint */
             quote_source_fingerprint: string;
+        };
+        /** ResearchAssetReadinessDto */
+        ResearchAssetReadinessDto: {
+            /** Approved */
+            approved: boolean;
+            /** Canonical Asset Id */
+            canonical_asset_id: string;
+            /**
+             * Identity State
+             * @enum {string}
+             */
+            identity_state: "resolved" | "review_required";
+            /** Paths */
+            paths: components["schemas"]["ResearchPathReadinessDto"][];
+            /** Ready */
+            ready: boolean;
+            /** Reasons */
+            reasons: components["schemas"]["ReadinessReasonDto"][];
+        };
+        /** ResearchPathReadinessDto */
+        ResearchPathReadinessDto: {
+            /** Canonical Asset Id */
+            canonical_asset_id: string;
+            /** Data Through */
+            data_through: string | null;
+            /** Generations */
+            generations: components["schemas"]["GenerationBindingDto"][];
+            /** Ready */
+            ready: boolean;
+            /** Reasons */
+            reasons: components["schemas"]["ReadinessReasonDto"][];
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+            /** Venue Symbol */
+            venue_symbol: string;
         };
         /** ResearchUniverseAssetDto */
         ResearchUniverseAssetDto: {
@@ -3547,6 +3724,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductMarketDataDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    runCurrentApprovedResearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurrentApprovedResearchRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getCurrentApprovedResearchReadiness: {
+        parameters: {
+            query: {
+                horizon: "short" | "medium" | "swing";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentApprovedReadinessDto"];
                 };
             };
             /** @description Validation Error */

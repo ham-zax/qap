@@ -32,6 +32,7 @@ from qap.scanner.artifacts import (
 from qap.scanner.catalog import (
     ScannerCatalog,
 )
+from qap.scanner.current_scope import CurrentApprovedScanScope
 from qap.scanner.forensic_graph import ScopedManualPin, build_scanner_graph
 from qap.scanner.graph import (
     GraphMetadataRecord,
@@ -521,6 +522,7 @@ def run_scan(
     replay_service: ScannerReplayService,
     catalog_admission_guard: Callable[[ScannerCatalog], None],
     protocol: ScannerProtocol = SCANNER_V1_SLICE1,
+    current_approved_scope: CurrentApprovedScanScope | None = None,
 ) -> ScanRunResult:
     """Run one frozen scan while delegating authoritative replay outward."""
 
@@ -544,6 +546,7 @@ def run_scan(
         manual_replay_candidate_ids=manual_ids,
         catalog_admission_guard=catalog_admission_guard,
         protocol=protocol,
+        current_approved_scope=current_approved_scope,
     )
     generation = start_scan_generation(run_path, prepared.definition)
 

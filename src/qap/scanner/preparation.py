@@ -26,6 +26,10 @@ from qap.scanner.catalog import (
     load_scanner_catalog,
     resolve_catalog_source,
 )
+from qap.scanner.current_scope import (
+    CURRENT_APPROVED_UNIVERSE_POLICY_VERSION,
+    CurrentApprovedScanScope,
+)
 from qap.scanner.models import ScanDefinition, ScanInputIdentity, ScannerPinSpec
 from qap.scanner.protocol import ScannerHorizon, ScannerProtocol, protocol_identity
 from qap.scanner.slices import EvaluatedSeries, evaluate_series
@@ -185,6 +189,8 @@ def _sources_by_base(
     venue: str,
     interval: BarInterval,
     quote_asset: str,
+    allowed_assets: frozenset[str] | None = None,
+    allowed_dataset_ids: frozenset[str] | None = None,
 ) -> dict[str, ScannerSourceSpec]:
     result: dict[str, ScannerSourceSpec] = {}
     for source in catalog.sources:
@@ -193,6 +199,11 @@ def _sources_by_base(
             or source.interval != interval.label
             or source.quote_asset != quote_asset
             or source.base_asset == quote_asset
+            or (allowed_assets is not None and source.base_asset not in allowed_assets)
+            or (
+                allowed_dataset_ids is not None
+                and source.dataset_id not in allowed_dataset_ids
+            )
         ):
             continue
         if source.base_asset in result:
@@ -212,6 +223,7 @@ def _prepare_inputs(
     manual_replay_candidate_ids: tuple[str, ...],
     catalog_admission_guard: Callable[[ScannerCatalog], None],
     protocol: ScannerProtocol,
+    current_approved_scope: CurrentApprovedScanScope | None = None,
 ) -> _PreparedInputs:
     if as_of.tzinfo is None or as_of.utcoffset() != timedelta(0):
         raise ValueError("as_of must be timezone-aware UTC")
@@ -227,6 +239,19 @@ def _prepare_inputs(
 
     catalog = load_scanner_catalog(data_root)
     catalog_admission_guard(catalog)
+    catalog_identity = catalog_semantic_identity(catalog)
+    current_policy = (
+        protocol.universe_policy_version == CURRENT_APPROVED_UNIVERSE_POLICY_VERSION
+    )
+    if current_policy != (current_approved_scope is not None):
+        raise ScannerRunError(
+            "current-approved protocol requires an explicit bound Product scope"
+        )
+    if (
+        current_approved_scope is not None
+        and current_approved_scope.expected_catalog_identity != catalog_identity
+    ):
+        raise ScannerRunError("current-approved market-data catalog binding is stale")
     lifecycle_events = _load_lifecycle_events(data_root, catalog)
     resolved_cache: dict[str, ResolvedCatalogSource] = {}
     evaluated_cache: dict[tuple[str, int], EvaluatedSeries] = {}
@@ -278,11 +303,22 @@ def _prepare_inputs(
         )
         for venue in protocol.venues:
             scope = (venue, horizon)
+            allowed_assets = (
+                None
+                if current_approved_scope is None
+                else current_approved_scope.assets_for(venue)
+            )
             graph_map = _sources_by_base(
                 catalog,
                 venue=venue,
                 interval=horizon_protocol.graph_interval,
                 quote_asset=protocol.quote_asset,
+                allowed_assets=allowed_assets,
+                allowed_dataset_ids=(
+                    None
+                    if current_approved_scope is None
+                    else current_approved_scope.datasets
+                ),
             )
             sources = tuple(
                 sorted(graph_map.values(), key=lambda item: item.base_asset)
@@ -313,27 +349,34 @@ def _prepare_inputs(
                         venue=venue,
                         interval=resolution,
                         quote_asset=protocol.quote_asset,
+                        allowed_assets=allowed_assets,
+                        allowed_dataset_ids=(
+                            None
+                            if current_approved_scope is None
+                            else current_approved_scope.datasets
+                        ),
                     )
                     model_key = (source.base_asset, resolution.label)
                     model_source = model_map.get(source.base_asset)
                     if model_source is None:
                         model_failures[model_key] = "model_source_unavailable"
                         continue
-                    lifecycle = _evidence_for_source(
-                        model_source,
-                        lifecycle_events,
-                    )
-                    lifecycle_decision = classify_historical_eligibility(
-                        lifecycle,
-                        required_start=as_of - model_lookback,
-                        required_end=as_of,
-                    )
-                    if (
-                        lifecycle_decision.state
-                        is not HistoricalEligibilityState.KNOWN_ELIGIBLE
-                    ):
-                        model_failures[model_key] = "model_lifecycle_ineligible"
-                        continue
+                    if current_approved_scope is None:
+                        lifecycle = _evidence_for_source(
+                            model_source,
+                            lifecycle_events,
+                        )
+                        lifecycle_decision = classify_historical_eligibility(
+                            lifecycle,
+                            required_start=as_of - model_lookback,
+                            required_end=as_of,
+                        )
+                        if (
+                            lifecycle_decision.state
+                            is not HistoricalEligibilityState.KNOWN_ELIGIBLE
+                        ):
+                            model_failures[model_key] = "model_lifecycle_ineligible"
+                            continue
                     try:
                         model_value = evaluated(model_source, model_lookback)
                     except TypeError, ValueError:
@@ -372,7 +415,7 @@ def _prepare_inputs(
     definition = ScanDefinition(
         scanner_protocol_version=protocol.protocol_id,
         protocol_identity=protocol_identity(protocol),
-        catalog_identity=catalog_semantic_identity(catalog),
+        catalog_identity=catalog_identity,
         universe_policy_version=protocol.universe_policy_version,
         candidate_generator_version=protocol.candidate_generator_version,
         template_set_version=protocol.template_set_version,
@@ -384,6 +427,16 @@ def _prepare_inputs(
         horizons=horizons,
         input_slices=tuple(input_identities.values()),
         manual_inputs=manual_inputs,
+        research_claim_identity=(
+            None
+            if current_approved_scope is None
+            else current_approved_scope.research_claim_identity
+        ),
+        research_scope_identity=(
+            None
+            if current_approved_scope is None
+            else current_approved_scope.scope_identity
+        ),
         created_at=datetime.now(UTC),
     )
     return _PreparedInputs(

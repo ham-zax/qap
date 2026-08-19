@@ -1423,6 +1423,195 @@
         "title": "CostSummaryDto",
         "type": "object"
       },
+      "CurrentApprovedReadinessDto": {
+        "additionalProperties": false,
+        "properties": {
+          "approved_asset_count": {
+            "title": "Approved Asset Count",
+            "type": "integer"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchAssetReadinessDto"
+            },
+            "title": "Assets",
+            "type": "array"
+          },
+          "catalog_identity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Identity"
+          },
+          "claim_id": {
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "claim_identity": {
+            "title": "Claim Identity",
+            "type": "string"
+          },
+          "claim_label": {
+            "title": "Claim Label",
+            "type": "string"
+          },
+          "direct_markets": {
+            "items": {
+              "$ref": "#/components/schemas/DirectMarketReadinessDto"
+            },
+            "title": "Direct Markets",
+            "type": "array"
+          },
+          "directory_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Directory Id"
+          },
+          "directory_observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Directory Observed At"
+          },
+          "horizon": {
+            "enum": [
+              "short",
+              "medium",
+              "swing"
+            ],
+            "title": "Horizon",
+            "type": "string"
+          },
+          "maintenance": {
+            "$ref": "#/components/schemas/MarketDataMaintenanceDto"
+          },
+          "readiness_id": {
+            "title": "Readiness Id",
+            "type": "string"
+          },
+          "ready_asset_count": {
+            "title": "Ready Asset Count",
+            "type": "integer"
+          },
+          "ready_for_research": {
+            "title": "Ready For Research",
+            "type": "boolean"
+          },
+          "ready_path_count": {
+            "title": "Ready Path Count",
+            "type": "integer"
+          },
+          "ready_venues": {
+            "items": {
+              "enum": [
+                "binance",
+                "gate"
+              ],
+              "type": "string"
+            },
+            "title": "Ready Venues",
+            "type": "array"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/ReadinessReasonDto"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "safe_cutoff": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe Cutoff"
+          },
+          "scanner_protocol_id": {
+            "title": "Scanner Protocol Id",
+            "type": "string"
+          },
+          "scanner_protocol_identity": {
+            "title": "Scanner Protocol Identity",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.current_approved_readiness.v1",
+            "default": "qap.api.current_approved_readiness.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "claim_id",
+          "claim_label",
+          "claim_identity",
+          "scanner_protocol_id",
+          "scanner_protocol_identity",
+          "horizon",
+          "readiness_id",
+          "directory_id",
+          "directory_observed_at",
+          "catalog_identity",
+          "safe_cutoff",
+          "approved_asset_count",
+          "ready_asset_count",
+          "ready_path_count",
+          "ready_venues",
+          "assets",
+          "direct_markets",
+          "maintenance",
+          "reasons",
+          "ready_for_research"
+        ],
+        "title": "CurrentApprovedReadinessDto",
+        "type": "object"
+      },
+      "CurrentApprovedResearchRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "horizon": {
+            "enum": [
+              "short",
+              "medium",
+              "swing"
+            ],
+            "title": "Horizon",
+            "type": "string"
+          },
+          "readiness_id": {
+            "title": "Readiness Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "horizon",
+          "readiness_id"
+        ],
+        "title": "CurrentApprovedResearchRequestDto",
+        "type": "object"
+      },
       "DataRole": {
         "enum": [
           "exploratory",
@@ -1503,6 +1692,73 @@
           "fingerprint"
         ],
         "title": "DatasetFingerprint",
+        "type": "object"
+      },
+      "DirectMarketReadinessDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_a": {
+            "title": "Asset A",
+            "type": "string"
+          },
+          "asset_b": {
+            "title": "Asset B",
+            "type": "string"
+          },
+          "generations": {
+            "items": {
+              "$ref": "#/components/schemas/GenerationBindingDto"
+            },
+            "title": "Generations",
+            "type": "array"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/ReadinessReasonDto"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "unavailable",
+              "history_missing",
+              "history_insufficient"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Symbol"
+          }
+        },
+        "required": [
+          "venue",
+          "asset_a",
+          "asset_b",
+          "venue_symbol",
+          "status",
+          "reasons",
+          "generations"
+        ],
+        "title": "DirectMarketReadinessDto",
         "type": "object"
       },
       "DirectorySourceDto": {
@@ -2669,6 +2925,30 @@
           "freeze_at"
         ],
         "title": "FreezeForwardCohortRequestDto",
+        "type": "object"
+      },
+      "GenerationBindingDto": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "interval": {
+            "title": "Interval",
+            "type": "string"
+          },
+          "semantic_fingerprint": {
+            "title": "Semantic Fingerprint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "semantic_fingerprint",
+          "interval"
+        ],
+        "title": "GenerationBindingDto",
         "type": "object"
       },
       "GraphScopeDto": {
@@ -4949,6 +5229,41 @@
         "title": "QualificationRequestDto",
         "type": "object"
       },
+      "ReadinessReasonDto": {
+        "additionalProperties": false,
+        "properties": {
+          "blocking": {
+            "title": "Blocking",
+            "type": "boolean"
+          },
+          "code": {
+            "enum": [
+              "not_approved",
+              "identity_review_required",
+              "current_market_unavailable",
+              "history_missing",
+              "history_insufficient",
+              "refresh_running",
+              "refresh_failed",
+              "direct_market_unavailable",
+              "insufficient_ready_scope"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "detail",
+          "blocking"
+        ],
+        "title": "ReadinessReasonDto",
+        "type": "object"
+      },
       "RebalanceDecisionAuditDto": {
         "additionalProperties": false,
         "properties": {
@@ -5222,6 +5537,117 @@
           "points"
         ],
         "title": "RelationshipEvidenceSeriesDto",
+        "type": "object"
+      },
+      "ResearchAssetReadinessDto": {
+        "additionalProperties": false,
+        "properties": {
+          "approved": {
+            "title": "Approved",
+            "type": "boolean"
+          },
+          "canonical_asset_id": {
+            "title": "Canonical Asset Id",
+            "type": "string"
+          },
+          "identity_state": {
+            "enum": [
+              "resolved",
+              "review_required"
+            ],
+            "title": "Identity State",
+            "type": "string"
+          },
+          "paths": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchPathReadinessDto"
+            },
+            "title": "Paths",
+            "type": "array"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/ReadinessReasonDto"
+            },
+            "title": "Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "canonical_asset_id",
+          "approved",
+          "identity_state",
+          "ready",
+          "reasons",
+          "paths"
+        ],
+        "title": "ResearchAssetReadinessDto",
+        "type": "object"
+      },
+      "ResearchPathReadinessDto": {
+        "additionalProperties": false,
+        "properties": {
+          "canonical_asset_id": {
+            "title": "Canonical Asset Id",
+            "type": "string"
+          },
+          "data_through": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Through"
+          },
+          "generations": {
+            "items": {
+              "$ref": "#/components/schemas/GenerationBindingDto"
+            },
+            "title": "Generations",
+            "type": "array"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/ReadinessReasonDto"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "title": "Venue Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "canonical_asset_id",
+          "venue",
+          "venue_symbol",
+          "ready",
+          "data_through",
+          "reasons",
+          "generations"
+        ],
+        "title": "ResearchPathReadinessDto",
         "type": "object"
       },
       "ResearchUniverseAssetDto": {
@@ -7358,6 +7784,94 @@
         "summary": "Refresh Product Market Data",
         "tags": [
           "product-market-data"
+        ]
+      }
+    },
+    "/api/product-research": {
+      "post": {
+        "operationId": "runCurrentApprovedResearch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CurrentApprovedResearchRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationRefDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Current Approved Research",
+        "tags": [
+          "product-research"
+        ]
+      }
+    },
+    "/api/product-research/readiness": {
+      "get": {
+        "operationId": "getCurrentApprovedResearchReadiness",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "horizon",
+            "required": true,
+            "schema": {
+              "enum": [
+                "short",
+                "medium",
+                "swing"
+              ],
+              "title": "Horizon",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentApprovedReadinessDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Current Approved Readiness",
+        "tags": [
+          "product-research"
         ]
       }
     },

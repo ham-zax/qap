@@ -140,6 +140,8 @@ class ScanDefinition(_FrozenModel):
     horizons: tuple[ScannerHorizon, ...]
     input_slices: tuple[ScanInputIdentity, ...]
     manual_inputs: tuple[str, ...] = ()
+    research_claim_identity: str | None = None
+    research_scope_identity: str | None = None
     created_at: datetime
 
     @field_validator("scanner_protocol_version")
@@ -150,6 +152,18 @@ class ScanDefinition(_FrozenModel):
     @field_validator("protocol_identity", "catalog_identity")
     @classmethod
     def validate_identity_fingerprint(cls, value: str, info: object) -> str:
+        field_name = getattr(info, "field_name", "identity")
+        return _fingerprint(value, field=field_name)
+
+    @field_validator("research_claim_identity", "research_scope_identity")
+    @classmethod
+    def validate_optional_identity_fingerprint(
+        cls,
+        value: str | None,
+        info: object,
+    ) -> str | None:
+        if value is None:
+            return None
         field_name = getattr(info, "field_name", "identity")
         return _fingerprint(value, field=field_name)
 
@@ -242,6 +256,10 @@ class ScanDefinition(_FrozenModel):
             ],
             "manual_inputs": sorted(self.manual_inputs),
         }
+        if self.research_claim_identity is not None:
+            payload["research_claim_identity"] = self.research_claim_identity
+        if self.research_scope_identity is not None:
+            payload["research_scope_identity"] = self.research_scope_identity
         encoded = json.dumps(
             payload,
             sort_keys=True,

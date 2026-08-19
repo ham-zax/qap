@@ -41,6 +41,7 @@ from qap.scanner.catalog import (
     load_scanner_catalog,
     resolve_catalog_source,
 )
+from qap.scanner.current_scope import CurrentApprovedScanScope
 from qap.scanner.models import ScanDefinition, ScannerPinSpec
 from qap.scanner.prospective import CandidateFreeze, ForwardCheckpoint
 from qap.scanner.prospective_run import (
@@ -104,8 +105,15 @@ def _economic_gate(run_root: Path, run_id: str) -> str:
 
 
 class _QapReplayService:
-    def __init__(self, repository_root: Path) -> None:
+    def __init__(
+        self,
+        repository_root: Path,
+        protocol: ScannerProtocol,
+        current_approved_scope: CurrentApprovedScanScope | None,
+    ) -> None:
         self._repository_root = repository_root
+        self._protocol = protocol
+        self._current_approved_scope = current_approved_scope
 
     def execute(
         self,
@@ -125,6 +133,12 @@ class _QapReplayService:
             data_root=data_root,
             repository_root=self._repository_root,
             run_root=run_root,
+            protocol=self._protocol,
+            allowed_direct_dataset_ids=(
+                None
+                if self._current_approved_scope is None
+                else self._current_approved_scope.datasets
+            ),
         )
         return ReplayReference(
             status=outcome.status.value,
@@ -591,6 +605,7 @@ def run_scan_with_qap(
     manual_replay_candidate_ids: Sequence[str] = (),
     repository_root: str | Path | None = None,
     protocol: ScannerProtocol = SCANNER_V1_SLICE1,
+    current_approved_scope: CurrentApprovedScanScope | None = None,
 ) -> ScanRunResult:
     """Compose scanner discovery with the ordinary experiment replay adapter."""
 
@@ -606,9 +621,14 @@ def run_scan_with_qap(
         run_root=run_root,
         pins=pins,
         manual_replay_candidate_ids=manual_replay_candidate_ids,
-        replay_service=_QapReplayService(repository),
+        replay_service=_QapReplayService(
+            repository,
+            protocol,
+            current_approved_scope,
+        ),
         catalog_admission_guard=_validate_scanner_catalog_admission,
         protocol=protocol,
+        current_approved_scope=current_approved_scope,
     )
 
 

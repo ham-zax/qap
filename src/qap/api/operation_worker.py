@@ -13,6 +13,7 @@ from qap.api.operations import (
     OperationStatus,
     OperationStore,
 )
+from qap.api.product_research_schemas import ProductRunScanRequestDto
 from qap.api.scanner_schemas import (
     AdvanceForwardCohortRequestDto,
     CapturePublicEvidenceRequestDto,
@@ -27,6 +28,9 @@ from qap.market.microstructure_storage import (
 )
 from qap.market.public_capture import CaptureKind, capture_public_spot
 from qap.portfolio import AssetId
+from qap.product_current_approved import CurrentApprovedResearch
+from qap.product_market_data import ProductMarketData
+from qap.product_universe import ProductUniverse
 from qap.scanner.basket_artifacts import read_basket_generation
 from qap.scanner.catalog import load_scanner_catalog
 from qap.scanner.models import ScannerPinSpec
@@ -74,6 +78,30 @@ def _run_scan(request: RunScanRequestDto, settings: object) -> dict[str, JsonVal
         run_root=run_root,
         pins=pins,
         manual_replay_candidate_ids=request.manual_replay_candidate_ids,
+        repository_root=repository_root,
+    )
+    return {"scan_id": result.scan_id}
+
+
+def _run_current_approved_scan(
+    request: ProductRunScanRequestDto,
+    settings: object,
+) -> dict[str, JsonValue]:
+    data_root = _path(getattr(settings, "data_root"), field="data_root")
+    run_root = _path(getattr(settings, "run_root"), field="run_root")
+    repository_root = _path(
+        getattr(settings, "repository_root"),
+        field="repository_root",
+    )
+    owner = CurrentApprovedResearch(
+        ProductUniverse(run_root),
+        ProductMarketData(run_root, data_root),
+    )
+    result = owner.run(
+        horizon=ScannerHorizon(request.horizon),
+        readiness_id=request.readiness_id,
+        data_root=data_root,
+        run_root=run_root,
         repository_root=repository_root,
     )
     return {"scan_id": result.scan_id}
@@ -228,6 +256,11 @@ def _execute(
     settings: object,
 ) -> dict[str, JsonValue]:
     if kind is OperationKind.RUN_SCAN:
+        if payload.get("research_mode") == "current_approved":
+            return _run_current_approved_scan(
+                ProductRunScanRequestDto.model_validate(payload),
+                settings,
+            )
         return _run_scan(RunScanRequestDto.model_validate(payload), settings)
     if kind is OperationKind.GENERATE_ASSET_MOMENTUM:
         scan_id = str(payload["scan_id"])
