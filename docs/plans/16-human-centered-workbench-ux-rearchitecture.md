@@ -380,12 +380,15 @@ If authoritative existing read models do not provide enough information for Reac
 
 ## 12. Milestone 6 — Results and Activity architecture
 
+**Status:** complete.
+
 **Files:**
 
 - Modify: `web/src/features/operations/OperationList.tsx`
 - Modify: `web/src/features/operations/OperationDetail.tsx`
 - Modify: `web/src/features/operations/presentation.ts`
-- Modify as needed: navigation entry points into existing Experiment/Portfolio/Pair/Paper features.
+- Modify: `web/src/routes/experiments.index.tsx`
+- Modify: `web/src/features/experiments/ExperimentList.tsx`
 
 **Interfaces:**
 
@@ -394,18 +397,20 @@ If authoritative existing read models do not provide enough information for Reac
 
 **Steps:**
 
-- [ ] Present Operations primarily as `Activity` with human labels for the seven command kinds.
-- [ ] Keep exact operation kind/request metadata in Operation Detail.
-- [ ] Preserve the existing explicit statement that operational failure does not imply scientific failure.
-- [ ] Create a `Results` entry path using existing experiment/paper/basket/scan evidence queries rather than introducing a new result database.
-- [ ] Group result links by user meaning: research idea, forward validation, portfolio result, research run, paper evidence.
-- [ ] Preserve exact lineage/deep links across Scan → Idea → Validation → Basket → QAP evidence.
+- [x] Present Operations primarily as `Activity` with human labels for the seven command kinds.
+- [x] Keep exact operation kind/request metadata in Operation Detail.
+- [x] Preserve the existing explicit statement that operational failure does not imply scientific failure.
+- [x] Create a `Results` entry path using existing experiment/paper/basket/scan evidence queries rather than introducing a new result database.
+- [x] Group result links by user meaning: research idea, forward validation, portfolio result, research run, paper evidence.
+- [x] Preserve exact lineage/deep links across Scan → Idea → Validation → Basket → QAP evidence.
 
 **Acceptance criteria:**
 
 - Users know whether they are looking at background activity or research evidence.
 - Existing specialist evidence routes remain available.
 - No new persistence or duplicated research index is created unless current read APIs demonstrably cannot supply the view.
+
+**Route decision:** `/experiments` remains the stable `Results` entry path and composes existing scan, forward-validation, basket, experiment, and paper-operation list queries. No cosmetic `/results` route or duplicate result store was introduced.
 
 ## 13. Milestone 7 — Visual-system convergence
 

@@ -9,11 +9,24 @@ export function operationStatusTone(
   return 'negative'
 }
 
+export function operationStatusLabel(status: OperationDto['status']): string {
+  if (status === 'completed') return 'Completed'
+  if (status === 'running') return 'In progress'
+  if (status === 'interrupted') return 'Interrupted'
+  return 'Failed to run'
+}
+
 export function operationKindLabel(kind: string): string {
-  return kind
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
+  const labels: Record<string, string> = {
+    run_scan: 'Find research ideas',
+    generate_asset_momentum: 'Update pair-blind market context',
+    freeze_forward_cohort: 'Start forward validation',
+    advance_forward_cohort: 'Update forward evidence',
+    capture_public_evidence: 'Update current market evidence',
+    qualify_candidate: 'Evaluate amount',
+    run_basket: 'Analyze portfolio',
+  }
+  return labels[kind] ?? kind.replaceAll('_', ' ')
 }
 
 export function operationDuration(operation: OperationDto): string {
@@ -37,16 +50,16 @@ export function operationResultLinks(operation: OperationDto) {
   const basketId = typeof result.basket_id === 'string' ? result.basket_id : null
   const qapRunId = typeof result.qap_run_id === 'string' ? result.qap_run_id : null
 
-  if (scanId) links.push({ label: 'Scan evidence', href: `/scanner/${scanId}` })
+  if (scanId) links.push({ label: 'Research ideas', href: `/scanner/${scanId}` })
   if (!scanId && sourceScanId) {
-    links.push({ label: 'Source scan', href: `/scanner/${sourceScanId}` })
+    links.push({ label: 'Historical research', href: `/scanner/${sourceScanId}` })
   }
   if (cohortId) {
-    links.push({ label: 'Prospective cohort', href: `/prospective/${cohortId}` })
+    links.push({ label: 'Forward validation', href: `/prospective/${cohortId}` })
   }
-  if (basketId) links.push({ label: 'Basket evidence', href: `/baskets/${basketId}` })
+  if (basketId) links.push({ label: 'Portfolio result', href: `/baskets/${basketId}` })
   if (qapRunId) {
-    links.push({ label: 'QAP experiment', href: `/experiments/${qapRunId}` })
+    links.push({ label: 'Research run', href: `/experiments/${qapRunId}` })
     links.push({ label: 'Portfolio economics', href: `/portfolio/${qapRunId}` })
   }
   return links
