@@ -1,13 +1,14 @@
 """Typed Scanner-V1 basket and asset-momentum protocol."""
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import timedelta
 from decimal import Decimal
 from hashlib import sha256
 from typing import cast
 
 from qap.market import BarInterval
+from qap.product_current_approved_policy import CURRENT_APPROVED_SCANNER_PROTOCOL
 from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon, protocol_identity
 
 
@@ -114,10 +115,27 @@ def basket_protocol_identity(protocol: BasketProtocol) -> str:
 
 
 SCANNER_V1_BASKET = BasketProtocol()
+PRODUCT_CURRENT_APPROVED_BASKET = replace(
+    SCANNER_V1_BASKET,
+    protocol_id="product-current-approved-basket-v1",
+    source_pair_protocol_id=CURRENT_APPROVED_SCANNER_PROTOCOL.protocol_id,
+    source_pair_protocol_identity=protocol_identity(CURRENT_APPROVED_SCANNER_PROTOCOL),
+)
+
+
+def basket_protocol(protocol_id: str) -> BasketProtocol:
+    normalized = protocol_id.strip()
+    for protocol in (SCANNER_V1_BASKET, PRODUCT_CURRENT_APPROVED_BASKET):
+        if protocol.protocol_id == normalized:
+            return protocol
+    raise ValueError("unsupported basket protocol ID")
+
 
 __all__ = [
     "BasketProtocol",
     "MomentumRule",
+    "PRODUCT_CURRENT_APPROVED_BASKET",
     "SCANNER_V1_BASKET",
+    "basket_protocol",
     "basket_protocol_identity",
 ]

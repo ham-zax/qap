@@ -5,12 +5,21 @@ from pathlib import Path
 from qap.api.basket_schemas import (
     BasketDetailDto,
     BasketEdgeDto,
+    BasketExecutionGenerationDto,
     BasketListDto,
     BasketSummaryDto,
 )
 from qap.api.errors import ApiBoundaryError
+from qap.api.scanner_completed import research_claim
 from qap.api.schemas import ErrorDetailDto
-from qap.scanner.basket_artifacts import BasketArtifactError, read_basket_generation
+from qap.scanner.artifacts import ScanArtifactError, read_completed_scan
+from qap.scanner.basket import BasketDefinition
+from qap.scanner.basket_artifacts import (
+    BasketArtifactError,
+    BasketReplayAttempt,
+    read_basket_generation,
+)
+from qap.scanner.models import ScanDefinition
 
 
 def _identity(value: str) -> str:
@@ -51,7 +60,9 @@ class BasketArtifactReader:
     """Project completed immutable basket generations into HTTP DTOs."""
 
     def __init__(self, run_root: Path) -> None:
-        self.root = run_root.resolve() / "baskets"
+        resolved = run_root.resolve()
+        self.root = resolved / "baskets"
+        self.scan_root = resolved / "scans"
 
     def _directories(self) -> tuple[Path, ...]:
         if not self.root.is_dir():
@@ -65,30 +76,49 @@ class BasketArtifactReader:
             and all(char in "0123456789abcdef" for char in path.name.lower())
         )
 
-    @staticmethod
-    def _summary(definition: object, attempt: object) -> BasketSummaryDto:
-        basket = definition
-        replay = attempt
-        return BasketSummaryDto.model_validate(
-            {
-                "artifact_status": "valid",
-                "basket_id": getattr(basket, "basket_id"),
-                "source_scan_id": getattr(basket, "source_scan_id"),
-                "source_momentum_scan_id": getattr(basket, "source_momentum_scan_id"),
-                "source_as_of": getattr(basket, "source_as_of"),
-                "venue": getattr(basket, "venue"),
-                "horizon": getattr(basket, "horizon").value,
-                "decision_resolution": getattr(basket, "decision_resolution"),
-                "economic_assets": getattr(basket, "economic_assets"),
-                "forensic": getattr(basket, "forensic"),
-                "attempt_status": getattr(replay, "status").value,
-                "economic_gate_status": (
-                    None
-                    if getattr(replay, "economic_gate_status") is None
-                    else getattr(replay, "economic_gate_status").value
-                ),
-                "qap_run_id": getattr(replay, "qap_run_id"),
-            }
+    def _source_scan(self, source_scan_id: str) -> ScanDefinition | None:
+        directory = self.scan_root / source_scan_id
+        if not directory.is_dir():
+            return None
+        try:
+            definition, _tables = read_completed_scan(directory)
+        except OSError, ScanArtifactError, TypeError, ValueError:
+            return None
+        return definition if definition.scan_id == source_scan_id else None
+
+    def _summary(
+        self,
+        definition: BasketDefinition,
+        attempt: BasketReplayAttempt,
+    ) -> BasketSummaryDto:
+        scan = self._source_scan(definition.source_scan_id)
+        return BasketSummaryDto(
+            artifact_status="valid",
+            basket_id=definition.basket_id,
+            source_scan_id=definition.source_scan_id,
+            source_claim=None if scan is None else research_claim(scan),
+            source_scanner_protocol_id=(
+                None if scan is None else scan.scanner_protocol_version
+            ),
+            source_scanner_protocol_identity=(
+                None if scan is None else scan.protocol_identity
+            ),
+            basket_protocol_id=definition.basket_protocol_id,
+            basket_protocol_identity=definition.basket_protocol_identity,
+            source_momentum_scan_id=definition.source_momentum_scan_id,
+            source_as_of=definition.source_as_of,
+            venue=definition.venue,
+            horizon=definition.horizon.value,
+            decision_resolution=definition.decision_resolution,
+            economic_assets=definition.economic_assets,
+            forensic=definition.forensic,
+            attempt_status=attempt.status.value,
+            economic_gate_status=(
+                None
+                if attempt.economic_gate_status is None
+                else attempt.economic_gate_status.value
+            ),
+            qap_run_id=attempt.qap_run_id,
         )
 
     def list_baskets(self) -> BasketListDto:
@@ -146,10 +176,20 @@ class BasketArtifactReader:
             )
             for edge in definition.selected_edges
         )
+        generations = tuple(
+            BasketExecutionGenerationDto(
+                asset_id=item.asset_id,
+                dataset_id=item.dataset_id,
+                relative_path=item.relative_path,
+                source_artifact_fingerprint=item.source_artifact_fingerprint,
+            )
+            for item in definition.execution_generations or ()
+        )
         qap_run_id = attempt.qap_run_id
         return BasketDetailDto(
             summary=self._summary(definition, attempt),
             selected_edges=edges,
+            execution_generations=generations,
             qap_experiment_run_id=qap_run_id,
             qap_portfolio_run_id=qap_run_id,
             resolver_audit_available=qap_run_id is not None,

@@ -596,6 +596,7 @@ def run_basket_with_qap(
         candidate_ids=candidate_ids,
         created_at=created_at,
         source_momentum=source_momentum,
+        data_root=data_root,
     )
     final_directory = run_root_path / "baskets" / definition.basket_id
     if final_directory.is_dir():

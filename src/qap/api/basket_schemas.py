@@ -5,6 +5,7 @@ from typing import Literal
 
 from pydantic import Field
 
+from qap.api.scanner_schemas import ResearchClaimDto
 from qap.api.schemas import ApiDto, ErrorDetailDto
 
 
@@ -27,10 +28,22 @@ class BasketEdgeDto(ApiDto):
     economic_gate_status: str | None
 
 
+class BasketExecutionGenerationDto(ApiDto):
+    asset_id: str
+    dataset_id: str
+    relative_path: str
+    source_artifact_fingerprint: str
+
+
 class BasketSummaryDto(ApiDto):
     artifact_status: Literal["valid", "invalid"]
     basket_id: str
     source_scan_id: str | None = None
+    source_claim: ResearchClaimDto | None = None
+    source_scanner_protocol_id: str | None = None
+    source_scanner_protocol_identity: str | None = None
+    basket_protocol_id: str | None = None
+    basket_protocol_identity: str | None = None
     source_momentum_scan_id: str | None = None
     source_as_of: datetime | None = None
     venue: str | None = None
@@ -53,6 +66,7 @@ class BasketDetailDto(ApiDto):
     schema_version: Literal["qap.api.basket_detail.v1"] = "qap.api.basket_detail.v1"
     summary: BasketSummaryDto
     selected_edges: tuple[BasketEdgeDto, ...]
+    execution_generations: tuple[BasketExecutionGenerationDto, ...] | None = None
     qap_experiment_run_id: str | None
     qap_portfolio_run_id: str | None
     resolver_audit_available: bool
@@ -71,6 +85,7 @@ class BasketRunRequestDto(ApiDto):
 __all__ = [
     "BasketDetailDto",
     "BasketEdgeDto",
+    "BasketExecutionGenerationDto",
     "BasketListDto",
     "BasketRunRequestDto",
     "BasketSummaryDto",

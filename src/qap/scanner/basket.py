@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from hashlib import sha256
 from pathlib import Path
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
@@ -18,20 +18,23 @@ from qap.portfolio import AssetId
 from qap.scanner.artifacts import ScanArtifactError, read_completed_scan
 from qap.scanner.asset_momentum import AssetMomentumGeneration
 from qap.scanner.basket_protocol import (
+    PRODUCT_CURRENT_APPROVED_BASKET,
     SCANNER_V1_BASKET,
+    basket_protocol,
     basket_protocol_identity,
+)
+from qap.scanner.basket_source import (
+    BasketSourceError,
+    ProductBasketExecutionGeneration,
+    basket_source_contract,
+    resolve_product_execution_generations,
 )
 from qap.scanner.catalog import (
     ScannerCatalog,
     ScannerSourceSpec,
     catalog_semantic_identity,
 )
-from qap.scanner.protocol import (
-    SCANNER_V1_SLICE1,
-    ScannerHorizon,
-    TemplateId,
-    protocol_identity,
-)
+from qap.scanner.protocol import ScannerHorizon, TemplateId
 from qap.scanner.trials import ScannerModelFamily
 
 _FINGERPRINT = re.compile(r"^[0-9a-f]{64}$")
@@ -153,7 +156,10 @@ class BasketEdge(_FrozenModel):
 
 
 class BasketDefinition(_FrozenModel):
-    schema_version: str = "qap.scanner.basket-definition.v1"
+    schema_version: Literal[
+        "qap.scanner.basket-definition.v1",
+        "qap.scanner.basket-definition.v2",
+    ] = "qap.scanner.basket-definition.v1"
     basket_protocol_id: str = SCANNER_V1_BASKET.protocol_id
     basket_protocol_identity: str = basket_protocol_identity(SCANNER_V1_BASKET)
     source_scan_id: str
@@ -165,6 +171,7 @@ class BasketDefinition(_FrozenModel):
     economic_assets: tuple[str, ...]
     selected_edges: tuple[BasketEdge, ...]
     execution_dataset_ids: tuple[tuple[str, str], ...]
+    execution_generations: tuple[ProductBasketExecutionGeneration, ...] | None = None
     forensic_assets: tuple[str, ...] = ()
     execution_bridge: str = SCANNER_V1_BASKET.execution_bridge
     neutral_allocation_rule: str = SCANNER_V1_BASKET.neutral_allocation_rule
@@ -209,11 +216,17 @@ class BasketDefinition(_FrozenModel):
 
     @model_validator(mode="after")
     def validate_definition(self) -> Self:
-        protocol = SCANNER_V1_BASKET
-        if self.basket_protocol_id != protocol.protocol_id:
-            raise ValueError("basket protocol ID mismatch")
+        protocol = basket_protocol(self.basket_protocol_id)
         if self.basket_protocol_identity != basket_protocol_identity(protocol):
             raise ValueError("basket protocol identity mismatch")
+        product_protocol = protocol is PRODUCT_CURRENT_APPROVED_BASKET
+        expected_schema = (
+            "qap.scanner.basket-definition.v2"
+            if product_protocol
+            else "qap.scanner.basket-definition.v1"
+        )
+        if self.schema_version != expected_schema:
+            raise ValueError("basket definition schema does not match source policy")
         if not (
             protocol.minimum_economic_assets
             <= len(self.economic_assets)
@@ -251,6 +264,22 @@ class BasketDefinition(_FrozenModel):
             raise ValueError("every economic asset requires one execution dataset")
         if any(not dataset_id.strip() for dataset_id in execution.values()):
             raise ValueError("execution dataset IDs must not be empty")
+        if product_protocol:
+            if self.execution_generations is None:
+                raise ValueError("Product basket requires frozen execution generations")
+            generations = {item.asset_id: item for item in self.execution_generations}
+            if len(generations) != len(self.execution_generations):
+                raise ValueError("Product execution generation assets must be unique")
+            if set(generations) != assets:
+                raise ValueError("Product execution generations must cover every asset")
+            if any(
+                generations[asset].dataset_id != execution[asset] for asset in assets
+            ):
+                raise ValueError("Product execution generation dataset mismatch")
+        elif self.execution_generations is not None:
+            raise ValueError(
+                "strict PIT basket cannot carry Product execution generations"
+            )
         if not set(self.forensic_assets) <= assets:
             raise ValueError("forensic assets must belong to the economic basket")
         if self.execution_bridge != protocol.execution_bridge:
@@ -275,6 +304,14 @@ class BasketDefinition(_FrozenModel):
             "execution_dataset_ids",
             tuple(sorted(self.execution_dataset_ids)),
         )
+        if self.execution_generations is not None:
+            object.__setattr__(
+                self,
+                "execution_generations",
+                tuple(
+                    sorted(self.execution_generations, key=lambda item: item.asset_id)
+                ),
+            )
         return self
 
     @property
@@ -283,8 +320,12 @@ class BasketDefinition(_FrozenModel):
 
     @property
     def basket_id(self) -> str:
-        payload = {
-            "identity_version": "qap.scanner.basket.v1",
+        payload: dict[str, object] = {
+            "identity_version": (
+                "qap.scanner.basket.v2"
+                if self.execution_generations is not None
+                else "qap.scanner.basket.v1"
+            ),
             "basket_protocol_identity": self.basket_protocol_identity,
             "source_scan_id": self.source_scan_id,
             "source_momentum_scan_id": self.source_momentum_scan_id,
@@ -307,6 +348,10 @@ class BasketDefinition(_FrozenModel):
             "mechanical_control_reference": self.mechanical_control_reference,
             "pair_blind_control_reference": self.pair_blind_control_reference,
         }
+        if self.execution_generations is not None:
+            payload["execution_generations"] = [
+                item.model_dump(mode="json") for item in self.execution_generations
+            ]
         encoded = json.dumps(
             payload,
             sort_keys=True,
@@ -369,6 +414,7 @@ def build_basket_definition_from_scan(
     candidate_ids: Sequence[str],
     created_at: datetime,
     source_momentum: AssetMomentumGeneration | None = None,
+    data_root: str | Path | None = None,
 ) -> BasketDefinition:
     """Validate one manual basket directly against immutable Slice-1 evidence."""
 
@@ -378,11 +424,10 @@ def build_basket_definition_from_scan(
         raise BasketDefinitionError(
             "source scan integrity/provenance is invalid"
         ) from exc
-    if (
-        definition.scanner_protocol_version != SCANNER_V1_SLICE1.protocol_id
-        or definition.protocol_identity != protocol_identity(SCANNER_V1_SLICE1)
-    ):
-        raise BasketDefinitionError("source scan is not Scanner-V1 Slice-1 evidence")
+    try:
+        source_contract = basket_source_contract(definition)
+    except BasketSourceError as exc:
+        raise BasketDefinitionError(str(exc)) from exc
     normalized_venue = venue.strip().lower()
     resolution = BarInterval(decision_resolution).label
     assets = tuple(sorted(AssetId(value).key for value in economic_assets))
@@ -391,7 +436,10 @@ def build_basket_definition_from_scan(
         raise BasketDefinitionError("candidate IDs must be unique")
     if normalized_venue not in definition.venues or horizon not in definition.horizons:
         raise BasketDefinitionError("basket scope is absent from source scan")
-    if catalog_semantic_identity(catalog) != definition.catalog_identity:
+    if (
+        not source_contract.product_current_approved
+        and catalog_semantic_identity(catalog) != definition.catalog_identity
+    ):
         raise BasketDefinitionError("catalog does not match frozen source scan")
     eligible_by_asset = {
         str(row["asset_id"]): row
@@ -410,19 +458,45 @@ def build_basket_definition_from_scan(
         if bool(row["forensic_research_allowed"]):
             forensic_assets.append(asset)
 
-    input_dataset_ids = {item.dataset_id for item in definition.input_slices}
-    execution_sources = tuple(
-        _execution_source(
-            catalog,
-            venue=normalized_venue,
-            asset_id=asset,
-            resolution=resolution,
+    execution_generations: tuple[ProductBasketExecutionGeneration, ...] | None = None
+    if source_contract.product_current_approved:
+        if data_root is None:
+            raise BasketDefinitionError(
+                "Product basket requires configured immutable market-data generations"
+            )
+        try:
+            execution_generations = resolve_product_execution_generations(
+                definition,
+                data_root=data_root,
+                venue=normalized_venue,
+                resolution=resolution,
+                economic_assets=assets,
+                execution_bridge=source_contract.basket_protocol.execution_bridge,
+            )
+        except BasketSourceError as exc:
+            raise BasketDefinitionError(str(exc)) from exc
+        execution_dataset_ids = tuple(
+            (item.asset_id, item.dataset_id) for item in execution_generations
         )
-        for asset in assets
-    )
-    if any(source.dataset_id not in input_dataset_ids for source in execution_sources):
-        raise BasketDefinitionError(
-            "basket execution source was not admitted by the source scan"
+    else:
+        input_dataset_ids = {item.dataset_id for item in definition.input_slices}
+        execution_sources = tuple(
+            _execution_source(
+                catalog,
+                venue=normalized_venue,
+                asset_id=asset,
+                resolution=resolution,
+            )
+            for asset in assets
+        )
+        if any(
+            source.dataset_id not in input_dataset_ids for source in execution_sources
+        ):
+            raise BasketDefinitionError(
+                "basket execution source was not admitted by the source scan"
+            )
+        execution_dataset_ids = tuple(
+            (source.base_asset, source.dataset_id) for source in execution_sources
         )
 
     neighbors = {
@@ -504,6 +578,10 @@ def build_basket_definition_from_scan(
 
     momentum_id: str | None = None
     if source_momentum is not None:
+        if source_contract.product_current_approved:
+            raise BasketDefinitionError(
+                "Product basket asset-momentum lineage is not supported"
+            )
         if (
             source_momentum.venue != normalized_venue
             or source_momentum.horizon is not horizon
@@ -515,6 +593,15 @@ def build_basket_definition_from_scan(
         momentum_id = source_momentum.momentum_scan_id
 
     return BasketDefinition(
+        schema_version=(
+            "qap.scanner.basket-definition.v2"
+            if source_contract.product_current_approved
+            else "qap.scanner.basket-definition.v1"
+        ),
+        basket_protocol_id=source_contract.basket_protocol.protocol_id,
+        basket_protocol_identity=basket_protocol_identity(
+            source_contract.basket_protocol
+        ),
         source_scan_id=definition.scan_id,
         source_momentum_scan_id=momentum_id,
         source_as_of=definition.eligible_information_end,
@@ -523,9 +610,8 @@ def build_basket_definition_from_scan(
         decision_resolution=resolution,
         economic_assets=assets,
         selected_edges=tuple(edges),
-        execution_dataset_ids=tuple(
-            (source.base_asset, source.dataset_id) for source in execution_sources
-        ),
+        execution_dataset_ids=execution_dataset_ids,
+        execution_generations=execution_generations,
         forensic_assets=tuple(forensic_assets),
         created_at=created_at,
     )

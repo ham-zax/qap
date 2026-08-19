@@ -121,6 +121,8 @@ def _atomic_write(path: Path, payload: bytes) -> None:
 
 def _definition_payload(definition: BasketDefinition) -> dict[str, object]:
     payload = definition.model_dump(mode="json")
+    if definition.execution_generations is None:
+        payload.pop("execution_generations", None)
     payload["basket_id"] = definition.basket_id
     payload["research_family_id"] = definition.research_family_id
     return payload

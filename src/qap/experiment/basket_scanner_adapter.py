@@ -5,7 +5,11 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
-from qap.experiment.artifacts import read_run_artifacts, run_experiment_to_artifacts
+from qap.experiment.artifacts import (
+    ArtifactError,
+    read_run_artifacts,
+    run_experiment_to_artifacts,
+)
 from qap.experiment.basket_manifest import basket_edge_rule, pair_blind_window_returns
 from qap.experiment.basket_policy import compose_basket_strategy_policy
 from qap.experiment.data import ExperimentSetupError
@@ -14,6 +18,10 @@ from qap.experiment.result import ExperimentResult
 from qap.experiment.runner import prepare_experiment
 from qap.market import BarInterval
 from qap.portfolio._decimal import divide
+from qap.product_market_data_generation import (
+    ProductGenerationReadError,
+    resolve_immutable_generation,
+)
 from qap.scanner.artifacts import read_completed_scan
 from qap.scanner.basket import BasketDefinition
 from qap.scanner.basket_artifacts import (
@@ -23,14 +31,22 @@ from qap.scanner.basket_artifacts import (
     read_basket_attempt,
     transition_basket_attempt,
 )
+from qap.scanner.basket_protocol import basket_protocol_identity
+from qap.scanner.basket_source import (
+    BasketSourceError,
+    basket_source_contract,
+    resolve_product_execution_generations,
+)
 from qap.scanner.catalog import (
     ResolvedCatalogSource,
     ScannerCatalog,
     ScannerCatalogError,
+    ScannerSourceSpec,
     catalog_semantic_identity,
     resolve_catalog_source,
 )
-from qap.scanner.protocol import SCANNER_V1_SLICE1, protocol_identity
+from qap.scanner.models import ScanDefinition
+from qap.scanner.protocol import SCANNER_V1_SLICE1
 
 
 class BasketReplaySetupError(ExperimentSetupError):
@@ -62,7 +78,7 @@ def _require_source_scan_contract(
     definition: BasketDefinition,
     source_scan_directory: str | Path,
     catalog: ScannerCatalog,
-) -> None:
+) -> ScanDefinition:
     try:
         scan, _tables = read_completed_scan(source_scan_directory)
     except ValueError as exc:
@@ -75,15 +91,26 @@ def _require_source_scan_contract(
             "source_scan_identity_mismatch",
             stage="source_scan_admission",
         )
-    if (
-        scan.scanner_protocol_version != SCANNER_V1_SLICE1.protocol_id
-        or scan.protocol_identity != protocol_identity(SCANNER_V1_SLICE1)
-    ):
+    try:
+        source_contract = basket_source_contract(scan)
+    except BasketSourceError as exc:
         raise BasketReplaySetupError(
             "source_scan_protocol_mismatch",
             stage="source_scan_admission",
+        ) from exc
+    if (
+        definition.basket_protocol_id != source_contract.basket_protocol.protocol_id
+        or definition.basket_protocol_identity
+        != basket_protocol_identity(source_contract.basket_protocol)
+    ):
+        raise BasketReplaySetupError(
+            "basket_source_policy_mismatch",
+            stage="source_scan_admission",
         )
-    if scan.catalog_identity != catalog_semantic_identity(catalog):
+    if (
+        not source_contract.product_current_approved
+        and scan.catalog_identity != catalog_semantic_identity(catalog)
+    ):
         raise BasketReplaySetupError(
             "catalog_identity_mismatch",
             stage="source_scan_admission",
@@ -93,29 +120,90 @@ def _require_source_scan_contract(
             "basket_source_cutoff_mismatch",
             stage="source_scan_admission",
         )
+    return scan
 
 
 def _resolved_execution_sources(
     definition: BasketDefinition,
     catalog: ScannerCatalog,
     *,
+    source_scan: ScanDefinition,
     data_root: str | Path,
 ) -> tuple[ResolvedCatalogSource, ...]:
     execution = dict(definition.execution_dataset_ids)
+    frozen = (
+        None
+        if definition.execution_generations is None
+        else {item.asset_id: item for item in definition.execution_generations}
+    )
+    if frozen is not None:
+        try:
+            expected = resolve_product_execution_generations(
+                source_scan,
+                data_root=data_root,
+                venue=definition.venue,
+                resolution=definition.decision_resolution,
+                economic_assets=definition.economic_assets,
+                execution_bridge=definition.execution_bridge,
+            )
+        except BasketSourceError as exc:
+            raise BasketReplaySetupError(
+                "frozen_execution_lineage_invalid",
+                stage="execution_data_admission",
+            ) from exc
+        if tuple(sorted(frozen.values(), key=lambda item: item.asset_id)) != expected:
+            raise BasketReplaySetupError(
+                "frozen_execution_lineage_mismatch",
+                stage="execution_data_admission",
+            )
     resolved: list[ResolvedCatalogSource] = []
     for asset in definition.economic_assets:
         dataset_id = execution[asset]
-        try:
-            source = resolve_catalog_source(
-                catalog,
-                dataset_id=dataset_id,
-                data_root=data_root,
+        if frozen is None:
+            try:
+                source = resolve_catalog_source(
+                    catalog,
+                    dataset_id=dataset_id,
+                    data_root=data_root,
+                )
+            except ScannerCatalogError as exc:
+                raise BasketReplaySetupError(
+                    "execution_source_admission_failed",
+                    stage="execution_data_admission",
+                ) from exc
+        else:
+            binding = frozen[asset]
+            try:
+                provenance, series = resolve_immutable_generation(
+                    data_root,
+                    dataset_id=binding.dataset_id,
+                    semantic_fingerprint=binding.source_artifact_fingerprint,
+                )
+            except ProductGenerationReadError as exc:
+                raise BasketReplaySetupError(
+                    "frozen_execution_generation_invalid",
+                    stage="execution_data_admission",
+                ) from exc
+            if provenance.relative_path != binding.relative_path:
+                raise BasketReplaySetupError(
+                    "frozen_execution_generation_path_mismatch",
+                    stage="execution_data_admission",
+                )
+            spec = ScannerSourceSpec(
+                dataset_id=provenance.dataset_id,
+                relative_path=provenance.relative_path,
+                venue=provenance.venue,
+                venue_symbol=provenance.venue_symbol,
+                base_asset=provenance.base_asset,
+                quote_asset=provenance.quote_asset,
+                interval=provenance.interval,
+                expected_semantic_fingerprint=provenance.semantic_fingerprint,
             )
-        except ScannerCatalogError as exc:
-            raise BasketReplaySetupError(
-                "execution_source_admission_failed",
-                stage="execution_data_admission",
-            ) from exc
+            source = ResolvedCatalogSource(
+                spec=spec,
+                series=series,
+                source_artifact_fingerprint=provenance.semantic_fingerprint,
+            )
         if (
             source.spec.venue != definition.venue
             or source.spec.base_asset != asset
@@ -231,8 +319,15 @@ def prepare_basket_replay_manifest(
             stage="attempt_validation",
         )
     definition = generation.definition
-    _require_source_scan_contract(definition, source_scan_directory, catalog)
-    sources = _resolved_execution_sources(definition, catalog, data_root=data_root)
+    source_scan = _require_source_scan_contract(
+        definition, source_scan_directory, catalog
+    )
+    sources = _resolved_execution_sources(
+        definition,
+        catalog,
+        source_scan=source_scan,
+        data_root=data_root,
+    )
 
     interval = BarInterval(definition.decision_resolution)
     evaluation_end = definition.source_as_of
@@ -380,6 +475,64 @@ def _gate_status(
     )
 
 
+def _recover_product_terminal_attempt(
+    *,
+    generation: BasketArtifactGeneration,
+    source_scan_directory: str | Path,
+    catalog: ScannerCatalog,
+    data_root: str | Path,
+    run_root: str | Path,
+) -> BasketReplayOutcome:
+    attempt = read_basket_attempt(generation)
+    if attempt.status is BasketReplayStatus.ENUMERATED:
+        raise RuntimeError("enumerated Product basket attempt is not recoverable")
+    if attempt.status is not BasketReplayStatus.COMPLETED:
+        return BasketReplayOutcome(
+            basket_id=generation.definition.basket_id,
+            status=attempt.status,
+            qap_run_id=None,
+            economic_gate_status=None,
+            failure_stage=attempt.failure_stage,
+            failure_reason=attempt.failure_reason,
+        )
+
+    source_scan = _require_source_scan_contract(
+        generation.definition,
+        source_scan_directory,
+        catalog,
+    )
+    _resolved_execution_sources(
+        generation.definition,
+        catalog,
+        source_scan=source_scan,
+        data_root=data_root,
+    )
+    if attempt.qap_run_id is None or attempt.economic_gate_status is None:
+        raise BasketReplaySetupError(
+            "completed_attempt_lineage_invalid",
+            stage="recovery_validation",
+        )
+    try:
+        loaded = read_run_artifacts(Path(run_root).resolve() / attempt.qap_run_id)
+    except (ArtifactError, OSError, ValueError) as exc:
+        raise BasketReplaySetupError(
+            "completed_qap_artifact_invalid",
+            stage="recovery_validation",
+        ) from exc
+    gate = _gate_status(loaded.result, horizon=generation.definition.horizon.value)
+    if gate is not attempt.economic_gate_status:
+        raise BasketReplaySetupError(
+            "completed_attempt_gate_mismatch",
+            stage="recovery_validation",
+        )
+    return BasketReplayOutcome(
+        basket_id=generation.definition.basket_id,
+        status=attempt.status,
+        qap_run_id=attempt.qap_run_id,
+        economic_gate_status=attempt.economic_gate_status,
+    )
+
+
 def _setup_failure(
     generation: BasketArtifactGeneration,
     failure: BasketReplaySetupError,
@@ -411,6 +564,19 @@ def run_basket_replay(
     run_timestamp: datetime | None = None,
 ) -> BasketReplayOutcome:
     """Execute one enumerated manual basket through ordinary QAP artifacts."""
+
+    attempt = read_basket_attempt(generation)
+    if (
+        generation.definition.execution_generations is not None
+        and attempt.status is not BasketReplayStatus.ENUMERATED
+    ):
+        return _recover_product_terminal_attempt(
+            generation=generation,
+            source_scan_directory=source_scan_directory,
+            catalog=catalog,
+            data_root=data_root,
+            run_root=run_root,
+        )
 
     try:
         prepared = prepare_basket_replay_manifest(

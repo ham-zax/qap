@@ -6,7 +6,6 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from threading import Lock
-from urllib.parse import quote
 
 from pydantic import BaseModel, ValidationError
 
@@ -22,6 +21,12 @@ from qap.product_maintenance import (
     MarketDataMaintenanceStore,
     ProductMaintenanceError,
 )
+from qap.product_market_data_generation import (
+    generation_relative_path as _generation_relative_path,
+)
+from qap.product_market_data_generation import (
+    provenance_relative_path as _provenance_relative_path,
+)
 from qap.product_market_data_models import (
     CurrentMarketDataGeneration,
     MarketDataDerivation,
@@ -31,7 +36,6 @@ from qap.product_market_data_models import (
     MarketDataUpstreamSource,
     ProductMarketDataProjection,
     ProvenanceStatus,
-    safe_relative_path,
     validated_text,
     validated_utc,
 )
@@ -44,24 +48,11 @@ from qap.scanner.catalog import (
     resolve_catalog_source,
 )
 
-_GENERATION_ROOT = PurePosixPath("product-market-data/generations")
 _LIFECYCLE_PATH = PurePosixPath("product-market-data/lifecycle.jsonl")
 
 
 class ProductMarketDataError(RuntimeError):
     """Raised when Product market-data state cannot be published or read safely."""
-
-
-def _generation_relative_path(dataset_id: str, fingerprint: str) -> str:
-    component = quote(validated_text(dataset_id, field="dataset_id"), safe="-_.~")
-    if component in {".", ".."}:
-        raise ValueError("dataset_id cannot resolve to a relative path marker")
-    return (_GENERATION_ROOT / component / f"{fingerprint}.parquet").as_posix()
-
-
-def _provenance_relative_path(generation_relative_path: str) -> str:
-    path = PurePosixPath(safe_relative_path(generation_relative_path))
-    return path.with_suffix(".provenance.json").as_posix()
 
 
 class ProductMarketData:

@@ -284,6 +284,20 @@
       "BasketDetailDto": {
         "additionalProperties": false,
         "properties": {
+          "execution_generations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BasketExecutionGenerationDto"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Generations"
+          },
           "qap_experiment_run_id": {
             "anyOf": [
               {
@@ -454,6 +468,35 @@
         "title": "BasketEdgeDto",
         "type": "object"
       },
+      "BasketExecutionGenerationDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "dataset_id": {
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "relative_path": {
+            "title": "Relative Path",
+            "type": "string"
+          },
+          "source_artifact_fingerprint": {
+            "title": "Source Artifact Fingerprint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_id",
+          "dataset_id",
+          "relative_path",
+          "source_artifact_fingerprint"
+        ],
+        "title": "BasketExecutionGenerationDto",
+        "type": "object"
+      },
       "BasketListDto": {
         "additionalProperties": false,
         "properties": {
@@ -571,6 +614,28 @@
             "title": "Basket Id",
             "type": "string"
           },
+          "basket_protocol_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basket Protocol Id"
+          },
+          "basket_protocol_identity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basket Protocol Identity"
+          },
           "decision_resolution": {
             "anyOf": [
               {
@@ -656,6 +721,16 @@
             ],
             "title": "Source As Of"
           },
+          "source_claim": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchClaimDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "source_momentum_scan_id": {
             "anyOf": [
               {
@@ -677,6 +752,28 @@
               }
             ],
             "title": "Source Scan Id"
+          },
+          "source_scanner_protocol_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Scanner Protocol Id"
+          },
+          "source_scanner_protocol_identity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Scanner Protocol Identity"
           },
           "venue": {
             "anyOf": [

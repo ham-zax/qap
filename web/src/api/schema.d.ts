@@ -797,6 +797,8 @@ export interface components {
         };
         /** BasketDetailDto */
         BasketDetailDto: {
+            /** Execution Generations */
+            execution_generations?: components["schemas"]["BasketExecutionGenerationDto"][] | null;
             /** Qap Experiment Run Id */
             qap_experiment_run_id: string | null;
             /** Qap Portfolio Run Id */
@@ -848,6 +850,17 @@ export interface components {
             /** Template Id */
             template_id: string;
         };
+        /** BasketExecutionGenerationDto */
+        BasketExecutionGenerationDto: {
+            /** Asset Id */
+            asset_id: string;
+            /** Dataset Id */
+            dataset_id: string;
+            /** Relative Path */
+            relative_path: string;
+            /** Source Artifact Fingerprint */
+            source_artifact_fingerprint: string;
+        };
         /** BasketListDto */
         BasketListDto: {
             /** Items */
@@ -893,6 +906,10 @@ export interface components {
             attempt_status?: string | null;
             /** Basket Id */
             basket_id: string;
+            /** Basket Protocol Id */
+            basket_protocol_id?: string | null;
+            /** Basket Protocol Identity */
+            basket_protocol_identity?: string | null;
             /** Decision Resolution */
             decision_resolution?: string | null;
             /**
@@ -911,10 +928,15 @@ export interface components {
             qap_run_id?: string | null;
             /** Source As Of */
             source_as_of?: string | null;
+            source_claim?: components["schemas"]["ResearchClaimDto"] | null;
             /** Source Momentum Scan Id */
             source_momentum_scan_id?: string | null;
             /** Source Scan Id */
             source_scan_id?: string | null;
+            /** Source Scanner Protocol Id */
+            source_scanner_protocol_id?: string | null;
+            /** Source Scanner Protocol Identity */
+            source_scanner_protocol_identity?: string | null;
             /** Venue */
             venue?: string | null;
         };
