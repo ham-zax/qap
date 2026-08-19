@@ -5,15 +5,15 @@
 **Source plan:** `docs/plans/17-product-layer-market-data-and-research-lifecycle.md`
 **Investigation evidence:** `docs/research/2026-08-19-qap-product-layer-investigation.md`
 **Frozen design base:** `1bb6e78`
-**Execution shape:** parallel venue writers on the verified shared M3 foundation, followed by one central M3 integration/orchestration pass before M4
-**Current wave:** 4
+**Execution shape:** one final writable M3 Product orchestration/exit pass plus one concurrent read-only combined-state cross-check; M4 starts only after M3 exit is verified
+**Current wave:** 4b
 
 ## Current frontier
 
 | Mission | Type | Status | Can start | Workspace | Isolation reason | Blocked by |
 |---|---|---|---|---|---|---|
-| Agent 1 — M3 Binance historical acquisition | executable | ready | now | `/home/hamza/repo/qap/.worktrees/phase17-m3-binance` on branch `phase17-m3-binance` | concurrent venue writer; shared M3 foundation is frozen | integrated foundation `1a476db` + Wave-4 coordination base |
-| Agent 2 — M3 Gate historical acquisition | executable | ready | now | `/home/hamza/repo/qap/.worktrees/phase17-m3-gate` on branch `phase17-m3-gate` | concurrent venue writer; shared M3 foundation is frozen | integrated foundation `1a476db` + Wave-4 coordination base |
+| Agent 1 — M3 combined Product orchestration / exit | mixed executable | ready | now | `/home/hamza/repo/qap/.worktrees/phase17-m3-orchestration` on branch `phase17-m3-orchestration` | sole final M3 writer while main stays stable for Agent 2 cross-check | integrated Binance `f1fab24` + Gate integration on main + Wave-4b coordination base |
+| Agent 2 — M3 combined integration / exit cross-check | read-only | ready | now | `/home/hamza/repo/qap` read-only | no writable worktree; must not race Agent 1 | integrated combined M3 venue state |
 
 ## Dependency map
 
@@ -29,18 +29,19 @@ M2 directory / identity / admission (8e45c36, integrated)
         v
 M3 shared generation/provenance foundation (1a476db, integrated)
         |
+        v
+M3 Binance + Gate venue acquisition (integrated)
+        |
         +--------------------------------------+
         |                                      |
         v                                      v
-Agent 1: Binance acquisition          Agent 2: Gate acquisition
-archive/checksum + REST paging        candlesticks + bounded windows
+Agent 1: Product orchestration/exit   Agent 2: read-only M3 cross-check
+prepare/refresh across both venues    combined owners / exit / M4 handoff
         |                                      |
         +------------------+-------------------+
-                           v
-             planner integrates both venue branches
                            |
                            v
-           one bounded M3 orchestration/exit pass
+                 planner verifies M3 exit
                            |
                            v
                M4 current-approved readiness
@@ -49,7 +50,7 @@ archive/checksum + REST paging        candlesticks + bounded windows
                 M5+ Product UI/lifecycle work
 ```
 
-M3 shared foundation is integrated. Agent 2's M4 reconnaissance is complete and provides the executable M4 policy/readiness contract, but M4 implementation remains blocked until complete M3. The current writable frontier is the genuinely parallel Binance/Gate acquisition fan-out. After both venue branches are integrated, the planner must perform or assign one small central M3 orchestration/exit pass so a clean approved scope can actually drive Product preparation across the venue drivers before declaring M3 complete.
+M3 shared foundation, Binance acquisition, and Gate acquisition are integrated. Agent 2's M4 reconnaissance is complete and provides the executable M4 policy/readiness contract, but M4 implementation remains blocked until complete M3. The sole remaining writable M3 work is the bounded Product orchestration/exit pass that connects captured approved scope + Scanner-V1 timeframe requirements to both venue acquirers and the shared immutable publisher through Product prepare/refresh operations.
 
 ## Milestone progress
 
@@ -58,7 +59,7 @@ M3 shared foundation is integrated. Agent 2's M4 reconnaissance is complete and 
 | M0 design freeze | complete | — |
 | M1 workspace identity + clean zero-state | complete / integrated at `461a33c` | Agent 1 finished |
 | M2 market directory + explicit asset admission | complete / integrated at `8e45c36` | Agent 2 finished |
-| M3 historical acquisition + provenance/generations | shared foundation integrated at `1a476db`; venue acquisition is current writable frontier | Agent 1 Binance + Agent 2 Gate |
+| M3 historical acquisition + provenance/generations | foundation + Binance + Gate integrated; combined Product orchestration/exit is the only remaining M3 work | Agent 1 writer + Agent 2 read-only cross-check |
 | M4 current-approved policy + readiness/safe cutoff | reconnaissance complete; implementation blocked by complete M3 | unassigned until M3 exit |
 | M5 self-explanatory Research + primary IA | blocked by M4 | unassigned |
 | M6 longitudinal Research Idea | blocked by M5 | unassigned |
@@ -80,43 +81,35 @@ M3 shared foundation is integrated. Agent 2's M4 reconnaissance is complete and 
 
 ## Workspace policy
 
-Agent 1 and Agent 2 are concurrent writers only because the integrated M3 foundation established a real disjoint venue seam. Each receives a separate worktree/branch from the same Wave-4 coordination base.
+Agent 1 is the sole writable autonomous process for the final M3 pass and receives `/home/hamza/repo/qap/.worktrees/phase17-m3-orchestration`. Agent 2 is read-only on stable `main` and must not edit, stage, commit, switch branches, create worktrees, or run mutating Product/API commands.
 
-- Agent 1 owns Binance-specific historical acquisition only.
-- Agent 2 owns Gate-specific historical acquisition only.
-- Neither venue writer may independently redesign the shared generation/provenance publisher, maintenance schema, historical-freeze repair, or M4 read contract.
-
-The former M1/M2/M3-foundation worktrees are historical integrated milestone state and must not be reused as additional writers for Wave 4.
+The former M1/M2/M3-foundation/Binance/Gate worktrees are historical integrated milestone state and must not be reused as additional writers for Wave 4b.
 
 ## Integration policy
 
-M1 is integrated at `461a33c`, M2 at `8e45c36`, and the M3 shared foundation at `1a476db`. The foundation was verified to preserve the shared generation/provenance/publication contract and historical-freeze source ownership before venue fan-out.
+M1 is integrated at `461a33c`, M2 at `8e45c36`, the M3 shared foundation at `1a476db`, Binance at `f1fab24`, and Gate is integrated on combined main after its venue commit `30297cd`. The venue fan-out required no shared-contract changes and produced no file overlap.
 
-The planner integrates the Binance and Gate branches centrally, one at a time, after verifying each clean branch and its venue-only ownership. If both branches require conflicting shared-contract changes, stop the fan-out and replan rather than resolving the semantic conflict opportunistically during merge.
+The planner integrates Agent 1's final M3 orchestration branch only after verifying the clean branch, the bounded Product operation surface, combined Binance/Gate dispatch, immutable refresh behavior, and M3 exit criteria. Agent 2's read-only cross-check is advisory evidence; it does not replace direct integration verification.
 
-After both venue branches land, full M3 is **not yet automatically complete**. The planner must verify the combined acquisition paths and materialize one bounded central orchestration/exit mission if needed to connect Product preparation/refresh to both venue drivers and satisfy the canonical M3 exit criteria. Only then may executable M4 start.
-
-Neither venue agent may merge/rebase/reset `main` or rewrite the other venue branch.
+Only after full M3 exit is established may executable M4 start.
 
 ## Execution lifetime policy
 
-Both venue writers should load and use `persistent-agent-loop` because acquisition work may include bounded network/public-data operations and the user intends to steer long-running work.
+Both sessions should load and use `persistent-agent-loop` because the user intends to steer long-running work.
 
-- Agent 1 Binance writer: persistent loop required; use Terminal + event wait only for a genuinely persistent/long public-data operation.
-- Agent 2 Gate writer: persistent loop required under the same rule.
+- Agent 1 M3 orchestration writer: persistent loop required; use Terminal + event wait only for a genuinely persistent Product acquisition smoke/process.
+- Agent 2 read-only cross-check: persistent loop for continuity only; do not manufacture waits/processes.
 - Status/progress questions are steering events, not stop commands, unless the user explicitly stops/replaces a mission.
 
 ## Verification policy
 
-### Agent 1 — Binance
+### Agent 1 — M3 orchestration / exit
 
-Prove bounded multi-page/archive Binance acquisition can normalize a resolved Product instrument into contiguous completed QAP bars, seal exact upstream provenance, and publish through the integrated M3 foundation. Do not create/run tests unless separately authorized.
+Prove a clean explicitly approved Local Market scope can initiate bounded Product preparation/refresh across both integrated venue drivers, publish immutable generations with complete provenance, preserve old generations on refresh, and expose truthful Product maintenance state without implementing M4 readiness. Do not create/run tests unless separately authorized.
 
-### Agent 2 — Gate
+### Agent 2 — read-only M3 cross-check
 
-Prove bounded Gate candlestick/window/archive acquisition can normalize a resolved Product instrument into contiguous completed QAP bars, seal exact upstream provenance, and publish through the same foundation. Do not create/run tests unless separately authorized.
-
-The planner will separately verify combined integration and the full M3 exit after both branches return.
+Verify combined owner/caller composition, timeframe/window ownership, logical-ID compatibility, prepare/refresh invariants, exact M3 exit evidence, and M4 handoff completeness. No tests or mutations.
 
 ## Future / blocked work
 
@@ -127,8 +120,8 @@ The whole Phase-17 implementation is decomposed at low resolution below. Detaile
 | **1 — complete** | **Write M1:** workspace identity, zero-state, launcher/UI contract | **Read-only M2 reconnaissance** | M1 integrated at `461a33c`; M2 reconnaissance complete |
 | **2 — complete** | **Read-only M3 reconnaissance** | **Write M2:** current market directory + explicit asset admission | M2 integrated at `8e45c36`; M3 reconnaissance complete and found a foundation-then-fan-out seam |
 | **3 — complete** | **Write M3 foundation:** immutable dataset-generation/provenance contract + shared publication/read seam + scan-refresh-freeze ownership repair | **Read-only M4 reconnaissance:** current-approved policy/readiness/safe cutoff | foundation integrated at `1a476db`; M4 reconnaissance complete |
-| **4 — current** | **Write M3 Binance path** in isolated worktree | **Write M3 Gate path** in isolated worktree | real parallel fan-out on the integrated shared seam; integrate centrally |
-| **4b** | **M3 combined orchestration/exit pass** | available for independent read-only integration cross-check if useful | starts only after both venue branches integrate; full M3 exit must be proven before M4 |
+| **4 — complete** | **Write M3 Binance path** in isolated worktree | **Write M3 Gate path** in isolated worktree | both venue paths integrated without shared-contract conflict |
+| **4b — current** | **Write M3 combined Product orchestration/exit pass** | **Read-only combined M3 integration/exit cross-check** | full M3 exit must be proven before M4 |
 | **5** | **Write M4:** current-approved research policy + backend readiness/safe cutoff | **Read-only M5 Research/IA reconnaissance** | M5 stays blocked until M1-M4 truth is integrated |
 | **6** | **Write M5:** self-explanatory Research experience + primary IA | **Read-only M6 longitudinal-idea reconnaissance** | frontend product composition may begin only after M4 |
 | **7** | **Write M6:** longitudinal Research Idea + all-survivor follow-up | **Read-only M7 collector reconnaissance** | keeps prospective semantics owned by existing QAP/scanner contracts |
@@ -141,7 +134,7 @@ This map is a dependency plan, not permission to start future writers early. The
 
 Important blocked work now:
 
-- M3 combined orchestration/exit pass — blocked by both current venue branches.
+- M3 combined orchestration/exit pass — current writable frontier.
 - M4 current-approved policy/readiness/safe cutoff implementation — reconnaissance complete but executable work remains blocked by full M3.
 - M5 primary React IA restructuring — blocked by M1-M4; do not start early.
 - M6-M10 detailed briefs remain intentionally unmaterialized until their prerequisite contracts are real.
@@ -153,3 +146,4 @@ Important blocked work now:
 - `2026-08-19` — M2 `8e45c36` verified and fast-forward integrated into `main`. M3 reconnaissance traced the freeze defect to loss of the historical physical `relative_path`, confirmed existing native required intervals, and recommended a shared generation/provenance foundation followed by disjoint Binance/Gate writers. Wave 3 materialized with Agent 1 on the M3 foundation and Agent 2 on read-only M4 reconnaissance.
 
 - `2026-08-19` — M3 shared foundation `1a476db` verified and fast-forward integrated. M4 reconnaissance completed the separate current-approved policy/readiness design. Wave 4 materialized as parallel Binance/Gate historical-acquisition writers on the frozen shared generation/provenance seam; full M3 still requires central combined orchestration/exit verification after both return.
+- `2026-08-19` — Binance `f1fab24` and Gate `30297cd` returned clean with disjoint venue-only diffs and no shared-contract change; both were integrated on main. Wave 4b materialized with Agent 1 owning the bounded combined Product orchestration/exit pass and Agent 2 performing a read-only M3 exit/M4-handoff cross-check.

@@ -1,6 +1,6 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M2 and the M3 shared generation/provenance/freeze-lineage foundation are complete and integrated. Parallel Binance/Gate historical acquisition is the current frontier; full M3 still requires combined Product preparation/orchestration and exit verification before M4.
+**Status:** M0-M2, the M3 shared generation/provenance/freeze-lineage foundation, and both Binance/Gate historical acquisition paths are complete and integrated. The bounded combined Product preparation/orchestration and M3 exit pass is the current frontier; M4 starts only after full M3 exit verification.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
@@ -575,7 +575,7 @@ Phase 17 is complete only when:
 
 ## 19. Fresh-agent implementation mission
 
-> Work in `/home/hamza/repo/qap` on `main`. Preserve legitimate concurrent changes. Read `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md` first for the live coordination frontier, then the Product Layer investigation/design and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M2 and the M3 shared generation/provenance/freeze-lineage foundation are complete and integrated; the current writable frontier is the parallel Binance/Gate historical acquisition fan-out, followed by one bounded combined M3 Product orchestration/exit pass and then M4. Preserve the strict historical-PIT policy, explicit operator asset admission, immutable evidence, negative research, all-survivor prospective follow-up, QAP financial authority, and the Phase-12 live-capital `NO-GO`. Do not add CCXT, a generic job system, cloud infrastructure, or live/private exchange authority without a concrete separately authorized need. Testing remains opt-in under the current execution policy.
+> Work in `/home/hamza/repo/qap` on `main`. Preserve legitimate concurrent changes. Read `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md` first for the live coordination frontier, then the Product Layer investigation/design and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M2, the M3 shared generation/provenance/freeze-lineage foundation, and both Binance/Gate historical acquisition paths are complete and integrated; the current writable frontier is the bounded combined M3 Product preparation/orchestration/exit pass, followed by M4. Preserve the strict historical-PIT policy, explicit operator asset admission, immutable evidence, negative research, all-survivor prospective follow-up, QAP financial authority, and the Phase-12 live-capital `NO-GO`. Do not add CCXT, a generic job system, cloud infrastructure, or live/private exchange authority without a concrete separately authorized need. Testing remains opt-in under the current execution policy.
 
 ## 20. One-screen status
 
@@ -586,9 +586,11 @@ Phase 17 M0 design freeze         COMPLETE
 Phase 17 M1 workspace identity    COMPLETE
 Phase 17 M2 research universe     COMPLETE
 Phase 17 M3 shared foundation      COMPLETE
+Phase 17 M3 Binance acquisition    COMPLETE
+Phase 17 M3 Gate acquisition       COMPLETE
 
 NEXT
-Phase 17 M3 Binance/Gate historical acquisition
+Phase 17 M3 combined Product orchestration / exit
 
 FUTURE PRIMARY IA
 Home | Research | Portfolios | History
