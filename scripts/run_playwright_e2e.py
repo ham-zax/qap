@@ -1,4 +1,4 @@
-"""Run the two critical browser flows against deterministic local QAP servers."""
+"""Run critical browser flows against deterministic local QAP servers."""
 
 from __future__ import annotations
 
@@ -19,6 +19,8 @@ _WEB_ROOT = _ROOT / "web"
 _DEFAULT_SPECS = (
     "e2e/portfolio-workbench.spec.ts",
     "e2e/pair-anchor-lens.spec.ts",
+    "e2e/slice4-discovery-basket.spec.ts",
+    "e2e/slice4-prospective-operations.spec.ts",
 )
 
 
@@ -46,7 +48,7 @@ def _wait_for_http(
     url: str,
     process: subprocess.Popen[bytes],
     log_path: Path,
-    timeout_seconds: float = 30.0,
+    timeout_seconds: float = 120.0,
 ) -> None:
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
@@ -153,7 +155,14 @@ def main(argv: list[str]) -> int:
                 test_environment["QAP_E2E_API_BASE_URL"] = api_base_url
                 test_environment["QAP_E2E_WEB_BASE_URL"] = web_base_url
                 completed = subprocess.run(
-                    ["pnpm", "exec", "playwright", "test", *specs],
+                    [
+                        "pnpm",
+                        "exec",
+                        "playwright",
+                        "test",
+                        "--workers=1",
+                        *specs,
+                    ],
                     cwd=_WEB_ROOT,
                     env=test_environment,
                     check=False,

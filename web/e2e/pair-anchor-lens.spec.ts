@@ -10,9 +10,16 @@ test('pair workbench keeps reciprocal orientation and anchor lens in URL state',
   const response = await request.get(`${API_BASE_URL}/api/experiments`)
   expect(response.ok()).toBeTruthy()
   const payload = (await response.json()) as {
-    items: Array<{ artifact_status: string; run_id: string }>
+    items: Array<{
+      artifact_status: string
+      experiment_name: string | null
+      run_id: string
+    }>
   }
-  const runId = payload.items.find((item) => item.artifact_status === 'valid')?.run_id
+  const runId = payload.items.find(
+    (item) =>
+      item.artifact_status === 'valid' && item.experiment_name === 'two-asset dummy',
+  )?.run_id
   expect(runId).toBeTruthy()
   if (!runId) throw new Error('fixture API returned no valid run')
 

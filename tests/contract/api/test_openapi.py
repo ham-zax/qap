@@ -21,16 +21,34 @@ def test_openapi_exposes_stable_operation_ids_and_public_dtos(tmp_path: Path) ->
         if isinstance(operation, dict) and "operationId" in operation
     }
     assert operation_ids == {
-        "getHealth",
-        "listExperiments",
+        "advanceForwardCohort",
+        "capturePublicEvidence",
+        "freezeForwardCohort",
+        "generateAssetMomentum",
+        "getAnchorLens",
+        "getBasket",
         "getExperiment",
+        "getForwardCohort",
+        "getHealth",
+        "getOperation",
+        "getPairEvidence",
+        "getPairSeries",
+        "getPaperOperation",
         "getPortfolio",
         "getPortfolioPerformance",
-        "getPairSeries",
-        "getPairEvidence",
-        "getAnchorLens",
+        "getScan",
+        "getScanCandidate",
+        "getScannerProtocol",
+        "listBaskets",
+        "listExperiments",
+        "listForwardCohorts",
+        "listOperations",
         "listPaperOperations",
-        "getPaperOperation",
+        "listScanCandidates",
+        "listScans",
+        "qualifyCandidate",
+        "runBasket",
+        "runScan",
     }
 
     schemas = set(schema["components"]["schemas"])
@@ -45,6 +63,12 @@ def test_openapi_exposes_stable_operation_ids_and_public_dtos(tmp_path: Path) ->
         "RebalanceDecisionAuditDto",
         "PaperOperationSummaryDto",
         "PaperOperationDetailDto",
+        "ScannerProtocolDto",
+        "ScanDetailDto",
+        "CandidateDetailDto",
+        "ForwardCohortDetailDto",
+        "BasketDetailDto",
+        "OperationDto",
     } <= schemas
 
 
@@ -61,7 +85,7 @@ def test_openapi_export_script_is_deterministic(tmp_path: Path) -> None:
 
     assert first.read_bytes() == second.read_bytes()
     payload = json.loads(first.read_text(encoding="utf-8"))
-    assert payload["info"]["title"] == "QAP Research Evidence API"
+    assert payload["info"]["title"] == "QAP Research Application API"
     assert payload["paths"]["/api/experiments"]["get"]["operationId"] == (
         "listExperiments"
     )
