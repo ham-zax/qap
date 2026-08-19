@@ -1,8 +1,9 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
 import type { WorkspaceStatusDto } from '../api/types'
 import { ChartAttribution } from './ChartAttribution'
+import { ScreenGuide, screenGuideForPath } from './ScreenGuide'
 import { Badge } from './ui/Badge'
 
 interface AppShellProps {
@@ -15,6 +16,9 @@ const navLinkClass =
   'flex min-h-11 w-auto flex-1 items-center justify-center rounded-md border border-transparent px-3 py-2 text-sm font-semibold text-secondary no-underline transition-[background-color,border-color,color] duration-150 hover:bg-subtle hover:text-foreground data-[status=active]:border-border data-[status=active]:bg-subtle data-[status=active]:text-foreground md:flex-none'
 
 export function AppShell({ children, workspaceMode, collectorStatus }: AppShellProps) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const guide = screenGuideForPath(pathname)
+
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -73,6 +77,7 @@ export function AppShell({ children, workspaceMode, collectorStatus }: AppShellP
         </nav>
       </header>
       <main id="main-content" tabIndex={-1}>
+        {guide ? <ScreenGuide guide={guide} /> : null}
         {children}
       </main>
       <footer>

@@ -297,7 +297,7 @@ export function ResearchUniverse({
       {universe.directory_status === 'observed' ? (
         <details className="mt-8 rounded-lg border border-border bg-panel p-5">
           <summary className="min-h-11 cursor-pointer py-2 text-lg font-semibold text-accent">
-            Identity review
+            Identity review · tell QAP what each venue code means
           </summary>
           <div className="mt-3 max-w-4xl">
             <p className="text-sm leading-6 text-secondary">
@@ -307,14 +307,38 @@ export function ResearchUniverse({
               ticker text.
             </p>
 
+            <div className="mt-4 rounded-md border border-accent/35 bg-canvas/35 p-4">
+              <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+                Do this in order
+              </p>
+              <ol className="mt-3 mb-0 space-y-2 pl-5 text-sm leading-6 text-secondary">
+                <li>Resolve the venue&apos;s USDT quote identity when QAP asks for it.</li>
+                <li>Search for the base-asset code you want to review.</li>
+                <li>
+                  Confirm the canonical asset and identity version only after independent
+                  verification.
+                </li>
+                <li>Approve the canonical asset separately in the list above.</li>
+              </ol>
+              <p className="mt-3 mb-0 text-sm leading-6 text-secondary">
+                <strong className="text-foreground">Example:</strong> after independently
+                confirming that Binance <code>BTC</code> is the canonical <code>BTC</code>
+                identity you intend to research, map that venue code to <code>BTC</code> and
+                its confirmed identity version. The mapping says “these are the same
+                economic identity”; the separate approval says “QAP may research this
+                asset.”
+              </p>
+            </div>
+
             {quoteReviews.length ? (
               <div className="mt-5 rounded-md border border-warning/40 bg-subtle p-4">
                 <h3 className="m-0 text-base font-semibold text-foreground">
                   Quote identity required
                 </h3>
                 <p className="mt-2 text-sm text-secondary">
-                  Resolve the venue&apos;s USDT quote coordinate before an asset/USDT market
-                  can become a canonical current instrument.
+                  Every asset/USDT market contains two asset identities. Resolve the
+                  venue&apos;s USDT quote identity first so QAP can safely turn that market into
+                  a canonical current instrument.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {quoteReviews.map((item) => (
@@ -368,6 +392,9 @@ export function ResearchUniverse({
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <label className="text-sm font-medium text-secondary">
                     Canonical economic asset
+                    <span className="mt-1 block text-xs font-normal leading-5 text-muted">
+                      The QAP asset key this venue code belongs to, for example BTC.
+                    </span>
                     <input
                       className="mt-2 min-h-11 w-full rounded-md border border-border bg-canvas px-3 text-foreground"
                       value={identityDraft.canonical_asset_id}
@@ -382,6 +409,10 @@ export function ResearchUniverse({
                   </label>
                   <label className="text-sm font-medium text-secondary">
                     Identity version
+                    <span className="mt-1 block text-xs font-normal leading-5 text-muted">
+                      The confirmed token/contract identity label. Do not copy the venue
+                      ticker here unless that is truly your confirmed identity version.
+                    </span>
                     <input
                       className="mt-2 min-h-11 w-full rounded-md border border-border bg-canvas px-3 text-foreground"
                       value={identityDraft.asset_identity_version}
