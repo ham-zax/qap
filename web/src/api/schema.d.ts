@@ -345,6 +345,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/product-market-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Product Market Data */
+        get: operations["getProductMarketData"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/product-market-data/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prepare Product Market Data */
+        post: operations["prepareProductMarketData"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/product-market-data/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Product Market Data */
+        post: operations["refreshProductMarketData"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/qualifications": {
         parameters: {
             query?: never;
@@ -1624,6 +1675,59 @@ export interface components {
             venue_symbol: string;
         };
         JsonValue: unknown;
+        /** MarketDataGenerationDto */
+        MarketDataGenerationDto: {
+            /** Base Asset */
+            base_asset: string;
+            /** Coverage End Exclusive */
+            coverage_end_exclusive: string | null;
+            /** Coverage Start */
+            coverage_start: string | null;
+            /** Dataset Id */
+            dataset_id: string;
+            /** Interval */
+            interval: string;
+            /** Issue */
+            issue: string | null;
+            /** Provenance Relative Path */
+            provenance_relative_path: string | null;
+            /**
+             * Provenance Status
+             * @enum {string}
+             */
+            provenance_status: "complete" | "missing" | "invalid";
+            /** Quote Asset */
+            quote_asset: string;
+            /** Relative Path */
+            relative_path: string;
+            /** Semantic Fingerprint */
+            semantic_fingerprint: string;
+            /** Venue */
+            venue: string;
+            /** Venue Symbol */
+            venue_symbol: string;
+        };
+        /** MarketDataMaintenanceDto */
+        MarketDataMaintenanceDto: {
+            /** Failure Reason */
+            failure_reason: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /** Kind */
+            kind: ("prepare_market_data" | "refresh_market_data") | null;
+            /** Started At */
+            started_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "idle" | "running" | "failed";
+        };
+        /** MarketDataPreparationRequestDto */
+        MarketDataPreparationRequestDto: {
+            /** Horizons */
+            horizons: ("short" | "medium" | "swing")[];
+        };
         /** MomentumGenerationDto */
         MomentumGenerationDto: {
             /**
@@ -2185,6 +2289,18 @@ export interface components {
          * @enum {string}
          */
         PrimaryMetric: "hodl_relative_terminal_wealth" | "primary_control_relative_terminal_wealth";
+        /** ProductMarketDataDto */
+        ProductMarketDataDto: {
+            /** Generations */
+            generations: components["schemas"]["MarketDataGenerationDto"][];
+            maintenance: components["schemas"]["MarketDataMaintenanceDto"];
+            /**
+             * Schema Version
+             * @default qap.api.product_market_data.v1
+             * @constant
+             */
+            schema_version: "qap.api.product_market_data.v1";
+        };
         /** QualificationDto */
         QualificationDto: {
             /**
@@ -2721,9 +2837,9 @@ export interface components {
             /**
              * Product Maintenance Status
              * @default idle
-             * @constant
+             * @enum {string}
              */
-            product_maintenance_status: "idle";
+            product_maintenance_status: "idle" | "running" | "failed";
             /**
              * Schema Version
              * @default qap.api.workspace_status.v1
@@ -3345,6 +3461,92 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PortfolioPerformanceDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getProductMarketData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductMarketDataDto"];
+                };
+            };
+        };
+    };
+    prepareProductMarketData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarketDataPreparationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductMarketDataDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refreshProductMarketData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarketDataPreparationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductMarketDataDto"];
                 };
             };
             /** @description Validation Error */

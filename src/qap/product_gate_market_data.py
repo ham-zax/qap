@@ -47,6 +47,28 @@ def publish_gate_historical_generation(
 ) -> MarketDataGenerationProvenance:
     """Acquire and publish one exact Gate generation through the shared M3 owner."""
 
+    generation = acquire_gate_historical_generation_input(
+        adapter=adapter,
+        scope=scope,
+        resolved_instrument=resolved_instrument,
+        interval=interval,
+        start=start,
+        end_exclusive=end_exclusive,
+    )
+    return market_data.publish_generation(scope, generation)
+
+
+def acquire_gate_historical_generation_input(
+    *,
+    adapter: GateHistoricalAdapter,
+    scope: ProductResearchScope,
+    resolved_instrument: ResolvedProductInstrument,
+    interval: BarInterval,
+    start: datetime,
+    end_exclusive: datetime,
+) -> MarketDataGenerationInput:
+    """Acquire one exact Gate window without publishing partial Product state."""
+
     if resolved_instrument not in scope.instruments:
         raise ValueError(
             "Gate acquisition instrument is not in the Product research scope"
@@ -70,14 +92,17 @@ def publish_gate_historical_generation(
         )
         for source in acquisition.sources
     )
-    generation = MarketDataGenerationInput(
+    return MarketDataGenerationInput(
         dataset_id=gate_dataset_id(resolved_instrument, interval),
         resolved_instrument=resolved_instrument,
         series=acquisition.series,
         acquisition_implementation=_GATE_ACQUISITION_IMPLEMENTATION,
         upstream_sources=upstream_sources,
     )
-    return market_data.publish_generation(scope, generation)
 
 
-__all__ = ["gate_dataset_id", "publish_gate_historical_generation"]
+__all__ = [
+    "acquire_gate_historical_generation_input",
+    "gate_dataset_id",
+    "publish_gate_historical_generation",
+]

@@ -2932,6 +2932,210 @@
         "type": "object"
       },
       "JsonValue": {},
+      "MarketDataGenerationDto": {
+        "additionalProperties": false,
+        "properties": {
+          "base_asset": {
+            "title": "Base Asset",
+            "type": "string"
+          },
+          "coverage_end_exclusive": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage End Exclusive"
+          },
+          "coverage_start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Start"
+          },
+          "dataset_id": {
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "interval": {
+            "title": "Interval",
+            "type": "string"
+          },
+          "issue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issue"
+          },
+          "provenance_relative_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provenance Relative Path"
+          },
+          "provenance_status": {
+            "enum": [
+              "complete",
+              "missing",
+              "invalid"
+            ],
+            "title": "Provenance Status",
+            "type": "string"
+          },
+          "quote_asset": {
+            "title": "Quote Asset",
+            "type": "string"
+          },
+          "relative_path": {
+            "title": "Relative Path",
+            "type": "string"
+          },
+          "semantic_fingerprint": {
+            "title": "Semantic Fingerprint",
+            "type": "string"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "title": "Venue Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "relative_path",
+          "venue",
+          "venue_symbol",
+          "base_asset",
+          "quote_asset",
+          "interval",
+          "semantic_fingerprint",
+          "coverage_start",
+          "coverage_end_exclusive",
+          "provenance_status",
+          "provenance_relative_path",
+          "issue"
+        ],
+        "title": "MarketDataGenerationDto",
+        "type": "object"
+      },
+      "MarketDataMaintenanceDto": {
+        "additionalProperties": false,
+        "properties": {
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "prepare_market_data",
+                  "refresh_market_data"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "enum": [
+              "idle",
+              "running",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "kind",
+          "started_at",
+          "finished_at",
+          "failure_reason"
+        ],
+        "title": "MarketDataMaintenanceDto",
+        "type": "object"
+      },
+      "MarketDataPreparationRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "horizons": {
+            "items": {
+              "enum": [
+                "short",
+                "medium",
+                "swing"
+              ],
+              "type": "string"
+            },
+            "title": "Horizons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "horizons"
+        ],
+        "title": "MarketDataPreparationRequestDto",
+        "type": "object"
+      },
       "MomentumGenerationDto": {
         "additionalProperties": false,
         "properties": {
@@ -4489,6 +4693,33 @@
         ],
         "title": "PrimaryMetric",
         "type": "string"
+      },
+      "ProductMarketDataDto": {
+        "additionalProperties": false,
+        "properties": {
+          "generations": {
+            "items": {
+              "$ref": "#/components/schemas/MarketDataGenerationDto"
+            },
+            "title": "Generations",
+            "type": "array"
+          },
+          "maintenance": {
+            "$ref": "#/components/schemas/MarketDataMaintenanceDto"
+          },
+          "schema_version": {
+            "const": "qap.api.product_market_data.v1",
+            "default": "qap.api.product_market_data.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "generations",
+          "maintenance"
+        ],
+        "title": "ProductMarketDataDto",
+        "type": "object"
       },
       "QualificationDto": {
         "additionalProperties": false,
@@ -6079,8 +6310,12 @@
             "type": "string"
           },
           "product_maintenance_status": {
-            "const": "idle",
             "default": "idle",
+            "enum": [
+              "idle",
+              "running",
+              "failed"
+            ],
             "title": "Product Maintenance Status",
             "type": "string"
           },
@@ -7020,6 +7255,109 @@
         "summary": "Portfolio Performance",
         "tags": [
           "portfolios"
+        ]
+      }
+    },
+    "/api/product-market-data": {
+      "get": {
+        "operationId": "getProductMarketData",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductMarketDataDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Product Market Data",
+        "tags": [
+          "product-market-data"
+        ]
+      }
+    },
+    "/api/product-market-data/prepare": {
+      "post": {
+        "operationId": "prepareProductMarketData",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarketDataPreparationRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductMarketDataDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Prepare Product Market Data",
+        "tags": [
+          "product-market-data"
+        ]
+      }
+    },
+    "/api/product-market-data/refresh": {
+      "post": {
+        "operationId": "refreshProductMarketData",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarketDataPreparationRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductMarketDataDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh Product Market Data",
+        "tags": [
+          "product-market-data"
         ]
       }
     },

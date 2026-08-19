@@ -98,11 +98,63 @@ class AssetAdmissionRequestDto(ProductApiDto):
         return AssetId(value).key
 
 
+class MarketDataPreparationRequestDto(ProductApiDto):
+    horizons: tuple[Literal["short", "medium", "swing"], ...]
+
+    @field_validator("horizons")
+    @classmethod
+    def validate_horizons(
+        cls,
+        values: tuple[Literal["short", "medium", "swing"], ...],
+    ) -> tuple[Literal["short", "medium", "swing"], ...]:
+        if not values:
+            raise ValueError("horizons must contain at least one timeframe")
+        if len(set(values)) != len(values):
+            raise ValueError("horizons must not contain duplicates")
+        return values
+
+
+class MarketDataMaintenanceDto(ProductApiDto):
+    status: Literal["idle", "running", "failed"]
+    kind: Literal["prepare_market_data", "refresh_market_data"] | None
+    started_at: datetime | None
+    finished_at: datetime | None
+    failure_reason: str | None
+
+
+class MarketDataGenerationDto(ProductApiDto):
+    dataset_id: str
+    relative_path: str
+    venue: str
+    venue_symbol: str
+    base_asset: str
+    quote_asset: str
+    interval: str
+    semantic_fingerprint: str
+    coverage_start: datetime | None
+    coverage_end_exclusive: datetime | None
+    provenance_status: Literal["complete", "missing", "invalid"]
+    provenance_relative_path: str | None
+    issue: str | None
+
+
+class ProductMarketDataDto(ProductApiDto):
+    schema_version: Literal["qap.api.product_market_data.v1"] = (
+        "qap.api.product_market_data.v1"
+    )
+    generations: tuple[MarketDataGenerationDto, ...]
+    maintenance: MarketDataMaintenanceDto
+
+
 __all__ = [
     "AssetAdmissionRequestDto",
     "DirectorySourceDto",
     "IdentityMappingRequestDto",
     "IdentityReviewDto",
+    "MarketDataGenerationDto",
+    "MarketDataMaintenanceDto",
+    "MarketDataPreparationRequestDto",
+    "ProductMarketDataDto",
     "ResearchUniverseAssetDto",
     "ResearchUniverseDto",
     "ResearchUniverseVenueDto",

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request
 
 from qap.api.schemas import WorkspaceStatusDto
 from qap.api.settings import ApiSettings
+from qap.product_market_data import ProductMarketData
 
 router = APIRouter(tags=["workspace"])
 
@@ -33,11 +34,13 @@ def _market_data_status(
 def workspace_status(request: Request) -> WorkspaceStatusDto:
     settings: ApiSettings = request.app.state.settings
     market_data_status, catalog_updated_at = _market_data_status(settings)
+    product_market_data: ProductMarketData = request.app.state.product_market_data
     return WorkspaceStatusDto(
         workspace_mode=settings.workspace_mode,
         workspace_root=str(settings.run_root),
         market_data_status=market_data_status,
         market_data_catalog_updated_at=catalog_updated_at,
+        product_maintenance_status=product_market_data.maintenance_state().status,
     )
 
 
