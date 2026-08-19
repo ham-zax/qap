@@ -1,6 +1,6 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M2, the M3 shared generation/provenance/freeze-lineage foundation, and both Binance/Gate historical acquisition paths are complete and integrated. The selective legacy-QAP salvage amendment is approved. The upgraded combined Product preparation/orchestration and M3 exit pass is the current frontier; M4 starts only after full M3 exit verification.
+**Status:** M0-M3 are complete and integrated. The selective legacy-QAP salvage amendment is approved and M3 now includes adaptive current-coverage reuse, bounded request-pressure evidence, immutable refresh lineage, and combined Binance/Gate Product preparation. M4 current-approved policy + explainable readiness/safe cutoff is the current implementation frontier; M5 Research/funnel reconnaissance may proceed read-only in parallel.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
@@ -793,7 +793,7 @@ Phase 17 is complete only when:
 
 ## 19. Fresh-agent implementation mission
 
-> Work in `/home/hamza/repo/qap` on `main`. Preserve legitimate concurrent changes. Read `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md` first for the live coordination frontier, then the Product Layer investigation/design, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M2, the M3 shared generation/provenance/freeze-lineage foundation, and both Binance/Gate historical acquisition paths are complete and integrated; the current writable frontier is the bounded combined M3 Product preparation/orchestration/exit pass with the approved legacy-salvage overlay: gap-aware refresh planning, measured request amplification, bounded API-pressure behavior, and strict separation of acquisition availability from historical PIT eligibility. Preserve the strict historical-PIT policy, explicit operator asset admission, immutable evidence, negative research, all-survivor prospective follow-up, QAP financial authority, and the Phase-12 live-capital `NO-GO`. Do not port legacy runtime architecture, add CCXT, a generic job system, cloud infrastructure, or live/private exchange authority without a concrete separately authorized need. Testing remains opt-in under the current execution policy.
+> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the Product Layer investigation/design, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M3 are complete and integrated at `c1d97eb`; the current writable frontier is M4: separately-versioned current-approved retrospective research, explainable backend readiness/safe cutoff, stale-binding protection, and Product-default research initiation without primary user-entered `as_of`. Preserve the strict historical-PIT path, explicit operator asset admission, immutable evidence, negative research, all-survivor prospective follow-up, QAP financial authority, and the Phase-12 live-capital `NO-GO`. Do not port legacy runtime architecture, add CCXT, a generic job system, cloud infrastructure, or live/private exchange authority without a concrete separately authorized need. Testing remains opt-in under the current execution policy.
 
 ## 20. One-screen status
 
@@ -806,10 +806,13 @@ Phase 17 M2 research universe     COMPLETE
 Phase 17 M3 shared foundation      COMPLETE
 Phase 17 M3 Binance acquisition    COMPLETE
 Phase 17 M3 Gate acquisition       COMPLETE
+Phase 17 M3 Product orchestration  COMPLETE
 
 NEXT
-Phase 17 M3 adaptive Product orchestration / exit
-(gap-aware coverage reuse + request-pressure/source-efficiency decision)
+Phase 17 M4 current-approved policy + explainable readiness/safe cutoff
+
+PARALLEL READ-ONLY
+Phase 17 M5 Research/funnel/IA reconnaissance
 
 FUTURE PRIMARY IA
 Home | Research | Portfolios | History
