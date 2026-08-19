@@ -21,6 +21,7 @@ from qap.portfolio import (
 
 D = Decimal
 BTC = AssetId("BTC")
+ETH = AssetId("ETH")
 USDT = AssetId("USDT")
 BASKET = (BTC, USDT)
 AT = datetime(2024, 1, 1, 1, tzinfo=UTC)
@@ -146,6 +147,31 @@ def test_band_partial_control_applies_declared_fraction_after_breach() -> None:
     assert decision.target is not None
     assert decision.target.weights == {BTC: D("0.55"), USDT: D("0.45")}
     assert decision.reason is DecisionReason.EVIDENCE_TARGET
+
+
+def test_band_partial_control_ignores_declared_execution_only_bridge() -> None:
+    target = AllocationTarget.for_basket(
+        {BTC: D("0.5"), ETH: D("0.5")},
+        basket=(BTC, ETH),
+    )
+    policy = BandPartialPolicy(
+        policy_id="band-half",
+        target=target,
+        band_width=D("0.05"),
+        partial_correction_fraction=D("0.5"),
+        execution_only_bridge=USDT,
+    )
+    state = PortfolioState.from_holdings({BTC: D("1"), ETH: D("1.6"), USDT: D("20")})
+    prices = PriceSnapshot.from_prices(
+        timestamp=AT,
+        numeraire=USDT,
+        prices={BTC: D("120"), ETH: D("50"), USDT: D("1")},
+    )
+
+    decision = _decide(policy, state=state, prices=prices)
+
+    assert decision.target is not None
+    assert decision.target.weights == {BTC: D("0.55"), ETH: D("0.45")}
 
 
 def test_contribution_aware_control_routes_contributed_excess_to_underweight() -> None:

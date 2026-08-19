@@ -313,6 +313,11 @@ def _control_policy(
             target=target,
             band_width=control.band_width,
             partial_correction_fraction=control.partial_correction_fraction,
+            execution_only_bridge=(
+                None
+                if manifest.execution.mode == "direct"
+                else AssetId(cast(str, manifest.execution.bridge_asset))
+            ),
         )
         control_id = control.control_id
     elif isinstance(control, PairBlindRelativeMomentumControlSpec):

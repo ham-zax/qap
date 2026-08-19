@@ -98,8 +98,14 @@ def _explicit_values(
     state: PortfolioState,
     prices: PriceSnapshot,
     basket: tuple[AssetId, ...],
+    *,
+    ignored_assets: frozenset[AssetId] = frozenset(),
 ) -> Mapping[AssetId, Decimal]:
-    outside = sorted(asset for asset in state.holdings if asset not in basket)
+    outside = sorted(
+        asset
+        for asset in state.holdings
+        if asset not in basket and asset not in ignored_assets
+    )
     if outside:
         formatted = ", ".join(asset.key for asset in outside)
         raise ValueError(
@@ -135,8 +141,15 @@ def _current_weights(
     state: PortfolioState,
     prices: PriceSnapshot,
     basket: tuple[AssetId, ...],
+    *,
+    ignored_assets: frozenset[AssetId] = frozenset(),
 ) -> Mapping[AssetId, Decimal]:
-    values = _explicit_values(state, prices, basket)
+    values = _explicit_values(
+        state,
+        prices,
+        basket,
+        ignored_assets=ignored_assets,
+    )
     total = exact_sum(values.values())
     return _weights_from_values(values, total=total, basket=basket)
 
@@ -448,6 +461,7 @@ class BandPartialPolicy:
     target: AllocationTarget
     band_width: Decimal
     partial_correction_fraction: Decimal
+    execution_only_bridge: AssetId | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -473,6 +487,11 @@ class BandPartialPolicy:
                 field="partial_correction_fraction",
             ),
         )
+        if self.execution_only_bridge is not None:
+            if not isinstance(cast(object, self.execution_only_bridge), AssetId):
+                raise TypeError("execution_only_bridge must be AssetId or None")
+            if self.execution_only_bridge in self.target.weights:
+                raise ValueError("execution_only_bridge cannot be in target basket")
 
     def decide(
         self,
@@ -490,7 +509,17 @@ class BandPartialPolicy:
             applied_flows=applied_flows,
         )
         basket = _basket(self.target)
-        current = _current_weights(current_state, price_snapshot, basket)
+        ignored_assets: frozenset[AssetId] = (
+            frozenset()
+            if self.execution_only_bridge is None
+            else frozenset({self.execution_only_bridge})
+        )
+        current = _current_weights(
+            current_state,
+            price_snapshot,
+            basket,
+            ignored_assets=ignored_assets,
+        )
         if _maximum_drift(current, self.target.weights, basket) <= self.band_width:
             return _no_action(
                 policy_id=self.policy_id,
