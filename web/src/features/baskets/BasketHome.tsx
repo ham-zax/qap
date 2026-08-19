@@ -66,9 +66,15 @@ function sourceBoundary(scan: ScanListDto['items'][number] | undefined) {
       ? `Data through ${formatResearchTimestamp(scan.eligible_information_end)}`
       : 'Data boundary unavailable'
   }
-  return scan.as_of
-    ? `Historical universe as of ${formatResearchTimestamp(scan.as_of)}`
-    : 'Historical boundary unavailable'
+  if (scan.claim?.kind === 'historical_pit') {
+    return scan.as_of
+      ? `Historical universe as of ${formatResearchTimestamp(scan.as_of)}`
+      : 'Historical boundary unavailable'
+  }
+  const boundary = scan.eligible_information_end ?? scan.as_of
+  return boundary
+    ? `Research data boundary ${formatResearchTimestamp(boundary)}`
+    : 'Research boundary unavailable'
 }
 
 export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
