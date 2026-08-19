@@ -79,6 +79,8 @@ def _validate_scanner_catalog_admission(catalog: ScannerCatalog) -> None:
 def _direct_execution_instrument_id(
     catalog: ScannerCatalog,
     trial: ScannerTrial,
+    *,
+    allowed_dataset_ids: frozenset[str] | None = None,
 ) -> str:
     candidate_assets = {trial.asset_a.key, trial.asset_b.key}
     matches = tuple(
@@ -87,6 +89,7 @@ def _direct_execution_instrument_id(
         if source.venue == trial.venue
         and source.interval == trial.resolution.label
         and {source.base_asset, source.quote_asset} == candidate_assets
+        and (allowed_dataset_ids is None or source.dataset_id in allowed_dataset_ids)
     )
     if len(matches) != 1:
         raise RuntimeError("terminal replay cannot resolve its frozen direct market")
@@ -169,11 +172,27 @@ class _QapReplayService:
         if attempt.attempt_status is ReplayAttemptStatus.COMPLETED:
             if attempt.deep_replay_run_id is None:
                 raise RuntimeError("completed replay attempt is missing its run ID")
-            direct_id = _direct_execution_instrument_id(catalog, trial)
+            direct_id = _direct_execution_instrument_id(
+                catalog,
+                trial,
+                allowed_dataset_ids=(
+                    None
+                    if self._current_approved_scope is None
+                    else self._current_approved_scope.datasets
+                ),
+            )
             gate = _economic_gate(run_root, attempt.deep_replay_run_id)
         else:
             direct_id = (
-                _direct_execution_instrument_id(catalog, trial)
+                _direct_execution_instrument_id(
+                    catalog,
+                    trial,
+                    allowed_dataset_ids=(
+                        None
+                        if self._current_approved_scope is None
+                        else self._current_approved_scope.datasets
+                    ),
+                )
                 if attempt.attempt_status is ReplayAttemptStatus.REPLAY_FAILED
                 else None
             )
