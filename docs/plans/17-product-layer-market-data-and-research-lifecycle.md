@@ -1,6 +1,6 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M7 are complete and integrated. The selective legacy-QAP salvage amendment is approved. M7 now provides bounded workspace-local current-evidence collection, restart-safe scheduled-slot accounting, exact frozen-instrument lineage, existing readiness/qualification reuse, and launcher-managed Local Market collector lifecycle without changing scientific policy. M8 now begins with a serial Product basket provenance/source-binding foundation because Product-v1 preserves basket economics but the current basket protocol/current-catalog binding is strict-PIT-specific. M9 process/state reconnaissance may proceed read-only in parallel; executable M9 remains blocked until full M8 completion.
+**Status:** M0-M7 and M8-0 are complete and integrated. The selective legacy-QAP salvage amendment is approved. M8-0 now gives current-approved Product baskets separately truthful provenance plus exact immutable M3 execution-generation binding while preserving strict PIT basket behavior and existing economics. The current implementation frontier is the genuine M8-A/M8-B fan-out: longitudinal History + utility Activity and claim-aware Product Portfolio presentation. M9 reconnaissance is complete and does not justify a desktop shell for Product V1; executable M9 lifecycle hardening remains blocked until full M8 completion.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
@@ -821,7 +821,7 @@ Phase 17 is complete only when:
 
 ## 19. Fresh-agent implementation mission
 
-> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the Product Layer investigation/design, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M7 are complete and integrated; the current writable frontier is M8-0: give current-approved Product-v1 scans a separately truthful basket source/protocol identity and seal exact immutable M3 execution-generation paths/fingerprints into Product basket definitions/replay so refresh cannot substitute the current catalog. Preserve the existing manual 3-6 asset/exact-edge basket economics and strict PIT basket behavior. Do not absorb History/Portfolio presentation fan-out, generic legacy old-scan recovery, M7 collector authority, a workflow engine, CCXT, cloud infrastructure, or live/private exchange authority. Testing remains opt-in under the current execution policy.
+> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the Product Layer investigation/design, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and this plan. Phase 16 is closed; do not replay its milestones. Phase 17 M0-M7 and M8-0 are complete and integrated. The current writable frontier is the two-writer M8 convergence fan-out: M8-A composes longitudinal History/utility Activity from existing authoritative artifacts, while M8-B makes the manual 3-6 asset/exact-edge Portfolio experience claim-aware using the already-frozen M8-0 basket provenance/read contract. Do not reopen basket economics/provenance, M7 collector authority, generic workflow infrastructure, CCXT, cloud infrastructure, packaging, or live/private exchange authority. Testing remains opt-in under the current execution policy.
 
 ## 20. One-screen status
 
@@ -840,15 +840,14 @@ Phase 17 M5 Research / truthful funnel / primary IA  COMPLETE
 Phase 17 M6 longitudinal Research Idea + evidence-layer semantics / all-survivor follow-up  COMPLETE
 Phase 17 M7 persistent current-evidence collector / qualification bridge  COMPLETE
 
-NEXT
-Phase 17 M8-0 Product basket provenance / immutable source binding
+Phase 17 M8-0 Product basket provenance / immutable source binding  COMPLETE
 
-THEN PARALLEL
+NEXT — PARALLEL
 Phase 17 M8-A History / utility Activity
 Phase 17 M8-B Product Portfolio presentation
 
-PARALLEL READ-ONLY NOW
-Phase 17 M9 process / state ownership reconnaissance
+RECON COMPLETE / EXECUTION BLOCKED UNTIL FULL M8
+Phase 17 M9 process / state ownership + lifecycle hardening
 
 CURRENT PRIMARY IA
 Home | Research | Portfolios | History
