@@ -1,6 +1,6 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M9 are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED after two contract reviews. M10-A Typed Research Recipe + Capability Preflight is complete and integrated at `12ed08a`. M10-B Research Cockpit + Experiment Lab is complete and integrated at `f39b4b4`. M10-C Capability/Fidelity Proof is APPROVED and integrated at `3e07878`. M10-D Representative-User Comprehension / Authority Closure is the final current gate; no further technical implementation is authorized unless representative-user evidence requests remediation or returns a protected semantic issue to design review.
+**Status:** M0-M9 are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED after two contract reviews. M10-A Typed Research Recipe + Capability Preflight is complete and integrated at `12ed08a`. M10-B Research Cockpit + Experiment Lab is complete and integrated at `f39b4b4`. M10-C Capability/Fidelity Proof is APPROVED and integrated at `3e07878`. The first M10-D representative-user Pair Research walkthrough returned `UX REMEDIATION REQUIRED`; a bounded Product remediation is current before M10-D reruns. No scientific-contract redesign is authorized by this finding.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
@@ -956,9 +956,13 @@ Prove the machinery with deliberately different cases. This milestone validates 
 
 Published methodologies are manually curated into typed recipes with source metadata. Phase 17 does **not** attempt automatic paper-to-code interpretation.
 
-### M10-D - Representative-user comprehension / authority closure - CURRENT / FINAL HUMAN GATE
+### M10-D - Representative-user comprehension / authority closure - UX REMEDIATION REQUIRED
 
 **Acceptance protocol:** `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/m10d-representative-user-acceptance.md`.
+
+The first representative-user Pair Research walkthrough attempted `W / PIXEL` and explicitly rejected the workflow as too complicated. Exact-first selection itself worked, but the path to research exposed quote-identity administration (`USDT` canonical identity + identity version), sent the user into Research Universe, and fragmented market-data preparation before the Product could reach support/results. That is a presentation/orchestration failure, not a reason to weaken identity or scientific truth.
+
+Current remediation target: one continuous Pair Research draft with one obvious `Prepare & check research` action that reuses existing identity/admission state, performs every safe routine setup/data preparation step, asks only for genuinely ambiguous identity confirmation inline, refreshes backend support, and then exposes supported experiments and backend-owned result values. Technical provenance remains progressive disclosure. The authoritative remediation mission is `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/agent-a-m10d-pair-research-ux-remediation.md`.
 
 Only after M10-A/B/C exist should representative users complete realistic tasks without developer coaching. At minimum they must be able to:
 
@@ -1048,7 +1052,8 @@ M10-0 Research Cockpit + Experiment Contract design        APPROVED / FROZEN
 M10-A typed Research Recipe + capability preflight         COMPLETE / INTEGRATED 12ed08a
 M10-B Research Cockpit + Experiment Lab                    COMPLETE / INTEGRATED `f39b4b4`
 M10-C capability/fidelity proof with real methods          COMPLETE / APPROVED 3e07878
-M10-D representative-user comprehension/authority closure  CURRENT / HUMAN-LED FINAL GATE
+M10-D Pair Research UX remediation                         CURRENT / BOUNDED PRODUCT FIX
+M10-D representative-user comprehension/authority closure  BLOCKED / RERUN AFTER REMEDIATION
 ```
 
 Do not start M5 visual/React restructuring before M1-M4 make workspace/universe/data/readiness state authoritative.
@@ -1095,7 +1100,7 @@ Phase 17 is complete only when:
 
 ## 19. Fresh-agent implementation mission
 
-> Phase 17 M0-M9 and M10-A/B/C are complete; M10-C is approved at `3e07878`. The only current gate is human-led M10-D. Use `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/m10d-representative-user-acceptance.md` as the acceptance protocol. Do not substitute developer self-review, an AI session, or fabricated usability metrics for actual/likely representative users. If evidence shows ordinary presentation/discoverability friction, perform only the smallest UX remediation and rerun the affected task. If evidence exposes misunderstanding of a protected scientific/economic meaning, return to design review instead of changing backend truth or inventing React semantics.
+> Phase 17 M0-M9 and M10-A/B/C are complete; M10-C is approved at `3e07878`. The first human-led M10-D Pair Research session returned `UX REMEDIATION REQUIRED`, so the current frontier is the bounded remediation in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/agent-a-m10d-pair-research-ux-remediation.md`. Preserve the acceptance protocol in `m10d-representative-user-acceptance.md` and rerun the affected human task after integration. Do not substitute developer self-review, an AI session, or fabricated usability metrics for final acceptance. If remediation would require changing a protected scientific/economic meaning, stop and return to design review instead of inventing React semantics.
 
 ## 20. One-screen status
 

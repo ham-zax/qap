@@ -3,15 +3,32 @@
 **Repository:** `/home/hamza/repo/qap`
 **Artifact type:** human-led acceptance / qualitative evidence
 **Baseline:** integrated Product through M10-C at `3e07878`
-**Can start:** now
+**Can start:** rerun affected Pair Research task after the current bounded UX remediation integrates
 **Depends on:** M10-A `12ed08a`, M10-B `f39b4b4`, M10-C proof `3e07878`
 **Execution owner:** human moderator + actual/likely representative users
+**Current verdict:** `UX REMEDIATION REQUIRED`
 
 ## Purpose
 
 Close Phase 17 only after the corrected Product can be used and explained by the intended audience without developer coaching.
 
 This is not a coding-agent simulation and not another technical proof. Do not fabricate participant reactions, completion rates, timings, or usability scores.
+
+## Observed representative-user evidence — 2026-08-20
+
+One live Product walkthrough against integrated `main @ d30c60f` attempted the concrete task `W / PIXEL` Pair Research with z-score/residual-style experiments and result values.
+
+Observed:
+
+- exact-first search correctly ranked/selects exact `W`;
+- `W` and `PIXEL` pair intent could be selected;
+- ordinary research then exposed quote-identity administration and required navigating into Research Universe;
+- the user encountered venue `USDT` identity confirmation fields, including canonical asset and identity-version vocabulary, before W/PIXEL current paths could become usable;
+- market-data preparation was presented as an asset-level setup problem rather than one complete pair/timeframe research task;
+- the user explicitly said the workflow was too complicated and that research should not be this hard;
+- the protected scientific meaning itself was not the reported problem; the failure was task continuity, setup hierarchy, wording, and recoverability.
+
+Disposition: **UX REMEDIATION REQUIRED**. The affected Pair Research task must be rerun after `agent-a-m10d-pair-research-ux-remediation.md` integrates. Do not close M10-D from this session.
 
 ## Representative-user profile
 
