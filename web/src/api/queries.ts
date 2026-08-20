@@ -20,6 +20,30 @@ export function createQapQueries(client: QapApiClient) {
         queryKey: ['current-approved-readiness', horizon] as const,
         queryFn: () => client.getCurrentApprovedResearchReadiness(horizon),
       }),
+    productMarketData: () =>
+      queryOptions({
+        queryKey: ['product-market-data'] as const,
+        queryFn: () => client.getProductMarketData(),
+      }),
+    researchRecipeProductContext: (options: {
+      researchObject: 'pair' | 'fixed_basket'
+      horizon?: 'short' | 'medium' | 'swing'
+      assets?: string[]
+    }) =>
+      queryOptions({
+        queryKey: [
+          'research-recipe-product-context',
+          options.researchObject,
+          options.horizon ?? 'none',
+          ...(options.assets ?? []),
+        ] as const,
+        queryFn: () => client.getResearchRecipeProductContext(options),
+      }),
+    researchRecipeRunLineage: (runId: string) =>
+      queryOptions({
+        queryKey: ['research-recipe-run-lineage', runId] as const,
+        queryFn: () => client.getResearchRecipeRunLineage(runId),
+      }),
     scannerProtocol: () =>
       queryOptions({
         queryKey: ['scanner-protocol'] as const,

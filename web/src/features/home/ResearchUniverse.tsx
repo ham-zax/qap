@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import type { QapApiClient } from '../../api/client'
 import type {
@@ -9,6 +9,10 @@ import type {
 } from '../../api/types'
 import { Badge } from '../../components/ui/Badge'
 import { formatResearchTimestamp } from '../../lib/format'
+import {
+  ResearchAssetSelector,
+  type ResearchAssetSelection,
+} from '../discovery/ResearchAssetSelector'
 
 interface ResearchUniverseProps {
   apiClient: QapApiClient
@@ -37,7 +41,8 @@ export function ResearchUniverse({
 }: ResearchUniverseProps) {
   const queryClient = useQueryClient()
   const [universe, setUniverse] = useState(data)
-  const [search, setSearch] = useState('')
+  const [identitySelection, setIdentitySelection] =
+    useState<ResearchAssetSelection | null>(null)
   const [identityDraft, setIdentityDraft] = useState<
     (IdentityMappingRequestDto & { key: string }) | null
   >(null)
@@ -57,6 +62,7 @@ export function ResearchUniverse({
     onSuccess: (next) => {
       acceptUniverse(next)
       setIdentityDraft(null)
+      setIdentitySelection(null)
     },
   })
   const admission = useMutation({
@@ -68,23 +74,33 @@ export function ResearchUniverse({
   const quoteReviews = universe.identity_reviews.filter(
     (item) => item.venue_asset_code === 'USDT',
   )
-  const matchingReviews = useMemo(() => {
-    const query = search.trim().toUpperCase()
-    if (!query) return []
-    return universe.identity_reviews
-      .filter(
-        (item) =>
-          item.venue_asset_code !== 'USDT' &&
-          (item.venue_asset_code.includes(query) || item.venue.includes(query.toLowerCase())),
-      )
-      .slice(0, 50)
-  }, [search, universe.identity_reviews])
-
   const startIdentityReview = (item: IdentityReview) => {
+    setIdentitySelection({
+      key: `review:${item.venue}:${item.venue_asset_code}`,
+      symbol: item.venue_asset_code,
+      canonicalAssetId: null,
+      approved: false,
+      identityState: 'review_required',
+      venue: item.venue,
+      venueAssetCode: item.venue_asset_code,
+      venueSymbols: [...item.venue_symbols],
+    })
     setIdentityDraft({
       key: `${item.venue}:${item.venue_asset_code}`,
       venue: item.venue,
       venue_asset_code: item.venue_asset_code,
+      canonical_asset_id: '',
+      asset_identity_version: '',
+    })
+  }
+
+  const startIdentitySelection = (selection: ResearchAssetSelection) => {
+    if (!selection.venue || !selection.venueAssetCode) return
+    setIdentitySelection(selection)
+    setIdentityDraft({
+      key: `${selection.venue}:${selection.venueAssetCode}`,
+      venue: selection.venue,
+      venue_asset_code: selection.venueAssetCode,
       canonical_asset_id: '',
       asset_identity_version: '',
     })
@@ -355,34 +371,20 @@ export function ResearchUniverse({
               </div>
             ) : null}
 
-            <label className="mt-5 block text-sm font-medium text-secondary">
-              Find a venue asset code to review
-              <input
-                className="mt-2 min-h-11 w-full rounded-md border border-border bg-canvas px-3 text-foreground"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search BTC, ETH, SOL…"
+            <div className="mt-5">
+              <ResearchAssetSelector
+                label="Find a venue asset code to review"
+                universe={universe}
+                selected={identitySelection}
+                unresolvedOnly
+                onSelect={startIdentitySelection}
+                onClear={() => {
+                  setIdentitySelection(null)
+                  setIdentityDraft(null)
+                }}
+                placeholder="Search BTC, W, ETH…"
               />
-            </label>
-
-            {matchingReviews.length ? (
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {matchingReviews.map((item) => (
-                  <button
-                    key={`${item.venue}:${item.venue_asset_code}`}
-                    className="min-h-11 rounded-md border border-border px-3 text-left text-sm text-foreground"
-                    type="button"
-                    onClick={() => startIdentityReview(item)}
-                  >
-                    <strong>{item.venue_asset_code}</strong> · {item.venue} ·{' '}
-                    {item.venue_symbols.length} current market
-                    {item.venue_symbols.length === 1 ? '' : 's'}
-                  </button>
-                ))}
-              </div>
-            ) : search.trim() ? (
-              <p className="mt-3 text-sm text-muted">No unresolved matching asset code.</p>
-            ) : null}
+            </div>
 
             {identityDraft ? (
               <div className="mt-5 rounded-md border border-border bg-subtle p-4">
@@ -442,7 +444,10 @@ export function ResearchUniverse({
                   <button
                     className="min-h-11 rounded-md border border-border px-4 text-sm font-semibold text-foreground"
                     type="button"
-                    onClick={() => setIdentityDraft(null)}
+                    onClick={() => {
+                      setIdentityDraft(null)
+                      setIdentitySelection(null)
+                    }}
                   >
                     Cancel
                   </button>

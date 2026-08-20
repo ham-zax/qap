@@ -537,6 +537,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/research-recipes/product-context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Research Recipe Product Context */
+        get: operations["getResearchRecipeProductContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/research-recipes/run": {
         parameters: {
             query?: never;
@@ -548,6 +565,23 @@ export interface paths {
         put?: never;
         /** Run Research Recipe */
         post: operations["runResearchRecipe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/research-recipes/runs/{run_id}/lineage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Research Recipe Run Lineage */
+        get: operations["getResearchRecipeRunLineage"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1150,6 +1184,28 @@ export interface components {
             trial_status: string;
             /** Venue */
             venue: string;
+        };
+        /**
+         * CapabilityKind
+         * @enum {string}
+         */
+        CapabilityKind: "relationship" | "decision_rule" | "allocation" | "risk_overlay" | "selection" | "execution" | "control";
+        /** CapabilityMetadataV1 */
+        CapabilityMetadataV1: {
+            /** Allocation Semantics */
+            allocation_semantics?: string | null;
+            /** Allowed Research Objects */
+            allowed_research_objects: components["schemas"]["ResearchObject"][];
+            authority_reason?: components["schemas"]["SupportReasonCode"] | null;
+            /** Canonical Owner */
+            canonical_owner?: string | null;
+            capability: components["schemas"]["SupportCapability"];
+            /** Component Id */
+            component_id: string;
+            kind: components["schemas"]["CapabilityKind"];
+            /** Nearest Capability */
+            nearest_capability?: string | null;
+            reason_code?: components["schemas"]["SupportReasonCode"] | null;
         };
         /** CapturePublicEvidenceRequestDto */
         CapturePublicEvidenceRequestDto: {
@@ -3226,6 +3282,30 @@ export interface components {
             schema_version: "qap.research.recipe-check.v1";
             support: components["schemas"]["SupportReportV1"];
         };
+        /** ResearchRecipeCompilationV1 */
+        ResearchRecipeCompilationV1: {
+            /** Capability Catalog Version */
+            capability_catalog_version: string;
+            /**
+             * Compilation Sha256
+             * @default
+             */
+            compilation_sha256: string;
+            /** Compiler Version */
+            compiler_version: string;
+            /** Ordered Compiled Manifest Sha256 */
+            ordered_compiled_manifest_sha256: string[];
+            /** Recipe Sha256 */
+            recipe_sha256: string;
+            /** Research Family Id */
+            research_family_id: string;
+            /**
+             * Schema Version
+             * @default qap.research.recipe-compilation.v1
+             * @constant
+             */
+            schema_version: "qap.research.recipe-compilation.v1";
+        };
         /** ResearchRecipeDraftV1 */
         ResearchRecipeDraftV1: {
             /** Assets */
@@ -3257,6 +3337,53 @@ export interface components {
             source: components["schemas"]["ResearchSourceV1"];
             /** Variants */
             variants: components["schemas"]["ResearchVariantV1"][];
+        };
+        /** ResearchRecipeLineageMatchDto */
+        ResearchRecipeLineageMatchDto: {
+            compilation: components["schemas"]["ResearchRecipeCompilationV1"];
+            recipe: components["schemas"]["ResearchRecipeV1"];
+        };
+        /** ResearchRecipeProductContextDto */
+        ResearchRecipeProductContextDto: {
+            /** Capabilities */
+            capabilities: components["schemas"]["CapabilityMetadataV1"][];
+            /** Capability Catalog Version */
+            capability_catalog_version: string;
+            default_draft?: components["schemas"]["ResearchRecipeDraftV1"] | null;
+            default_issue?: components["schemas"]["ResearchRecipeProductIssueDto"] | null;
+            /** Default Recipe Version */
+            default_recipe_version: string;
+            /**
+             * Schema Version
+             * @default qap.api.research-recipe-product-context.v1
+             * @constant
+             */
+            schema_version: "qap.api.research-recipe-product-context.v1";
+        };
+        /** ResearchRecipeProductIssueDto */
+        ResearchRecipeProductIssueDto: {
+            code: components["schemas"]["SupportReasonCode"];
+            /** Component */
+            component: string;
+            /** Detail */
+            detail: string;
+        };
+        /** ResearchRecipeRunLineageDto */
+        ResearchRecipeRunLineageDto: {
+            /** Manifest Sha256 */
+            manifest_sha256: string;
+            /** Matches */
+            matches: components["schemas"]["ResearchRecipeLineageMatchDto"][];
+            /** Research Family Id */
+            research_family_id: string;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @default qap.api.research-recipe-run-lineage.v1
+             * @constant
+             */
+            schema_version: "qap.api.research-recipe-run-lineage.v1";
         };
         /** ResearchRecipeRunRequestDto */
         ResearchRecipeRunRequestDto: {
@@ -4832,6 +4959,39 @@ export interface operations {
             };
         };
     };
+    getResearchRecipeProductContext: {
+        parameters: {
+            query?: {
+                research_object?: "pair" | "fixed_basket";
+                horizon?: ("short" | "medium" | "swing") | null;
+                asset?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchRecipeProductContextDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     runResearchRecipe: {
         parameters: {
             query?: never;
@@ -4852,6 +5012,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getResearchRecipeRunLineage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchRecipeRunLineageDto"];
                 };
             };
             /** @description Validation Error */

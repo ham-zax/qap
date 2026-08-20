@@ -8,6 +8,8 @@ import type {
 import { Badge } from '../../components/ui/Badge'
 import { formatResearchTimestamp } from '../../lib/format'
 import { DiscoveryHome } from './DiscoveryHome'
+import { ExperimentLab } from './ExperimentLab'
+import { PairResearch } from './PairResearch'
 import { ProductResearch } from './ProductResearch'
 
 interface ResearchHomeProps {
@@ -39,15 +41,35 @@ export function ResearchHome({
           Research
         </p>
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          Find research ideas
+          Start from the research question
         </h1>
         <p className="m-0 text-sm leading-6 text-secondary md:text-base">
-          Choose one timeframe. QAP owns current-approved readiness, the safe data cutoff,
-          the research protocol, and the immutable evidence produced by the scan.
+          Research one pair directly, scan the approved universe, or use Experiment Lab
+          when you need an explicit typed recipe. Scientific and economic decisions remain
+          backend-owned.
         </p>
       </header>
 
-      <ProductResearch apiClient={apiClient} queries={queries} workspace={workspace} />
+      <PairResearch apiClient={apiClient} queries={queries} workspace={workspace} />
+
+      <section className="mt-8" aria-labelledby="universal-scan-heading">
+        <div className="mb-4 max-w-4xl">
+          <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+            Discovery
+          </p>
+          <h2 id="universal-scan-heading" className="mt-2 mb-2 text-2xl font-semibold text-foreground">
+            Scan my universe
+          </h2>
+          <p className="m-0 text-sm leading-6 text-secondary">
+            Run the existing current-approved scanner over the ready approved scope, one
+            Product timeframe at a time. Scanner stages and Research Ideas remain
+            backend-owned.
+          </p>
+        </div>
+        <ProductResearch apiClient={apiClient} queries={queries} workspace={workspace} />
+      </section>
+
+      <ExperimentLab apiClient={apiClient} queries={queries} workspace={workspace} />
 
       <section className="mt-10" aria-labelledby="previous-research-heading">
         <div className="mb-4 max-w-3xl">

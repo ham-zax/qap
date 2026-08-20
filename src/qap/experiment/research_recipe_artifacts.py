@@ -196,10 +196,35 @@ def find_research_recipe_compilation(
     return read_research_recipe_compilation(matches[0])
 
 
+def find_research_recipe_compilations_for_manifest(
+    run_root: str | Path,
+    *,
+    research_family_id: str,
+    exact_manifest_sha256: str,
+) -> tuple[StoredResearchRecipeCompilation, ...]:
+    """Return integrity-verified compilations that declare one exact manifest."""
+
+    root = (
+        Path(run_root).resolve()
+        / _RECIPE_ROOT
+        / _family_component(research_family_id)
+        / "compilations"
+    )
+    if not root.is_dir():
+        return ()
+    matches: list[StoredResearchRecipeCompilation] = []
+    for directory in sorted(path for path in root.iterdir() if path.is_dir()):
+        stored = read_research_recipe_compilation(directory)
+        if exact_manifest_sha256 in stored.compilation.ordered_compiled_manifest_sha256:
+            matches.append(stored)
+    return tuple(matches)
+
+
 __all__ = [
     "ResearchRecipeArtifactError",
     "StoredResearchRecipeCompilation",
     "find_research_recipe_compilation",
+    "find_research_recipe_compilations_for_manifest",
     "read_research_recipe_compilation",
     "write_research_recipe_compilation",
 ]

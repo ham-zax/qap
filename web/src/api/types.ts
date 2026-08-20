@@ -6,6 +6,9 @@ export type CurrentApprovedReadinessDto =
   components['schemas']['CurrentApprovedReadinessDto']
 export type CurrentApprovedResearchRequestDto =
   components['schemas']['CurrentApprovedResearchRequestDto']
+export type MarketDataPreparationRequestDto =
+  components['schemas']['MarketDataPreparationRequestDto']
+export type ProductMarketDataDto = components['schemas']['ProductMarketDataDto']
 export type IdentityMappingRequestDto = components['schemas']['IdentityMappingRequestDto']
 export type AssetAdmissionRequestDto = components['schemas']['AssetAdmissionRequestDto']
 export type RunSummaryDto = components['schemas']['RunSummaryDto']
@@ -51,6 +54,11 @@ export type ResearchRecipeRunRequestDto =
   components['schemas']['ResearchRecipeRunRequestDto']
 export type ResearchRecipeV1 = components['schemas']['ResearchRecipeV1']
 export type SupportReportV1 = components['schemas']['SupportReportV1']
+export type ResearchRecipeProductContextDto =
+  components['schemas']['ResearchRecipeProductContextDto']
+export type ResearchRecipeRunLineageDto =
+  components['schemas']['ResearchRecipeRunLineageDto']
+export type CapabilityMetadataV1 = components['schemas']['CapabilityMetadataV1']
 export type RunScanRequestDto = components['schemas']['RunScanRequestDto']
 export type MomentumGenerationRequestDto =
   components['schemas']['MomentumGenerationRequestDto']

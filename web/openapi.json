@@ -1243,6 +1243,102 @@
         "title": "CandidateSummaryDto",
         "type": "object"
       },
+      "CapabilityKind": {
+        "enum": [
+          "relationship",
+          "decision_rule",
+          "allocation",
+          "risk_overlay",
+          "selection",
+          "execution",
+          "control"
+        ],
+        "title": "CapabilityKind",
+        "type": "string"
+      },
+      "CapabilityMetadataV1": {
+        "additionalProperties": false,
+        "properties": {
+          "allocation_semantics": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allocation Semantics"
+          },
+          "allowed_research_objects": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchObject"
+            },
+            "title": "Allowed Research Objects",
+            "type": "array"
+          },
+          "authority_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportReasonCode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "canonical_owner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Owner"
+          },
+          "capability": {
+            "$ref": "#/components/schemas/SupportCapability"
+          },
+          "component_id": {
+            "title": "Component Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CapabilityKind"
+          },
+          "nearest_capability": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nearest Capability"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportReasonCode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "component_id",
+          "capability",
+          "allowed_research_objects"
+        ],
+        "title": "CapabilityMetadataV1",
+        "type": "object"
+      },
       "CapturePublicEvidenceRequestDto": {
         "additionalProperties": false,
         "properties": {
@@ -7067,6 +7163,54 @@
         "title": "ResearchRecipeCheckV1",
         "type": "object"
       },
+      "ResearchRecipeCompilationV1": {
+        "additionalProperties": false,
+        "properties": {
+          "capability_catalog_version": {
+            "title": "Capability Catalog Version",
+            "type": "string"
+          },
+          "compilation_sha256": {
+            "default": "",
+            "title": "Compilation Sha256",
+            "type": "string"
+          },
+          "compiler_version": {
+            "title": "Compiler Version",
+            "type": "string"
+          },
+          "ordered_compiled_manifest_sha256": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ordered Compiled Manifest Sha256",
+            "type": "array"
+          },
+          "recipe_sha256": {
+            "title": "Recipe Sha256",
+            "type": "string"
+          },
+          "research_family_id": {
+            "title": "Research Family Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.research.recipe-compilation.v1",
+            "default": "qap.research.recipe-compilation.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipe_sha256",
+          "research_family_id",
+          "compiler_version",
+          "capability_catalog_version",
+          "ordered_compiled_manifest_sha256"
+        ],
+        "title": "ResearchRecipeCompilationV1",
+        "type": "object"
+      },
       "ResearchRecipeDraftV1": {
         "additionalProperties": false,
         "properties": {
@@ -7154,6 +7298,137 @@
           "research_object"
         ],
         "title": "ResearchRecipeDraftV1",
+        "type": "object"
+      },
+      "ResearchRecipeLineageMatchDto": {
+        "additionalProperties": false,
+        "properties": {
+          "compilation": {
+            "$ref": "#/components/schemas/ResearchRecipeCompilationV1"
+          },
+          "recipe": {
+            "$ref": "#/components/schemas/ResearchRecipeV1"
+          }
+        },
+        "required": [
+          "recipe",
+          "compilation"
+        ],
+        "title": "ResearchRecipeLineageMatchDto",
+        "type": "object"
+      },
+      "ResearchRecipeProductContextDto": {
+        "additionalProperties": false,
+        "properties": {
+          "capabilities": {
+            "items": {
+              "$ref": "#/components/schemas/CapabilityMetadataV1"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "capability_catalog_version": {
+            "title": "Capability Catalog Version",
+            "type": "string"
+          },
+          "default_draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchRecipeDraftV1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "default_issue": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchRecipeProductIssueDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "default_recipe_version": {
+            "title": "Default Recipe Version",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.research-recipe-product-context.v1",
+            "default": "qap.api.research-recipe-product-context.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "capability_catalog_version",
+          "default_recipe_version",
+          "capabilities"
+        ],
+        "title": "ResearchRecipeProductContextDto",
+        "type": "object"
+      },
+      "ResearchRecipeProductIssueDto": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/SupportReasonCode"
+          },
+          "component": {
+            "title": "Component",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "component",
+          "detail"
+        ],
+        "title": "ResearchRecipeProductIssueDto",
+        "type": "object"
+      },
+      "ResearchRecipeRunLineageDto": {
+        "additionalProperties": false,
+        "properties": {
+          "manifest_sha256": {
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchRecipeLineageMatchDto"
+            },
+            "title": "Matches",
+            "type": "array"
+          },
+          "research_family_id": {
+            "title": "Research Family Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.research-recipe-run-lineage.v1",
+            "default": "qap.api.research-recipe-run-lineage.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "research_family_id",
+          "manifest_sha256",
+          "matches"
+        ],
+        "title": "ResearchRecipeRunLineageDto",
         "type": "object"
       },
       "ResearchRecipeRunRequestDto": {
@@ -10183,6 +10458,87 @@
         ]
       }
     },
+    "/api/research-recipes/product-context": {
+      "get": {
+        "operationId": "getResearchRecipeProductContext",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "research_object",
+            "required": false,
+            "schema": {
+              "default": "pair",
+              "enum": [
+                "pair",
+                "fixed_basket"
+              ],
+              "title": "Research Object",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "horizon",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "short",
+                    "medium",
+                    "swing"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Horizon"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Asset",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchRecipeProductContextDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Research Recipe Product Context",
+        "tags": [
+          "research-recipes"
+        ]
+      }
+    },
     "/api/research-recipes/run": {
       "post": {
         "operationId": "runResearchRecipe",
@@ -10219,6 +10575,48 @@
           }
         },
         "summary": "Run Research Recipe",
+        "tags": [
+          "research-recipes"
+        ]
+      }
+    },
+    "/api/research-recipes/runs/{run_id}/lineage": {
+      "get": {
+        "operationId": "getResearchRecipeRunLineage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchRecipeRunLineageDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Research Recipe Run Lineage",
         "tags": [
           "research-recipes"
         ]

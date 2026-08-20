@@ -5,6 +5,18 @@ type ResearchUniverseDto = components['schemas']['ResearchUniverseDto']
 type CurrentApprovedReadinessDto = components['schemas']['CurrentApprovedReadinessDto']
 type CurrentApprovedResearchRequestDto =
   components['schemas']['CurrentApprovedResearchRequestDto']
+type MarketDataPreparationRequestDto =
+  components['schemas']['MarketDataPreparationRequestDto']
+type ProductMarketDataDto = components['schemas']['ProductMarketDataDto']
+type ResearchRecipeCheckRequestDto =
+  components['schemas']['ResearchRecipeCheckRequestDto']
+type ResearchRecipeCheckV1 = components['schemas']['ResearchRecipeCheckV1']
+type ResearchRecipeProductContextDto =
+  components['schemas']['ResearchRecipeProductContextDto']
+type ResearchRecipeRunLineageDto =
+  components['schemas']['ResearchRecipeRunLineageDto']
+type ResearchRecipeRunRequestDto =
+  components['schemas']['ResearchRecipeRunRequestDto']
 type IdentityMappingRequestDto = components['schemas']['IdentityMappingRequestDto']
 type AssetAdmissionRequestDto = components['schemas']['AssetAdmissionRequestDto']
 type ExperimentListDto = components['schemas']['ExperimentListDto']
@@ -113,6 +125,44 @@ export function createApiClient({
         method: 'POST',
         body: JSON.stringify(command),
       }),
+    getProductMarketData: () =>
+      request<ProductMarketDataDto>('/api/product-market-data'),
+    prepareProductMarketData: (command: MarketDataPreparationRequestDto) =>
+      request<ProductMarketDataDto>('/api/product-market-data/prepare', {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }),
+    refreshProductMarketData: (command: MarketDataPreparationRequestDto) =>
+      request<ProductMarketDataDto>('/api/product-market-data/refresh', {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }),
+    getResearchRecipeProductContext: (options: {
+      researchObject: 'pair' | 'fixed_basket'
+      horizon?: 'short' | 'medium' | 'swing'
+      assets?: string[]
+    }) => {
+      const query = new URLSearchParams({ research_object: options.researchObject })
+      if (options.horizon) query.set('horizon', options.horizon)
+      for (const asset of options.assets ?? []) query.append('asset', asset)
+      return request<ResearchRecipeProductContextDto>(
+        `/api/research-recipes/product-context?${query}`,
+      )
+    },
+    checkResearchRecipeSupport: (command: ResearchRecipeCheckRequestDto) =>
+      request<ResearchRecipeCheckV1>('/api/research-recipes/check-support', {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }),
+    runResearchRecipe: (command: ResearchRecipeRunRequestDto) =>
+      request<OperationRefDto>('/api/research-recipes/run', {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }),
+    getResearchRecipeRunLineage: (runId: string) =>
+      request<ResearchRecipeRunLineageDto>(
+        `/api/research-recipes/runs/${encodeURIComponent(runId)}/lineage`,
+      ),
     startCurrentApprovedResearchFollowUp: (scanId: string) =>
       request<OperationRefDto>(
         `/api/product-research/${encodeURIComponent(scanId)}/follow-up`,

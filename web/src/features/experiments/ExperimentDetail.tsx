@@ -1,4 +1,7 @@
-import type { ExperimentDetailDto } from '../../api/types'
+import type {
+  ExperimentDetailDto,
+  ResearchRecipeRunLineageDto,
+} from '../../api/types'
 import { Badge } from '../../components/ui/Badge'
 import {
   ComparisonBars,
@@ -16,6 +19,7 @@ import {
 
 interface ExperimentDetailProps {
   data: ExperimentDetailDto
+  lineage?: ResearchRecipeRunLineageDto
 }
 
 function heroBorder(tone: ReturnType<typeof researchStatusPresentation>['tone']): string {
@@ -44,7 +48,7 @@ function ProvenanceValue({ label, value }: { label: string; value: string }) {
   )
 }
 
-export function ExperimentDetail({ data }: ExperimentDetailProps) {
+export function ExperimentDetail({ data, lineage }: ExperimentDetailProps) {
   const { manifest, provenance, result, final_oos_commitment: commitment } = data
   const pairLinks = data.available_pairs.map((pair) => ({
     pair,
@@ -288,6 +292,63 @@ export function ExperimentDetail({ data }: ExperimentDetailProps) {
               </div>
             ))}
           </div>
+
+          {lineage?.matches.length ? (
+            <div className="mt-6 border-t border-border pt-5">
+              <h3 className="m-0 text-sm font-semibold text-foreground">
+                Research recipe lineage
+              </h3>
+              <p className="mt-2 mb-0 text-xs leading-5 text-muted">
+                These integrity-verified compilation records declare this exact manifest.
+                They are audit lineage, not another scientific verdict.
+              </p>
+              <div className="mt-4 space-y-4">
+                {lineage.matches.map((match) => (
+                  <div
+                    key={match.compilation.compilation_sha256}
+                    className="grid gap-4 rounded-md border border-border bg-canvas/35 p-4 sm:grid-cols-2"
+                  >
+                    <ProvenanceValue label="Recipe SHA-256" value={match.recipe.recipe_sha256} />
+                    <ProvenanceValue
+                      label="Compilation SHA-256"
+                      value={match.compilation.compilation_sha256}
+                    />
+                    <ProvenanceValue
+                      label="Recipe compiler"
+                      value={match.compilation.compiler_version}
+                    />
+                    <ProvenanceValue
+                      label="Capability catalog"
+                      value={match.compilation.capability_catalog_version}
+                    />
+                    <ProvenanceValue
+                      label="Selected from compilation"
+                      value={match.recipe.selected_from_compilation_sha256 ?? 'none'}
+                    />
+                    <ProvenanceValue
+                      label="Derived from recipe"
+                      value={match.recipe.derived_from_recipe_sha256 ?? 'none'}
+                    />
+                    <div className="min-w-0 sm:col-span-2">
+                      <p className="m-0 text-xs font-medium text-muted">
+                        Ordered compiled manifest SHA-256 values
+                      </p>
+                      <div className="mt-1 space-y-1">
+                        {match.compilation.ordered_compiled_manifest_sha256.map((hash) => (
+                          <code
+                            key={hash}
+                            className="block max-w-full overflow-x-auto font-mono text-xs text-secondary"
+                          >
+                            {hash}
+                          </code>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </details>
       </div>
     </article>

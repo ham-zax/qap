@@ -25,6 +25,7 @@ export function operationKindLabel(kind: string): string {
     capture_public_evidence: 'Update current market evidence',
     qualify_candidate: 'Evaluate amount',
     run_basket: 'Analyze portfolio',
+    run_research_recipe: 'Run research recipe',
   }
   return labels[kind] ?? kind.replaceAll('_', ' ')
 }
@@ -49,6 +50,9 @@ export function operationResultLinks(operation: OperationDto) {
   const cohortId = typeof result.cohort_id === 'string' ? result.cohort_id : null
   const basketId = typeof result.basket_id === 'string' ? result.basket_id : null
   const qapRunId = typeof result.qap_run_id === 'string' ? result.qap_run_id : null
+  const recipeRunIds = Array.isArray(result.run_ids)
+    ? result.run_ids.filter((item): item is string => typeof item === 'string')
+    : []
 
   if (scanId) links.push({ label: 'Research ideas', href: `/scanner/${scanId}` })
   if (!scanId && sourceScanId) {
@@ -61,6 +65,12 @@ export function operationResultLinks(operation: OperationDto) {
   if (qapRunId) {
     links.push({ label: 'Research run', href: `/experiments/${qapRunId}` })
     links.push({ label: 'Portfolio economics', href: `/portfolio/${qapRunId}` })
+  }
+  for (const [index, runId] of recipeRunIds.entries()) {
+    links.push({
+      label: recipeRunIds.length === 1 ? 'Research result' : `Recipe result ${index + 1}`,
+      href: `/experiments/${runId}`,
+    })
   }
   return links
 }

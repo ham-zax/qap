@@ -31,15 +31,15 @@ const guides = {
   },
   research: {
     intent:
-      'Find Research Ideas from your approved current market scope, one timeframe at a time.',
+      'Start from a concrete research question: research one pair, scan the approved universe, or declare an advanced typed experiment.',
     action:
-      'Choose Short-term, Medium-term, or Longer-term, resolve any backend readiness blockers, then use Find research ideas.',
+      'For a pair, choose two assets and one timeframe, resolve only the setup QAP identifies, then Check support. Use Scan my universe for scanner discovery and Experiment Lab for explicit recipe authoring.',
     example:
-      'If BTC and ETH are approved and the Short-term scope is ready, launch Short-term research with the backend-selected data boundary.',
+      'Select W and BTC, choose Medium-term, complete any one-time identity/data setup without losing the pair, then run only if the backend marks the exact recipe runnable.',
     next:
-      'A completed research generation shows truthful stage counts, Research Ideas, valid negative evidence, and unavailable replay evidence separately.',
+      'Pair Research links exact QAP runs; Universal Scan shows the truthful scanner funnel and Research Ideas; advanced historical PIT research remains separately available below.',
     boundary:
-      'Current Approved Market Research is a current-survivor retrospective, not a historical point-in-time universe claim or an investment recommendation.',
+      'The browser does not decide method support, scientific compatibility, or trade attractiveness, and no Research action authorizes a live trade.',
   },
   scan: {
     intent: 'Understand exactly what one completed research generation tested and what survived.',

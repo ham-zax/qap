@@ -28,8 +28,8 @@ const researchUniverseGoal = {
 
 const goals = [
   {
-    title: 'Find research ideas',
-    description: 'Explore historical relationship evidence and the ideas it produced.',
+    title: 'Research a pair or scan the market',
+    description: 'Start with a pair question, scan your approved universe, or open the advanced Experiment Lab.',
     to: '/scanner' as const,
   },
   {

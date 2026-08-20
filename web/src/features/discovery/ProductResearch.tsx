@@ -130,7 +130,7 @@ export function ProductResearch({
           What QAP will research
         </p>
         <h2 className="mt-2 mb-2 text-xl font-semibold text-foreground">
-          Current approved market research
+          Approved universe scope
         </h2>
         <p className="m-0 max-w-4xl text-sm leading-6 text-secondary">
           QAP researches assets you explicitly approved and that are currently resolved on
@@ -176,7 +176,7 @@ export function ProductResearch({
 
       <section className="rounded-lg border border-border bg-panel p-5" aria-labelledby="find-ideas-heading">
         <h2 id="find-ideas-heading" className="mt-0 text-lg font-semibold text-foreground">
-          Find research ideas
+          Scan my universe
         </h2>
         <p className="text-sm leading-6 text-secondary">
           QAP will use the exact approved scope, immutable market-data generations, and safe
@@ -192,7 +192,7 @@ export function ProductResearch({
           }
           onClick={() => launch.mutate()}
         >
-          {launch.isPending ? 'Starting…' : 'Find research ideas'}
+          {launch.isPending ? 'Starting…' : 'Scan my universe'}
         </button>
         {!readiness.data?.ready_for_research && !readiness.isPending ? (
           <p className="mt-3 mb-0 text-sm text-secondary">
@@ -417,7 +417,7 @@ function OperationState({
         <Badge tone={operationTone(operation.status)}>{operationLabel(operation.status)}</Badge>
       </div>
       <h2 id="task-state-heading" className="mt-3 mb-2 text-lg font-semibold text-foreground">
-        {operation.status === 'running' ? 'QAP is researching the frozen scope' : 'Background task state'}
+        {operation.status === 'running' ? 'QAP is scanning the frozen approved scope' : 'Background task state'}
       </h2>
       <p className="m-0 text-sm leading-6 text-secondary">
         {operation.status === 'running'

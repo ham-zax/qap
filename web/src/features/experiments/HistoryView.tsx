@@ -198,6 +198,22 @@ function ResearchIdeaCard({ idea }: { idea: HistoryIdea }) {
   )
 }
 
+function groupOtherRuns(runs: RunSummaryDto[]) {
+  const groups = new Map<string, RunSummaryDto[]>()
+  for (const run of runs) {
+    const key =
+      run.artifact_status === 'valid' && run.research_family_id
+        ? `family:${run.research_family_id}`
+        : `run:${run.run_id}`
+    groups.set(key, [...(groups.get(key) ?? []), run])
+  }
+  return [...groups.entries()].map(([key, items]) => ({
+    key,
+    familyId: key.startsWith('family:') ? key.slice('family:'.length) : null,
+    runs: items,
+  }))
+}
+
 function OtherRunCard({ run }: { run: RunSummaryDto }) {
   if (run.artifact_status === 'invalid') {
     return (
@@ -240,6 +256,41 @@ function OtherRunCard({ run }: { run: RunSummaryDto }) {
   )
 }
 
+function OtherRunGroup({
+  familyId,
+  runs,
+}: {
+  familyId: string | null
+  runs: RunSummaryDto[]
+}) {
+  if (!familyId || runs.length === 1) return <OtherRunCard run={runs[0]} />
+  return (
+    <section className="rounded-lg border border-border-strong bg-subtle p-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge tone="info">Research family</Badge>
+        <Badge tone="neutral">{runs.length} attempts</Badge>
+      </div>
+      <h3 className="mt-3 mb-2 text-lg font-semibold text-foreground">
+        {runs[0]?.basket?.join(' · ') ?? 'Manual QAP research family'}
+      </h3>
+      <p className="m-0 text-sm leading-6 text-secondary">
+        These exact runs share the existing QAP research-family identity. They remain
+        separate attempts with separate persisted outcomes; History does not combine them
+        into a new verdict or Research Idea.
+      </p>
+      <div className="mt-4 space-y-3">
+        {runs.map((run) => (
+          <OtherRunCard key={run.run_id} run={run} />
+        ))}
+      </div>
+      <details className="mt-4 text-xs text-muted">
+        <summary className="cursor-pointer font-semibold text-accent">Exact family identity</summary>
+        <p className="mt-2 mb-0 break-all font-mono">{familyId}</p>
+      </details>
+    </section>
+  )
+}
+
 function Section({
   eyebrow,
   title,
@@ -276,6 +327,7 @@ function Section({
 }
 
 export function HistoryView({ history }: HistoryViewProps) {
+  const otherRunGroups = groupOtherRuns(history.other_research_runs)
   return (
     <section aria-labelledby="history-heading" className="min-w-0">
       <header className="mb-8 max-w-4xl">
@@ -429,8 +481,12 @@ export function HistoryView({ history }: HistoryViewProps) {
         empty={history.other_research_runs.length === 0}
         emptyText="No additional unowned QAP research runs are available."
       >
-        {history.other_research_runs.map((run) => (
-          <OtherRunCard key={run.run_id} run={run} />
+        {otherRunGroups.map((group) => (
+          <OtherRunGroup
+            key={group.key}
+            familyId={group.familyId}
+            runs={group.runs}
+          />
         ))}
       </Section>
 
