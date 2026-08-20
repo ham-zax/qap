@@ -24,6 +24,7 @@ from qap.api.routes import (
     product_current_evidence_router,
     product_market_data_router,
     product_research_router,
+    research_recipes_router,
     research_universe_router,
     scanner_router,
     workspace_router,
@@ -36,6 +37,7 @@ from qap.product_current_evidence import ProductCurrentEvidenceStore
 from qap.product_market_data import ProductMarketData
 from qap.product_market_data_prepare import ProductMarketDataPreparation
 from qap.product_universe import ProductUniverse
+from qap.research_recipe_entry import ResearchRecipeService
 
 
 def _error_response(
@@ -96,9 +98,16 @@ def create_app(settings: ApiSettings) -> FastAPI:
         product_universe,
         product_market_data,
     )
-    app.state.current_approved_research = CurrentApprovedResearch(
+    current_approved_research = CurrentApprovedResearch(
         product_universe,
         product_market_data,
+    )
+    app.state.current_approved_research = current_approved_research
+    app.state.research_recipe_service = ResearchRecipeService(
+        run_root=settings.run_root,
+        data_root=settings.market_data_root,
+        repository_root=settings.repository_root,
+        current_approved=current_approved_research,
     )
     app.state.product_current_evidence = ProductCurrentEvidenceStore(settings.run_root)
     app.state.operation_manager = OperationManager(settings)
@@ -181,6 +190,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.include_router(research_universe_router)
     app.include_router(product_market_data_router)
     app.include_router(product_research_router)
+    app.include_router(research_recipes_router)
     app.include_router(product_current_evidence_router)
     app.include_router(experiments_router)
     app.include_router(history_router)

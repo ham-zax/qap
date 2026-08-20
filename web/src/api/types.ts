@@ -43,6 +43,14 @@ export type BasketDetailDto = components['schemas']['BasketDetailDto']
 export type OperationDto = components['schemas']['OperationDto']
 export type OperationListDto = components['schemas']['OperationListDto']
 export type OperationRefDto = components['schemas']['OperationRefDto']
+export type ResearchRecipeCheckRequestDto =
+  components['schemas']['ResearchRecipeCheckRequestDto']
+export type ResearchRecipeCheckV1 = components['schemas']['ResearchRecipeCheckV1']
+export type ResearchRecipeDraftV1 = components['schemas']['ResearchRecipeDraftV1']
+export type ResearchRecipeRunRequestDto =
+  components['schemas']['ResearchRecipeRunRequestDto']
+export type ResearchRecipeV1 = components['schemas']['ResearchRecipeV1']
+export type SupportReportV1 = components['schemas']['SupportReportV1']
 export type RunScanRequestDto = components['schemas']['RunScanRequestDto']
 export type MomentumGenerationRequestDto =
   components['schemas']['MomentumGenerationRequestDto']

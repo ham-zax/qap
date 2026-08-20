@@ -54,6 +54,21 @@ from qap.experiment.provenance import (
     deterministic_run_id,
     manifest_sha256,
 )
+from qap.experiment.research_recipe import (
+    FidelityIntent,
+    ResearchObject,
+    ResearchRecipeCheckV1,
+    ResearchRecipeCompilationV1,
+    ResearchRecipeDraftV1,
+    ResearchRecipeV1,
+    SupportAuthority,
+    SupportCapability,
+    SupportFidelity,
+    SupportReadiness,
+    SupportReasonCode,
+    SupportReportV1,
+    SupportStructure,
+)
 from qap.experiment.result import ExperimentResult, ResultStatus, RoleSummary
 from qap.experiment.runner import (
     ExperimentRun,
@@ -62,6 +77,7 @@ from qap.experiment.runner import (
     execute_experiment,
     execute_prepared_experiment,
     prepare_experiment,
+    validate_strategy_policy,
 )
 
 __all__ = [
@@ -84,6 +100,7 @@ __all__ = [
     "ExperimentRun",
     "ExperimentSetupError",
     "ExternalFlowSpec",
+    "FidelityIntent",
     "FinalOosCommitment",
     "HoldoutAlreadyCommittedError",
     "InstrumentSpec",
@@ -95,6 +112,11 @@ __all__ = [
     "PreparedExperiment",
     "PrimaryMetric",
     "ProvenanceError",
+    "ResearchObject",
+    "ResearchRecipeCheckV1",
+    "ResearchRecipeCompilationV1",
+    "ResearchRecipeDraftV1",
+    "ResearchRecipeV1",
     "ResultStatus",
     "RoleRun",
     "RoleSummary",
@@ -102,6 +124,13 @@ __all__ = [
     "RunArtifactPaths",
     "RunProvenance",
     "StrictHodlPolicy",
+    "SupportAuthority",
+    "SupportCapability",
+    "SupportFidelity",
+    "SupportReadiness",
+    "SupportReasonCode",
+    "SupportReportV1",
+    "SupportStructure",
     "UniverseMode",
     "canonical_manifest_bytes",
     "capture_run_provenance",
@@ -117,5 +146,6 @@ __all__ = [
     "read_run_artifacts",
     "run_experiment_to_artifacts",
     "starting_value_target",
+    "validate_strategy_policy",
     "write_run_artifacts",
 ]

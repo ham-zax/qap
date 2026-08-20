@@ -517,6 +517,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/research-recipes/check-support": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Research Recipe Support
+         * @description Explain support without mutating setup, lineage, or scientific state.
+         */
+        post: operations["checkResearchRecipeSupport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/research-recipes/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Research Recipe */
+        post: operations["runResearchRecipe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/research-universe": {
         parameters: {
             query?: never;
@@ -1638,6 +1675,11 @@ export interface components {
             /** Quantity Delta */
             quantity_delta: string;
         };
+        /**
+         * FidelityIntent
+         * @enum {string}
+         */
+        FidelityIntent: "native_qap" | "faithful_replication" | "adaptation";
         /** FillAuditDto */
         FillAuditDto: {
             /** Base */
@@ -2851,6 +2893,27 @@ export interface components {
             /** Reasons */
             reasons: components["schemas"]["ReadinessReasonDto"][];
         };
+        /** ResearchBenchmarkV1 */
+        ResearchBenchmarkV1: {
+            /**
+             * Controls
+             * @default []
+             */
+            controls: {
+                [key: string]: components["schemas"]["JsonValue"];
+            }[];
+            /** Primary Incremental Benchmark */
+            primary_incremental_benchmark?: string | null;
+            /** Primary Metric */
+            primary_metric: string;
+            /**
+             * Relationship Alpha Claim
+             * @default false
+             */
+            relationship_alpha_claim: boolean;
+            /** Success Threshold */
+            success_threshold: string;
+        };
         /** ResearchClaimDto */
         ResearchClaimDto: {
             /** Claim Identity */
@@ -2864,6 +2927,86 @@ export interface components {
             label: string;
             /** Scope Identity */
             scope_identity: string | null;
+        };
+        /** ResearchComponentV1 */
+        ResearchComponentV1: {
+            /** Component Id */
+            component_id: string;
+            /**
+             * Config
+             * @default {}
+             */
+            config: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+        };
+        /** ResearchDataBindingV1 */
+        ResearchDataBindingV1: {
+            /** Analysis Anchor */
+            analysis_anchor?: string | null;
+            /**
+             * Authority
+             * @enum {string}
+             */
+            authority: "current_approved" | "strict_pit";
+            /** Claim Identity */
+            claim_identity: string;
+            data_role: components["schemas"]["DataRole"];
+            data_window: components["schemas"]["DataWindowSpec"];
+            evaluation_window?: components["schemas"]["DataWindowSpec"] | null;
+            /**
+             * Generations
+             * @default []
+             */
+            generations: components["schemas"]["ResearchGenerationBindingV1"][];
+            /** Horizon */
+            horizon?: ("short" | "medium" | "swing") | null;
+            /** Interval */
+            interval: string;
+            /** Readiness Id */
+            readiness_id?: string | null;
+            /** Starting Quantities */
+            starting_quantities: {
+                [key: string]: string;
+            };
+        };
+        /** ResearchExecutionV1 */
+        ResearchExecutionV1: {
+            /** Adverse Cost Scenario */
+            adverse_cost_scenario?: {
+                [key: string]: components["schemas"]["JsonValue"];
+            } | null;
+            /** Base Step */
+            base_step?: string | null;
+            /** Bridge Asset */
+            bridge_asset?: string | null;
+            /** Fee Bps */
+            fee_bps: string;
+            /**
+             * Market Metadata Mode
+             * @default required
+             */
+            market_metadata_mode: string;
+            /** Minimum Rebalance Notional */
+            minimum_rebalance_notional: string;
+            /** Mode */
+            mode: string;
+            /** Numeraire Asset */
+            numeraire_asset: string;
+            /** Slippage Bps */
+            slippage_bps: string;
+        };
+        /** ResearchGenerationBindingV1 */
+        ResearchGenerationBindingV1: {
+            /** Dataset Id */
+            dataset_id: string;
+            /**
+             * Purpose
+             * @enum {string}
+             */
+            purpose: "execution" | "evidence";
+            /** Semantic Fingerprint */
+            semantic_fingerprint: string;
         };
         /** ResearchIdeaCurrentAssessmentDto */
         ResearchIdeaCurrentAssessmentDto: {
@@ -3037,6 +3180,11 @@ export interface components {
             /** Memberships */
             memberships: components["schemas"]["ResearchIdeaFollowUpMembershipDto"][];
         };
+        /**
+         * ResearchObject
+         * @enum {string}
+         */
+        ResearchObject: "pair" | "fixed_basket";
         /** ResearchPathReadinessDto */
         ResearchPathReadinessDto: {
             /** Canonical Asset Id */
@@ -3056,6 +3204,119 @@ export interface components {
             venue: "binance" | "gate";
             /** Venue Symbol */
             venue_symbol: string;
+        };
+        /** ResearchRecipeCheckRequestDto */
+        ResearchRecipeCheckRequestDto: {
+            recipe: components["schemas"]["ResearchRecipeDraftV1"];
+            /**
+             * Schema Version
+             * @default qap.api.research-recipe-check-request.v1
+             * @constant
+             */
+            schema_version: "qap.api.research-recipe-check-request.v1";
+        };
+        /** ResearchRecipeCheckV1 */
+        ResearchRecipeCheckV1: {
+            recipe: components["schemas"]["ResearchRecipeV1"] | null;
+            /**
+             * Schema Version
+             * @default qap.research.recipe-check.v1
+             * @constant
+             */
+            schema_version: "qap.research.recipe-check.v1";
+            support: components["schemas"]["SupportReportV1"];
+        };
+        /** ResearchRecipeDraftV1 */
+        ResearchRecipeDraftV1: {
+            /** Assets */
+            assets: string[];
+            benchmarks: components["schemas"]["ResearchBenchmarkV1"];
+            data: components["schemas"]["ResearchDataBindingV1"];
+            /** Derived From Recipe Sha256 */
+            derived_from_recipe_sha256?: string | null;
+            execution: components["schemas"]["ResearchExecutionV1"];
+            fidelity_intent: components["schemas"]["FidelityIntent"];
+            /** Research Family Id */
+            research_family_id: string;
+            /** Research Object */
+            research_object: string;
+            /**
+             * Schema Version
+             * @default qap.research.recipe-draft.v1
+             * @constant
+             */
+            schema_version: "qap.research.recipe-draft.v1";
+            /** Selected From Compilation Sha256 */
+            selected_from_compilation_sha256?: string | null;
+            selection: components["schemas"]["SelectionProtocolV1"];
+            /**
+             * @default {
+             *       "metadata": {}
+             *     }
+             */
+            source: components["schemas"]["ResearchSourceV1"];
+            /** Variants */
+            variants: components["schemas"]["ResearchVariantV1"][];
+        };
+        /** ResearchRecipeRunRequestDto */
+        ResearchRecipeRunRequestDto: {
+            recipe: components["schemas"]["ResearchRecipeV1"];
+            /**
+             * Schema Version
+             * @default qap.api.research-recipe-run-request.v1
+             * @constant
+             */
+            schema_version: "qap.api.research-recipe-run-request.v1";
+        };
+        /** ResearchRecipeV1 */
+        ResearchRecipeV1: {
+            /** Assets */
+            assets: string[];
+            benchmarks: components["schemas"]["ResearchBenchmarkV1"];
+            data: components["schemas"]["ResearchDataBindingV1"];
+            /** Derived From Recipe Sha256 */
+            derived_from_recipe_sha256?: string | null;
+            execution: components["schemas"]["ResearchExecutionV1"];
+            fidelity_intent: components["schemas"]["FidelityIntent"];
+            /**
+             * Recipe Sha256
+             * @default
+             */
+            recipe_sha256: string;
+            /** Research Family Id */
+            research_family_id: string;
+            research_object: components["schemas"]["ResearchObject"];
+            /**
+             * Schema Version
+             * @default qap.research.recipe.v1
+             * @constant
+             */
+            schema_version: "qap.research.recipe.v1";
+            /** Selected From Compilation Sha256 */
+            selected_from_compilation_sha256?: string | null;
+            selection: components["schemas"]["SelectionProtocolV1"];
+            /**
+             * @default {
+             *       "metadata": {}
+             *     }
+             */
+            source: components["schemas"]["ResearchSourceV1"];
+            /** Variants */
+            variants: components["schemas"]["ResearchVariantV1"][];
+        };
+        /** ResearchSourceV1 */
+        ResearchSourceV1: {
+            /**
+             * Metadata
+             * @default {}
+             */
+            metadata: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /** Reference */
+            reference?: string | null;
+            /** Source Id */
+            source_id?: string | null;
         };
         /** ResearchUniverseAssetDto */
         ResearchUniverseAssetDto: {
@@ -3120,6 +3381,21 @@ export interface components {
             venue: "binance" | "gate";
             /** Venue Symbol */
             venue_symbol: string;
+        };
+        /** ResearchVariantV1 */
+        ResearchVariantV1: {
+            allocation: components["schemas"]["ResearchComponentV1"];
+            decision_rule: components["schemas"]["ResearchComponentV1"];
+            /** Random Seed */
+            random_seed?: number | null;
+            relationship: components["schemas"]["ResearchComponentV1"];
+            /**
+             * Risk Overlays
+             * @default []
+             */
+            risk_overlays: components["schemas"]["ResearchComponentV1"][];
+            /** Variant Id */
+            variant_id: string;
         };
         /**
          * ResultStatus
@@ -3380,6 +3656,85 @@ export interface components {
             /** Venues */
             venues: string[];
         };
+        /** SelectionProtocolV1 */
+        SelectionProtocolV1: {
+            /** Kind */
+            kind: string;
+            /** Selected Variant Id */
+            selected_variant_id?: string | null;
+        };
+        /**
+         * SupportAuthority
+         * @enum {string}
+         */
+        SupportAuthority: "allowed" | "constitution_blocked" | "claim_incompatible";
+        /**
+         * SupportCapability
+         * @enum {string}
+         */
+        SupportCapability: "executable" | "diagnostic_only" | "unimplemented" | "unknown";
+        /**
+         * SupportFidelity
+         * @enum {string}
+         */
+        SupportFidelity: "native" | "faithful_replication" | "adaptation_required" | "not_applicable";
+        /**
+         * SupportReadiness
+         * @enum {string}
+         */
+        SupportReadiness: "ready" | "needs_setup";
+        /**
+         * SupportReasonCategory
+         * @enum {string}
+         */
+        SupportReasonCategory: "structure" | "capability" | "authority" | "readiness" | "fidelity" | "lineage";
+        /**
+         * SupportReasonCode
+         * @enum {string}
+         */
+        SupportReasonCode: "unknown_method" | "known_method_not_implemented" | "method_not_admitted_for_replay" | "method_has_no_current_data_contract" | "unsupported_research_object" | "incompatible_component_combination" | "requires_short_position" | "requires_leverage_or_borrow" | "requires_derivative" | "requires_unimplemented_risk_overlay" | "requires_unimplemented_parameter_selection" | "requires_unimplemented_walk_forward_protocol" | "requires_unavailable_numerical_backend" | "requires_missing_identity_confirmation" | "requires_operator_asset_approval" | "requires_market_data" | "requires_real_direct_market" | "current_claim_incompatible" | "strict_pit_evidence_required" | "cannot_claim_faithful_replication" | "adaptation_available" | "final_oos_requires_single_precommitted_variant" | "final_oos_requires_frozen_family_selection" | "final_oos_family_mismatch";
+        /** SupportReasonV1 */
+        SupportReasonV1: {
+            category: components["schemas"]["SupportReasonCategory"];
+            code: components["schemas"]["SupportReasonCode"];
+            /** Component */
+            component: string;
+            /** Detail */
+            detail: string;
+            /** Nearest Capability */
+            nearest_capability?: string | null;
+        };
+        /** SupportReportV1 */
+        SupportReportV1: {
+            authority: components["schemas"]["SupportAuthority"];
+            capability: components["schemas"]["SupportCapability"];
+            fidelity: components["schemas"]["SupportFidelity"];
+            readiness: components["schemas"]["SupportReadiness"];
+            /**
+             * Reasons
+             * @default []
+             */
+            reasons: components["schemas"]["SupportReasonV1"][];
+            /** Runnable */
+            runnable: boolean;
+            /**
+             * Schema Version
+             * @default qap.research.support-report.v1
+             * @constant
+             */
+            schema_version: "qap.research.support-report.v1";
+            structure: components["schemas"]["SupportStructure"];
+            /**
+             * Suggestions
+             * @default []
+             */
+            suggestions: string[];
+        };
+        /**
+         * SupportStructure
+         * @enum {string}
+         */
+        SupportStructure: "valid" | "invalid";
         /** UniverseAssetDto */
         UniverseAssetDto: {
             /** Asset Id */
@@ -4421,6 +4776,72 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["QualificationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checkResearchRecipeSupport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResearchRecipeCheckRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchRecipeCheckV1"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    runResearchRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResearchRecipeRunRequestDto"];
             };
         };
         responses: {

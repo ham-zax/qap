@@ -233,6 +233,15 @@ def _strategy_policy(
     )
 
 
+def validate_strategy_policy(
+    manifest: ExperimentManifest,
+    loaded: LoadedExperimentData,
+) -> None:
+    """Validate one admitted strategy through the runner's canonical composer."""
+
+    _strategy_policy(manifest, loaded)
+
+
 def _run_role(
     *,
     prepared: PreparedExperiment,
@@ -528,4 +537,5 @@ __all__ = [
     "execute_prepared_experiment",
     "load_experiment_data",
     "prepare_experiment",
+    "validate_strategy_policy",
 ]

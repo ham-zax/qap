@@ -17,6 +17,7 @@ from qap.api.product_current_evidence_schemas import (
     ProductQualificationWorkerRequestDto,
 )
 from qap.api.product_research_schemas import ProductRunScanRequestDto
+from qap.api.research_recipe_schemas import ResearchRecipeRunRequestDto
 from qap.api.scanner_schemas import (
     AdvanceForwardCohortRequestDto,
     CapturePublicEvidenceRequestDto,
@@ -38,6 +39,7 @@ from qap.product_current_evidence import (
 )
 from qap.product_market_data import ProductMarketData
 from qap.product_universe import ProductUniverse
+from qap.research_recipe_entry import ResearchRecipeService
 from qap.scanner.basket_artifacts import read_basket_generation
 from qap.scanner.catalog import load_scanner_catalog
 from qap.scanner.models import ScannerPinSpec
@@ -266,6 +268,32 @@ def _basket(
     }
 
 
+def _research_recipe(
+    request: ResearchRecipeRunRequestDto,
+    settings: object,
+) -> dict[str, JsonValue]:
+    data_root = _path(getattr(settings, "data_root"), field="data_root")
+    run_root = _path(getattr(settings, "run_root"), field="run_root")
+    repository_root = _path(
+        getattr(settings, "repository_root"),
+        field="repository_root",
+    )
+    current_approved = CurrentApprovedResearch(
+        ProductUniverse(run_root),
+        ProductMarketData(run_root, data_root),
+    )
+    result = ResearchRecipeService(
+        run_root=run_root,
+        data_root=data_root,
+        repository_root=repository_root,
+        current_approved=current_approved,
+    ).execute(request.recipe)
+    return {
+        "compilation_sha256": result.compilation_sha256,
+        "run_ids": list(result.run_ids),
+    }
+
+
 def _execute(
     kind: OperationKind,
     payload: dict[str, JsonValue],
@@ -311,6 +339,10 @@ def _execute(
         return _qualify(request, settings)
     if kind is OperationKind.RUN_BASKET:
         return _basket(BasketRunRequestDto.model_validate(payload), settings)
+    if kind is OperationKind.RUN_RESEARCH_RECIPE:
+        return _research_recipe(
+            ResearchRecipeRunRequestDto.model_validate(payload), settings
+        )
     raise RuntimeError(f"unsupported operation kind: {kind.value}")
 
 

@@ -2643,6 +2643,15 @@
         "title": "ExternalFlowSpec",
         "type": "object"
       },
+      "FidelityIntent": {
+        "enum": [
+          "native_qap",
+          "faithful_replication",
+          "adaptation"
+        ],
+        "title": "FidelityIntent",
+        "type": "string"
+      },
       "FillAuditDto": {
         "additionalProperties": false,
         "properties": {
@@ -6086,6 +6095,52 @@
         "title": "ResearchAssetReadinessDto",
         "type": "object"
       },
+      "ResearchBenchmarkV1": {
+        "additionalProperties": false,
+        "properties": {
+          "controls": {
+            "default": [],
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JsonValue"
+              },
+              "type": "object"
+            },
+            "title": "Controls",
+            "type": "array"
+          },
+          "primary_incremental_benchmark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Incremental Benchmark"
+          },
+          "primary_metric": {
+            "title": "Primary Metric",
+            "type": "string"
+          },
+          "relationship_alpha_claim": {
+            "default": false,
+            "title": "Relationship Alpha Claim",
+            "type": "boolean"
+          },
+          "success_threshold": {
+            "title": "Success Threshold",
+            "type": "string"
+          }
+        },
+        "required": [
+          "primary_metric",
+          "success_threshold"
+        ],
+        "title": "ResearchBenchmarkV1",
+        "type": "object"
+      },
       "ResearchClaimDto": {
         "additionalProperties": false,
         "properties": {
@@ -6132,6 +6187,231 @@
           "scope_identity"
         ],
         "title": "ResearchClaimDto",
+        "type": "object"
+      },
+      "ResearchComponentV1": {
+        "additionalProperties": false,
+        "properties": {
+          "component_id": {
+            "title": "Component Id",
+            "type": "string"
+          },
+          "config": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "default": {},
+            "title": "Config",
+            "type": "object"
+          }
+        },
+        "required": [
+          "component_id"
+        ],
+        "title": "ResearchComponentV1",
+        "type": "object"
+      },
+      "ResearchDataBindingV1": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_anchor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Anchor"
+          },
+          "authority": {
+            "enum": [
+              "current_approved",
+              "strict_pit"
+            ],
+            "title": "Authority",
+            "type": "string"
+          },
+          "claim_identity": {
+            "title": "Claim Identity",
+            "type": "string"
+          },
+          "data_role": {
+            "$ref": "#/components/schemas/DataRole"
+          },
+          "data_window": {
+            "$ref": "#/components/schemas/DataWindowSpec"
+          },
+          "evaluation_window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataWindowSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "generations": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ResearchGenerationBindingV1"
+            },
+            "title": "Generations",
+            "type": "array"
+          },
+          "horizon": {
+            "anyOf": [
+              {
+                "enum": [
+                  "short",
+                  "medium",
+                  "swing"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horizon"
+          },
+          "interval": {
+            "title": "Interval",
+            "type": "string"
+          },
+          "readiness_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readiness Id"
+          },
+          "starting_quantities": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Starting Quantities",
+            "type": "object"
+          }
+        },
+        "required": [
+          "authority",
+          "claim_identity",
+          "data_role",
+          "interval",
+          "data_window",
+          "starting_quantities"
+        ],
+        "title": "ResearchDataBindingV1",
+        "type": "object"
+      },
+      "ResearchExecutionV1": {
+        "additionalProperties": false,
+        "properties": {
+          "adverse_cost_scenario": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adverse Cost Scenario"
+          },
+          "base_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Step"
+          },
+          "bridge_asset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bridge Asset"
+          },
+          "fee_bps": {
+            "title": "Fee Bps",
+            "type": "string"
+          },
+          "market_metadata_mode": {
+            "default": "required",
+            "title": "Market Metadata Mode",
+            "type": "string"
+          },
+          "minimum_rebalance_notional": {
+            "title": "Minimum Rebalance Notional",
+            "type": "string"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "numeraire_asset": {
+            "title": "Numeraire Asset",
+            "type": "string"
+          },
+          "slippage_bps": {
+            "title": "Slippage Bps",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "numeraire_asset",
+          "fee_bps",
+          "slippage_bps",
+          "minimum_rebalance_notional"
+        ],
+        "title": "ResearchExecutionV1",
+        "type": "object"
+      },
+      "ResearchGenerationBindingV1": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "purpose": {
+            "enum": [
+              "execution",
+              "evidence"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "semantic_fingerprint": {
+            "title": "Semantic Fingerprint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "semantic_fingerprint",
+          "purpose"
+        ],
+        "title": "ResearchGenerationBindingV1",
         "type": "object"
       },
       "ResearchIdeaCurrentAssessmentDto": {
@@ -6668,6 +6948,14 @@
         "title": "ResearchIdeaLongitudinalDto",
         "type": "object"
       },
+      "ResearchObject": {
+        "enum": [
+          "pair",
+          "fixed_basket"
+        ],
+        "title": "ResearchObject",
+        "type": "string"
+      },
       "ResearchPathReadinessDto": {
         "additionalProperties": false,
         "properties": {
@@ -6728,6 +7016,293 @@
           "generations"
         ],
         "title": "ResearchPathReadinessDto",
+        "type": "object"
+      },
+      "ResearchRecipeCheckRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "recipe": {
+            "$ref": "#/components/schemas/ResearchRecipeDraftV1"
+          },
+          "schema_version": {
+            "const": "qap.api.research-recipe-check-request.v1",
+            "default": "qap.api.research-recipe-check-request.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipe"
+        ],
+        "title": "ResearchRecipeCheckRequestDto",
+        "type": "object"
+      },
+      "ResearchRecipeCheckV1": {
+        "additionalProperties": false,
+        "properties": {
+          "recipe": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchRecipeV1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "schema_version": {
+            "const": "qap.research.recipe-check.v1",
+            "default": "qap.research.recipe-check.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "support": {
+            "$ref": "#/components/schemas/SupportReportV1"
+          }
+        },
+        "required": [
+          "recipe",
+          "support"
+        ],
+        "title": "ResearchRecipeCheckV1",
+        "type": "object"
+      },
+      "ResearchRecipeDraftV1": {
+        "additionalProperties": false,
+        "properties": {
+          "assets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assets",
+            "type": "array"
+          },
+          "benchmarks": {
+            "$ref": "#/components/schemas/ResearchBenchmarkV1"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ResearchDataBindingV1"
+          },
+          "derived_from_recipe_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derived From Recipe Sha256"
+          },
+          "execution": {
+            "$ref": "#/components/schemas/ResearchExecutionV1"
+          },
+          "fidelity_intent": {
+            "$ref": "#/components/schemas/FidelityIntent"
+          },
+          "research_family_id": {
+            "title": "Research Family Id",
+            "type": "string"
+          },
+          "research_object": {
+            "title": "Research Object",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.research.recipe-draft.v1",
+            "default": "qap.research.recipe-draft.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "selected_from_compilation_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected From Compilation Sha256"
+          },
+          "selection": {
+            "$ref": "#/components/schemas/SelectionProtocolV1"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ResearchSourceV1",
+            "default": {
+              "metadata": {}
+            }
+          },
+          "variants": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchVariantV1"
+            },
+            "title": "Variants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "research_family_id",
+          "assets",
+          "variants",
+          "selection",
+          "execution",
+          "benchmarks",
+          "data",
+          "fidelity_intent",
+          "research_object"
+        ],
+        "title": "ResearchRecipeDraftV1",
+        "type": "object"
+      },
+      "ResearchRecipeRunRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "recipe": {
+            "$ref": "#/components/schemas/ResearchRecipeV1"
+          },
+          "schema_version": {
+            "const": "qap.api.research-recipe-run-request.v1",
+            "default": "qap.api.research-recipe-run-request.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipe"
+        ],
+        "title": "ResearchRecipeRunRequestDto",
+        "type": "object"
+      },
+      "ResearchRecipeV1": {
+        "additionalProperties": false,
+        "properties": {
+          "assets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assets",
+            "type": "array"
+          },
+          "benchmarks": {
+            "$ref": "#/components/schemas/ResearchBenchmarkV1"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ResearchDataBindingV1"
+          },
+          "derived_from_recipe_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derived From Recipe Sha256"
+          },
+          "execution": {
+            "$ref": "#/components/schemas/ResearchExecutionV1"
+          },
+          "fidelity_intent": {
+            "$ref": "#/components/schemas/FidelityIntent"
+          },
+          "recipe_sha256": {
+            "default": "",
+            "title": "Recipe Sha256",
+            "type": "string"
+          },
+          "research_family_id": {
+            "title": "Research Family Id",
+            "type": "string"
+          },
+          "research_object": {
+            "$ref": "#/components/schemas/ResearchObject"
+          },
+          "schema_version": {
+            "const": "qap.research.recipe.v1",
+            "default": "qap.research.recipe.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "selected_from_compilation_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected From Compilation Sha256"
+          },
+          "selection": {
+            "$ref": "#/components/schemas/SelectionProtocolV1"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ResearchSourceV1",
+            "default": {
+              "metadata": {}
+            }
+          },
+          "variants": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchVariantV1"
+            },
+            "title": "Variants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "research_family_id",
+          "assets",
+          "variants",
+          "selection",
+          "execution",
+          "benchmarks",
+          "data",
+          "fidelity_intent",
+          "research_object"
+        ],
+        "title": "ResearchRecipeV1",
+        "type": "object"
+      },
+      "ResearchSourceV1": {
+        "additionalProperties": false,
+        "properties": {
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "default": {},
+            "title": "Metadata",
+            "type": "object"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          }
+        },
+        "title": "ResearchSourceV1",
         "type": "object"
       },
       "ResearchUniverseAssetDto": {
@@ -6901,6 +7476,51 @@
           "trading"
         ],
         "title": "ResearchUniverseVenueDto",
+        "type": "object"
+      },
+      "ResearchVariantV1": {
+        "additionalProperties": false,
+        "properties": {
+          "allocation": {
+            "$ref": "#/components/schemas/ResearchComponentV1"
+          },
+          "decision_rule": {
+            "$ref": "#/components/schemas/ResearchComponentV1"
+          },
+          "random_seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Random Seed"
+          },
+          "relationship": {
+            "$ref": "#/components/schemas/ResearchComponentV1"
+          },
+          "risk_overlays": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ResearchComponentV1"
+            },
+            "title": "Risk Overlays",
+            "type": "array"
+          },
+          "variant_id": {
+            "title": "Variant Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "variant_id",
+          "relationship",
+          "decision_rule",
+          "allocation"
+        ],
+        "title": "ResearchVariantV1",
         "type": "object"
       },
       "ResultStatus": {
@@ -7709,6 +8329,212 @@
         ],
         "title": "ScannerProtocolDto",
         "type": "object"
+      },
+      "SelectionProtocolV1": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "selected_variant_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Variant Id"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "SelectionProtocolV1",
+        "type": "object"
+      },
+      "SupportAuthority": {
+        "enum": [
+          "allowed",
+          "constitution_blocked",
+          "claim_incompatible"
+        ],
+        "title": "SupportAuthority",
+        "type": "string"
+      },
+      "SupportCapability": {
+        "enum": [
+          "executable",
+          "diagnostic_only",
+          "unimplemented",
+          "unknown"
+        ],
+        "title": "SupportCapability",
+        "type": "string"
+      },
+      "SupportFidelity": {
+        "enum": [
+          "native",
+          "faithful_replication",
+          "adaptation_required",
+          "not_applicable"
+        ],
+        "title": "SupportFidelity",
+        "type": "string"
+      },
+      "SupportReadiness": {
+        "enum": [
+          "ready",
+          "needs_setup"
+        ],
+        "title": "SupportReadiness",
+        "type": "string"
+      },
+      "SupportReasonCategory": {
+        "enum": [
+          "structure",
+          "capability",
+          "authority",
+          "readiness",
+          "fidelity",
+          "lineage"
+        ],
+        "title": "SupportReasonCategory",
+        "type": "string"
+      },
+      "SupportReasonCode": {
+        "enum": [
+          "unknown_method",
+          "known_method_not_implemented",
+          "method_not_admitted_for_replay",
+          "method_has_no_current_data_contract",
+          "unsupported_research_object",
+          "incompatible_component_combination",
+          "requires_short_position",
+          "requires_leverage_or_borrow",
+          "requires_derivative",
+          "requires_unimplemented_risk_overlay",
+          "requires_unimplemented_parameter_selection",
+          "requires_unimplemented_walk_forward_protocol",
+          "requires_unavailable_numerical_backend",
+          "requires_missing_identity_confirmation",
+          "requires_operator_asset_approval",
+          "requires_market_data",
+          "requires_real_direct_market",
+          "current_claim_incompatible",
+          "strict_pit_evidence_required",
+          "cannot_claim_faithful_replication",
+          "adaptation_available",
+          "final_oos_requires_single_precommitted_variant",
+          "final_oos_requires_frozen_family_selection",
+          "final_oos_family_mismatch"
+        ],
+        "title": "SupportReasonCode",
+        "type": "string"
+      },
+      "SupportReasonV1": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/SupportReasonCategory"
+          },
+          "code": {
+            "$ref": "#/components/schemas/SupportReasonCode"
+          },
+          "component": {
+            "title": "Component",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "nearest_capability": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nearest Capability"
+          }
+        },
+        "required": [
+          "code",
+          "category",
+          "component",
+          "detail"
+        ],
+        "title": "SupportReasonV1",
+        "type": "object"
+      },
+      "SupportReportV1": {
+        "additionalProperties": false,
+        "properties": {
+          "authority": {
+            "$ref": "#/components/schemas/SupportAuthority"
+          },
+          "capability": {
+            "$ref": "#/components/schemas/SupportCapability"
+          },
+          "fidelity": {
+            "$ref": "#/components/schemas/SupportFidelity"
+          },
+          "readiness": {
+            "$ref": "#/components/schemas/SupportReadiness"
+          },
+          "reasons": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SupportReasonV1"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "runnable": {
+            "title": "Runnable",
+            "type": "boolean"
+          },
+          "schema_version": {
+            "const": "qap.research.support-report.v1",
+            "default": "qap.research.support-report.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "structure": {
+            "$ref": "#/components/schemas/SupportStructure"
+          },
+          "suggestions": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "structure",
+          "capability",
+          "authority",
+          "readiness",
+          "fidelity",
+          "runnable"
+        ],
+        "title": "SupportReportV1",
+        "type": "object"
+      },
+      "SupportStructure": {
+        "enum": [
+          "valid",
+          "invalid"
+        ],
+        "title": "SupportStructure",
+        "type": "string"
       },
       "UniverseAssetDto": {
         "additionalProperties": false,
@@ -9312,6 +10138,89 @@
         "summary": "Qualify Candidate",
         "tags": [
           "scanner"
+        ]
+      }
+    },
+    "/api/research-recipes/check-support": {
+      "post": {
+        "description": "Explain support without mutating setup, lineage, or scientific state.",
+        "operationId": "checkResearchRecipeSupport",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResearchRecipeCheckRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchRecipeCheckV1"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Check Research Recipe Support",
+        "tags": [
+          "research-recipes"
+        ]
+      }
+    },
+    "/api/research-recipes/run": {
+      "post": {
+        "operationId": "runResearchRecipe",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResearchRecipeRunRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationRefDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Research Recipe",
+        "tags": [
+          "research-recipes"
         ]
       }
     },
