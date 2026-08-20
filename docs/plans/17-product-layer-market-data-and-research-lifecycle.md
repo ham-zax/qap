@@ -1,6 +1,6 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M9 are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED after two contract reviews. M10-A Typed Research Recipe + Capability Preflight is the current executable frontier. M10-B Product cockpit implementation remains blocked on M10-A, though read-only repository/UI reconnaissance may proceed against the frozen contract. The Product correction remains broader than a Pair Research UI: QAP needs a typed Research Recipe / capability-preflight layer so a researcher can declare a method, check whether QAP can reproduce it faithfully, understand exact unsupported/blocked/data-readiness reasons, and only then execute it through existing experiment/scanner authority.
+**Status:** M0-M9 are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED after two contract reviews. M10-A Typed Research Recipe + Capability Preflight is complete and integrated at `12ed08a`. M10-B Research Cockpit + Experiment Lab is now the current executable frontier. The integrated M10-A public contract provides support-check, asynchronous launch, operation-result `compilation_sha256` + exact `run_ids[]`, and generated recipe/support types. M10-B may add only the smallest read-only Product projections needed to expose M10-A's already-owned default/capability/lineage truth; it must not recreate scientific support or lineage rules in React.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
@@ -760,7 +760,7 @@ M10-0 freezes these contract decisions before implementation:
 
 M10-0 is frozen/approved. M10-A may implement only the bounded recipe/preflight/lineage/compiler contract below. Scientific authority beneath `ExperimentManifest` remains unchanged.
 
-### M10-A - Typed Research Recipe + Capability Preflight - CURRENT
+### M10-A - Typed Research Recipe + Capability Preflight - COMPLETE / INTEGRATED `12ed08a`
 
 Implement the smallest backend domain/API owner that can answer **before execution** whether a declared recipe is representable, executable, claim-compatible, and data-ready.
 
@@ -891,9 +891,11 @@ Existing immutable data fingerprints, code provenance, controls, HODL/economic c
 
 The check/preflight operation is read-only: it must not download data, mutate admission, consume OOS, or start a scientific run.
 
-### M10-B - Research Cockpit + Experiment Lab Product Surface - BLOCKED ON M10-A
+### M10-B - Research Cockpit + Experiment Lab Product Surface - CURRENT
 
 Build the user-facing surface on top of the typed recipe/preflight boundary.
+
+Post-integration API reconciliation found that M10-A's HTTP surface intentionally exposes support-check and launch but does not yet expose its internal capability/default descriptors or immutable recipe-compilation lineage reads. M10-B may add the smallest read-only application projection required for the Product to consume that existing backend truth. Reuse `CAPABILITY_CATALOG` and immutable recipe-compilation artifact readers; do not create a React capability registry, duplicate scientific defaults, or add another lineage store.
 
 Required modes:
 
@@ -1039,8 +1041,8 @@ M7  ownership-safe persistent current-evidence collector    COMPLETE
 M8  objective-aware Portfolios + History + utility Activity COMPLETE
 M9  process/state ownership + packaging decision            COMPLETE
 M10-0 Research Cockpit + Experiment Contract design        APPROVED / FROZEN
-M10-A typed Research Recipe + capability preflight         CURRENT / IMPLEMENTATION
-M10-B Research Cockpit + Experiment Lab                    BLOCKED ON M10-A
+M10-A typed Research Recipe + capability preflight         COMPLETE / INTEGRATED 12ed08a
+M10-B Research Cockpit + Experiment Lab                    CURRENT / IMPLEMENTATION
 M10-C capability/fidelity proof with real methods          BLOCKED ON M10-A/B
 M10-D representative-user comprehension/authority closure  FINAL / BLOCKED
 ```
@@ -1089,7 +1091,7 @@ Phase 17 is complete only when:
 
 ## 19. Fresh-agent implementation mission
 
-> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the frozen Product Layer design, this plan, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and `docs/research/2026-08-20-qap-research-cockpit-investigation.md`. Phase 17 M0-M9 are complete and must not be replayed. M10 is reopened in design review: M10-0 must be approved before executable M10-A work. M10-A owns only the typed `ResearchRecipeV1` / compositional `SupportReportV1` / immutable compilation-lineage boundary for executable `pair | fixed_basket` research. Universal Scan remains under existing scanner authority; Focus Scan stays deferred unless scanner-scope reuse is nearly mechanical. Preserve strict PIT as Advanced Research, current-approved claim/readiness truth, fail-closed identity, immutable data provenance, research-family/final-OOS semantics, longitudinal evidence, manual Portfolio authority, and no-live-trade authority. Exact recipe hashes may change across development-to-final-OOS selection, but the frozen `research_family_id` must remain continuous; final-OOS must reference the exact prior compilation and reject multi-variant/search use before compilation. The capability catalog must reuse canonical validators/composers rather than duplicate runtime rules. Do not build a generic plugin runtime or auto-adapt published research. Copula is an example known-unimplemented method, not a required milestone. Testing remains opt-in under the current execution policy.
+> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the frozen Product Layer design, this plan, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and `docs/research/2026-08-20-qap-research-cockpit-investigation.md`. Phase 17 M0-M9 and M10-A are complete and must not be replayed. M10-B is the current Product implementation frontier over integrated M10-A. Consume `ResearchRecipeV1`, compositional `SupportReportV1`, support-check, asynchronous launch, operation-result `compilation_sha256` + exact `run_ids[]`, and generated recipe/support types. Universal Scan remains under existing scanner authority; Focus Scan stays deferred unless scanner-scope reuse is nearly mechanical. Preserve strict PIT as Advanced Research, current-approved claim/readiness truth, fail-closed identity, immutable data provenance, research-family/final-OOS semantics, longitudinal evidence, manual Portfolio authority, and no-live-trade authority. M10-B may expose only the smallest read-only backend projections needed for default recipe/capability/lineage presentation and must reuse canonical M10-A owners instead of creating React scientific registries or local precedence. Do not build a generic plugin runtime or auto-adapt published research. Copula is an example known-unimplemented method, not a required milestone. Testing remains opt-in under the current execution policy.
 
 ## 20. One-screen status
 
@@ -1116,11 +1118,13 @@ Phase 17 M9 process / state ownership + lifecycle hardening        COMPLETE
 APPROVED / FROZEN
 Phase 17 M10-0 Research Cockpit + Experiment Contract design
 
+COMPLETE / INTEGRATED
+Phase 17 M10-A typed Research Recipe + capability preflight  12ed08a
+
 CURRENT / IMPLEMENTATION
-Phase 17 M10-A typed Research Recipe + capability preflight
+Phase 17 M10-B Research Cockpit + Experiment Lab
 
 BLOCKED / DEPENDENCIES
-Phase 17 M10-B Research Cockpit + Experiment Lab
 Phase 17 M10-C capability/fidelity proof with real methods
 Phase 17 M10-D representative-user acceptance
 
