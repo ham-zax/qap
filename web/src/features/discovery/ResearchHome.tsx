@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import type { QapApiClient } from '../../api/client'
 import type { QapQueries } from '../../api/queries'
 import type {
@@ -34,6 +36,8 @@ export function ResearchHome({
   protocol,
   scans,
 }: ResearchHomeProps) {
+  const [activeTask, setActiveTask] = useState<'pair' | 'scan' | 'lab'>('pair')
+
   return (
     <section className="min-w-0">
       <header className="mb-8 max-w-4xl">
@@ -50,26 +54,53 @@ export function ResearchHome({
         </p>
       </header>
 
-      <PairResearch apiClient={apiClient} queries={queries} workspace={workspace} />
+      <nav
+        className="mb-6 flex flex-wrap gap-2 rounded-lg border border-border bg-panel p-2"
+        aria-label="Research task"
+      >
+        {([
+          ['pair', 'Research a pair'],
+          ['scan', 'Scan my universe'],
+          ['lab', 'Experiment Lab'],
+        ] as const).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={activeTask === value}
+            className={`min-h-11 rounded-md px-4 text-sm font-semibold transition-colors ${
+              activeTask === value
+                ? 'bg-accent text-canvas'
+                : 'text-secondary hover:bg-subtle hover:text-foreground'
+            }`}
+            onClick={() => setActiveTask(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
 
-      <section className="mt-8" aria-labelledby="universal-scan-heading">
-        <div className="mb-4 max-w-4xl">
-          <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-            Discovery
-          </p>
-          <h2 id="universal-scan-heading" className="mt-2 mb-2 text-2xl font-semibold text-foreground">
-            Scan my universe
-          </h2>
-          <p className="m-0 text-sm leading-6 text-secondary">
-            Run the existing current-approved scanner over the ready approved scope, one
-            Product timeframe at a time. Scanner stages and Research Ideas remain
-            backend-owned.
-          </p>
-        </div>
-        <ProductResearch apiClient={apiClient} queries={queries} workspace={workspace} />
-      </section>
-
-      <ExperimentLab apiClient={apiClient} queries={queries} workspace={workspace} />
+      {activeTask === 'pair' ? (
+        <PairResearch apiClient={apiClient} queries={queries} workspace={workspace} />
+      ) : activeTask === 'scan' ? (
+        <section aria-labelledby="universal-scan-heading">
+          <div className="mb-4 max-w-4xl">
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+              Discovery
+            </p>
+            <h2 id="universal-scan-heading" className="mt-2 mb-2 text-2xl font-semibold text-foreground">
+              Scan my universe
+            </h2>
+            <p className="m-0 text-sm leading-6 text-secondary">
+              Run the existing current-approved scanner over the ready approved scope, one
+              Product timeframe at a time. Scanner stages and Research Ideas remain
+              backend-owned.
+            </p>
+          </div>
+          <ProductResearch apiClient={apiClient} queries={queries} workspace={workspace} />
+        </section>
+      ) : (
+        <ExperimentLab apiClient={apiClient} queries={queries} workspace={workspace} />
+      )}
 
       <section className="mt-10" aria-labelledby="previous-research-heading">
         <div className="mb-4 max-w-3xl">

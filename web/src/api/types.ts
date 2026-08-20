@@ -9,6 +9,10 @@ export type CurrentApprovedResearchRequestDto =
 export type MarketDataPreparationRequestDto =
   components['schemas']['MarketDataPreparationRequestDto']
 export type ProductMarketDataDto = components['schemas']['ProductMarketDataDto']
+export type ProductPairStudyContextDto =
+  components['schemas']['ProductPairStudyContextDto']
+export type ProductPairStudySeriesDto =
+  components['schemas']['ProductPairStudySeriesDto']
 export type IdentityMappingRequestDto = components['schemas']['IdentityMappingRequestDto']
 export type AssetAdmissionRequestDto = components['schemas']['AssetAdmissionRequestDto']
 export type RunSummaryDto = components['schemas']['RunSummaryDto']

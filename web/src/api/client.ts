@@ -8,6 +8,8 @@ type CurrentApprovedResearchRequestDto =
 type MarketDataPreparationRequestDto =
   components['schemas']['MarketDataPreparationRequestDto']
 type ProductMarketDataDto = components['schemas']['ProductMarketDataDto']
+type ProductPairStudyContextDto = components['schemas']['ProductPairStudyContextDto']
+type ProductPairStudySeriesDto = components['schemas']['ProductPairStudySeriesDto']
 type ResearchRecipeCheckRequestDto =
   components['schemas']['ResearchRecipeCheckRequestDto']
 type ResearchRecipeCheckV1 = components['schemas']['ResearchRecipeCheckV1']
@@ -137,6 +139,50 @@ export function createApiClient({
         method: 'POST',
         body: JSON.stringify(command),
       }),
+    getProductPairStudyContext: (options: {
+      assetA: string
+      assetB: string
+      horizon: 'short' | 'medium' | 'swing'
+      orientation?: string
+      venue?: 'binance' | 'gate'
+      analysisReference?: string
+    }) => {
+      const query = new URLSearchParams({
+        asset_a: options.assetA,
+        asset_b: options.assetB,
+        horizon: options.horizon,
+      })
+      if (options.orientation) query.set('orientation', options.orientation)
+      if (options.venue) query.set('venue', options.venue)
+      if (options.analysisReference) {
+        query.set('analysis_reference', options.analysisReference)
+      }
+      return request<ProductPairStudyContextDto>(
+        `/api/product-pair-study/context?${query}`,
+      )
+    },
+    getProductPairStudySeries: (options: {
+      assetA: string
+      assetB: string
+      horizon: 'short' | 'medium' | 'swing'
+      orientation?: string
+      venue?: 'binance' | 'gate'
+      analysisReference?: string
+    }) => {
+      const query = new URLSearchParams({
+        asset_a: options.assetA,
+        asset_b: options.assetB,
+        horizon: options.horizon,
+      })
+      if (options.orientation) query.set('orientation', options.orientation)
+      if (options.venue) query.set('venue', options.venue)
+      if (options.analysisReference) {
+        query.set('analysis_reference', options.analysisReference)
+      }
+      return request<ProductPairStudySeriesDto>(
+        `/api/product-pair-study/series?${query}`,
+      )
+    },
     getResearchRecipeProductContext: (options: {
       researchObject: 'pair' | 'fixed_basket'
       horizon?: 'short' | 'medium' | 'swing'

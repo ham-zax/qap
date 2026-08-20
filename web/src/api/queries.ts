@@ -25,6 +25,46 @@ export function createQapQueries(client: QapApiClient) {
         queryKey: ['product-market-data'] as const,
         queryFn: () => client.getProductMarketData(),
       }),
+    productPairStudyContext: (options: {
+      assetA: string
+      assetB: string
+      horizon: 'short' | 'medium' | 'swing'
+      orientation?: string
+      venue?: 'binance' | 'gate'
+      analysisReference?: string
+    }) =>
+      queryOptions({
+        queryKey: [
+          'product-pair-study-context',
+          options.assetA,
+          options.assetB,
+          options.horizon,
+          options.orientation ?? 'default',
+          options.venue ?? 'default',
+          options.analysisReference ?? 'none',
+        ] as const,
+        queryFn: () => client.getProductPairStudyContext(options),
+      }),
+    productPairStudySeries: (options: {
+      assetA: string
+      assetB: string
+      horizon: 'short' | 'medium' | 'swing'
+      orientation?: string
+      venue?: 'binance' | 'gate'
+      analysisReference?: string
+    }) =>
+      queryOptions({
+        queryKey: [
+          'product-pair-study-series',
+          options.assetA,
+          options.assetB,
+          options.horizon,
+          options.orientation ?? 'default',
+          options.venue ?? 'default',
+          options.analysisReference ?? 'none',
+        ] as const,
+        queryFn: () => client.getProductPairStudySeries(options),
+      }),
     researchRecipeProductContext: (options: {
       researchObject: 'pair' | 'fixed_basket'
       horizon?: 'short' | 'medium' | 'swing'

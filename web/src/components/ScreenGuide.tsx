@@ -33,11 +33,11 @@ const guides = {
     intent:
       'Start from a concrete research question: research one pair, scan the approved universe, or declare an advanced typed experiment.',
     action:
-      'For a pair, choose two assets and one timeframe, resolve only the setup QAP identifies, then Check support. Use Scan my universe for scanner discovery and Experiment Lab for explicit recipe authoring.',
+      'Choose one Research task. For a pair, select two assets and one timeframe, resolve only genuine identity or approval setup, then use Research this pair. QAP prepares only that pair when needed and shows relationship evidence before economic replay support.',
     example:
-      'Select W and BTC, choose Medium-term, complete any one-time identity/data setup without losing the pair, then run only if the backend marks the exact recipe runnable.',
+      'Select W and PIXEL, choose Medium-term, and research the relationship on their same-venue USDT paths. A missing direct W/PIXEL market limits economic replay; it does not erase the relationship study.',
     next:
-      'Pair Research links exact QAP runs; Universal Scan shows the truthful scanner funnel and Research Ideas; advanced historical PIT research remains separately available below.',
+      'Pair Research shows current backend relationship values first and only checks a default economic recipe when one can be truthfully declared. Universal Scan and Experiment Lab keep their existing authorities.',
     boundary:
       'The browser does not decide method support, scientific compatibility, or trade attractiveness, and no Research action authorizes a live trade.',
   },

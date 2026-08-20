@@ -4,7 +4,10 @@ import { useMemo, useState } from 'react'
 import type { QapApiClient } from '../../api/client'
 import type { QapQueries } from '../../api/queries'
 import type {
+  CapabilityMetadataV1,
   OperationDto,
+  ProductPairStudyContextDto,
+  ProductPairStudySeriesDto,
   ResearchRecipeCheckV1,
   ResearchUniverseDto,
   WorkspaceStatusDto,
@@ -14,6 +17,7 @@ import {
   ResearchAssetSelector,
   type ResearchAssetSelection,
 } from './ResearchAssetSelector'
+import { PairStudyResults } from './PairStudyResults'
 import { SupportReportPanel } from './SupportReportPanel'
 
 type Horizon = 'short' | 'medium' | 'swing'
@@ -33,6 +37,17 @@ interface PairResearchProps {
 interface IdentityDraft {
   canonicalAssetId: string
   assetIdentityVersion: string
+}
+
+interface PairStudyResult {
+  context: ProductPairStudyContextDto
+  series: ProductPairStudySeriesDto | null
+  capabilities: CapabilityMetadataV1[]
+}
+
+interface PairStudyRequestOptions {
+  venue?: 'binance' | 'gate'
+  analysisReference?: string
 }
 
 function resultRunIds(operation: OperationDto | undefined): string[] {
@@ -75,31 +90,27 @@ export function PairResearch({ apiClient, queries, workspace }: PairResearchProp
   })
   const [checked, setChecked] = useState<ResearchRecipeCheckV1 | null>(null)
   const [operationId, setOperationId] = useState<string | null>(null)
+  const [studyResult, setStudyResult] = useState<PairStudyResult | null>(null)
+  const [useBtcReference, setUseBtcReference] = useState(false)
 
   const universe = useQuery(queries.researchUniverse())
-  const canonicalAssets = useMemo(
+  const canonicalAssets = useMemo<[string, string] | null>(
     () =>
       assetA?.canonicalAssetId && assetB?.canonicalAssetId
         ? [assetA.canonicalAssetId, assetB.canonicalAssetId]
         : null,
     [assetA, assetB],
   )
-  const productContext = useQuery({
-    ...queries.researchRecipeProductContext({
-      researchObject: 'pair',
-      horizon,
-      assets: canonicalAssets ?? undefined,
-    }),
-    enabled: workspace.workspace_mode === 'local_market' && canonicalAssets !== null,
-  })
   const operation = useQuery({
     ...queries.operation(operationId ?? ''),
     enabled: operationId !== null,
   })
 
   const clearResult = () => {
+    setStudyResult(null)
     setChecked(null)
     setOperationId(null)
+    setUseBtcReference(false)
   }
 
   const acceptUniverse = (next: ResearchUniverseDto) => {
@@ -111,6 +122,8 @@ export function PairResearch({ apiClient, queries, workspace }: PairResearchProp
       queryClient.invalidateQueries({ queryKey: ['research-universe'] }),
       queryClient.invalidateQueries({ queryKey: ['current-approved-readiness', horizon] }),
       queryClient.invalidateQueries({ queryKey: ['research-recipe-product-context'] }),
+      queryClient.invalidateQueries({ queryKey: ['product-pair-study-context'] }),
+      queryClient.invalidateQueries({ queryKey: ['product-pair-study-series'] }),
       queryClient.invalidateQueries({ queryKey: ['product-market-data'] }),
     ])
   }
@@ -162,24 +175,81 @@ export function PairResearch({ apiClient, queries, workspace }: PairResearchProp
     },
   })
 
-  const prepare = useMutation({
-    mutationFn: () => apiClient.prepareProductMarketData({ horizons: [horizon] }),
-    onSuccess: async () => {
-      clearResult()
-      await refreshRecipeReads()
-    },
-  })
+  const researchPair = useMutation({
+    mutationFn: async (options: PairStudyRequestOptions = {}): Promise<{
+      study: PairStudyResult
+      check: ResearchRecipeCheckV1 | null
+    }> => {
+      if (!canonicalAssets) throw new Error('Choose two canonical assets first.')
+      const [assetAId, assetBId] = canonicalAssets
+      const analysisReference = options.analysisReference
+      const orientation = `${assetAId}/${assetBId}`
+      const pairOptions = {
+        assetA: assetAId,
+        assetB: assetBId,
+        horizon,
+        orientation,
+        venue: options.venue,
+        analysisReference,
+      }
 
-  const checkSupport = useMutation({
-    mutationFn: () => {
-      const draft = productContext.data?.default_draft
-      if (!draft) throw new Error('The backend has not produced an exact pair recipe yet.')
-      return apiClient.checkResearchRecipeSupport({
-        schema_version: 'qap.api.research-recipe-check-request.v1',
-        recipe: draft,
+      let context = await queryClient.fetchQuery(
+        queries.productPairStudyContext(pairOptions),
+      )
+      const referenceNeedsData =
+        analysisReference !== undefined && context.analysis_lens?.status === 'needs_data'
+      if (context.data.status === 'needs_setup' || referenceNeedsData) {
+        await apiClient.prepareProductMarketData({
+          horizons: [horizon],
+          asset_ids: [assetAId, assetBId],
+          analysis_reference_ids: analysisReference ? [analysisReference] : [],
+        })
+        await queryClient.invalidateQueries({ queryKey: ['product-market-data'] })
+        await queryClient.invalidateQueries({ queryKey: ['product-pair-study-context'] })
+        context = await queryClient.fetchQuery(
+          queries.productPairStudyContext(pairOptions),
+        )
+      }
+
+      const series =
+        context.data.status === 'ready'
+          ? await queryClient.fetchQuery(
+              queries.productPairStudySeries({
+                ...pairOptions,
+                venue: context.question.venue,
+                analysisReference:
+                  context.analysis_lens?.status === 'ready' ? analysisReference : undefined,
+              }),
+            )
+          : null
+
+      const recipeContext = await apiClient.getResearchRecipeProductContext({
+        researchObject: 'pair',
+        horizon,
+        assets: canonicalAssets,
       })
+      const check =
+        context.economic_expression.default_recipe_declarable && recipeContext.default_draft
+          ? await apiClient.checkResearchRecipeSupport({
+              schema_version: 'qap.api.research-recipe-check-request.v1',
+              recipe: recipeContext.default_draft,
+            })
+          : null
+
+      return {
+        study: {
+          context,
+          series,
+          capabilities: recipeContext.capabilities,
+        },
+        check,
+      }
     },
-    onSuccess: setChecked,
+    onSuccess: ({ study, check }) => {
+      setStudyResult(study)
+      setChecked(check)
+      setOperationId(null)
+    },
   })
 
   const runRecipe = useMutation({
@@ -216,6 +286,30 @@ export function PairResearch({ apiClient, queries, workspace }: PairResearchProp
   ) ?? null
   const runIds = resultRunIds(operation.data)
   const compilation = resultCompilation(operation.data)
+  const selectedPairVenues = canonicalAssets
+    ? canonicalAssets
+        .map(
+          (assetId) =>
+            universe.data?.assets.find((asset) => asset.canonical_asset_id === assetId)
+              ?.venues ?? [],
+        )
+        .map((venues) => new Set(venues.map((venue) => venue.venue)))
+        .reduce<Array<'binance' | 'gate'>>(
+          (common, venues, index) =>
+            index === 0 ? [...venues] : common.filter((venue) => venues.has(venue)),
+          [],
+        )
+    : []
+  const btcReference = universe.data?.assets.find(
+    (asset) => asset.canonical_asset_id === 'BTC' && asset.identity_state === 'resolved',
+  )
+  const btcReferenceResolved = btcReference !== undefined
+  const btcReferenceEligible =
+    canonicalAssets !== null &&
+    !canonicalAssets.includes('BTC') &&
+    btcReference !== undefined &&
+    btcReference.venues.some((venue) => selectedPairVenues.includes(venue.venue))
+  const analysisReference = useBtcReference && btcReferenceEligible ? 'BTC' : undefined
 
   return (
     <section className="rounded-lg border border-border-strong bg-panel p-5 md:p-6" aria-labelledby="pair-research-heading">
@@ -226,9 +320,9 @@ export function PairResearch({ apiClient, queries, workspace }: PairResearchProp
         Research a pair
       </h2>
       <p className="m-0 max-w-4xl text-sm leading-6 text-secondary">
-        Choose the two assets and one timeframe. QAP supplies the versioned default pair
-        recipe, checks exact support, and runs only the canonical recipe the backend marks
-        runnable.
+        Choose two assets and one timeframe. QAP studies their same-venue relationship first,
+        preparing only this pair when needed. Economic replay and recipe support are a later,
+        separate question.
       </p>
 
       {universe.data ? (
@@ -369,63 +463,104 @@ export function PairResearch({ apiClient, queries, workspace }: PairResearchProp
         </section>
       ) : canonicalAssets ? (
         <section className="mt-6 rounded-lg border border-border bg-subtle p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                Backend-owned Product recipe
+                Research question
               </p>
               <h3 className="mt-2 mb-1 text-lg font-semibold text-foreground">
-                {assetA?.symbol} / {assetB?.symbol} · {TIMEFRAMES.find((item) => item.value === horizon)?.label}
+                {assetA?.symbol} / {assetB?.symbol} ·{' '}
+                {TIMEFRAMES.find((item) => item.value === horizon)?.label}
               </h3>
-              <p className="m-0 text-sm text-secondary">
-                {productContext.data?.default_recipe_version ?? 'Loading versioned default…'}
+              <p className="m-0 max-w-2xl text-sm leading-6 text-secondary">
+                One action reads Pair Study context, prepares the exact selected pair only if
+                needed, and returns backend-owned relationship values on this screen.
               </p>
             </div>
-            {productContext.data?.default_draft ? <Badge tone="info">Exact draft frozen</Badge> : null}
+            <button
+              type="button"
+              className="min-h-11 rounded-md border border-border px-4 text-sm font-semibold text-accent"
+              onClick={() => {
+                const previousA = assetA
+                setAssetA(assetB)
+                setAssetB(previousA)
+                clearResult()
+              }}
+            >
+              Reverse orientation
+            </button>
           </div>
 
-          {productContext.isPending ? (
-            <p className="mt-4 text-sm text-secondary">Freezing exact Product inputs…</p>
-          ) : productContext.data?.default_issue ? (
-            <div className="mt-4 rounded-md border border-warning/40 bg-panel p-4">
-              <p className="m-0 font-semibold text-foreground">
-                {productContext.data.default_issue.detail}
-              </p>
-              {productContext.data.default_issue.code === 'requires_market_data' ? (
-                <button
-                  type="button"
-                  className="mt-3 min-h-11 rounded-md bg-accent px-4 font-semibold text-canvas disabled:opacity-50"
-                  disabled={prepare.isPending}
-                  onClick={() => prepare.mutate()}
-                >
-                  {prepare.isPending ? 'Preparing…' : 'Prepare data for this research'}
-                </button>
-              ) : null}
-              {prepare.isError ? <p className="mt-3 text-sm text-negative">{prepare.error.message}</p> : null}
-            </div>
-          ) : productContext.data?.default_draft ? (
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                className="min-h-11 rounded-md bg-accent px-5 font-semibold text-canvas disabled:opacity-50"
-                disabled={checkSupport.isPending}
-                onClick={() => checkSupport.mutate()}
-              >
-                {checkSupport.isPending ? 'Checking…' : checked ? 'Check support again' : 'Check support'}
-              </button>
-              <span className="text-xs text-muted">
-                QAP checks capability, authority, readiness, fidelity, and exact data binding.
+          {!canonicalAssets.includes('BTC') ? (
+            <label className="mt-4 flex max-w-2xl items-start gap-3 rounded-md border border-border bg-panel p-4 text-sm text-secondary">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={useBtcReference}
+                disabled={!btcReferenceEligible || researchPair.isPending}
+                onChange={(event) => {
+                  setUseBtcReference(event.target.checked)
+                  setStudyResult(null)
+                  setChecked(null)
+                  setOperationId(null)
+                }}
+              />
+              <span>
+                <strong className="block text-foreground">Add a descriptive BTC lens</strong>
+                <span className="mt-1 block leading-5">
+                  {btcReferenceEligible
+                    ? 'Optional analysis only. BTC is not added to this economic pair, scanner scope, or execution.'
+                    : btcReferenceResolved
+                      ? 'Unavailable because BTC has no resolved same-venue path with this pair. Pair Research does not require it.'
+                      : 'Unavailable until canonical BTC reference identity is resolved. Pair Research does not require it.'}
+                </span>
               </span>
-            </div>
-          ) : productContext.isError ? (
-            <p className="mt-4 text-sm text-negative">{productContext.error.message}</p>
+            </label>
+          ) : null}
+
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="min-h-12 rounded-md bg-accent px-6 font-semibold text-canvas disabled:opacity-50"
+              disabled={researchPair.isPending}
+              onClick={() => researchPair.mutate({ analysisReference })}
+            >
+              {researchPair.isPending ? 'Researching this pair…' : 'Research this pair'}
+            </button>
+            <span className="text-xs leading-5 text-muted">
+              Pair Study readiness is independent from direct-market recipe readiness.
+            </span>
+          </div>
+          {researchPair.isError ? (
+            <p className="mt-4 text-sm leading-6 text-negative">
+              Pair setup or data preparation could not complete: {researchPair.error.message}{' '}
+              This is an operational state, not a negative relationship result.
+            </p>
           ) : null}
         </section>
       ) : null}
 
+      {studyResult ? (
+        <PairStudyResults
+          context={studyResult.context}
+          series={studyResult.series}
+          capabilities={studyResult.capabilities}
+          busy={researchPair.isPending}
+          onVenueChange={(venue) => researchPair.mutate({ venue, analysisReference })}
+        />
+      ) : null}
+
       {checked ? (
         <div className="mt-6 space-y-4">
-          <SupportReportPanel report={checked.support} />
+          <div>
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+              Downstream economic recipe
+            </p>
+            <h3 className="mt-2 mb-3 text-lg font-semibold text-foreground">
+              Default direct-market support
+            </h3>
+            <SupportReportPanel report={checked.support} />
+          </div>
           <button
             type="button"
             className="min-h-11 rounded-md bg-accent px-5 font-semibold text-canvas disabled:opacity-50"
