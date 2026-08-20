@@ -262,15 +262,46 @@ Copula must therefore be a **scientific design gate**, not a frontend option.
 
 ## 4. Required typed Research Recipe / capability-check machinery
 
-The new machinery should sit **above** the existing `ExperimentManifest`, not replace the experiment engine and not become a generic plugin framework.
+The new machinery should sit **above** the existing `ExperimentManifest`, not replace the experiment engine and not become a generic plugin framework. It also must not absorb scanner discovery just to make every research action look like one compiler target.
 
-### 4.1 Research Recipe is the user's declared methodology
+M10 V1 has two adjacent execution paths:
 
-A recipe should separate concepts that are currently easy to collapse under the word `model`:
+```text
+PAIR / FIXED-BASKET EXPERIMENT
+ResearchRecipeDraft
+        -> structural validation
+        -> capability / authority / readiness resolution
+        -> SupportReportV1
+        -> Recipe Compiler
+        -> ExperimentManifest(s)
+        -> existing experiment runner
+
+UNIVERSAL / FOCUS DISCOVERY
+Research intent
+        -> current-approved readiness / scope
+        -> existing scanner protocol
+        -> candidate discovery
+        -> existing candidate ExperimentManifest replay
+```
+
+Do not create a generic `compile_target` abstraction merely to unify these arrows. Universal Scan remains scanner-owned. Focus Scan is deferred unless it can reuse the existing scanner scope mechanism almost mechanically.
+
+### 4.1 Research Recipe is the user's declared executable methodology
+
+For M10 V1, the recipe compiler's executable `research_object` is deliberately narrow:
+
+```text
+pair
+fixed_basket
+```
+
+`universe` and `focus asset vs universe` are Product discovery intents, not `ResearchRecipeV1` executable objects. They remain under scanner ownership and may later produce pair/fixed-basket candidates that can be opened in Experiment Lab.
+
+Within an executable recipe, separate concepts that are currently easy to collapse under the word `model`:
 
 ```text
 research object
-  pair | focus asset vs universe | universe | basket
+  pair | fixed_basket
 
 relationship / evidence method
   log-ratio | residual/OLS | Student-t Copula | other declared method
@@ -298,51 +329,59 @@ This is exactly the distinction needed to answer questions such as `does W/BTC s
 
 ### 4.2 Check first, run second
 
-The normal experiment lifecycle should be:
+The executable experiment lifecycle should be:
 
 ```text
 Draft recipe
     -> structural/type check
     -> capability/authority check
     -> data/readiness preflight
-    -> explicit support report
-    -> compile to one or more frozen ExperimentManifest trials
+    -> SupportReportV1
+    -> if runnable: compile to one or more frozen ExperimentManifest trials
+    -> persist immutable recipe + compilation lineage
     -> execute through existing QAP replay/economics
-    -> persist exact recipe + compiled manifest lineage
 ```
 
-The check operation is read-only. It must never download data, mutate admission, consume final OOS, or start a scientific run merely to explain support.
+The check operation is read-only. It must never download data, mutate admission, consume final OOS, or start a scientific run merely to explain support. Universal/focus discovery never enters this compiler path; it uses the existing scanner path above.
 
-### 4.3 Support status must distinguish fidelity from availability
+### 4.3 SupportReportV1 is compositional, not one mutually-exclusive status
 
-Recommended recipe-level states:
+The backend must not force implementation agents or UI code to invent precedence between simultaneous truths. `SupportReportV1` therefore carries independent axes:
 
 ```text
-runnable_exact
-    QAP can execute the declared method without semantic substitution.
+structure
+  valid | invalid
 
-runnable_after_setup
-    methodology is supported; identity/data/direct-market prerequisites are missing.
+capability
+  executable | diagnostic_only | unimplemented | unknown
 
-adaptation_possible
-    QAP can run a related method, but it is not a faithful reproduction.
-    User must explicitly create/accept a different adapted recipe.
+authority
+  allowed | constitution_blocked | claim_incompatible
 
-diagnostic_only
-    QAP can compute the evidence but has no admitted economic policy/claim for it.
+readiness
+  ready | needs_setup
 
-unsupported
-    a required method/risk/selection/execution component is not implemented/admitted.
+fidelity
+  native | faithful_replication | adaptation_required | not_applicable
 
-blocked_by_constitution
-    the declared methodology requires behavior QAP intentionally forbids
-    (for example shorting, leverage, derivatives, or live-capital authority).
+runnable
+  true | false
 
-invalid
-    the recipe itself is structurally contradictory or malformed.
+reasons[]
+  every applicable typed reason
+
+suggestions[]
+  optional explicit next actions / separately declared adaptations
 ```
 
-`adaptation_possible` must never silently downgrade into `runnable_exact`.
+`runnable` is backend-owned and must be consistent with the axes. It can be `true` only when the recipe is structurally valid, executable, authority-allowed, ready, and does not require an undeclared adaptation.
+
+The two meanings of "exact" stay separate:
+
+- **native execution fidelity** asks whether QAP can execute the declared QAP recipe without semantic substitution;
+- **faithful replication** asks whether that declared recipe faithfully reproduces the cited external methodology.
+
+A UI may derive a friendly headline such as `Cannot run exactly`, but that headline is presentation, not scientific/backend truth. `adaptation_available` is a reason/suggestion, never an exclusive support state.
 
 ### 4.4 Reasons must be typed and actionable
 
@@ -370,46 +409,103 @@ current_claim_incompatible
 strict_pit_evidence_required
 cannot_claim_faithful_replication
 adaptation_available
+final_oos_requires_single_precommitted_variant
 ```
 
 Each reason should state:
 
 - which recipe component caused it;
-- whether it is missing implementation, missing data, or a protected authority boundary;
+- whether it is missing implementation, missing data/setup, a protected authority boundary, or a research-integrity conflict;
 - what current QAP capability is nearest, if any;
 - whether a scientifically different adaptation is possible;
 - the exact owner/design milestone required to make it executable.
 
-### 4.5 Explicit capability catalog, not a plugin system
+All applicable reasons are returned together. For example, a Palazzi exact-replication recipe may simultaneously report a constitution blocker for shorting, unimplemented risk/selection components, missing setup, and an available but non-faithful adaptation.
+
+### 4.5 Explicit capability catalog, not a second copy of runtime rules
 
 Do not build a generic strategy registry, dynamic import system, workflow engine, or plugin platform.
 
-Use one explicit, versioned capability catalog owned by the research/experiment boundary. For each known component ID it should declare enough static metadata to validate the request and explain support, for example:
+Use one explicit, versioned capability catalog owned by the research/experiment boundary. It contains **explanatory/static metadata** and references canonical validators/compiler/composition owners; it must not duplicate the authoritative configuration schemas or cross-field rules already enforced by `ExperimentManifest`, `compose_model_strategy_policy()`, the runner, basket validators, or other existing owners.
+
+For each known component ID, the catalog may declare:
 
 ```text
 component kind
 component ID + version
-configuration schema/validator
 implementation state
-allowed research objects
-required data semantics
-allowed allocation/execution semantics
-claim limitations
-compiler/composition owner when executable
+allowed research-object summary
+required data-semantics summary
+claim / authority limitations
+canonical validator owner
+canonical compiler / composition owner when executable
 ```
 
-Unknown IDs remain representable at the draft envelope only long enough to return `unknown_method`; they never become executable through dynamic dispatch.
+Preflight invokes or reuses the canonical owner for executable configuration validation rather than maintaining a parallel giant schema table. Unknown IDs remain representable at the draft envelope only long enough to return `unknown_method`; they never become executable through dynamic dispatch.
 
 ### 4.6 Compile downward into existing authority
 
-The recipe layer should not become a second backtester. A supported recipe compiles to:
+The recipe layer should not become a second backtester. Only `pair` and `fixed_basket` recipes compile. A supported recipe compiles to:
 
 - one `ExperimentManifest`; or
-- an explicit finite family of sibling manifests under one `research_family_id` when the recipe declares multiple precommitted variants.
+- for `exploratory` / `development` only, an explicit finite family of sibling manifests under one `research_family_id` when the recipe declares multiple precommitted variants.
 
-Existing provenance, immutable data fingerprints, controls, replay, economics, final-OOS rules, and negative-result handling remain authoritative.
+Existing immutable data fingerprints, controls, replay, economics, negative-result handling, and final-OOS reservation/consumption remain authoritative.
 
-The compiler must fail if it would need to invent a semantic substitution. For example, a long-short paper cannot be silently compiled to a long-only QAP tilt while retaining a `faithful replication` label.
+The compiler must fail if it would need to invent a semantic substitution. For example, a long-short paper cannot be silently compiled to a long-only QAP tilt while retaining a `faithful replication` declaration.
+
+### 4.7 ResearchRecipeV1 and immutable compilation lineage
+
+The recipe claim itself must be reconstructible, not merely the low-level manifest that happened to run. Freeze the following identity contract:
+
+```text
+ResearchRecipeV1
+  schema_version
+  recipe_sha256                 # canonical semantic recipe hash
+  research_object               # pair | fixed_basket
+  component declarations
+  parameters / precommitted variants
+  data / evaluation role
+  fidelity_intent               # native QAP | faithful external replication | adaptation
+  source / reference metadata
+  derived_from_recipe_sha256?   # required for an explicit adaptation
+```
+
+`recipe_sha256` is computed from canonical semantic recipe content, excluding the hash field itself. A changed method declaration, variant set, fidelity intent, source claim, or evaluation role therefore creates a different recipe identity.
+
+Compilation persists one immutable family-level record before scientific execution:
+
+```text
+ResearchRecipeCompilationV1
+  schema_version
+  recipe_sha256
+  research_family_id
+  compiler_version
+  capability_catalog_version
+  ordered_compiled_manifest_sha256[]
+```
+
+`research_family_id` must be deterministically bound to the canonical recipe identity plus the compiler/catalog versions used to interpret it. Every compiled manifest carries that exact family ID. The compilation record then binds that family to the ordered exact manifest hashes. This avoids a circular identity dependency while still proving which recipe declaration produced which frozen manifests.
+
+The compilation/family record is immutable and family-owned; it is not an unbound `recipe.json` casually placed beside a run. Existing run artifacts can remain recipe-unaware below `research_family_id`: a reader can verify that the run manifest's family ID matches the family record and that its `manifest_sha256` is one of the compilation record's declared hashes.
+
+An adaptation always gets a new `recipe_sha256` and uses `derived_from_recipe_sha256` to retain lineage to the source methodology declaration. It can never inherit a `faithful replication` claim from the parent recipe.
+
+### 4.8 Final-OOS is single-variant only
+
+The existing final-OOS reservation is already correctly family-scoped. M10 must preserve that contract rather than discovering the conflict during execution.
+
+```text
+exploratory / development
+  finite predeclared sibling variants are allowed
+
+final_oos
+  exactly ONE already-selected, frozen executable variant
+  no grid/search/variant comparison on the holdout
+  no second sibling may reuse the same family holdout
+```
+
+If a `final_oos` recipe declares multiple variants, a parameter search, or another selection protocol that would choose among siblings on the holdout, preflight returns `structure=invalid`, `runnable=false`, and `final_oos_requires_single_precommitted_variant` before compilation/execution. The existing `research_family_id + holdout_id` reservation/consumption mechanism remains the final runtime authority.
 
 ## 5. Palazzi paper as a preflight acceptance example
 
@@ -421,7 +517,14 @@ A correct current-QAP support report should look conceptually like:
 
 ```text
 Palazzi 2025 exact reproduction
-STATUS: blocked / not faithfully reproducible today
+
+SupportReportV1
+structure: valid
+capability: unimplemented
+authority: constitution_blocked
+readiness: ready | needs_setup      # selected-pair/data dependent
+fidelity: adaptation_required
+runnable: false
 
 pair research object                         supported
 Spot historical data/provenance             supported in QAP form
@@ -435,9 +538,18 @@ adaptive trailing stop                       not implemented as this paper's rul
 walk-forward parameter re-estimation         no generic admitted paper-replication protocol
 buy-and-hold/control comparison              QAP has its own stronger explicit control machinery
 
+reasons:
+- requires_short_position
+- requires_unimplemented_parameter_selection
+- requires_unimplemented_risk_overlay
+- requires_unimplemented_walk_forward_protocol
+- cannot_claim_faithful_replication
+- adaptation_available
+
 NEAREST ADAPTATION:
 A separately named long-only rolling-residual QAP experiment may be possible,
-but it is not “Palazzi replication” and must have its own recipe/family identity.
+but it is not “Palazzi replication” and must have a new recipe identity with
+derived_from_recipe_sha256 pointing back to the exact-replication declaration.
 ```
 
 This is the kind of answer the user should be able to obtain **before writing code or launching a backtest**.
@@ -459,7 +571,16 @@ current QAP policy mapping                    not defined
 current QAP numerical backend                 NumPy only; SciPy is not a current dependency
 pair-specific incompatibility                 not established
 
-STATUS: known method not implemented/admitted
+SupportReportV1
+structure: valid
+capability: unimplemented
+authority: allowed
+readiness: ready | needs_setup      # selected-pair/data dependent
+fidelity: native | not_applicable   # depends on whether an external replication is claimed
+runnable: false
+reasons:
+- known_method_not_implemented
+- method_has_no_current_data_contract
 ```
 
 The critical wording is the last distinction: QAP should not tell the user `W/BTC does not support Copula` when the truth is `QAP has not defined/admitted a current Student-t Copula experiment contract, so it cannot yet assess or execute that method for W/BTC.`
@@ -688,7 +809,7 @@ Data role: exploratory / development / final OOS where allowed
 Check support
 ```
 
-The first result is a support/fidelity report, not a backtest. Only `runnable_exact` or an explicitly resolved `runnable_after_setup` recipe can proceed unchanged. An adaptation requires a new recipe identity and explicit user choice.
+The first result is a compositional `SupportReportV1`, not a backtest. Execution is allowed only when `runnable=true`. An adaptation requires a new recipe identity, explicit user choice, and `derived_from_recipe_sha256` lineage to the original declaration.
 
 This is the key correction from the follow-up user clarification: **the machinery to ask and validate the research question matters more than any one model such as Copula.**
 
@@ -876,27 +997,25 @@ This is a planning direction, not an implementation contract yet.
 
 ### Pair Research
 
-The smallest plausible current-QAP-native seam is a Product pair-research launch that:
+Pair Research is an executable `ResearchRecipeV1` with `research_object=pair`. The Product should:
 
-1. accepts two canonical Product assets + horizon + opaque readiness binding;
-2. validates both assets against current approved readiness;
-3. resolves common ready venue paths and exact M3 generation bindings;
-4. requires the real direct market only where deep replay requires it;
-5. builds a current-approved scan scope containing only the selected pair's assets;
-6. preserves the pair as an explicit Product research focus/pin without invoking strict-PIT forensic semantics;
-7. invokes the existing `RUN_SCAN` scientific operation / `run_scan_with_qap` path;
-8. records a separately truthful Product pair/focus scope identity;
-9. returns ordinary scanner artifacts so existing candidate, longitudinal, History, and Portfolio consumers continue to work.
+1. accept two canonical Product assets plus the declared recipe/method family and evaluation role;
+2. resolve current-approved identity/data readiness as preflight inputs without turning readiness into experiment authority;
+3. return `SupportReportV1` before execution;
+4. compile only a runnable fixed-pair recipe into one or a finite predeclared family of ordinary `ExperimentManifest` objects;
+5. persist the immutable recipe/compilation family record before running;
+6. execute through the existing experiment runner, controls, HODL/economic comparison, and artifact path;
+7. preserve exact manifest/run links so History and later specialist views can reach the result.
 
-The design should strongly prefer this composition over building a second pair backtester.
+This uses the existing experiment engine rather than creating a second pair backtester. It also avoids forcing a fixed-pair experiment through scanner discovery merely to reuse one Product route.
 
 ### Universal Scan
 
-Keep the current Product scan engine and change presentation/entry semantics first. Only add API fields when required by genuine user choices.
+Universal Scan remains beside the recipe compiler under the existing current-approved scanner owner. Keep the current Product scan protocol and change presentation/entry semantics first. Scanner discovery may later open a discovered pair as a `ResearchRecipeV1`, but the universe search itself does not compile to `ExperimentManifest` through the recipe compiler.
 
 ### Focus Scan
 
-If implemented, it can potentially reuse the same bounded Product scope concept with one focus asset plus all compatible approved-ready counterparts. It must not silently change the scientific graph/promotion policy without a versioned contract.
+Defer Focus Scan for M10 V1 unless it can reuse the existing scanner scope mechanism almost mechanically. If implemented, it remains scanner-owned: one focus asset plus compatible approved-ready counterparts under the same versioned scanner protocol. It must not become a new `ResearchRecipeV1` object or silently change graph/trial/promotion policy.
 
 ## 16. Research modes: simple Product defaults and explicit Experiment Lab
 
@@ -904,11 +1023,11 @@ The user does need method choice, but not every research surface should have the
 
 ### Simple Pair Research
 
-The novice/default Product flow should use one versioned QAP pair-comparison recipe that evaluates the currently admitted Scanner-V1 pair families together and records the complete sibling family. This makes `W / BTC` immediately useful without requiring protocol design choices.
+The novice/default Product flow should use one versioned QAP fixed-pair recipe that compiles the currently admitted pair methods into a complete predeclared sibling family under one `research_family_id`. This makes `W / BTC` immediately useful without requiring protocol design choices while keeping the execution owner in the existing experiment engine.
 
 ### Universal Scan
 
-The normal scanner remains a versioned Product protocol over the approved-ready universe. It should not turn into an arbitrary method-builder because changing graph/trial enumeration changes the claim.
+The normal scanner remains a separate versioned Product discovery protocol over the approved-ready universe. It should not turn into an arbitrary method-builder because changing graph/trial enumeration changes the claim.
 
 ### Experiment Lab
 
@@ -924,7 +1043,7 @@ Choose research object
 -> Run only if the recipe compiles to current QAP authority
 ```
 
-Here user-selected methods are legitimate because they are **predeclared research variants**, not silently selected after outcomes. Sibling attempts remain linked under `research_family_id`, and exploratory/development/final-OOS semantics continue to control what can be claimed.
+Here user-selected methods are legitimate because they are **predeclared research variants**, not silently selected after outcomes. Sibling attempts remain linked under `research_family_id` for exploratory/development work. `final_oos` is different: it permits exactly one already-selected frozen executable variant and cannot be used to compare sibling variants or run a parameter search on the holdout.
 
 The Experiment Lab should expose both friendly forms for catalogued components and an advanced structured recipe view. It should not execute arbitrary Python or dynamically import strategies.
 
@@ -944,12 +1063,14 @@ Outputs:
 
 - this investigation;
 - amended Phase-17 plan;
-- approved Pair Research / Universal Scan / Focus Scan semantics;
-- approved Experiment Lab / Research Recipe schema and fidelity states;
-- approved read-only `Check support` behavior and typed reason vocabulary;
-- approved compile-down boundary to existing `ExperimentManifest`/research-family authority;
+- approved ownership split: `pair | fixed_basket` recipes compile to experiments; Universal Scan remains scanner-owned; Focus Scan is deferred unless scanner-scope reuse is nearly mechanical;
+- approved `ResearchRecipeV1` identity contract and `ResearchRecipeCompilationV1` immutable family-lineage contract;
+- approved compositional `SupportReportV1` axes plus typed reason vocabulary;
+- approved read-only `Check support` behavior;
+- approved compile-down boundary to existing `ExperimentManifest`/research-family authority without a generic compile-target abstraction;
+- approved final-OOS single-precommitted-variant rule;
 - approved setup-interruption behavior;
-- initial explicit capability catalog derived from current QAP, without a plugin framework.
+- initial explicit capability catalog derived from current QAP, with canonical validators/composers remaining the rule owners rather than a duplicated schema registry.
 
 No implementation until reviewed.
 
@@ -959,27 +1080,30 @@ Implement the smallest backend domain/API owner that can answer whether a declar
 
 Required behavior:
 
-- structurally parse a recipe envelope without treating unknown method IDs as executable;
-- resolve each catalogued component through an explicit capability catalog;
-- validate configuration using component-owned typed validators;
-- distinguish `runnable_exact`, `runnable_after_setup`, `adaptation_possible`, `diagnostic_only`, `unsupported`, `blocked_by_constitution`, and `invalid`;
-- return typed reasons rather than only `ExperimentSetupError` strings;
+- structurally parse `ResearchRecipeV1` without treating unknown method IDs as executable;
+- constrain executable recipe objects to `pair | fixed_basket`;
+- resolve each catalogued component through explanatory metadata plus its canonical validator/compiler/composition owner;
+- return `SupportReportV1` with independent `structure`, `capability`, `authority`, `readiness`, `fidelity`, backend-owned `runnable`, and all applicable typed reasons;
+- separate native QAP executability from faithful reproduction of an external methodology;
 - separate method support from identity/data/direct-market readiness;
-- compile only exact supported recipes to one or a finite family of current `ExperimentManifest` objects;
-- preserve `research_family_id`, data role, controls, immutable fingerprints, code provenance, negative results, and final-OOS rules;
+- persist the canonical `recipe_sha256` and immutable `ResearchRecipeCompilationV1` before scientific execution;
+- deterministically bind `research_family_id` to recipe identity plus compiler/catalog versions, then bind the family record to the ordered compiled manifest hashes;
+- compile only runnable pair/fixed-basket recipes to one or, for exploratory/development only, a finite predeclared family of current `ExperimentManifest` objects;
+- reject `final_oos` recipes unless exactly one already-selected frozen executable variant is declared, returning `final_oos_requires_single_precommitted_variant` before execution when violated;
+- preserve existing data-role/final-OOS reservation, controls, immutable fingerprints, code provenance, negative results, and runtime authority;
 - never auto-convert an unsupported paper method into a QAP adaptation;
 - remain read-only during check/preflight.
 
-The initial catalog should describe **existing** QAP capabilities first: rolling log-ratio evidence, rolling residual evidence, slow momentum, cross-sectional relative return, scheduled targets, basket graph, existing controls, execution modes, and current data-role/economic constraints. This milestone is not permission to implement new research methods.
+The initial catalog should describe **existing** QAP capabilities first: rolling log-ratio evidence, rolling residual evidence, slow momentum, cross-sectional relative return, scheduled targets, basket graph, existing controls, execution modes, and current data-role/economic constraints. It stores explanatory/static metadata and canonical-owner references; it must not become a second copy of config schemas, combination rules, or runner constraints. This milestone is not permission to implement new research methods.
 
 ### M10-B — Research Cockpit + Experiment Lab Product Surface
 
 Build the user-facing surface on top of M10-A:
 
-- **Research a pair** — e.g. `W / BTC`, with the default QAP pair-comparison recipe;
-- **Scan my universe** — the existing current-approved scanner presented explicitly as a scanner;
-- **Focus scan** — one asset against approved-ready counterparts if the reviewed scope seam remains small;
-- **Experiment Lab** — choose/inspect a research recipe, check support, see exact blockers/adaptations, and run supported recipes;
+- **Research a pair** — e.g. `W / BTC`, as a `pair` recipe compiled to the existing experiment engine;
+- **Scan my universe** — the existing current-approved scanner presented explicitly as a scanner and kept outside the recipe compiler;
+- **Focus scan** — deferred by default; include only if it reuses scanner scope almost mechanically and remains scanner-owned;
+- **Experiment Lab** — choose/inspect a `pair` or `fixed_basket` recipe, check support, see all blockers/adaptations, and run supported recipes;
 - exact-first asset search and selected-item mobile behavior;
 - just-in-time identity/admission/data setup while preserving the draft;
 - pair/universe readiness in user-task language;
@@ -991,12 +1115,13 @@ Experiment Lab method selection is allowed because the recipe/family/data-role c
 
 Before claiming the machinery works, exercise it with deliberately different recipes:
 
-1. **Current QAP rolling residual pair recipe** — should reach `runnable_exact` or `runnable_after_setup` for a ready pair.
-2. **Current slow-momentum recipe** — should explain that it is asset evidence/policy, not automatically a pair-relationship model.
-3. **Student-t Copula recipe** — should report `known_method_not_implemented` / no current model contract, not falsely blame the selected pair.
-4. **Palazzi 2025 exact-replication recipe** — should identify the related OLS/z-score capability while blocking faithful replication for long-short/selection/risk-method differences.
-5. **Palazzi-inspired QAP adaptation** — only if manually declared as a different recipe; must never inherit an `exact replication` claim.
-6. **Unknown method ID** — should return `unknown_method`, not attempt dynamic dispatch.
+1. **Current QAP rolling residual pair recipe** — `structure=valid`, `capability=executable`, `authority=allowed`; `readiness` varies with setup and `runnable` follows it.
+2. **Current slow-momentum recipe** — should explain through capability/research-object reasons that it is asset evidence/policy, not automatically a pair-relationship model.
+3. **Student-t Copula recipe** — `capability=unimplemented`, `runnable=false`, with `known_method_not_implemented`; it must not falsely blame the selected pair.
+4. **Palazzi 2025 exact-replication recipe** — should return all applicable truths together: related OLS/z-score capability, constitution blocking for shorting, missing selection/risk methods, `fidelity=adaptation_required`, and `runnable=false`.
+5. **Palazzi-inspired QAP adaptation** — only if manually declared as a new recipe with a new `recipe_sha256` and `derived_from_recipe_sha256`; it must never inherit an exact-replication claim.
+6. **Final-OOS multi-variant recipe** — `structure=invalid`, `runnable=false`, `final_oos_requires_single_precommitted_variant` before compilation.
+7. **Unknown method ID** — `capability=unknown`, `runnable=false`, `unknown_method`; no dynamic dispatch.
 
 This is an acceptance proof of the **research machinery**, not a requirement to implement Copula or Palazzi's strategy.
 
@@ -1016,47 +1141,61 @@ Only after M10-A/B/C are integrated should actual/likely users repeat realistic 
 
 ## 18. Review decisions required before implementation
 
-The following decisions are intentionally left for user/design review.
+The four contract-level findings from design review are now resolved in this amendment. The remaining items are product-detail decisions, not reasons for another architecture round.
 
-### D1 — Research Recipe envelope
+### D1 — Research-object ownership — FROZEN FOR M10 V1
 
-**Recommendation:** a small first-class typed recipe above `ExperimentManifest`, explicitly separating research object, evidence/model, decision rule, allocation/rebalance, risk overlays, selection/calibration, execution/costs, and evaluation/benchmarks.
+**Decision:** `ResearchRecipeV1.research_object` is limited to `pair | fixed_basket`. Universal Scan remains under the existing scanner owner. Focus Scan is deferred unless it can reuse scanner scope almost mechanically, and if added it remains scanner-owned. Do not introduce a generic compile-target abstraction.
 
-Do not make users author raw low-level experiment manifests for normal experiments, but keep the compiled manifest visible for audit.
+### D2 — SupportReportV1 — FROZEN
 
-### D2 — Capability catalog scope
+**Decision:** backend support truth is compositional, not one exclusive status. `SupportReportV1` carries independent `structure`, `capability`, `authority`, `readiness`, `fidelity`, `runnable`, and `reasons[]`. The UI may derive one friendly headline, but no precedence rule replaces the axes. `adaptation_available` is a reason/suggestion.
 
-**Recommendation:** one explicit in-code catalog of known QAP research components and known-but-unimplemented named methods used for explanation. No generic plugins, dynamic imports, or runtime strategy registration.
+### D3 — Recipe / compilation identity — FROZEN
 
-### D3 — Default Pair Research versus Experiment Lab
+**Decision:** `ResearchRecipeV1` has a canonical `recipe_sha256`; adaptations get a new recipe identity and `derived_from_recipe_sha256`. Before execution, `ResearchRecipeCompilationV1` immutably binds the recipe to `research_family_id`, compiler/catalog versions, and ordered compiled `manifest_sha256` values. The family ID is deterministically derived from recipe identity plus compiler/catalog interpretation versions, and every compiled manifest carries it.
 
-**Recommendation:** simple Pair Research runs a frozen versioned QAP pair-method family; advanced Experiment Lab permits declared method/parameter selection and records every sibling attempt under research-family/data-role semantics.
+### D4 — Final-OOS variant rule — FROZEN
 
-### D4 — Paper recipes
+**Decision:** exploratory/development recipes may compile finite predeclared sibling variants. `final_oos` requires exactly one already-selected frozen executable variant and permits no grid/search/variant comparison on the holdout. Preflight rejects violations with `final_oos_requires_single_precommitted_variant` before compilation or reservation.
+
+### D5 — Research Recipe envelope
+
+**Recommendation:** keep the small first-class typed recipe above `ExperimentManifest`, explicitly separating evidence/model, decision rule, allocation/rebalance, risk overlays, selection/calibration, execution/costs, and evaluation/benchmarks. Do not make users author raw low-level experiment manifests for normal experiments, but keep the compiled manifest visible for audit.
+
+### D6 — Capability catalog scope
+
+**Recommendation:** one explicit in-code catalog of known QAP research components and known-but-unimplemented named methods used for explanation. Store explanatory/static metadata and references to canonical validators/composers; do not duplicate their schemas/combination rules. No generic plugins, dynamic imports, or runtime strategy registration.
+
+### D7 — Default Pair Research versus Experiment Lab
+
+**Recommendation:** simple Pair Research runs a frozen versioned QAP pair-method family through the recipe compiler/experiment engine; advanced Experiment Lab permits declared method/parameter selection. Multiple siblings are allowed only for exploratory/development roles.
+
+### D8 — Paper recipes
 
 **Recommendation:** paper methodologies are manually curated recipe templates with source metadata. Do not attempt automatic paper-to-code interpretation in Phase 17. The support checker judges the declared recipe, not natural-language prose.
 
-### D5 — Copula
+### D9 — Copula
 
 **Recommendation:** Copula is only one known-unimplemented method in the initial catalog. It should not block M10 or Phase-17 closure. A later method-expansion design can implement it if/when it becomes a useful research hypothesis.
 
-### D6 — Palazzi exact versus adapted
+### D10 — Palazzi exact versus adapted
 
-**Recommendation:** encode the paper as a fidelity test. Exact reproduction should remain blocked while it requires long-short positions and other undeclared current capabilities. A long-only QAP adaptation is a different recipe with a different claim.
+**Recommendation:** encode the paper as a fidelity test. Exact reproduction remains non-runnable while it requires constitution-blocked or unimplemented semantics. A long-only QAP adaptation is a different recipe with a different identity/claim and explicit derived-from lineage.
 
-### D7 — Momentum semantics
+### D11 — Momentum semantics
 
 Do not label all momentum as one pair model. The capability checker should identify whether the requested recipe means slow single-asset evidence, cross-sectional relative return, pair-blind control, or a new method.
 
-### D8 — Identity evidence UX
+### D12 — Identity evidence UX
 
 Decide what novice-facing independent evidence QAP may show when confirming a venue code. The backend must still fail closed and never infer identity from ticker equality alone.
 
-### D9 — Pair-specific data preparation
+### D13 — Pair-specific data preparation
 
 **Recommendation:** initially reuse whole approved-scope preparation if it keeps implementation small; add pair-only preparation only when measured latency/request burden justifies it.
 
-### D10 — Result ordering
+### D14 — Result ordering
 
 **Recommendation:** use existing scanner stage/promotion truth and deterministic filters; do not create a new “interestingness” score during the cockpit redesign.
 
@@ -1099,9 +1238,10 @@ Run QAP pair research
 
 -> if W needs setup, resolve/approve it once without losing the draft
 -> if data is missing, prepare it without abandoning the draft
--> run the existing current-approved scanner over the focused pair
--> compare current admitted pair methods
--> show economic replay/negative/unavailable evidence
+-> preflight the fixed-pair ResearchRecipeV1
+-> compile the admitted pair-method family to existing ExperimentManifest siblings
+-> run through existing replay/controls/economics
+-> show economic/negative/unavailable evidence
 -> expose exact protocol/data lineage only under audit details
 ```
 

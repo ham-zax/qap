@@ -14,9 +14,9 @@
 
 | Mission | Type | Status | Can start | Workspace | Isolation reason | Blocked by |
 |---|---|---|---|---|---|---|
-| M10-0 Research Cockpit + Experiment Contract amendment | read-only/design planning | current / ready for review | now | stable integrated Product V1 on `main` | freezes Pair/Universe UX plus Research Recipe, support/fidelity states, capability catalog, and compile-down boundary | none — M0-M9 integrated |
-| M10-A Typed Research Recipe + capability preflight | executable backend | blocked | after M10-0 approval | not materialized | read-only `Check support`, typed reasons, faithful compile to existing experiment authority | M10-0 |
-| M10-B Research Cockpit + Experiment Lab | executable Product | blocked | after M10-A | not materialized | Pair Research, Universal Scan, Experiment Lab, exact-first search, JIT setup | M10-A |
+| M10-0 Research Cockpit + Experiment Contract amendment | read-only/design planning | current / ready for re-review | now | stable integrated Product V1 on `main` | freezes real execution owners, compositional SupportReport, immutable recipe/compile lineage, final-OOS variant rule, and cockpit UX | none — M0-M9 integrated |
+| M10-A Typed Research Recipe + capability preflight | executable backend | blocked | after M10-0 approval | not materialized | `pair | fixed_basket` only; read-only SupportReportV1; immutable recipe/compilation binding; faithful compile to existing experiment authority | M10-0 |
+| M10-B Research Cockpit + Experiment Lab | executable Product | blocked | after M10-A | not materialized | Pair Research/Experiment Lab over recipe contract; Universal Scan remains scanner-owned; exact-first search/JIT setup | M10-A |
 | M10-C capability/fidelity proof | acceptance/research | blocked | after M10-A/B | stable integrated build | proves current, unsupported, constitution-blocked, paper-replication/adaptation cases | M10-A and M10-B |
 | M10-D representative-user closure | human-led acceptance | blocked | after M10-C | stable integrated Product build | validates corrected research/experiment tasks with actual/likely users | M10-C |
 
@@ -107,7 +107,7 @@ Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. The first real-user
 
 ## Workspace policy
 
-No autonomous writer is currently authorized. M0-M9 are integrated on `main`; former Phase-17 worktrees are historical milestone state. M10-0 is a design-review checkpoint, not an implementation branch. After approval, M10-A should first materialize the bounded backend Research Recipe / `Check support` boundary. Only after that contract is stable should M10-B build the Product cockpit/Experiment Lab. Copula, Palazzi-style reproduction, Momentum variants, or any other method must be classified by the capability layer; M10 does not preapprove implementing them.
+No autonomous writer is currently authorized. M0-M9 are integrated on `main`; former Phase-17 worktrees are historical milestone state. M10-0 is a design-review checkpoint, not an implementation branch. The four contract findings are now folded into the plan: recipes compile only for `pair | fixed_basket`; Universal Scan remains scanner-owned; `SupportReportV1` is compositional; recipe/compilation identity is immutable and family-bound; and `final_oos` is single-precommitted-variant only. After approval, M10-A should materialize only that bounded backend boundary. Only after it is stable should M10-B build the Product cockpit/Experiment Lab. Copula, Palazzi-style reproduction, Momentum variants, or any other method must be classified by the capability layer; M10 does not preapprove implementing them.
 
 ## Integration policy
 
@@ -123,11 +123,11 @@ M10-0 is a bounded design/review mission. No persistent coding process is needed
 
 ### M10-0 — Research Cockpit + Experiment Contract design review
 
-Review `docs/research/2026-08-20-qap-research-cockpit-investigation.md` against the current backend and legacy product-intent evidence. No implementation until Pair Research, Universal Scan, optional Focus Scan, Research Recipe decomposition, support/fidelity states, typed reasons, capability catalog, and faithful compile-down semantics are explicitly approved.
+Review `docs/research/2026-08-20-qap-research-cockpit-investigation.md` against the current backend and legacy product-intent evidence. Re-review the corrected contract: `ResearchRecipeV1` executable objects are only `pair | fixed_basket`; Universal Scan stays scanner-owned; `SupportReportV1` carries independent structure/capability/authority/readiness/fidelity/runnable axes plus all reasons; recipe identity is immutably bound through `ResearchRecipeCompilationV1` to family/manifests; and `final_oos` rejects multi-variant/search recipes before compilation. No implementation until this corrected M10-0 contract is approved.
 
 ### M10-C — capability/fidelity proof
 
-Use representative recipes rather than new method implementations: a current rolling-residual recipe, current momentum semantics, known-unimplemented Student-t Copula, a Palazzi exact-replication recipe that should be blocked truthfully, a separately declared adaptation, and an unknown method ID.
+Use representative recipes rather than new method implementations: a current rolling-residual recipe, current momentum semantics, known-unimplemented Student-t Copula, a Palazzi exact-replication recipe with simultaneous reasons, a separately declared adaptation with derived-from recipe identity, an invalid final-OOS multi-variant recipe, and an unknown method ID.
 
 ### M10-D — representative-user comprehension / authority closure
 
@@ -159,10 +159,10 @@ This map is a dependency plan, not permission to start future writers early. The
 
 Important remaining work now:
 
-- M10-0 Research Cockpit + Experiment Contract design amendment is the current frontier.
-- M10-A typed Research Recipe / capability preflight is blocked until review.
-- M10-B Pair Research / Universal Scan / Experiment Lab Product work is blocked on M10-A.
-- M10-C must prove truthful support/fidelity reporting using current methods, Student-t Copula as known-unimplemented, Palazzi exact/adapted cases, and an unknown method.
+- M10-0 Research Cockpit + Experiment Contract design amendment is the current frontier and is ready for re-review after the four contract corrections.
+- M10-A typed Research Recipe / capability preflight is blocked until review; its executable objects are only `pair | fixed_basket`.
+- M10-B Pair Research / Experiment Lab Product work is blocked on M10-A; Universal Scan remains existing scanner authority and Focus Scan is deferred unless mechanically reusable.
+- M10-C must prove compositional support/fidelity reporting using current methods, Student-t Copula as known-unimplemented, Palazzi exact/adapted cases, an invalid final-OOS multi-variant recipe, and an unknown method.
 - M10-D representative-user acceptance remains final and blocked.
 - Tauri/desktop packaging remains deferred; current Product-V1 evidence supports the hardened launcher/browser model.
 
@@ -184,3 +184,4 @@ Important remaining work now:
 - `2026-08-20` — M8-A `2aa60ea` and M8-B `291f2f3` returned complete on clean disjoint branches. Central review found one M8-B unknown-versioned-claim wording seam and closed it before integration; full M8 is integrated through `3b7c32d`. A fresh combined OpenAPI export, generated TypeScript contract, Ruff/format/Pyright/import-contract, typecheck, build, and diff-hygiene pass were green; no tests were run.
 - `2026-08-20` — M9 lifecycle hardening completed centrally at `d9cb44e`. Market-data maintenance now persists PID/start-marker ownership and recovers orphaned `running` state as explicit failure; the launcher waits for exact API/workspace/web/collector readiness before declaring success; the shell refreshes collector status while open. A real Local Market launcher smoke reached `QAP workbench ready.` with the collector running and cleaned its ports on shutdown. Tauri remains deferred.
 - `2026-08-20` — First real-user mobile research walkthrough reopened M10 in design review. Follow-up clarified the intended Product: not a Copula-specific UI, but machinery to declare/type-check research recipes, explain exact support/fidelity/readiness/constitution blockers, and run only faithfully supported methods through existing QAP experiment authority. Pair Research, Universal Scan, and an advanced Experiment Lab are now planned on top of that contract; M10-A/B/C/D remain blocked pending M10-0 review.
+- `2026-08-20` — M10-0 contract review requested four major corrections and all four are now incorporated for re-review: recipe compilation is constrained to `pair | fixed_basket` while Universal/Focus discovery stays scanner-owned; `SupportReportV1` is compositional instead of precedence-based; `ResearchRecipeV1` plus immutable compilation lineage binds methodology to family/manifests; and `final_oos` rejects multi-variant/search recipes before compilation. The capability catalog remains explanatory and delegates validation/composition to existing canonical owners.
