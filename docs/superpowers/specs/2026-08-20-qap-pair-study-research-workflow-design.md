@@ -1,6 +1,6 @@
 # QAP Pair Study Research Workflow Design
 
-**Status:** DESIGN FREEZE CANDIDATE — direction explicitly approved by the user; production implementation remains blocked until this document is reviewed.
+**Status:** APPROVED / FROZEN — integrated on `main` with the M11-A backend foundation through `2f055d1`.
 
 **Phase:** 17 — Product Layer follow-on after the first M10-D representative-user Pair Research walkthrough.
 

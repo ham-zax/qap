@@ -9,8 +9,8 @@
 **Pair Study design:** `docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md`
 **Pair Study implementation plan:** `docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`
 **Frozen design base:** `1bb6e78`
-**Execution shape:** M0-M9 and M10-A/B/C are integrated, and M10-0 is approved. The first M10-D `W / PIXEL` walkthrough returned `UX REMEDIATION REQUIRED`. Candidate remediation `6609a1c` proved useful acquisition/orchestration fixes but also proved that Pair Research is incorrectly gated by executable direct-market recipe construction before relationship study. The user explicitly authorized a Pair Study redesign. Wave 16 is design-only: freeze the Pair Study contract and implementation plan before another production writer starts.
-**Current wave:** 16 — M11-0 Pair Study design review
+**Execution shape:** M0-M9 and M10-A/B/C are integrated, M10-0 is approved, and the Pair Study redesign is frozen. M11-A is complete/integrated through `2f055d1`: selected-pair Product preparation and backend Pair Study evidence now work without a direct pair market or executable recipe. Wave 17 is one Product/browser writer for M11-B; M11-C remains serial and blocked until the Product flow proves the new boundary.
+**Current wave:** 17 — M11-B Pair Research Product flow
 
 ## Current frontier
 
@@ -21,9 +21,9 @@
 | Agent A — M10-B Research Cockpit + Experiment Lab | mixed Product/API read composition | complete / integrated at `f39b4b4` | complete | historical clean worktree | no active ownership | M10-A integrated |
 | Agent B — M10-C capability/fidelity proof | research/acceptance evidence | complete / integrated at `3e07878` | complete | historical clean worktree | no active ownership | M10-A and M10-B integrated |
 | Agent A — M10-D Pair Research UX remediation | mixed Product UX / minimal application orchestration | completed candidate `6609a1c`; superseded as closure path | historical evidence only | `/home/hamza/repo/qap/.worktrees/phase17-m10d-pair-research-ux` | preserved bounded remediation evidence | deeper Pair Study contract finding |
-| M11-0 Pair Study design freeze | design contract | current / review candidate | now | `/home/hamza/repo/qap/.worktrees/phase17-pair-study-redesign` | main contains protected live-session artifacts and this is a design-only branch | user-authorized architecture reopen |
-| M11-A Pair Study backend/API | executable Product/backend | blocked | after M11-0 approval | future implementation workspace | contract-dependent | M11-0 |
-| M11-B Pair Research Product flow | mixed Product/API | blocked | after M11-A | future implementation workspace | depends on exact Pair Study API | M11-A |
+| M11-0 Pair Study design freeze | design contract | complete / approved at `df41d0c` | complete | historical clean worktree | frozen contract | none |
+| M11-A Pair Study backend/API | executable Product/backend | complete / integrated through `2f055d1` | complete | historical clean worktree | no active ownership | M11-0 |
+| Agent A — M11-B Pair Research Product flow | mixed Product/browser/API consumption | ready / current writer | now | `/home/hamza/repo/qap/.worktrees/phase17-m11b-pair-research-product` | isolates browser/runtime work from protected live-session state on `main` | M11-A integrated |
 | M11-C two-leg Pair Research economics | executable experiment contract | blocked | after M11-B | future isolated writer | changes manifest/compiler semantics and must be serial | M11-0/A/B |
 | M11-D integrated research-completion evidence | mixed Product/read composition | blocked | after M11-C | future implementation workspace | depends on final economic contract | M11-C |
 | M10-D representative-user closure | human-led acceptance | blocked / rerun after M11 | after M11 integration | stable integrated `main` | must use real participants | M11-A/B/C/D |
@@ -79,13 +79,13 @@ M10-D first representative-user Pair Research               UX REMEDIATION REQUI
 bounded remediation candidate 6609a1c                       EVIDENCE / NOT FINAL ARCHITECTURE
         |
         v
-M11-0 Pair Study design freeze                              CURRENT / REVIEW
+M11-0 Pair Study design freeze                              COMPLETE / APPROVED df41d0c
         |
         v
-M11-A Pair Study backend/API                                BLOCKED
+M11-A Pair Study backend/API                                COMPLETE / INTEGRATED 2f055d1
         |
         v
-M11-B Pair Research Product flow                            BLOCKED
+M11-B Pair Research Product flow                            CURRENT
         |
         v
 M11-C real two-leg pair economics                           BLOCKED
@@ -97,7 +97,7 @@ M11-D integrated research-completion evidence               BLOCKED
 M10-D representative-user comprehension / authority closure RERUN / FINAL HUMAN GATE
 ```
 
-Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. M10-0/A/B/C are also complete. The first M10-D `W / PIXEL` walkthrough then exposed that Pair Research still defines the research job through executable-recipe/direct-market readiness. Candidate remediation `6609a1c` improved continuity and market-data preparation but did not solve that abstraction mismatch. The current design frontier is therefore M11-0 Pair Study: relationship evidence first, economic recipe second.
+Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. M10-0/A/B/C are also complete. M11-0 froze the corrected Pair Study boundary and M11-A now provides scoped preparation plus backend-owned relationship evidence on `main`. The current frontier is M11-B: make the normal Research surface consume that boundary before recipe/economic replay.
 
 ## Milestone progress
 
@@ -120,9 +120,9 @@ Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. M10-0/A/B/C are als
 | M10-B Research Cockpit + Experiment Lab | complete / integrated at `f39b4b4` | Agent A finished |
 | M10-C capability/fidelity proof with real methods | complete / integrated at `3e07878` | Agent B finished |
 | M10-D Pair Research UX remediation | candidate complete at `6609a1c`; no longer sufficient for closure | historical Agent A branch |
-| M11-0 Pair Study research workflow design | current / review candidate | design owner |
-| M11-A pair-scoped preparation + Pair Study backend/API | blocked | next implementation owner after design approval |
-| M11-B Pair Research Product flow + current values | blocked | after M11-A |
+| M11-0 Pair Study research workflow design | complete / approved at `df41d0c` | — |
+| M11-A pair-scoped preparation + Pair Study backend/API | complete / integrated through `2f055d1` | — |
+| M11-B Pair Research Product flow + current values | current | Agent A writer |
 | M11-C real two-leg Pair Research economics | blocked | after M11-B; serial contract writer |
 | M11-D integrated research-completion evidence | blocked | after M11-C |
 | M10-D representative-user comprehension/authority closure | blocked / rerun after M11 | human moderator + representative users |
@@ -146,17 +146,17 @@ Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. M10-0/A/B/C are als
 
 ## Workspace policy
 
-M10-0 is approved; M10-A is integrated at `12ed08a`; M10-B at `f39b4b4`; M10-C at `3e07878`. The bounded M10-D remediation branch is retained as evidence, but the user has explicitly escalated the finding to design review. The only current writable workspace is the design-only `phase17-pair-study-redesign` worktree. No production writer starts until M11-0 is approved.
+M10-0 is approved; M10-A is integrated at `12ed08a`; M10-B at `f39b4b4`; M10-C at `3e07878`; M11-A is integrated through `2f055d1`. M11-B is the only current writer. Its isolated worktree exists because `main` contains protected live-session `catalog.json` and `product-market-data/` state and the mission requires browser/runtime work; no concurrent production writer is authorized.
 
 ## Integration policy
 
 M1 is integrated at `461a33c`, M2 at `8e45c36`, the M3 shared foundation at `1a476db`, Binance at `f1fab24`, Gate is integrated from original venue commit `30297cd`, final adaptive M3 orchestration at `c1d97eb`, M4 at `d49e597` plus planner closure `c3c81ca`, M5 at `6b40028`, M6 at `c1db648`, M7 at `d5fbddc`, M8-0 at `01e8d3e`, M8-A at `2aa60ea`, M8-B centrally at `0efd728` plus claim-wording closure `3b7c32d`, M9 at `d9cb44e`, M10-A at `12ed08a`, M10-B at `f39b4b4`, and M10-C at `3e07878`.
 
-Full M8 and M9 are closed. M10-0 is approved and frozen. M10-A, M10-B, and M10-C are integrated on `main` at `12ed08a`, `f39b4b4`, and `3e07878`. M10-C approved all eight frozen capability/fidelity cases and found no blocking production defect. Representative-user M10-D is now blocked by M11 Pair Study redesign/implementation before the final human gate can rerun.
+Full M8 and M9 are closed. M10-0 is approved and frozen. M10-A, M10-B, and M10-C are integrated on `main` at `12ed08a`, `f39b4b4`, and `3e07878`; M11-A is integrated through `2f055d1`. M11-B integrates next only after review of the real Pair Study/browser flow. M11-C remains blocked until then, and representative-user M10-D remains blocked until M11 completes.
 
 ## Execution lifetime policy
 
-Future M11 executable missions should use Persistent Agent Loop when they own end-to-end Product/browser evidence. The current M11-0 design wave is documentation-only. Human M10-D remains the final authority after M11 integration; never fabricate participant reactions or usability metrics.
+M11-B uses Persistent Agent Loop because it owns one end-to-end Product/browser flow and may need a durable web/API runtime plus repeated steering. M11-C remains blocked. Human M10-D remains the final authority after M11 integration; never fabricate participant reactions or usability metrics.
 
 ## Verification policy
 
@@ -191,8 +191,9 @@ The whole Phase-17 implementation is decomposed at low resolution below. Detaile
 | **14 — complete** | **Agent B runs M10-C capability/fidelity proof** | no second writer | approved and integrated at `3e07878`; no production remediation required |
 | **15 — human evidence** | first representative-user Pair Research walkthrough | **M10-D human-led acceptance** | returned `UX REMEDIATION REQUIRED`; research task continuity/setup was too complicated |
 | **15a — evidence complete** | **Agent A bounded Pair Research UX remediation** | no second writer | candidate `6609a1c` proved continuity plus acquisition/cutoff fixes, but exposed the deeper direct-recipe-before-study mismatch |
-| **16 — current design** | **M11-0 Pair Study design freeze** | no production writer | relationship study is separated from economic replay; implementation remains blocked pending approval |
-| **17 — blocked implementation** | **M11-A/B Pair Study backend + Product flow** | no second writer until contract stabilizes | pair-scoped preparation and immediate current relationship evidence |
+| **16 — complete** | **M11-0 Pair Study design freeze** | no production writer | approved at `df41d0c`; relationship study is separated from economic replay |
+| **17a — complete** | **M11-A Pair Study backend/API** | no second writer | integrated through `2f055d1`; pair-scoped preparation and immediate current relationship evidence are available |
+| **17b — current** | **Agent A M11-B Pair Research Product flow** | no second writer | consume M11-A Pair Study context/series on one active Research task; no M11-C economics |
 | **18 — blocked contract implementation** | **M11-C real two-leg Pair Research economics** | serial writer only | additive relationship-input role + explicit transient USDT authority + existing `multi_asset_bridge` executor |
 | **19 — blocked integration/acceptance** | **M11-D research-completion evidence then M10-D human rerun** | human final gate after integration | user completes the research question without developer coaching |
 
@@ -205,7 +206,8 @@ Important remaining work now:
 - M10-B Pair Research / Universal Scan reshaping / Experiment Lab is complete and integrated at `f39b4b4`; Universal Scan remains existing scanner authority and Focus Scan remains deferred unless mechanically reusable.
 - M10-C is complete and integrated at `3e07878`; all eight frozen cases passed without production remediation.
 - M10-D first representative-user evidence returned `UX REMEDIATION REQUIRED`. Candidate remediation `6609a1c` is useful evidence but no longer the final architecture path.
-- M11-0 Pair Study design is the current frontier. M11-A/B/C/D remain blocked until that design is approved; final human M10-D reruns only after M11 integration.
+- M11-0 Pair Study design is approved at `df41d0c`; M11-A is complete and integrated through `2f055d1` after central review closure.
+- M11-B Pair Research Product flow is the current frontier. M11-C/D remain blocked; final human M10-D reruns only after M11 integration.
 - Tauri/desktop packaging remains deferred; current Product-V1 evidence supports the hardened launcher/browser model.
 
 ## Status log
@@ -234,3 +236,5 @@ Important remaining work now:
 - `2026-08-20` — M10-C `3e07878` returned `APPROVE M10-C` with all eight frozen capability/fidelity/final-OOS cases passing and no production remediation required. The docs-only proof commit was fast-forward integrated into `main`. Wave 15 is now human-led M10-D acceptance only; no autonomous coding writer is authorized unless representative-user evidence requests bounded remediation.
 - `2026-08-20` — The first live M10-D Pair Research walkthrough attempted `W / PIXEL` and returned `UX REMEDIATION REQUIRED`: exact-first selection worked, but quote-identity administration and fragmented market-data preparation made ordinary research too difficult before experiments/results. Wave 15a materialized one bounded Agent-A Product remediation.
 - `2026-08-20` — Candidate remediation `6609a1c` proved two useful acquisition corrections (invalid Gate archive -> existing REST path, one shared preparation cutoff) and a one-action draft-preserving flow. Follow-up review found a deeper design defect: `_pair_draft()` requires a real direct pair market before collecting the existing `ASSET/USDT` relationship inputs, so a Slice-1 replay restriction became a manual research-entry restriction. The user explicitly authorized the M11 Pair Study redesign. Wave 16 is design-only; production implementation and M10-D rerun remain blocked pending approval.
+- `2026-08-20` — Pair Study design `df41d0c` was approved as the M11-0 contract. M11-A returned at `2505528` with real Gate `W_USDT + PIXEL_USDT` evidence and no direct `W/PIXEL` market. Central review found three bounded integration seams: ambiguous current path/direct-market selection needed to fail closed, universe-wide preparation had unintentionally inherited selected-pair shared-cutoff semantics, and checked-in OpenAPI/generated TypeScript had drifted. Review closure `2f055d1` fixed those seams, preserved optional unscoped request compatibility, passed focused Ruff/format/Pyright/OpenAPI/typecheck/diff-hygiene checks, and was fast-forward integrated into `main`. No tests were run; protected live-session `catalog.json` and `product-market-data/` were untouched.
+- `2026-08-20` — Wave 17b materializes one M11-B Product/browser writer against the integrated Pair Study API. The mission must make Pair Study readiness primary on Research, preserve Universal Scan and Experiment Lab authority, and leave real two-leg economics/transient bridge authority to blocked M11-C.
