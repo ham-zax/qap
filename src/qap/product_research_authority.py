@@ -86,9 +86,9 @@ class ProductResearchAuthority:
             return False
         try:
             current_version = self._current_bridge_identity_version()
+            state = self._read()
         except ProductResearchAuthorityError:
             return False
-        state = self._read()
         return (
             state.transient_bridge_asset == _TRANSIENT_BRIDGE.key
             and state.transient_bridge_identity_version == current_version
