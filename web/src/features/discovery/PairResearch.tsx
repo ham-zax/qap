@@ -17,6 +17,7 @@ import {
   ResearchAssetSelector,
   type ResearchAssetSelection,
 } from './ResearchAssetSelector'
+import { PairResearchCompletion } from './PairResearchCompletion'
 import { PairStudyResults } from './PairStudyResults'
 import { SupportReportPanel } from './SupportReportPanel'
 
@@ -633,6 +634,16 @@ export function PairResearch({ apiClient, queries, workspace }: PairResearchProp
             </div>
           ) : null}
         </section>
+      ) : null}
+
+      {operationId && operation.data?.status === 'completed' && runIds.length > 0 && studyResult ? (
+        <PairResearchCompletion
+          queries={queries}
+          context={studyResult.context}
+          runIds={runIds}
+          operationId={operationId}
+          compilationSha256={compilation}
+        />
       ) : null}
     </section>
   )
