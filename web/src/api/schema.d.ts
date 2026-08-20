@@ -413,6 +413,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/product-pair-study/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Product Pair Study Context */
+        get: operations["getProductPairStudyContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/product-pair-study/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Product Pair Study Series */
+        get: operations["getProductPairStudySeries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/product-research": {
         parameters: {
             query?: never;
@@ -2159,6 +2193,13 @@ export interface components {
         };
         /** MarketDataPreparationRequestDto */
         MarketDataPreparationRequestDto: {
+            /** Analysis Reference Ids */
+            analysis_reference_ids?: string[] | null;
+            /** Asset Ids */
+            asset_ids?: [
+                string,
+                string
+            ] | null;
             /** Horizons */
             horizons: ("short" | "medium" | "swing")[];
         };
@@ -2364,6 +2405,221 @@ export interface components {
              * @constant
              */
             schema_version: "qap.api.pair_series.v1";
+        };
+        /** PairStudyAnalysisLensDto */
+        PairStudyAnalysisLensDto: {
+            /** Asset */
+            asset: string;
+            generation: components["schemas"]["PairStudyGenerationRefDto"] | null;
+            reason: components["schemas"]["PairStudyReasonDto"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "needs_data" | "unavailable";
+        };
+        /** PairStudyDataDto */
+        PairStudyDataDto: {
+            asset_a_path: components["schemas"]["PairStudyGenerationRefDto"] | null;
+            asset_b_path: components["schemas"]["PairStudyGenerationRefDto"] | null;
+            direct_market: components["schemas"]["PairStudyDirectMarketDto"];
+            /** Reasons */
+            reasons: components["schemas"]["PairStudyReasonDto"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "needs_setup";
+        };
+        /** PairStudyDirectMarketDto */
+        PairStudyDirectMarketDto: {
+            /** Base Asset */
+            base_asset: string | null;
+            generation: components["schemas"]["PairStudyGenerationRefDto"] | null;
+            /** Quote Asset */
+            quote_asset: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "needs_data" | "unavailable";
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+            /** Venue Symbol */
+            venue_symbol: string | null;
+        };
+        /** PairStudyEconomicExpressionDto */
+        PairStudyEconomicExpressionDto: {
+            /**
+             * Bridge Status
+             * @constant
+             */
+            bridge_status: "not_available_in_current_recipe_contract";
+            /** Default Recipe Declarable */
+            default_recipe_declarable: boolean;
+            /**
+             * Direct Status
+             * @enum {string}
+             */
+            direct_status: "ready" | "needs_data" | "unavailable";
+            /** Reasons */
+            reasons: components["schemas"]["PairStudyReasonDto"][];
+        };
+        /** PairStudyGenerationRefDto */
+        PairStudyGenerationRefDto: {
+            /** Base Asset */
+            base_asset: string;
+            /**
+             * Coverage End Exclusive
+             * Format: date-time
+             */
+            coverage_end_exclusive: string;
+            /**
+             * Coverage Start
+             * Format: date-time
+             */
+            coverage_start: string;
+            /** Dataset Id */
+            dataset_id: string;
+            /** Directory Source Fingerprint */
+            directory_source_fingerprint: string;
+            /** Directory Source Id */
+            directory_source_id: string;
+            /** Interval */
+            interval: string;
+            /** Provenance Relative Path */
+            provenance_relative_path: string;
+            /** Quote Asset */
+            quote_asset: string;
+            /** Relative Path */
+            relative_path: string;
+            /** Semantic Fingerprint */
+            semantic_fingerprint: string;
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+            /** Venue Symbol */
+            venue_symbol: string;
+        };
+        /** PairStudyObservationDto */
+        PairStudyObservationDto: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Base Source Fingerprint */
+            base_source_fingerprint: string;
+            /** Coverage Observations */
+            coverage_observations: number;
+            /** Evidence Reciprocity */
+            evidence_reciprocity: string;
+            /** Fit Reciprocity */
+            fit_reciprocity: string;
+            /** Input Fingerprint */
+            input_fingerprint: string;
+            /** Model Id */
+            model_id: string;
+            /** Model Version */
+            model_version: string;
+            /** Orientation */
+            orientation: string;
+            /** Quote Source Fingerprint */
+            quote_source_fingerprint: string;
+            /** Required Observations */
+            required_observations: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "valid" | "insufficient_history" | "insufficient_variance";
+            /** Values */
+            values: {
+                [key: string]: number;
+            };
+            /** Window Observations */
+            window_observations: number;
+        };
+        /** PairStudyPointDto */
+        PairStudyPointDto: {
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Value */
+            value: number;
+        };
+        /** PairStudyQuestionDto */
+        PairStudyQuestionDto: {
+            /** Asset A */
+            asset_a: string;
+            /** Asset B */
+            asset_b: string;
+            /** Available Venues */
+            available_venues: ("binance" | "gate")[];
+            /** Canonical Pair */
+            canonical_pair: [
+                string,
+                string
+            ];
+            /** Coordinate Asset */
+            coordinate_asset: string;
+            /**
+             * Horizon
+             * @enum {string}
+             */
+            horizon: "short" | "medium" | "swing";
+            /** Interval */
+            interval: string;
+            /** Orientation */
+            orientation: string;
+            /** Safe Cutoff */
+            safe_cutoff: string | null;
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+        };
+        /** PairStudyReasonDto */
+        PairStudyReasonDto: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+        };
+        /** PairStudyReferenceSeriesDto */
+        PairStudyReferenceSeriesDto: {
+            /** Asset */
+            asset: string;
+            /** Base To Reference */
+            base_to_reference: components["schemas"]["PairStudyPointDto"][];
+            /** Base To Reference Log */
+            base_to_reference_log: components["schemas"]["PairStudyPointDto"][];
+            generation: components["schemas"]["PairStudyGenerationRefDto"];
+            /** Quote To Reference */
+            quote_to_reference: components["schemas"]["PairStudyPointDto"][];
+            /** Quote To Reference Log */
+            quote_to_reference_log: components["schemas"]["PairStudyPointDto"][];
+        };
+        /** PairStudyRelationshipDto */
+        PairStudyRelationshipDto: {
+            /** Log Ratio Current */
+            log_ratio_current: number;
+            /** Normalized Base Current */
+            normalized_base_current: number;
+            /** Normalized Quote Current */
+            normalized_quote_current: number;
+            /** Raw Ratio Current */
+            raw_ratio_current: number;
+            residual_ols: components["schemas"]["PairStudyObservationDto"];
+            rolling_log_ratio: components["schemas"]["PairStudyObservationDto"];
         };
         /** PaperMarketMetadataDto */
         PaperMarketMetadataDto: {
@@ -2755,6 +3011,47 @@ export interface components {
              * @constant
              */
             schema_version: "qap.api.product_market_data.v1";
+        };
+        /** ProductPairStudyContextDto */
+        ProductPairStudyContextDto: {
+            analysis_lens: components["schemas"]["PairStudyAnalysisLensDto"] | null;
+            data: components["schemas"]["PairStudyDataDto"];
+            /** Directory Id */
+            directory_id: string;
+            economic_expression: components["schemas"]["PairStudyEconomicExpressionDto"];
+            question: components["schemas"]["PairStudyQuestionDto"];
+            relationship: components["schemas"]["PairStudyRelationshipDto"] | null;
+            /**
+             * Schema Version
+             * @default qap.api.product_pair_study_context.v1
+             * @constant
+             */
+            schema_version: "qap.api.product_pair_study_context.v1";
+        };
+        /** ProductPairStudySeriesDto */
+        ProductPairStudySeriesDto: {
+            analysis_reference: components["schemas"]["PairStudyReferenceSeriesDto"] | null;
+            asset_a_path: components["schemas"]["PairStudyGenerationRefDto"];
+            asset_b_path: components["schemas"]["PairStudyGenerationRefDto"];
+            /** Base Source Fingerprint */
+            base_source_fingerprint: string;
+            /** Log Ratio */
+            log_ratio: components["schemas"]["PairStudyPointDto"][];
+            /** Normalized Base */
+            normalized_base: components["schemas"]["PairStudyPointDto"][];
+            /** Normalized Quote */
+            normalized_quote: components["schemas"]["PairStudyPointDto"][];
+            question: components["schemas"]["PairStudyQuestionDto"];
+            /** Quote Source Fingerprint */
+            quote_source_fingerprint: string;
+            /** Ratio */
+            ratio: components["schemas"]["PairStudyPointDto"][];
+            /**
+             * Schema Version
+             * @default qap.api.product_pair_study_series.v1
+             * @constant
+             */
+            schema_version: "qap.api.product_pair_study_series.v1";
         };
         /** QualificationDto */
         QualificationDto: {
@@ -4653,6 +4950,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductMarketDataDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getProductPairStudyContext: {
+        parameters: {
+            query: {
+                asset_a: string;
+                asset_b: string;
+                horizon: "short" | "medium" | "swing";
+                orientation?: string | null;
+                venue?: ("binance" | "gate") | null;
+                analysis_reference?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductPairStudyContextDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getProductPairStudySeries: {
+        parameters: {
+            query: {
+                asset_a: string;
+                asset_b: string;
+                horizon: "short" | "medium" | "swing";
+                orientation?: string | null;
+                venue?: ("binance" | "gate") | null;
+                analysis_reference?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductPairStudySeriesDto"];
                 };
             };
             /** @description Validation Error */

@@ -3928,6 +3928,41 @@
       "MarketDataPreparationRequestDto": {
         "additionalProperties": false,
         "properties": {
+          "analysis_reference_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Reference Ids"
+          },
+          "asset_ids": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asset Ids"
+          },
           "horizons": {
             "items": {
               "enum": [
@@ -4461,6 +4496,604 @@
           "descriptive_only"
         ],
         "title": "PairSeriesDto",
+        "type": "object"
+      },
+      "PairStudyAnalysisLensDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset": {
+            "title": "Asset",
+            "type": "string"
+          },
+          "generation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PairStudyGenerationRefDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PairStudyReasonDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "needs_data",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset",
+          "status",
+          "generation",
+          "reason"
+        ],
+        "title": "PairStudyAnalysisLensDto",
+        "type": "object"
+      },
+      "PairStudyDataDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_a_path": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PairStudyGenerationRefDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "asset_b_path": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PairStudyGenerationRefDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "direct_market": {
+            "$ref": "#/components/schemas/PairStudyDirectMarketDto"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/PairStudyReasonDto"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "needs_setup"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "reasons",
+          "asset_a_path",
+          "asset_b_path",
+          "direct_market"
+        ],
+        "title": "PairStudyDataDto",
+        "type": "object"
+      },
+      "PairStudyDirectMarketDto": {
+        "additionalProperties": false,
+        "properties": {
+          "base_asset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Asset"
+          },
+          "generation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PairStudyGenerationRefDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quote_asset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quote Asset"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "needs_data",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Symbol"
+          }
+        },
+        "required": [
+          "status",
+          "venue",
+          "venue_symbol",
+          "base_asset",
+          "quote_asset",
+          "generation"
+        ],
+        "title": "PairStudyDirectMarketDto",
+        "type": "object"
+      },
+      "PairStudyEconomicExpressionDto": {
+        "additionalProperties": false,
+        "properties": {
+          "bridge_status": {
+            "const": "not_available_in_current_recipe_contract",
+            "title": "Bridge Status",
+            "type": "string"
+          },
+          "default_recipe_declarable": {
+            "title": "Default Recipe Declarable",
+            "type": "boolean"
+          },
+          "direct_status": {
+            "enum": [
+              "ready",
+              "needs_data",
+              "unavailable"
+            ],
+            "title": "Direct Status",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/PairStudyReasonDto"
+            },
+            "title": "Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "direct_status",
+          "bridge_status",
+          "default_recipe_declarable",
+          "reasons"
+        ],
+        "title": "PairStudyEconomicExpressionDto",
+        "type": "object"
+      },
+      "PairStudyGenerationRefDto": {
+        "additionalProperties": false,
+        "properties": {
+          "base_asset": {
+            "title": "Base Asset",
+            "type": "string"
+          },
+          "coverage_end_exclusive": {
+            "format": "date-time",
+            "title": "Coverage End Exclusive",
+            "type": "string"
+          },
+          "coverage_start": {
+            "format": "date-time",
+            "title": "Coverage Start",
+            "type": "string"
+          },
+          "dataset_id": {
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "directory_source_fingerprint": {
+            "title": "Directory Source Fingerprint",
+            "type": "string"
+          },
+          "directory_source_id": {
+            "title": "Directory Source Id",
+            "type": "string"
+          },
+          "interval": {
+            "title": "Interval",
+            "type": "string"
+          },
+          "provenance_relative_path": {
+            "title": "Provenance Relative Path",
+            "type": "string"
+          },
+          "quote_asset": {
+            "title": "Quote Asset",
+            "type": "string"
+          },
+          "relative_path": {
+            "title": "Relative Path",
+            "type": "string"
+          },
+          "semantic_fingerprint": {
+            "title": "Semantic Fingerprint",
+            "type": "string"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "title": "Venue Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "relative_path",
+          "provenance_relative_path",
+          "semantic_fingerprint",
+          "venue",
+          "venue_symbol",
+          "base_asset",
+          "quote_asset",
+          "interval",
+          "coverage_start",
+          "coverage_end_exclusive",
+          "directory_source_id",
+          "directory_source_fingerprint"
+        ],
+        "title": "PairStudyGenerationRefDto",
+        "type": "object"
+      },
+      "PairStudyObservationDto": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "base_source_fingerprint": {
+            "title": "Base Source Fingerprint",
+            "type": "string"
+          },
+          "coverage_observations": {
+            "title": "Coverage Observations",
+            "type": "integer"
+          },
+          "evidence_reciprocity": {
+            "title": "Evidence Reciprocity",
+            "type": "string"
+          },
+          "fit_reciprocity": {
+            "title": "Fit Reciprocity",
+            "type": "string"
+          },
+          "input_fingerprint": {
+            "title": "Input Fingerprint",
+            "type": "string"
+          },
+          "model_id": {
+            "title": "Model Id",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "orientation": {
+            "title": "Orientation",
+            "type": "string"
+          },
+          "quote_source_fingerprint": {
+            "title": "Quote Source Fingerprint",
+            "type": "string"
+          },
+          "required_observations": {
+            "title": "Required Observations",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "valid",
+              "insufficient_history",
+              "insufficient_variance"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "values": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Values",
+            "type": "object"
+          },
+          "window_observations": {
+            "title": "Window Observations",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_id",
+          "model_version",
+          "orientation",
+          "fit_reciprocity",
+          "evidence_reciprocity",
+          "status",
+          "window_observations",
+          "required_observations",
+          "coverage_observations",
+          "as_of",
+          "base_source_fingerprint",
+          "quote_source_fingerprint",
+          "input_fingerprint",
+          "values"
+        ],
+        "title": "PairStudyObservationDto",
+        "type": "object"
+      },
+      "PairStudyPointDto": {
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "timestamp",
+          "value"
+        ],
+        "title": "PairStudyPointDto",
+        "type": "object"
+      },
+      "PairStudyQuestionDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_a": {
+            "title": "Asset A",
+            "type": "string"
+          },
+          "asset_b": {
+            "title": "Asset B",
+            "type": "string"
+          },
+          "available_venues": {
+            "items": {
+              "enum": [
+                "binance",
+                "gate"
+              ],
+              "type": "string"
+            },
+            "title": "Available Venues",
+            "type": "array"
+          },
+          "canonical_pair": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Canonical Pair",
+            "type": "array"
+          },
+          "coordinate_asset": {
+            "title": "Coordinate Asset",
+            "type": "string"
+          },
+          "horizon": {
+            "enum": [
+              "short",
+              "medium",
+              "swing"
+            ],
+            "title": "Horizon",
+            "type": "string"
+          },
+          "interval": {
+            "title": "Interval",
+            "type": "string"
+          },
+          "orientation": {
+            "title": "Orientation",
+            "type": "string"
+          },
+          "safe_cutoff": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe Cutoff"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_a",
+          "asset_b",
+          "canonical_pair",
+          "orientation",
+          "horizon",
+          "venue",
+          "available_venues",
+          "coordinate_asset",
+          "interval",
+          "safe_cutoff"
+        ],
+        "title": "PairStudyQuestionDto",
+        "type": "object"
+      },
+      "PairStudyReasonDto": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "PairStudyReasonDto",
+        "type": "object"
+      },
+      "PairStudyReferenceSeriesDto": {
+        "additionalProperties": false,
+        "properties": {
+          "asset": {
+            "title": "Asset",
+            "type": "string"
+          },
+          "base_to_reference": {
+            "items": {
+              "$ref": "#/components/schemas/PairStudyPointDto"
+            },
+            "title": "Base To Reference",
+            "type": "array"
+          },
+          "base_to_reference_log": {
+            "items": {
+              "$ref": "#/components/schemas/PairStudyPointDto"
+            },
+            "title": "Base To Reference Log",
+            "type": "array"
+          },
+          "generation": {
+            "$ref": "#/components/schemas/PairStudyGenerationRefDto"
+          },
+          "quote_to_reference": {
+            "items": {
+              "$ref": "#/components/schemas/PairStudyPointDto"
+            },
+            "title": "Quote To Reference",
+            "type": "array"
+          },
+          "quote_to_reference_log": {
+            "items": {
+              "$ref": "#/components/schemas/PairStudyPointDto"
+            },
+            "title": "Quote To Reference Log",
+            "type": "array"
+          }
+        },
+        "required": [
+          "asset",
+          "generation",
+          "base_to_reference",
+          "quote_to_reference",
+          "base_to_reference_log",
+          "quote_to_reference_log"
+        ],
+        "title": "PairStudyReferenceSeriesDto",
+        "type": "object"
+      },
+      "PairStudyRelationshipDto": {
+        "additionalProperties": false,
+        "properties": {
+          "log_ratio_current": {
+            "title": "Log Ratio Current",
+            "type": "number"
+          },
+          "normalized_base_current": {
+            "title": "Normalized Base Current",
+            "type": "number"
+          },
+          "normalized_quote_current": {
+            "title": "Normalized Quote Current",
+            "type": "number"
+          },
+          "raw_ratio_current": {
+            "title": "Raw Ratio Current",
+            "type": "number"
+          },
+          "residual_ols": {
+            "$ref": "#/components/schemas/PairStudyObservationDto"
+          },
+          "rolling_log_ratio": {
+            "$ref": "#/components/schemas/PairStudyObservationDto"
+          }
+        },
+        "required": [
+          "raw_ratio_current",
+          "log_ratio_current",
+          "normalized_base_current",
+          "normalized_quote_current",
+          "rolling_log_ratio",
+          "residual_ols"
+        ],
+        "title": "PairStudyRelationshipDto",
         "type": "object"
       },
       "PaperMarketMetadataDto": {
@@ -5602,6 +6235,140 @@
           "maintenance"
         ],
         "title": "ProductMarketDataDto",
+        "type": "object"
+      },
+      "ProductPairStudyContextDto": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_lens": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PairStudyAnalysisLensDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/PairStudyDataDto"
+          },
+          "directory_id": {
+            "title": "Directory Id",
+            "type": "string"
+          },
+          "economic_expression": {
+            "$ref": "#/components/schemas/PairStudyEconomicExpressionDto"
+          },
+          "question": {
+            "$ref": "#/components/schemas/PairStudyQuestionDto"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PairStudyRelationshipDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "schema_version": {
+            "const": "qap.api.product_pair_study_context.v1",
+            "default": "qap.api.product_pair_study_context.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "data",
+          "relationship",
+          "analysis_lens",
+          "economic_expression",
+          "directory_id"
+        ],
+        "title": "ProductPairStudyContextDto",
+        "type": "object"
+      },
+      "ProductPairStudySeriesDto": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_reference": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PairStudyReferenceSeriesDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "asset_a_path": {
+            "$ref": "#/components/schemas/PairStudyGenerationRefDto"
+          },
+          "asset_b_path": {
+            "$ref": "#/components/schemas/PairStudyGenerationRefDto"
+          },
+          "base_source_fingerprint": {
+            "title": "Base Source Fingerprint",
+            "type": "string"
+          },
+          "log_ratio": {
+            "items": {
+              "$ref": "#/components/schemas/PairStudyPointDto"
+            },
+            "title": "Log Ratio",
+            "type": "array"
+          },
+          "normalized_base": {
+            "items": {
+              "$ref": "#/components/schemas/PairStudyPointDto"
+            },
+            "title": "Normalized Base",
+            "type": "array"
+          },
+          "normalized_quote": {
+            "items": {
+              "$ref": "#/components/schemas/PairStudyPointDto"
+            },
+            "title": "Normalized Quote",
+            "type": "array"
+          },
+          "question": {
+            "$ref": "#/components/schemas/PairStudyQuestionDto"
+          },
+          "quote_source_fingerprint": {
+            "title": "Quote Source Fingerprint",
+            "type": "string"
+          },
+          "ratio": {
+            "items": {
+              "$ref": "#/components/schemas/PairStudyPointDto"
+            },
+            "title": "Ratio",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "qap.api.product_pair_study_series.v1",
+            "default": "qap.api.product_pair_study_series.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "asset_a_path",
+          "asset_b_path",
+          "base_source_fingerprint",
+          "quote_source_fingerprint",
+          "ratio",
+          "log_ratio",
+          "normalized_base",
+          "normalized_quote",
+          "analysis_reference"
+        ],
+        "title": "ProductPairStudySeriesDto",
         "type": "object"
       },
       "QualificationDto": {
@@ -10032,6 +10799,248 @@
         "summary": "Refresh Product Market Data",
         "tags": [
           "product-market-data"
+        ]
+      }
+    },
+    "/api/product-pair-study/context": {
+      "get": {
+        "operationId": "getProductPairStudyContext",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "asset_a",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Asset A",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset_b",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Asset B",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "horizon",
+            "required": true,
+            "schema": {
+              "enum": [
+                "short",
+                "medium",
+                "swing"
+              ],
+              "title": "Horizon",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "orientation",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minLength": 3,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Orientation"
+            }
+          },
+          {
+            "in": "query",
+            "name": "venue",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "binance",
+                    "gate"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Venue"
+            }
+          },
+          {
+            "in": "query",
+            "name": "analysis_reference",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Analysis Reference"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductPairStudyContextDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Product Pair Study Context",
+        "tags": [
+          "product-pair-study"
+        ]
+      }
+    },
+    "/api/product-pair-study/series": {
+      "get": {
+        "operationId": "getProductPairStudySeries",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "asset_a",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Asset A",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset_b",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Asset B",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "horizon",
+            "required": true,
+            "schema": {
+              "enum": [
+                "short",
+                "medium",
+                "swing"
+              ],
+              "title": "Horizon",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "orientation",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minLength": 3,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Orientation"
+            }
+          },
+          {
+            "in": "query",
+            "name": "venue",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "binance",
+                    "gate"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Venue"
+            }
+          },
+          {
+            "in": "query",
+            "name": "analysis_reference",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Analysis Reference"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductPairStudySeriesDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Product Pair Study Series",
+        "tags": [
+          "product-pair-study"
         ]
       }
     },

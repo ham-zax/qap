@@ -94,7 +94,7 @@ def _execute(
         else tuple(AssetId(value) for value in command.asset_ids)
     )
     analysis_reference_ids = tuple(
-        AssetId(value) for value in command.analysis_reference_ids
+        AssetId(value) for value in (command.analysis_reference_ids or ())
     )
     try:
         projection = (

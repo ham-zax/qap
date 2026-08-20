@@ -382,16 +382,16 @@ class ProductMarketDataPreparation:
                         scope.directory_observed_at,
                         instrument.directory_observed_at,
                     )
-                    shared_end = shared_end_by_venue.get(
-                        instrument.instrument.venue,
-                        _aligned_completed_end(
-                            observed_at,
-                            longest_interval,
-                            now=operation_now,
-                        ),
-                    )
                     for requirement in requirements:
-                        end_exclusive = shared_end
+                        end_exclusive = (
+                            _aligned_completed_end(
+                                observed_at,
+                                requirement.interval,
+                                now=operation_now,
+                            )
+                            if asset_ids is None
+                            else shared_end_by_venue[instrument.instrument.venue]
+                        )
                         start = end_exclusive - requirement.lookback
                         dataset_id = product_dataset_id(
                             instrument, requirement.interval

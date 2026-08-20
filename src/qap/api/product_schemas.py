@@ -101,7 +101,7 @@ class AssetAdmissionRequestDto(ProductApiDto):
 class MarketDataPreparationRequestDto(ProductApiDto):
     horizons: tuple[Literal["short", "medium", "swing"], ...]
     asset_ids: tuple[str, str] | None = None
-    analysis_reference_ids: tuple[str, ...] = ()
+    analysis_reference_ids: tuple[str, ...] | None = None
 
     @field_validator("horizons")
     @classmethod
@@ -135,6 +135,8 @@ class MarketDataPreparationRequestDto(ProductApiDto):
     @field_validator("analysis_reference_ids", mode="before")
     @classmethod
     def normalize_analysis_reference_ids(cls, value: object) -> object:
+        if value is None:
+            return None
         if not isinstance(value, (tuple, list)):
             raise ValueError("analysis_reference_ids must be a list or tuple")
         items = cast(tuple[object, ...] | list[object], value)

@@ -58,16 +58,14 @@ class PairStudyDataReader:
         asset: AssetId,
         venue: str,
     ) -> ResolvedProductInstrument | None:
-        return next(
-            (
-                item
-                for item in scope.instruments
-                if item.instrument.venue == venue
-                and item.instrument.base == asset
-                and item.instrument.quote == _PAIR_COORDINATE
-            ),
-            None,
+        matches = tuple(
+            item
+            for item in scope.instruments
+            if item.instrument.venue == venue
+            and item.instrument.base == asset
+            and item.instrument.quote == _PAIR_COORDINATE
         )
+        return matches[0] if len(matches) == 1 else None
 
     @staticmethod
     def _direct_instrument(
@@ -75,7 +73,6 @@ class PairStudyDataReader:
         *,
         asset_a: AssetId,
         asset_b: AssetId,
-        orientation: PairOrientation,
         venue: str,
     ) -> ResolvedProductInstrument | None:
         direct = tuple(
@@ -84,17 +81,9 @@ class PairStudyDataReader:
             if item.instrument.venue == venue
             and {item.instrument.base, item.instrument.quote} == {asset_a, asset_b}
         )
-        if not direct:
+        if len(direct) != 1:
             return None
-        return next(
-            (
-                item
-                for item in direct
-                if item.instrument.base == orientation.base
-                and item.instrument.quote == orientation.quote
-            ),
-            sorted(direct, key=lambda item: item.instrument.venue_symbol)[0],
-        )
+        return direct[0]
 
     @classmethod
     def _available_venues(
@@ -155,7 +144,8 @@ class PairStudyDataReader:
         )
         if not available:
             raise ProductPairStudyError(
-                "No supported venue has both selected asset/USDT paths."
+                "No supported venue has one unique current asset/USDT path for "
+                "both selected assets."
             )
         requested = None if venue is None else venue.strip().lower()
         selected_venue = available[0] if requested is None else requested
@@ -206,7 +196,6 @@ class PairStudyDataReader:
                 scope,
                 asset_a=asset_a,
                 asset_b=asset_b,
-                orientation=orientation,
                 venue=selected_venue,
             ),
             reference_asset=analysis_reference,
