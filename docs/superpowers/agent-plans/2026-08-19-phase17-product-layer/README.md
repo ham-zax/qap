@@ -7,8 +7,8 @@
 **Legacy salvage evidence:** `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`
 **Research cockpit evidence:** `docs/research/2026-08-20-qap-research-cockpit-investigation.md`
 **Frozen design base:** `1bb6e78`
-**Execution shape:** M0-M9 and M10-A are integrated, and M10-0 is approved. Wave 13 is one-writer Product implementation: Agent A owns M10-B in an isolated worktree from the post-M10-A coordination base. Agent B's M10-A branch is complete/historical. M10-C remains blocked until M10-B integrates.
-**Current wave:** 13 — M10-B Research Cockpit + Experiment Lab implementation
+**Execution shape:** M0-M9 and M10-A/B are integrated, and M10-0 is approved. Wave 14 is one proof writer: Agent B owns M10-C capability/fidelity evidence in an isolated worktree from the post-M10-B coordination base. Agent A's M10-B branch is complete/historical. M10-D remains human-led and blocked until M10-C is approved.
+**Current wave:** 14 — M10-C capability/fidelity proof
 
 ## Current frontier
 
@@ -16,8 +16,8 @@
 |---|---|---|---|---|---|---|
 | M10-0 Research Cockpit + Experiment Contract amendment | design contract | complete / approved | complete | `main` | frozen contract | none |
 | Agent B — M10-A Typed Research Recipe + capability preflight | executable backend | complete / integrated at `12ed08a` | complete | historical clean worktree | no active ownership | M10-0 approved |
-| Agent A — M10-B Research Cockpit + Experiment Lab | mixed Product/API read composition | ready / current writer | now | `/home/hamza/repo/qap/.worktrees/phase17-m10b-research-cockpit` | keeps `main` stable while the Product surface and minimal read projections change | M10-A integrated |
-| M10-C capability/fidelity proof | acceptance/research | blocked | after M10-A/B | stable integrated build | proves current, unsupported, constitution-blocked, paper-replication/adaptation cases | M10-A and M10-B |
+| Agent A — M10-B Research Cockpit + Experiment Lab | mixed Product/API read composition | complete / integrated at `f39b4b4` | complete | historical clean worktree | no active ownership | M10-A integrated |
+| Agent B — M10-C capability/fidelity proof | research/acceptance evidence | ready / current proof writer | now | `/home/hamza/repo/qap/.worktrees/phase17-m10c-capability-proof` | isolates temporary proof workspaces/reporting from stable integrated `main` | M10-A and M10-B integrated |
 | M10-D representative-user closure | human-led acceptance | blocked | after M10-C | stable integrated Product build | validates corrected research/experiment tasks with actual/likely users | M10-C |
 
 ## Dependency map
@@ -59,10 +59,10 @@ M10-0 Research Cockpit + Experiment Contract design         APPROVED
 M10-A typed Research Recipe + capability preflight          COMPLETE / INTEGRATED 12ed08a
         |
         v
-M10-B Research Cockpit + Experiment Lab                     CURRENT WRITER
+M10-B Research Cockpit + Experiment Lab                     COMPLETE / INTEGRATED f39b4b4
         |
         v
-M10-C capability/fidelity proof with real methods
+M10-C capability/fidelity proof with real methods           CURRENT PROOF
         |
         v
 M10-D representative-user comprehension / authority closure
@@ -88,8 +88,8 @@ Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. The first real-user
 | M9 process/state ownership + packaging decision | complete / integrated at `d9cb44e`; no desktop shell selected | — |
 | M10-0 Research Cockpit + Experiment Contract design | complete / approved at Wave-12 base | — |
 | M10-A typed Research Recipe + capability preflight | complete / integrated at `12ed08a` | Agent B finished |
-| M10-B Research Cockpit + Experiment Lab | current | Agent A writer |
-| M10-C capability/fidelity proof with real methods | blocked on M10-A/B | acceptance/research pass; no method implementation implied |
+| M10-B Research Cockpit + Experiment Lab | complete / integrated at `f39b4b4` | Agent A finished |
+| M10-C capability/fidelity proof with real methods | current | Agent B proof writer; no method implementation implied |
 | M10-D representative-user comprehension/authority closure | final / blocked | human-led acceptance |
 
 ## Shared contracts
@@ -107,27 +107,23 @@ Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. The first real-user
 
 ## Workspace policy
 
-M10-0 is approved and M10-A is integrated at `12ed08a`. Agent A owns the only writable current-wave workspace at `/home/hamza/repo/qap/.worktrees/phase17-m10b-research-cockpit`. Agent B's M10-A worktree is complete/historical and must not be used as a second writer. The frozen contract preserves both exact declaration identity and current QAP family semantics: recipes compile only for `pair | fixed_basket`; Universal Scan remains scanner-owned; `SupportReportV1` is compositional; each exact recipe/compilation is immutable; `research_family_id` remains stable across intentional siblings and the selected final-OOS descendant; and final-OOS is single-precommitted-variant only with an exact frozen prior-compilation reference. M10-B may add only the smallest Product/application read projections needed to expose M10-A's already-owned capability/default/lineage truth; it must not create a second scientific registry or lineage store. Copula, Palazzi-style reproduction, Momentum variants, or any other method must remain classified by the existing capability layer; M10 does not preapprove implementing them.
+M10-0 is approved; M10-A is integrated at `12ed08a`; M10-B is integrated at `f39b4b4`. Agent B owns the only writable current-wave workspace at `/home/hamza/repo/qap/.worktrees/phase17-m10c-capability-proof`. Agent A's M10-B worktree is complete/historical and must not be used as a second writer. M10-C is an evidence mission: it may create temporary deterministic Product workspaces and the durable M10-C report, but it must not modify production source to make a proof case pass. The frozen recipe/scanner/final-OOS contracts remain authoritative; missing methods remain missing methods.
 
 ## Integration policy
 
-M1 is integrated at `461a33c`, M2 at `8e45c36`, the M3 shared foundation at `1a476db`, Binance at `f1fab24`, Gate is integrated from original venue commit `30297cd`, final adaptive M3 orchestration at `c1d97eb`, M4 at `d49e597` plus planner closure `c3c81ca`, M5 at `6b40028`, M6 at `c1db648`, M7 at `d5fbddc`, M8-0 at `01e8d3e`, M8-A at `2aa60ea`, M8-B centrally at `0efd728` plus claim-wording closure `3b7c32d`, M9 at `d9cb44e`, and M10-A at `12ed08a`.
+M1 is integrated at `461a33c`, M2 at `8e45c36`, the M3 shared foundation at `1a476db`, Binance at `f1fab24`, Gate is integrated from original venue commit `30297cd`, final adaptive M3 orchestration at `c1d97eb`, M4 at `d49e597` plus planner closure `c3c81ca`, M5 at `6b40028`, M6 at `c1db648`, M7 at `d5fbddc`, M8-0 at `01e8d3e`, M8-A at `2aa60ea`, M8-B centrally at `0efd728` plus claim-wording closure `3b7c32d`, M9 at `d9cb44e`, M10-A at `12ed08a`, and M10-B at `f39b4b4`.
 
-Full M8 and M9 are closed. M10-0 is approved and frozen. M10-A is integrated on `main` at `12ed08a`. Its public write/check contract is now the stable source for M10-B. Integration review confirmed support-check, recipe launch, generic operation result (`compilation_sha256` + `run_ids[]`), and generated TypeScript recipe/support types. It also confirmed that capability/default descriptors and immutable compilation-lineage reads are internal-only today; M10-B owns only the smallest read-only application projection needed to present those truths without duplicating them in React.
+Full M8 and M9 are closed. M10-0 is approved and frozen. M10-A and M10-B are integrated on `main` at `12ed08a` and `f39b4b4`. M10-B closed the Product-read gaps with backend-owned context/lineage projections, exact-first shared asset selection, Pair Research, Experiment Lab, operation/result navigation, and progressive lineage disclosure while keeping Universal Scan scanner-owned. M10-C now proves those integrated contracts; it does not redesign them.
 
 ## Execution lifetime policy
 
-Agent A M10-B uses Persistent Agent Loop because it is the current writable vertical slice. Status questions or compatible steering do not implicitly stop the mission. Agent B has no active writer ownership after M10-A integration. M10-D remains human-led acceptance; never fabricate participant reactions or usability metrics.
+Agent B M10-C uses Persistent Agent Loop because the proof may span multiple deterministic cases, browser observations, and evidence/report checkpoints. Status questions or compatible steering do not implicitly stop the mission. Agent A has no active writer ownership after M10-B integration. M10-D remains human-led acceptance; never fabricate participant reactions or usability metrics.
 
 ## Verification policy
 
-### M10-B — Research Cockpit + Experiment Lab
-
-Consume integrated M10-A rather than recreating it. Build Pair Research first, Universal Scan second through existing scanner authority, and Experiment Lab over backend-described `pair | fixed_basket` recipe components. Use one shared exact-first asset selector, preserve unfinished pair draft through genuine identity/admission/data setup, follow `run_research_recipe` through existing operations, and expose recipe/compilation lineage only through backend-owned read projections and progressive disclosure. No React capability registry or scientific precedence is authorized.
-
 ### M10-C — capability/fidelity proof
 
-Use representative recipes rather than new method implementations: a current rolling-residual recipe, current momentum semantics, known-unimplemented Student-t Copula, a Palazzi exact-replication recipe with simultaneous reasons, a separately declared adaptation with derived-from recipe identity, an invalid final-OOS multi-variant recipe, and an unknown method ID.
+Use the eight frozen cases rather than new method implementations: current rolling-residual pair, current slow-momentum semantics, known-unimplemented Student-t Copula, Palazzi exact replication with simultaneous reasons, separately declared adaptation lineage, invalid multi-variant final-OOS, development-to-final-OOS family continuity, and an unknown method ID. Verify integrated M10-B presentation preserves backend support truth and exact run/lineage references. A blocking mismatch is `REQUEST CHANGES`, not permission to patch production code inside the proof mission.
 
 ### M10-D — representative-user comprehension / authority closure
 
@@ -152,8 +148,9 @@ The whole Phase-17 implementation is decomposed at low resolution below. Detaile
 | **10 — complete** | **Write M8-A:** History + utility Activity with research-learning semantics | **Write M8-B:** objective-aware Product Portfolio presentation convergence | full M8 integrated through `3b7c32d` |
 | **11 — complete** | **M10-0 Research Cockpit + Experiment Contract amendment/reviews** | contract reconnaissance/review | approved; family continuity and final-OOS selection lineage frozen |
 | **12 — complete** | **Agent B writes M10-A typed Research Recipe + capability preflight** | **Agent A read-only M10-B reconnaissance** | M10-A integrated at `12ed08a`; Agent A reconnaissance reconciled against the actual public contract |
-| **13 — current** | **Agent A writes M10-B Research Cockpit + Experiment Lab** | no second writer | one Product/API-read vertical slice; M10-C waits for the integrated M10-B surface |
-| **14 — closure** | integration/remediation only if approved | **M10-D human-led acceptance** | Phase 17 closes only after corrected research/experiment tasks and protected meanings are demonstrated |
+| **13 — complete** | **Agent A writes M10-B Research Cockpit + Experiment Lab** | no second writer | M10-B integrated at `f39b4b4`; exact-first Pair Research / scanner-owned Universal Scan / Experiment Lab are available |
+| **14 — current** | **Agent B runs M10-C capability/fidelity proof** | no second writer | prove the eight frozen cases against integrated M10-A/B; source remediation is not part of proof |
+| **15 — closure** | integration/remediation only if M10-C requests changes | **M10-D human-led acceptance** | Phase 17 closes only after corrected research/experiment tasks and protected meanings are demonstrated |
 
 This map is a dependency plan, not permission to start future writers early. The planner must re-evaluate each wave from returned commits/reports and may collapse or reshape later waves when repository reality makes the original split unnecessary.
 
@@ -161,9 +158,8 @@ Important remaining work now:
 
 - M10-0 Research Cockpit + Experiment Contract is approved and frozen.
 - M10-A typed Research Recipe / capability preflight is complete and integrated at `12ed08a`; executable objects remain only `pair | fixed_basket`.
-- M10-B Pair Research / Universal Scan reshaping / Experiment Lab is the current writable frontier under Agent A. Universal Scan remains existing scanner authority and Focus Scan remains deferred unless mechanically reusable.
-- M10-B must consume M10-A's support/run contract and may expose only the minimum backend-owned descriptor/default/lineage reads needed by the Product; no React scientific registry or local precedence.
-- M10-C must prove compositional support/fidelity reporting using current methods, Student-t Copula as known-unimplemented, Palazzi exact/adapted cases, an invalid final-OOS multi-variant recipe, and an unknown method.
+- M10-B Pair Research / Universal Scan reshaping / Experiment Lab is complete and integrated at `f39b4b4`; Universal Scan remains existing scanner authority and Focus Scan remains deferred unless mechanically reusable.
+- M10-C is the current proof frontier under Agent B. It must prove all eight frozen cases, including final-OOS family continuity, and verify the integrated Product renders backend truth without implementing missing methods.
 - M10-D representative-user acceptance remains final and blocked.
 - Tauri/desktop packaging remains deferred; current Product-V1 evidence supports the hardened launcher/browser model.
 
@@ -188,4 +184,5 @@ Important remaining work now:
 - `2026-08-20` — M10-0 contract review requested four major corrections and all four are now incorporated for re-review: recipe compilation is constrained to `pair | fixed_basket` while Universal/Focus discovery stays scanner-owned; `SupportReportV1` is compositional instead of precedence-based; `ResearchRecipeV1` plus immutable compilation lineage binds methodology to family/manifests; and `final_oos` rejects multi-variant/search recipes before compilation. The capability catalog remains explanatory and delegates validation/composition to existing canonical owners.
 - `2026-08-20` — Final M10-0 re-review found one remaining lineage defect: deriving `research_family_id` from exact `recipe_sha256` would sever development-to-final-OOS family continuity and weaken the existing family+holdout guard. The contract now keeps exact recipe identity separate from stable family identity, adds immutable prior-compilation selection lineage for final OOS, and requires the same family ID to survive `[A,B]/development -> [A]/final_oos`. Agent B's M10-A reconnaissance is complete; implementation remains blocked pending Agent A's final approval.
 - `2026-08-20` — M10-A `12ed08a` returned complete and was fast-forward integrated. Integration review confirmed the stable public handoff: support-check, asynchronous recipe launch, completed operation result containing `compilation_sha256` + exact `run_ids[]`, and generated TypeScript recipe/support types. Agent A's reconnaissance also exposed one Product read gap: capability/default descriptors and immutable compilation-lineage are internal-only. Wave 13 therefore materializes one Agent-A M10-B writer that may add only the smallest read-only projections needed to present existing M10-A truth.
+- `2026-08-20` — M10-B `f39b4b4` returned complete, its previously missing post-commit status was freshly verified clean, and it was fast-forward integrated into `main`. Pair Research, scanner-owned Universal Scan reshaping, Experiment Lab, exact-first shared asset selection, just-in-time setup, exact recipe-operation result links, and advanced recipe/compilation lineage are now integrated. Wave 14 materializes one Agent-B M10-C proof writer; Agent A is idle/reviewer, and M10-D remains human-led.
 - `2026-08-20` — Agent A APPROVED M10-0 at `052aaaf` with no remaining blockers. Wave 12 materializes one M10-A writer (Agent B) plus concurrent read-only M10-B reconnaissance (Agent A). M10-B implementation and M10-C remain blocked until M10-A integrates.
