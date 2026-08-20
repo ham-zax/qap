@@ -9,8 +9,8 @@
 **Pair Study design:** `docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md`
 **Pair Study implementation plan:** `docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`
 **Frozen design base:** `1bb6e78`
-**Execution shape:** M0-M9 and M10-A/B/C are integrated, M10-0 is approved, and the Pair Study redesign is frozen. M11-A is integrated through `2f055d1` and M11-B study-first Product flow at `9890431`. Wave 18 is one serial M11-C contract/economics writer: add explicit relationship-input roles and transient USDT research authority, then reuse the existing `multi_asset_bridge` executor for honest two-leg Pair Research economics.
-**Current wave:** 18 — M11-C honest two-leg Pair Research economics
+**Execution shape:** M0-M9 and M10-A/B/C are integrated, M10-0 is approved, and Pair Study M11-A/B/C is integrated through `3095c98`. The W/PIXEL path now supports relationship study first and honest two-leg economics through the existing bridge executor after explicit transient USDT research authority. Wave 19 is one Product/read-composition writer for M11-D; no new economic/backend authority is expected.
+**Current wave:** 19 — M11-D integrated research completion
 
 ## Current frontier
 
@@ -24,8 +24,8 @@
 | M11-0 Pair Study design freeze | design contract | complete / approved at `df41d0c` | complete | historical clean worktree | frozen contract | none |
 | M11-A Pair Study backend/API | executable Product/backend | complete / integrated through `2f055d1` | complete | historical clean worktree | no active ownership | M11-0 |
 | Agent A — M11-B Pair Research Product flow | mixed Product/browser/API consumption | complete / integrated at `9890431` | complete | historical clean worktree | no active ownership | M11-A integrated |
-| Agent A — M11-C honest two-leg Pair Research economics | mixed experiment contract / Product authority / minimal Product UI | ready / current writer | now | `/home/hamza/repo/qap/.worktrees/phase17-m11c-pair-bridge-economics` | isolates a serial manifest/compiler/state/runtime change from protected live-session state on `main` | M11-A/B integrated |
-| M11-D integrated research-completion evidence | mixed Product/read composition | blocked | after M11-C | future implementation workspace | depends on final economic contract | M11-C |
+| Agent A — M11-C honest two-leg Pair Research economics | mixed experiment contract / Product authority / minimal Product UI | complete / integrated through `3095c98` | complete | historical clean worktree | no active ownership | M11-A/B integrated |
+| Agent A — M11-D integrated research completion | mixed Product/read composition | ready / current writer | now | `/home/hamza/repo/qap/.worktrees/phase17-m11d-pair-research-completion` | isolates headed Product/runtime work from protected live-session state on `main` | M11-C integrated |
 | M10-D representative-user closure | human-led acceptance | blocked / rerun after M11 | after M11 integration | stable integrated `main` | must use real participants | M11-A/B/C/D |
 
 ## Dependency map
@@ -88,16 +88,16 @@ M11-A Pair Study backend/API                                COMPLETE / INTEGRATE
 M11-B Pair Research Product flow                            COMPLETE / INTEGRATED 9890431
         |
         v
-M11-C real two-leg pair economics                           CURRENT
+M11-C real two-leg pair economics                           COMPLETE / INTEGRATED 3095c98
         |
         v
-M11-D integrated research-completion evidence               BLOCKED
+M11-D integrated research-completion evidence               CURRENT
         |
         v
 M10-D representative-user comprehension / authority closure RERUN / FINAL HUMAN GATE
 ```
 
-Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. M10-0/A/B/C are also complete. M11-0 froze the corrected Pair Study boundary, M11-A provides scoped backend Pair Study evidence, and M11-B now exposes that study-first flow on Research. The current frontier is M11-C: make the same exact pair evidence economically replayable through two real same-venue USDT legs only when explicit transient bridge authority exists.
+Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. M10-0/A/B/C are also complete. M11-0 froze the corrected Pair Study boundary; M11-A/B made W/PIXEL study-first; M11-C now admits truthful direct-or-two-leg economics through existing QAP authority. The current frontier is M11-D: present the complete question → relationship → experiment → economics → conclusion chain without inventing new verdict or promotion authority.
 
 ## Milestone progress
 
@@ -123,8 +123,8 @@ Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. M10-0/A/B/C are als
 | M11-0 Pair Study research workflow design | complete / approved at `df41d0c` | — |
 | M11-A pair-scoped preparation + Pair Study backend/API | complete / integrated through `2f055d1` | — |
 | M11-B Pair Research Product flow + current values | complete / integrated at `9890431` | — |
-| M11-C real two-leg Pair Research economics | current | Agent A serial contract/economics writer |
-| M11-D integrated research-completion evidence | blocked | after M11-C |
+| M11-C real two-leg Pair Research economics | complete / integrated through `3095c98` | — |
+| M11-D integrated research-completion evidence | current | Agent A Product/read-composition writer |
 | M10-D representative-user comprehension/authority closure | blocked / rerun after M11 | human moderator + representative users |
 
 ## Shared contracts
@@ -146,17 +146,17 @@ Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. M10-0/A/B/C are als
 
 ## Workspace policy
 
-M10-0 is approved; M10-A is integrated at `12ed08a`; M10-B at `f39b4b4`; M10-C at `3e07878`; M11-A is integrated through `2f055d1`; M11-B at `9890431`. M11-C is the only current writer. Its isolated worktree exists because `main` contains protected live-session `catalog.json` and `product-market-data/` state and this mission changes manifest/compiler/Product authority plus runtime economics; no concurrent production writer is authorized.
+M10-0 is approved; M10-A is integrated at `12ed08a`; M10-B at `f39b4b4`; M10-C at `3e07878`; M11-A is integrated through `2f055d1`; M11-B at `9890431`; M11-C through `3095c98`. M11-D is the only current writer. Its isolated worktree exists because `main` contains protected live-session `catalog.json` and `product-market-data/` state and the mission requires headed Product/runtime evidence; no concurrent production writer is authorized.
 
 ## Integration policy
 
-M1 is integrated at `461a33c`, M2 at `8e45c36`, the M3 shared foundation at `1a476db`, Binance at `f1fab24`, Gate is integrated from original venue commit `30297cd`, final adaptive M3 orchestration at `c1d97eb`, M4 at `d49e597` plus planner closure `c3c81ca`, M5 at `6b40028`, M6 at `c1db648`, M7 at `d5fbddc`, M8-0 at `01e8d3e`, M8-A at `2aa60ea`, M8-B centrally at `0efd728` plus claim-wording closure `3b7c32d`, M9 at `d9cb44e`, M10-A at `12ed08a`, M10-B at `f39b4b4`, M10-C at `3e07878`, M11-A through `2f055d1`, and M11-B at `9890431`.
+M1 is integrated at `461a33c`, M2 at `8e45c36`, the M3 shared foundation at `1a476db`, Binance at `f1fab24`, Gate is integrated from original venue commit `30297cd`, final adaptive M3 orchestration at `c1d97eb`, M4 at `d49e597` plus planner closure `c3c81ca`, M5 at `6b40028`, M6 at `c1db648`, M7 at `d5fbddc`, M8-0 at `01e8d3e`, M8-A at `2aa60ea`, M8-B centrally at `0efd728` plus claim-wording closure `3b7c32d`, M9 at `d9cb44e`, M10-A at `12ed08a`, M10-B at `f39b4b4`, M10-C at `3e07878`, M11-A through `2f055d1`, M11-B at `9890431`, and M11-C through `3095c98`.
 
-Full M8 and M9 are closed. M10-0 is approved and frozen. M10-A, M10-B, and M10-C are integrated on `main` at `12ed08a`, `f39b4b4`, and `3e07878`; M11-A is integrated through `2f055d1` and M11-B at `9890431`. M11-C is now ready as the sole serial writer. Representative-user M10-D remains blocked until M11 completes.
+Full M8 and M9 are closed. M10-0 is approved and frozen. M10-A, M10-B, and M10-C are integrated on `main` at `12ed08a`, `f39b4b4`, and `3e07878`; M11-A is integrated through `2f055d1`, M11-B at `9890431`, and M11-C through `3095c98`. M11-D is now ready as the sole writer. Representative-user M10-D remains blocked until M11 completes.
 
 ## Execution lifetime policy
 
-M11-C uses Persistent Agent Loop because it owns one end-to-end contract/runtime/economic proof and may need a durable API/Product runtime plus repeated steering. M11-D remains blocked. Human M10-D remains the final authority after M11 integration; never fabricate participant reactions or usability metrics.
+M11-D uses Persistent Agent Loop because it owns one end-to-end Product/browser research-completion flow and may need a durable API/web runtime plus repeated steering. Human M10-D remains the final authority after M11 integration; never fabricate participant reactions or usability metrics.
 
 ## Verification policy
 
@@ -194,8 +194,8 @@ The whole Phase-17 implementation is decomposed at low resolution below. Detaile
 | **16 — complete** | **M11-0 Pair Study design freeze** | no production writer | approved at `df41d0c`; relationship study is separated from economic replay |
 | **17a — complete** | **M11-A Pair Study backend/API** | no second writer | integrated through `2f055d1`; pair-scoped preparation and immediate current relationship evidence are available |
 | **17b — complete** | **Agent A M11-B Pair Research Product flow** | no second writer | integrated at `9890431`; study-first W/PIXEL Product flow is proven without direct-market gating |
-| **18 — current contract implementation** | **Agent A M11-C real two-leg Pair Research economics** | serial writer only | additive relationship-input role + explicit transient USDT authority + existing `multi_asset_bridge` executor |
-| **19 — blocked integration/acceptance** | **M11-D research-completion evidence then M10-D human rerun** | human final gate after integration | user completes the research question without developer coaching |
+| **18 — complete** | **Agent A M11-C real two-leg Pair Research economics** | serial writer only | integrated through `3095c98`; explicit relationship-input role, transient USDT authority and existing `multi_asset_bridge` economics proven |
+| **19 — current integration** | **Agent A M11-D research-completion evidence** | one Product/read-composition writer | user can finish the W/PIXEL development question on Research; human M10-D follows after integration |
 
 This map is a dependency plan, not permission to start future writers early. The planner must re-evaluate each wave from returned commits/reports and may collapse or reshape later waves when repository reality makes the original split unnecessary.
 
@@ -207,7 +207,7 @@ Important remaining work now:
 - M10-C is complete and integrated at `3e07878`; all eight frozen cases passed without production remediation.
 - M10-D first representative-user evidence returned `UX REMEDIATION REQUIRED`. Candidate remediation `6609a1c` is useful evidence but no longer the final architecture path.
 - M11-0 Pair Study design is approved at `df41d0c`; M11-A is complete and integrated through `2f055d1` after central review closure.
-- M11-B Pair Research Product flow is complete and integrated at `9890431`; M11-C is the current frontier. M11-D remains blocked and final human M10-D reruns only after M11 integration.
+- M11-B Pair Research Product flow is complete at `9890431`; M11-C is complete through `3095c98`; M11-D is the current frontier. Final human M10-D reruns only after M11-D integration.
 - Tauri/desktop packaging remains deferred; current Product-V1 evidence supports the hardened launcher/browser model.
 
 ## Status log
@@ -239,3 +239,4 @@ Important remaining work now:
 - `2026-08-20` — Pair Study design `df41d0c` was approved as the M11-0 contract. M11-A returned at `2505528` with real Gate `W_USDT + PIXEL_USDT` evidence and no direct `W/PIXEL` market. Central review found three bounded integration seams: ambiguous current path/direct-market selection needed to fail closed, universe-wide preparation had unintentionally inherited selected-pair shared-cutoff semantics, and checked-in OpenAPI/generated TypeScript had drifted. Review closure `2f055d1` fixed those seams, preserved optional unscoped request compatibility, passed focused Ruff/format/Pyright/OpenAPI/typecheck/diff-hygiene checks, and was fast-forward integrated into `main`. No tests were run; protected live-session `catalog.json` and `product-market-data/` were untouched.
 - `2026-08-20` — Wave 17b materializes one M11-B Product/browser writer against the integrated Pair Study API. The mission must make Pair Study readiness primary on Research, preserve Universal Scan and Experiment Lab authority, and leave real two-leg economics/transient bridge authority to blocked M11-C.
 - `2026-08-20` — M11-B `9890431` returned complete and was centrally reviewed with no blocking finding. Its headed W/PIXEL evidence is against the exact unchanged commit: Pair Study relationship data is ready on Gate while direct-market replay remains unavailable, scoped preparation excludes unrelated BTC, and no M11-C concepts leaked into the Product slice. The commit was fast-forward integrated into `main`. Wave 18 materializes one serial M11-C writer to add explicit relationship-input roles and transient USDT research authority, then prove W/PIXEL economics through the existing `multi_asset_bridge` executor. No tests were run.
+- `2026-08-21` — M11-C `73d8f24` returned complete with real Gate W/PIXEL bridge economics, exact dual relationship/execution instrument roles, explicit persisted transient-USDT research authority, and unchanged existing executor/HODL/control semantics. Central review found one bounded authority-isolation seam: malformed research-authority state could raise through Pair Study and erase otherwise-valid relationship research. Review closure `3095c98` makes unreadable permission state fail closed as not granted, preserving Pair Study independence; focused Ruff/format/Pyright/diff-hygiene checks passed and no tests were run. M11-C was fast-forward integrated into `main`. Wave 19 materializes one M11-D Product/read-composition writer; existing experiment/result/lineage APIs are sufficient, so no new economic backend is expected.

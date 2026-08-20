@@ -1,6 +1,6 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M9 are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED after two contract reviews. M10-A Typed Research Recipe + Capability Preflight is complete and integrated at `12ed08a`. M10-B Research Cockpit + Experiment Lab is complete and integrated at `f39b4b4`. M10-C Capability/Fidelity Proof is APPROVED and integrated at `3e07878`. The Pair Study redesign is approved; M11-A pair-scoped preparation + Pair Study backend/API is integrated through `2f055d1`, and M11-B Pair Research Product flow is integrated at `9890431`. M11-C honest two-leg Pair Research economics is the current frontier; M10-D human closure remains blocked until M11 completes.
+**Status:** M0-M9 are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED after two contract reviews. M10-A Typed Research Recipe + Capability Preflight is complete and integrated at `12ed08a`. M10-B Research Cockpit + Experiment Lab is complete and integrated at `f39b4b4`. M10-C Capability/Fidelity Proof is APPROVED and integrated at `3e07878`. Pair Study M11-A/B/C is integrated through `3095c98`: pair-scoped relationship research, study-first Product flow, explicit transient USDT research authority, and honest two-leg bridge economics are available. M11-D integrated research-completion presentation is the current frontier; M10-D human closure remains blocked until M11 completes.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
@@ -1104,8 +1104,8 @@ M10-D representative-user comprehension/authority closure  BLOCKED / PAIR STUDY 
 M11-0 Pair Study design freeze                              COMPLETE / APPROVED
 M11-A pair-scoped preparation + Pair Study backend/API      COMPLETE / INTEGRATED 2f055d1
 M11-B Pair Research Product flow + current values           COMPLETE / INTEGRATED 9890431
-M11-C real two-leg pair economics via existing bridge       CURRENT
-M11-D integrated research-completion evidence               BLOCKED / AFTER M11-C
+M11-C real two-leg pair economics via existing bridge       COMPLETE / INTEGRATED 3095c98
+M11-D integrated research-completion evidence               CURRENT
 ```
 
 Do not start M5 visual/React restructuring before M1-M4 make workspace/universe/data/readiness state authoritative.
@@ -1160,7 +1160,7 @@ Phase 17 is complete only when:
 
 ## 20. Fresh-agent implementation mission
 
-> Phase 17 M0-M9 and M10-A/B/C are complete; M10-C is approved at `3e07878`. Pair Study design plus M11-A/B are integrated through `9890431`: selected-pair preparation, backend relationship evidence, and the study-first Product flow now work without a direct pair market or executable recipe. The current frontier is M11-C honest two-leg Pair Research economics, governed by `docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md` and `docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`. Reuse existing `multi_asset_bridge` execution, preserve M11-A/B study truth and M10-A support/final-OOS authority, and never synthesize a direct pair market. Preserve the M10-D acceptance protocol and rerun human acceptance only after M11 completes. Do not substitute developer self-review, an AI session, or fabricated usability metrics for final acceptance.
+> Phase 17 M0-M9 and M10-A/B/C are complete; M10-C is approved at `3e07878`. Pair Study M11-A/B/C is integrated through `3095c98`: selected-pair relationship evidence is independent of execution, and an admitted pair can now use either a ready real direct market or honest two-leg `multi_asset_bridge` economics with explicit transient USDT research authority. The current frontier is M11-D integrated research completion, governed by `docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md` and `docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`. Compose existing Pair Study, ExperimentResult, HODL/control, execution and lineage truth into one understandable conclusion; do not create a new verdict/economic engine or promotion state. Preserve the M10-D acceptance protocol and rerun human acceptance only after M11 completes. Do not substitute developer self-review, an AI session, or fabricated usability metrics for final acceptance.
 
 ## 21. One-screen status
 
