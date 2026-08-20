@@ -1,6 +1,6 @@
 # QAP Pair Study Research Workflow Implementation Plan
 
-**Status:** ACTIVE — M11-0 is approved/frozen and M11-A is complete/integrated through `2f055d1`; M11-B is the current implementation frontier.
+**Status:** ACTIVE — M11-0 is approved/frozen, M11-A is integrated through `2f055d1`, and M11-B is integrated at `9890431`; M11-C honest two-leg Pair Research economics is the current implementation frontier.
 
 **Phase:** 17 follow-on, proposed as M11 after the first M10-D human Pair Research session exposed an architecture gap.
 
