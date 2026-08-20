@@ -82,6 +82,7 @@ class SupportReasonCode(StrEnum):
     REQUIRES_OPERATOR_ASSET_APPROVAL = "requires_operator_asset_approval"
     REQUIRES_MARKET_DATA = "requires_market_data"
     REQUIRES_REAL_DIRECT_MARKET = "requires_real_direct_market"
+    REQUIRES_TRANSIENT_BRIDGE_AUTHORITY = "requires_transient_bridge_authority"
     CURRENT_CLAIM_INCOMPATIBLE = "current_claim_incompatible"
     STRICT_PIT_EVIDENCE_REQUIRED = "strict_pit_evidence_required"
     CANNOT_CLAIM_FAITHFUL_REPLICATION = "cannot_claim_faithful_replication"
@@ -276,7 +277,7 @@ class ResearchGenerationBindingV1(_FrozenModel):
 
 
 class ResearchDataBindingV1(_FrozenModel):
-    authority: Literal["current_approved", "strict_pit"]
+    authority: Literal["current_approved", "pair_study", "strict_pit"]
     claim_identity: str
     horizon: Literal["short", "medium", "swing"] | None = None
     readiness_id: str | None = None

@@ -15,7 +15,7 @@ from qap.scanner.protocol import ScannerHorizon
 DataStatus = Literal["ready", "needs_setup"]
 DirectMarketStatus = Literal["ready", "needs_data", "unavailable"]
 ReferenceStatus = Literal["ready", "needs_data", "unavailable"]
-BridgeStatus = Literal["not_available_in_current_recipe_contract"]
+BridgeStatus = Literal["ready", "needs_transient_authority", "unavailable"]
 
 
 @dataclass(frozen=True, slots=True)

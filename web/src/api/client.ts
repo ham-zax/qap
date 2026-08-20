@@ -8,6 +8,8 @@ type CurrentApprovedResearchRequestDto =
 type MarketDataPreparationRequestDto =
   components['schemas']['MarketDataPreparationRequestDto']
 type ProductMarketDataDto = components['schemas']['ProductMarketDataDto']
+type ProductPairStudyBridgeAuthorityDto =
+  components['schemas']['ProductPairStudyBridgeAuthorityDto']
 type ProductPairStudyContextDto = components['schemas']['ProductPairStudyContextDto']
 type ProductPairStudySeriesDto = components['schemas']['ProductPairStudySeriesDto']
 type ResearchRecipeCheckRequestDto =
@@ -187,14 +189,23 @@ export function createApiClient({
       researchObject: 'pair' | 'fixed_basket'
       horizon?: 'short' | 'medium' | 'swing'
       assets?: string[]
+      orientation?: string
+      venue?: 'binance' | 'gate'
     }) => {
       const query = new URLSearchParams({ research_object: options.researchObject })
       if (options.horizon) query.set('horizon', options.horizon)
       for (const asset of options.assets ?? []) query.append('asset', asset)
+      if (options.orientation) query.set('orientation', options.orientation)
+      if (options.venue) query.set('venue', options.venue)
       return request<ResearchRecipeProductContextDto>(
         `/api/research-recipes/product-context?${query}`,
       )
     },
+    grantProductPairStudyTransientUsdtAuthority: () =>
+      request<ProductPairStudyBridgeAuthorityDto>(
+        '/api/product-pair-study/transient-usdt-authority',
+        { method: 'POST' },
+      ),
     checkResearchRecipeSupport: (command: ResearchRecipeCheckRequestDto) =>
       request<ResearchRecipeCheckV1>('/api/research-recipes/check-support', {
         method: 'POST',

@@ -7,12 +7,18 @@ from fastapi import APIRouter, Query, Request
 
 from qap.api.errors import ApiBoundaryError
 from qap.api.product_pair_study_schemas import (
+    ProductPairStudyBridgeAuthorityDto,
     ProductPairStudyContextDto,
     ProductPairStudySeriesDto,
 )
 from qap.api.relationship_views import requested_pair_orientation
+from qap.api.settings import ApiSettings
 from qap.portfolio import AssetId, PairOrientation
 from qap.product_pair_study import ProductPairStudy, ProductPairStudyError
+from qap.product_research_authority import (
+    ProductResearchAuthority,
+    ProductResearchAuthorityError,
+)
 from qap.scanner.protocol import ScannerHorizon
 
 router = APIRouter(prefix="/api/product-pair-study", tags=["product-pair-study"])
@@ -23,6 +29,26 @@ def _owner(request: Request) -> ProductPairStudy:
     if not isinstance(owner, ProductPairStudy):
         raise RuntimeError("Product Pair Study is not configured")
     return owner
+
+
+def _authority(request: Request) -> ProductResearchAuthority:
+    owner = cast(object, request.app.state.product_research_authority)
+    if not isinstance(owner, ProductResearchAuthority):
+        raise RuntimeError("Product research authority is not configured")
+    return owner
+
+
+def _require_local_market(request: Request) -> None:
+    settings = cast(object, request.app.state.settings)
+    if not isinstance(settings, ApiSettings):
+        raise RuntimeError("API settings are not configured")
+    if settings.workspace_mode != "local_market":
+        raise ApiBoundaryError(
+            code="product_pair_study_authority_read_only",
+            message="Research bridge authority is available only in Local Market.",
+            status_code=409,
+            context={},
+        )
 
 
 def _analysis_reference(value: str | None) -> AssetId | None:
@@ -103,6 +129,30 @@ def product_pair_study_context(
     except ProductPairStudyError as exc:
         raise _error(exc, asset_a=asset_a, asset_b=asset_b, horizon=horizon) from exc
     return ProductPairStudyContextDto.model_validate(asdict(context))
+
+
+@router.post(
+    "/transient-usdt-authority",
+    response_model=ProductPairStudyBridgeAuthorityDto,
+    operation_id="grantProductPairStudyTransientUsdtAuthority",
+)
+def grant_transient_usdt_authority(
+    request: Request,
+) -> ProductPairStudyBridgeAuthorityDto:
+    _require_local_market(request)
+    try:
+        state = _authority(request).grant_transient_usdt_bridge()
+    except ProductResearchAuthorityError as exc:
+        raise ApiBoundaryError(
+            code="product_pair_study_bridge_authority_rejected",
+            message=str(exc),
+            status_code=409,
+            context={"bridge_asset": "USDT"},
+        ) from exc
+    assert state.transient_bridge_identity_version is not None
+    return ProductPairStudyBridgeAuthorityDto(
+        asset_identity_version=state.transient_bridge_identity_version
+    )
 
 
 @router.get(

@@ -221,29 +221,37 @@ def _named_relationship_inputs(
     loaded: LoadedExperimentData,
     config: Mapping[str, object],
 ) -> tuple[AlignedBarSeries, dict[AssetId, str]]:
-    raw_ids = config.get("evidence_instrument_ids")
+    explicit_ids = tuple(manifest.relationship_instrument_ids)
+    configured_ids = config.get("evidence_instrument_ids")
+    raw_ids: object = list(explicit_ids) if explicit_ids else configured_ids
     if isinstance(raw_ids, (str, bytes)) or not isinstance(raw_ids, (list, tuple)):
         raise ExperimentSetupError(
-            "relationship.config.evidence_instrument_ids must be a two-item list"
+            "relationship inputs must declare exactly two instrument IDs"
         )
     ids = tuple(cast(list[object] | tuple[object, ...], raw_ids))
     if len(ids) != 2 or any(
         not isinstance(item, str) or not item.strip() for item in ids
     ):
         raise ExperimentSetupError(
-            "relationship.config.evidence_instrument_ids must contain two "
-            "instrument IDs"
+            "relationship inputs must contain two instrument IDs"
         )
     normalized = tuple(cast(str, item).strip() for item in ids)
     if len(set(normalized)) != 2:
-        raise ExperimentSetupError(
-            "relationship.config.evidence_instrument_ids must be unique"
-        )
-    declared = set(manifest.evidence_instrument_ids)
+        raise ExperimentSetupError("relationship input instrument IDs must be unique")
+    if explicit_ids and configured_ids is not None:
+        configured = tuple(cast(list[object] | tuple[object, ...], configured_ids))
+        if configured != explicit_ids:
+            raise ExperimentSetupError(
+                "manifest relationship inputs disagree with evidence-only config"
+            )
+    declared = (
+        set(manifest.relationship_instrument_ids)
+        if explicit_ids
+        else set(manifest.evidence_instrument_ids)
+    )
     if not set(normalized) <= declared:
         raise ExperimentSetupError(
-            "relationship evidence instruments must be declared evidence-only "
-            "instruments"
+            "relationship input instruments must be declared by the manifest"
         )
 
     instruments = manifest.instruments_by_id()
@@ -471,7 +479,10 @@ def _compose_rolling_log_ratio(
             "relationship and evidence_tilt orientations must match exactly"
         )
     observations: list[RelationshipObservation] = []
-    if "evidence_instrument_ids" in relationship:
+    if (
+        manifest.relationship_instrument_ids
+        or "evidence_instrument_ids" in relationship
+    ):
         aligned, source_fingerprints = _named_relationship_inputs(
             manifest,
             loaded,
@@ -520,9 +531,9 @@ def _compose_rolling_residual(
         "quote_asset",
         "window_bars",
         "min_observations",
-        "evidence_instrument_ids",
     }
-    if set(relationship) != required:
+    allowed = {*required, "evidence_instrument_ids"}
+    if not required <= set(relationship) or not set(relationship) <= allowed:
         raise ExperimentSetupError(
             "residual_mean_reversion config keys must match the admitted contract"
         )

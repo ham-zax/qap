@@ -107,9 +107,19 @@ class PairStudyAnalysisLensDto(PairStudyApiDto):
 
 class PairStudyEconomicExpressionDto(PairStudyApiDto):
     direct_status: Literal["ready", "needs_data", "unavailable"]
-    bridge_status: Literal["not_available_in_current_recipe_contract"]
+    bridge_status: Literal["ready", "needs_transient_authority", "unavailable"]
     default_recipe_declarable: bool
     reasons: tuple[PairStudyReasonDto, ...]
+
+
+class ProductPairStudyBridgeAuthorityDto(PairStudyApiDto):
+    schema_version: Literal["qap.api.product_pair_study_bridge_authority.v1"] = (
+        "qap.api.product_pair_study_bridge_authority.v1"
+    )
+    bridge_asset: Literal["USDT"] = "USDT"
+    allowed: Literal[True] = True
+    asset_identity_version: str
+    scope: Literal["research_replay_only"] = "research_replay_only"
 
 
 class ProductPairStudyContextDto(PairStudyApiDto):
@@ -154,4 +164,8 @@ class ProductPairStudySeriesDto(PairStudyApiDto):
     analysis_reference: PairStudyReferenceSeriesDto | None
 
 
-__all__ = ["ProductPairStudyContextDto", "ProductPairStudySeriesDto"]
+__all__ = [
+    "ProductPairStudyBridgeAuthorityDto",
+    "ProductPairStudyContextDto",
+    "ProductPairStudySeriesDto",
+]

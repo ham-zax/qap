@@ -31,6 +31,7 @@ from qap.product_pair_study_models import (
     project_observation,
     project_points,
 )
+from qap.product_research_authority import ProductResearchAuthority
 from qap.product_universe import ProductUniverse, ResolvedProductInstrument
 from qap.relationship import (
     NormalizationScale,
@@ -49,9 +50,13 @@ class ProductPairStudy:
     """Compose one manual pair question without constructing an executable recipe."""
 
     def __init__(
-        self, universe: ProductUniverse, market_data: ProductMarketData
+        self,
+        universe: ProductUniverse,
+        market_data: ProductMarketData,
+        authority: ProductResearchAuthority,
     ) -> None:
         self._data = PairStudyDataReader(universe, market_data)
+        self._authority = authority
 
     def _selection(
         self,
@@ -257,6 +262,15 @@ class ProductPairStudy:
                 direct_market=direct,
             )
             relationship = self._relationship(ready)
+        bridge_status = (
+            "unavailable"
+            if data.status != "ready"
+            else (
+                "ready"
+                if self._authority.allows_transient_bridge(AssetId("USDT"))
+                else "needs_transient_authority"
+            )
+        )
         economic_reasons: list[PairStudyReason] = []
         if direct.status != "ready":
             economic_reasons.append(
@@ -268,15 +282,23 @@ class ProductPairStudy:
                     ),
                 )
             )
-        economic_reasons.append(
-            PairStudyReason(
-                code="two_leg_bridge_not_in_current_recipe_contract",
-                message=(
-                    "Two-leg bridge replay is separate execution capability and is not "
-                    "in the current Pair Research recipe contract."
-                ),
+        if direct.status != "ready" and bridge_status == "needs_transient_authority":
+            economic_reasons.append(
+                PairStudyReason(
+                    code="transient_usdt_authority_required",
+                    message=(
+                        "Two-leg replay uses the real selected asset/USDT paths but "
+                        "requires explicit temporary USDT research authority."
+                    ),
+                )
             )
-        )
+        elif direct.status != "ready" and bridge_status == "unavailable":
+            economic_reasons.append(
+                PairStudyReason(
+                    code="two_leg_bridge_paths_not_ready",
+                    message="Two-leg replay requires both selected Pair Study paths.",
+                )
+            )
         return PairStudyContext(
             question=question,
             data=data,
@@ -284,9 +306,8 @@ class ProductPairStudy:
             analysis_lens=analysis_lens,
             economic_expression=PairStudyEconomicExpression(
                 direct_status=direct.status,
-                bridge_status="not_available_in_current_recipe_contract",
-                default_recipe_declarable=data.status == "ready"
-                and direct.status == "ready",
+                bridge_status=bridge_status,
+                default_recipe_declarable=data.status == "ready",
                 reasons=tuple(economic_reasons),
             ),
             directory_id=selection.scope.directory_id,

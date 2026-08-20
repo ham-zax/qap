@@ -8,9 +8,8 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from qap.experiment.artifacts import RunArtifactPaths, run_experiment_to_artifacts
-from qap.experiment.basket_manifest import validate_basket_manifest_contract
 from qap.experiment.data import ExperimentSetupError
-from qap.experiment.manifest import BenchmarkSpec, DataRole, ExperimentManifest
+from qap.experiment.manifest import DataRole, ExperimentManifest
 from qap.experiment.provenance import manifest_sha256
 from qap.experiment.research_recipe import (
     FidelityIntent,
@@ -44,6 +43,9 @@ from qap.product_market_data_generation import (
     ProductGenerationReadError,
     resolve_immutable_generation,
 )
+from qap.product_pair_study import ProductPairStudy
+from qap.product_research_authority import ProductResearchAuthority
+from qap.research_recipe_basket_authority import validate_basket_authority
 from qap.research_recipe_capabilities import (
     CAPABILITY_CATALOG,
     CAPABILITY_CATALOG_VERSION,
@@ -60,6 +62,7 @@ from qap.research_recipe_compiler import (
     RECIPE_COMPILER_VERSION,
     compile_research_recipe,
 )
+from qap.research_recipe_pair_study import validate_pair_study_recipe
 from qap.scanner.protocol import ScannerHorizon
 
 
@@ -87,6 +90,8 @@ class ResearchRecipeService:
         data_root: str | Path | None,
         repository_root: str | Path | None,
         current_approved: CurrentApprovedResearch,
+        pair_study: ProductPairStudy,
+        product_research_authority: ProductResearchAuthority,
     ) -> None:
         self.run_root = Path(run_root).resolve()
         self.data_root = None if data_root is None else Path(data_root).resolve()
@@ -94,6 +99,8 @@ class ResearchRecipeService:
             None if repository_root is None else Path(repository_root).resolve()
         )
         self.current_approved = current_approved
+        self.pair_study = pair_study
+        self.product_research_authority = product_research_authority
 
     def check_draft(self, draft: ResearchRecipeDraftV1) -> ResearchRecipeCheckV1:
         """Canonicalize one draft and return compositional support truth."""
@@ -195,7 +202,7 @@ class ResearchRecipeService:
         recipe: ResearchRecipeV1,
     ) -> tuple[SupportReportV1, tuple[ExperimentManifest, ...] | None]:
         reasons = resolve_capability_reasons(recipe)
-        self._validate_basket_authority(recipe, reasons)
+        validate_basket_authority(recipe, reasons)
         self._validate_final_oos_selection(recipe, reasons)
         self._validate_readiness(recipe, reasons)
 
@@ -296,82 +303,6 @@ class ResearchRecipeService:
             and (
                 fidelity_value is not SupportFidelity.ADAPTATION_REQUIRED
                 or recipe.fidelity_intent is FidelityIntent.ADAPTATION
-            )
-        )
-
-    def _validate_basket_authority(
-        self,
-        recipe: ResearchRecipeV1,
-        reasons: list[SupportReasonV1],
-    ) -> None:
-        basket_variants = tuple(
-            variant
-            for variant in recipe.variants
-            if variant.decision_rule.component_id == "basket_graph"
-        )
-        if not basket_variants:
-            return
-        try:
-            benchmark = BenchmarkSpec.model_validate(
-                {
-                    "relationship_alpha_claim": (
-                        recipe.benchmarks.relationship_alpha_claim
-                    ),
-                    "primary_incremental_benchmark": (
-                        recipe.benchmarks.primary_incremental_benchmark
-                    ),
-                    "controls": list(recipe.benchmarks.controls),
-                }
-            )
-        except ValidationError as exc:
-            reasons.append(
-                reason(
-                    SupportReasonCode.INCOMPATIBLE_COMPONENT_COMBINATION,
-                    SupportReasonCategory.STRUCTURE,
-                    "benchmarks",
-                    str(exc),
-                )
-            )
-            return
-        for variant in basket_variants:
-            try:
-                validate_basket_manifest_contract(
-                    policy_component_id=variant.decision_rule.component_id,
-                    policy_config=variant.decision_rule.config,
-                    interval=recipe.data.interval,
-                    relationship_component_id=variant.relationship.component_id,
-                    relationship_config=variant.relationship.config,
-                    execution_mode=recipe.execution.mode,
-                    data_role=recipe.data.data_role.value,
-                    has_adverse_cost=recipe.execution.adverse_cost_scenario is not None,
-                    relationship_alpha_claim=recipe.benchmarks.relationship_alpha_claim,
-                    primary_incremental_benchmark=(
-                        recipe.benchmarks.primary_incremental_benchmark
-                    ),
-                    controls=benchmark.controls,
-                )
-            except ValueError as exc:
-                reasons.append(
-                    reason(
-                        SupportReasonCode.METHOD_NOT_ADMITTED_FOR_REPLAY,
-                        SupportReasonCategory.CAPABILITY,
-                        f"variants.{variant.variant_id}.decision_rule",
-                        str(exc),
-                    )
-                )
-        reasons.append(
-            reason(
-                SupportReasonCode.METHOD_HAS_NO_CURRENT_DATA_CONTRACT,
-                SupportReasonCategory.READINESS,
-                "data",
-                (
-                    "basket_graph remains scanner-derived; arbitrary fixed-basket "
-                    "declarations cannot replace its BasketDefinition replay contract."
-                ),
-                nearest=(
-                    "qap.experiment.basket_scanner_adapter."
-                    "prepare_basket_replay_manifest"
-                ),
             )
         )
 
@@ -488,6 +419,25 @@ class ResearchRecipeService:
         recipe: ResearchRecipeV1,
         reasons: list[SupportReasonV1],
     ) -> None:
+        if recipe.data.authority == "pair_study":
+            if recipe.research_object is not ResearchObject.PAIR:
+                reasons.append(
+                    reason(
+                        SupportReasonCode.INCOMPATIBLE_COMPONENT_COMBINATION,
+                        SupportReasonCategory.STRUCTURE,
+                        "data.authority",
+                        "pair_study data authority is reserved for pair recipes.",
+                    )
+                )
+                return
+            validate_pair_study_recipe(
+                recipe,
+                pair_study=self.pair_study,
+                authority=self.product_research_authority,
+                data_root=self.data_root,
+                reasons=reasons,
+            )
+            return
         if recipe.data.authority == "strict_pit":
             reasons.append(
                 reason(

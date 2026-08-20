@@ -447,6 +447,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/product-pair-study/transient-usdt-authority": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Grant Transient Usdt Authority */
+        post: operations["grantProductPairStudyTransientUsdtAuthority"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/product-research": {
         parameters: {
             query?: never;
@@ -1678,6 +1695,11 @@ export interface components {
             /** Random Seed */
             random_seed?: number | null;
             relationship: components["schemas"]["ComponentSpec"];
+            /**
+             * Relationship Instrument Ids
+             * @default []
+             */
+            relationship_instrument_ids: string[];
             /** Research Family Id */
             research_family_id: string;
             /**
@@ -2455,9 +2477,9 @@ export interface components {
         PairStudyEconomicExpressionDto: {
             /**
              * Bridge Status
-             * @constant
+             * @enum {string}
              */
-            bridge_status: "not_available_in_current_recipe_contract";
+            bridge_status: "ready" | "needs_transient_authority" | "unavailable";
             /** Default Recipe Declarable */
             default_recipe_declarable: boolean;
             /**
@@ -3012,6 +3034,35 @@ export interface components {
              */
             schema_version: "qap.api.product_market_data.v1";
         };
+        /** ProductPairStudyBridgeAuthorityDto */
+        ProductPairStudyBridgeAuthorityDto: {
+            /**
+             * Allowed
+             * @default true
+             * @constant
+             */
+            allowed: true;
+            /** Asset Identity Version */
+            asset_identity_version: string;
+            /**
+             * Bridge Asset
+             * @default USDT
+             * @constant
+             */
+            bridge_asset: "USDT";
+            /**
+             * Schema Version
+             * @default qap.api.product_pair_study_bridge_authority.v1
+             * @constant
+             */
+            schema_version: "qap.api.product_pair_study_bridge_authority.v1";
+            /**
+             * Scope
+             * @default research_replay_only
+             * @constant
+             */
+            scope: "research_replay_only";
+        };
         /** ProductPairStudyContextDto */
         ProductPairStudyContextDto: {
             analysis_lens: components["schemas"]["PairStudyAnalysisLensDto"] | null;
@@ -3301,7 +3352,7 @@ export interface components {
              * Authority
              * @enum {string}
              */
-            authority: "current_approved" | "strict_pit";
+            authority: "current_approved" | "pair_study" | "strict_pit";
             /** Claim Identity */
             claim_identity: string;
             data_role: components["schemas"]["DataRole"];
@@ -4116,7 +4167,7 @@ export interface components {
          * SupportReasonCode
          * @enum {string}
          */
-        SupportReasonCode: "unknown_method" | "known_method_not_implemented" | "method_not_admitted_for_replay" | "method_has_no_current_data_contract" | "unsupported_research_object" | "incompatible_component_combination" | "requires_short_position" | "requires_leverage_or_borrow" | "requires_derivative" | "requires_unimplemented_risk_overlay" | "requires_unimplemented_parameter_selection" | "requires_unimplemented_walk_forward_protocol" | "requires_unavailable_numerical_backend" | "requires_missing_identity_confirmation" | "requires_operator_asset_approval" | "requires_market_data" | "requires_real_direct_market" | "current_claim_incompatible" | "strict_pit_evidence_required" | "cannot_claim_faithful_replication" | "adaptation_available" | "final_oos_requires_single_precommitted_variant" | "final_oos_requires_frozen_family_selection" | "final_oos_family_mismatch";
+        SupportReasonCode: "unknown_method" | "known_method_not_implemented" | "method_not_admitted_for_replay" | "method_has_no_current_data_contract" | "unsupported_research_object" | "incompatible_component_combination" | "requires_short_position" | "requires_leverage_or_borrow" | "requires_derivative" | "requires_unimplemented_risk_overlay" | "requires_unimplemented_parameter_selection" | "requires_unimplemented_walk_forward_protocol" | "requires_unavailable_numerical_backend" | "requires_missing_identity_confirmation" | "requires_operator_asset_approval" | "requires_market_data" | "requires_real_direct_market" | "requires_transient_bridge_authority" | "current_claim_incompatible" | "strict_pit_evidence_required" | "cannot_claim_faithful_replication" | "adaptation_available" | "final_oos_requires_single_precommitted_variant" | "final_oos_requires_frozen_family_selection" | "final_oos_family_mismatch";
         /** SupportReasonV1 */
         SupportReasonV1: {
             category: components["schemas"]["SupportReasonCategory"];
@@ -5035,6 +5086,26 @@ export interface operations {
             };
         };
     };
+    grantProductPairStudyTransientUsdtAuthority: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductPairStudyBridgeAuthorityDto"];
+                };
+            };
+        };
+    };
     runCurrentApprovedResearch: {
         parameters: {
             query?: never;
@@ -5334,6 +5405,8 @@ export interface operations {
                 research_object?: "pair" | "fixed_basket";
                 horizon?: ("short" | "medium" | "swing") | null;
                 asset?: string[];
+                orientation?: string | null;
+                venue?: ("binance" | "gate") | null;
             };
             header?: never;
             path?: never;

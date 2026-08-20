@@ -38,6 +38,7 @@ from qap.product_current_evidence import ProductCurrentEvidenceStore
 from qap.product_market_data import ProductMarketData
 from qap.product_market_data_prepare import ProductMarketDataPreparation
 from qap.product_pair_study import ProductPairStudy
+from qap.product_research_authority import ProductResearchAuthority
 from qap.product_universe import ProductUniverse
 from qap.research_recipe_entry import ResearchRecipeService
 
@@ -96,13 +97,18 @@ def create_app(settings: ApiSettings) -> FastAPI:
     )
     app.state.product_universe = product_universe
     app.state.product_market_data = product_market_data
+    product_research_authority = ProductResearchAuthority(product_universe)
+    app.state.product_research_authority = product_research_authority
     app.state.product_market_data_preparation = ProductMarketDataPreparation(
         product_universe,
         product_market_data,
     )
-    app.state.product_pair_study = ProductPairStudy(
-        product_universe, product_market_data
+    product_pair_study = ProductPairStudy(
+        product_universe,
+        product_market_data,
+        product_research_authority,
     )
+    app.state.product_pair_study = product_pair_study
     current_approved_research = CurrentApprovedResearch(
         product_universe,
         product_market_data,
@@ -113,6 +119,8 @@ def create_app(settings: ApiSettings) -> FastAPI:
         data_root=settings.market_data_root,
         repository_root=settings.repository_root,
         current_approved=current_approved_research,
+        pair_study=product_pair_study,
+        product_research_authority=product_research_authority,
     )
     app.state.product_current_evidence = ProductCurrentEvidenceStore(settings.run_root)
     app.state.operation_manager = OperationManager(settings)

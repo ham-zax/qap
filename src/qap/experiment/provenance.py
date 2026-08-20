@@ -85,6 +85,8 @@ def canonical_manifest_bytes(manifest: ExperimentManifest) -> bytes:
     if not isinstance(cast(object, manifest), ExperimentManifest):
         raise TypeError("manifest must be an ExperimentManifest")
     payload = manifest.model_dump(mode="json", exclude_none=False)
+    if not manifest.relationship_instrument_ids:
+        payload.pop("relationship_instrument_ids", None)
     return json.dumps(
         payload,
         sort_keys=True,

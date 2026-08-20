@@ -2492,6 +2492,15 @@
           "relationship": {
             "$ref": "#/components/schemas/ComponentSpec"
           },
+          "relationship_instrument_ids": {
+            "default": [],
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Relationship Instrument Ids",
+            "type": "array"
+          },
           "research_family_id": {
             "minLength": 1,
             "title": "Research Family Id",
@@ -4675,7 +4684,11 @@
         "additionalProperties": false,
         "properties": {
           "bridge_status": {
-            "const": "not_available_in_current_recipe_contract",
+            "enum": [
+              "ready",
+              "needs_transient_authority",
+              "unavailable"
+            ],
             "title": "Bridge Status",
             "type": "string"
           },
@@ -6237,6 +6250,44 @@
         "title": "ProductMarketDataDto",
         "type": "object"
       },
+      "ProductPairStudyBridgeAuthorityDto": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed": {
+            "const": true,
+            "default": true,
+            "title": "Allowed",
+            "type": "boolean"
+          },
+          "asset_identity_version": {
+            "title": "Asset Identity Version",
+            "type": "string"
+          },
+          "bridge_asset": {
+            "const": "USDT",
+            "default": "USDT",
+            "title": "Bridge Asset",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.product_pair_study_bridge_authority.v1",
+            "default": "qap.api.product_pair_study_bridge_authority.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "scope": {
+            "const": "research_replay_only",
+            "default": "research_replay_only",
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_identity_version"
+        ],
+        "title": "ProductPairStudyBridgeAuthorityDto",
+        "type": "object"
+      },
       "ProductPairStudyContextDto": {
         "additionalProperties": false,
         "properties": {
@@ -7091,6 +7142,7 @@
           "authority": {
             "enum": [
               "current_approved",
+              "pair_study",
               "strict_pit"
             ],
             "title": "Authority",
@@ -9465,6 +9517,7 @@
           "requires_operator_asset_approval",
           "requires_market_data",
           "requires_real_direct_market",
+          "requires_transient_bridge_authority",
           "current_claim_incompatible",
           "strict_pit_evidence_required",
           "cannot_claim_faithful_replication",
@@ -11044,6 +11097,27 @@
         ]
       }
     },
+    "/api/product-pair-study/transient-usdt-authority": {
+      "post": {
+        "operationId": "grantProductPairStudyTransientUsdtAuthority",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductPairStudyBridgeAuthorityDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Grant Transient Usdt Authority",
+        "tags": [
+          "product-pair-study"
+        ]
+      }
+    },
     "/api/product-research": {
       "post": {
         "operationId": "runCurrentApprovedResearch",
@@ -11517,6 +11591,43 @@
               },
               "title": "Asset",
               "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "orientation",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minLength": 3,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Orientation"
+            }
+          },
+          {
+            "in": "query",
+            "name": "venue",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "binance",
+                    "gate"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Venue"
             }
           }
         ],

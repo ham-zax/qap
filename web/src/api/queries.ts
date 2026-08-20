@@ -69,12 +69,16 @@ export function createQapQueries(client: QapApiClient) {
       researchObject: 'pair' | 'fixed_basket'
       horizon?: 'short' | 'medium' | 'swing'
       assets?: string[]
+      orientation?: string
+      venue?: 'binance' | 'gate'
     }) =>
       queryOptions({
         queryKey: [
           'research-recipe-product-context',
           options.researchObject,
           options.horizon ?? 'none',
+          options.orientation ?? 'default',
+          options.venue ?? 'default',
           ...(options.assets ?? []),
         ] as const,
         queryFn: () => client.getResearchRecipeProductContext(options),

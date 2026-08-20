@@ -227,6 +227,8 @@ export function PairResearch({ apiClient, queries, workspace }: PairResearchProp
         researchObject: 'pair',
         horizon,
         assets: canonicalAssets,
+        orientation: context.question.orientation,
+        venue: context.question.venue,
       })
       const check =
         context.economic_expression.default_recipe_declarable && recipeContext.default_draft
@@ -249,6 +251,25 @@ export function PairResearch({ apiClient, queries, workspace }: PairResearchProp
       setStudyResult(study)
       setChecked(check)
       setOperationId(null)
+    },
+  })
+
+  const grantBridgeAuthority = useMutation({
+    mutationFn: () => apiClient.grantProductPairStudyTransientUsdtAuthority(),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['research-recipe-product-context'] }),
+        queryClient.invalidateQueries({ queryKey: ['product-pair-study-context'] }),
+      ])
+      if (studyResult) {
+        researchPair.mutate({
+          venue: studyResult.context.question.venue,
+          analysisReference:
+            studyResult.context.analysis_lens?.status === 'ready'
+              ? studyResult.context.analysis_lens.asset
+              : undefined,
+        })
+      }
     },
   })
 
@@ -546,6 +567,11 @@ export function PairResearch({ apiClient, queries, workspace }: PairResearchProp
           series={studyResult.series}
           capabilities={studyResult.capabilities}
           busy={researchPair.isPending}
+          bridgeAuthorityBusy={grantBridgeAuthority.isPending}
+          bridgeAuthorityError={
+            grantBridgeAuthority.isError ? grantBridgeAuthority.error.message : null
+          }
+          onGrantBridgeAuthority={() => grantBridgeAuthority.mutate()}
           onVenueChange={(venue) => researchPair.mutate({ venue, analysisReference })}
         />
       ) : null}
@@ -557,7 +583,7 @@ export function PairResearch({ apiClient, queries, workspace }: PairResearchProp
               Downstream economic recipe
             </p>
             <h3 className="mt-2 mb-3 text-lg font-semibold text-foreground">
-              Default direct-market support
+              Default economic replay support
             </h3>
             <SupportReportPanel report={checked.support} />
           </div>

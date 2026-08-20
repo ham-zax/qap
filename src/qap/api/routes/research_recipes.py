@@ -7,6 +7,7 @@ from pydantic import JsonValue
 
 from qap.api.errors import ApiBoundaryError
 from qap.api.operations import OperationKind
+from qap.api.relationship_views import requested_pair_orientation
 from qap.api.research_recipe_schemas import (
     ResearchRecipeCheckRequestDto,
     ResearchRecipeLineageMatchDto,
@@ -19,12 +20,17 @@ from qap.api.routes.operations import operation_manager
 from qap.api.scanner_schemas import OperationRefDto
 from qap.experiment.artifacts import ArtifactError, read_run_artifacts
 from qap.experiment.provenance import manifest_sha256
-from qap.experiment.research_recipe import ResearchObject, ResearchRecipeCheckV1
+from qap.experiment.research_recipe import (
+    ResearchObject,
+    ResearchRecipeCheckV1,
+    SupportReasonCode,
+)
 from qap.experiment.research_recipe_artifacts import (
     ResearchRecipeArtifactError,
     find_research_recipe_compilations_for_manifest,
 )
 from qap.portfolio import AssetId
+from qap.product_pair_study import ProductPairStudyError
 from qap.research_recipe_capabilities import (
     CAPABILITY_CATALOG,
     CAPABILITY_CATALOG_VERSION,
@@ -57,18 +63,43 @@ def research_recipe_product_context(
     research_object: Literal["pair", "fixed_basket"] = "pair",
     horizon: Literal["short", "medium", "swing"] | None = None,
     asset: list[str] = Query(default=[]),
+    orientation: str | None = Query(default=None, min_length=3),
+    venue: Literal["binance", "gate"] | None = Query(default=None),
 ) -> ResearchRecipeProductContextDto:
     draft = None
     issue = None
     if horizon is not None and asset:
         try:
             assets = tuple(AssetId(item).key for item in asset)
-            draft = default_product_recipe_draft(
-                _owner(request),
-                research_object=ResearchObject(research_object),
-                assets=assets,
-                horizon=ScannerHorizon(horizon),
-            )
+            pair_context = None
+            if research_object == "pair" and len(assets) == 2:
+                requested = requested_pair_orientation(
+                    asset_x=assets[0],
+                    asset_y=assets[1],
+                    orientation=orientation,
+                )
+                try:
+                    pair_context = _owner(request).pair_study.context(
+                        asset_a=AssetId(assets[0]),
+                        asset_b=AssetId(assets[1]),
+                        orientation=requested,
+                        horizon=ScannerHorizon(horizon),
+                        venue=venue,
+                    )
+                except ProductPairStudyError as exc:
+                    issue = ResearchRecipeProductIssueDto(
+                        code=SupportReasonCode.REQUIRES_MARKET_DATA,
+                        component="pair_study",
+                        detail=str(exc),
+                    )
+            if issue is None:
+                draft = default_product_recipe_draft(
+                    _owner(request),
+                    research_object=ResearchObject(research_object),
+                    assets=assets,
+                    horizon=ScannerHorizon(horizon),
+                    pair_study_context=pair_context,
+                )
         except ProductRecipeDraftUnavailable as exc:
             issue = ResearchRecipeProductIssueDto(
                 code=exc.issue.code,

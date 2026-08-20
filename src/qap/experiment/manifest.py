@@ -367,6 +367,7 @@ class ExperimentManifest(_FrozenModel):
     analysis_anchor: str | None = None
     instruments: tuple[InstrumentSpec, ...]
     evidence_instrument_ids: tuple[Identifier, ...] = ()
+    relationship_instrument_ids: tuple[Identifier, ...] = ()
     interval: Identifier
     data_window: DataWindowSpec
     evaluation_window: DataWindowSpec | None = None
@@ -480,10 +481,20 @@ class ExperimentManifest(_FrozenModel):
                 "evidence_instrument_ids must reference declared instruments; "
                 f"missing={sorted(unknown_evidence)}"
             )
+        relationship_ids = tuple(self.relationship_instrument_ids)
+        if len(set(relationship_ids)) != len(relationship_ids):
+            raise ValueError("relationship_instrument_ids must be unique")
+        unknown_relationship = set(relationship_ids) - set(instrument_ids)
+        if unknown_relationship:
+            raise ValueError(
+                "relationship_instrument_ids must reference declared instruments; "
+                f"missing={sorted(unknown_relationship)}"
+            )
         symbols = tuple((item.venue, item.venue_symbol) for item in self.instruments)
         if len(set(symbols)) != len(symbols):
             raise ValueError("venue/instrument symbols must be unique")
         evidence_set = set(evidence_ids)
+        relationship_set = set(relationship_ids)
         for instrument in self.instruments:
             if instrument.instrument_id in evidence_set:
                 if (
@@ -495,6 +506,13 @@ class ExperimentManifest(_FrozenModel):
                         "basket asset"
                     )
                 continue
+            if instrument.instrument_id in relationship_set and (
+                instrument.base_asset not in basket
+                and instrument.quote_asset not in basket
+            ):
+                raise ValueError(
+                    "relationship instrument must reference at least one basket asset"
+                )
             if (
                 instrument.base_asset not in admitted_run_assets
                 or instrument.quote_asset not in admitted_run_assets

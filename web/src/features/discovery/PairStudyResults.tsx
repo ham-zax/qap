@@ -137,12 +137,18 @@ export function PairStudyResults({
   series,
   capabilities,
   busy,
+  bridgeAuthorityBusy,
+  bridgeAuthorityError,
+  onGrantBridgeAuthority,
   onVenueChange,
 }: {
   context: ProductPairStudyContextDto
   series: ProductPairStudySeriesDto | null
   capabilities: readonly CapabilityMetadataV1[]
   busy: boolean
+  bridgeAuthorityBusy: boolean
+  bridgeAuthorityError: string | null
+  onGrantBridgeAuthority: () => void
   onVenueChange: (venue: 'binance' | 'gate') => void
 }) {
   const [chartView, setChartView] = useState<ChartView>('ratio')
@@ -513,16 +519,43 @@ export function PairStudyResults({
           </Badge>
         </div>
         <p className="mt-4 mb-0 text-sm leading-6 text-secondary">
-          {context.economic_expression.direct_status === 'unavailable'
-            ? `No real direct ${context.question.orientation} market is available for this study venue. The relationship evidence above remains valid.`
-            : context.economic_expression.direct_status === 'needs_data'
-              ? 'A real direct market exists, but its economic replay data is not ready yet.'
-              : 'A real direct market is ready; QAP may check the existing default recipe after this Pair Study.'}
+          {context.economic_expression.direct_status === 'ready'
+            ? 'A real direct market is ready and remains QAP’s preferred economic expression for this pair.'
+            : context.economic_expression.bridge_status === 'ready'
+              ? `No ready direct ${context.question.orientation} market is required: QAP can replay the pair through the exact selected ${context.question.asset_a}/USDT and ${context.question.asset_b}/USDT Spot legs.`
+              : context.economic_expression.bridge_status === 'needs_transient_authority'
+                ? `The exact selected ${context.question.asset_a}/USDT and ${context.question.asset_b}/USDT Spot legs are ready, but economic replay is blocked until temporary USDT ownership is explicitly allowed for research replay.`
+                : `No honest economic expression is ready yet. The ${context.question.orientation} relationship evidence above remains valid.`}
         </p>
-        <p className="mt-2 mb-0 text-sm leading-6 text-secondary">
-          Two-leg USDT bridge economics are not available in the current pair recipe contract
-          yet; QAP does not invent a synthetic direct market.
-        </p>
+        {context.economic_expression.direct_status !== 'ready' &&
+        context.economic_expression.bridge_status === 'needs_transient_authority' ? (
+          <div className="mt-4 rounded-md border border-warning/45 bg-subtle p-4">
+            <p className="m-0 text-sm leading-6 text-secondary">
+              This permission does not approve USDT as a portfolio target. It only allows QAP
+              to hold real bridge residue temporarily while research-only two-leg Spot replay
+              executes through the selected venue.
+            </p>
+            <button
+              type="button"
+              className="mt-3 min-h-11 rounded-md bg-accent px-4 font-semibold text-canvas disabled:opacity-50"
+              disabled={bridgeAuthorityBusy || busy}
+              onClick={onGrantBridgeAuthority}
+            >
+              {bridgeAuthorityBusy
+                ? 'Saving permission…'
+                : 'Allow temporary USDT in research replay'}
+            </button>
+            {bridgeAuthorityError ? (
+              <p className="mt-3 mb-0 text-sm text-negative">{bridgeAuthorityError}</p>
+            ) : null}
+          </div>
+        ) : context.economic_expression.direct_status !== 'ready' &&
+          context.economic_expression.bridge_status === 'ready' ? (
+          <p className="mt-2 mb-0 text-sm leading-6 text-secondary">
+            Two-leg replay uses real exchange fills and the existing multi-asset bridge
+            executor. QAP does not synthesize {context.question.orientation} candles or fills.
+          </p>
+        ) : null}
       </section>
 
       <details className="mt-7 rounded-md border border-border bg-panel p-4">

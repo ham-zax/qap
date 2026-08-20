@@ -25,6 +25,7 @@ from qap.experiment.research_recipe import (
     SupportReasonCode,
 )
 from qap.portfolio._decimal import divide
+from qap.product_current_approved import current_approved_claim_identity
 from qap.product_current_approved_models import (
     CurrentApprovedReadiness,
     GenerationBinding,
@@ -35,7 +36,9 @@ from qap.product_current_approved_policy import (
     semantic_hash,
 )
 from qap.product_market_data_generation import resolve_immutable_generation
+from qap.product_pair_study_models import PairStudyContext, PairStudyGenerationRef
 from qap.research_recipe_entry import ResearchRecipeService
+from qap.research_recipe_pair_study import pair_study_readiness_id
 from qap.scanner.protocol import ScannerHorizon, ScannerProtocol, TemplateId
 
 DEFAULT_PRODUCT_RECIPE_VERSION = "qap.product.default-research-recipe.v1"
@@ -228,71 +231,163 @@ def _pair_draft(
     *,
     assets: tuple[str, str],
     horizon: ScannerHorizon,
-    current: CurrentApprovedReadiness,
+    study: PairStudyContext,
 ) -> ResearchRecipeDraftV1:
-    _require_assets_ready(current, assets)
-    (
-        protocol,
-        interval,
-        window_bars,
-        minimum_observations,
-        data_start,
-        evaluation_start,
-        evaluation_end,
-    ) = _data_windows(current, horizon)
-    direct = next(
-        (
-            item
-            for item in current.direct_markets
-            if item.status == "ready"
-            and {item.asset_a, item.asset_b} == set(assets)
-            and _generation(item.generations, interval.label) is not None
-        ),
-        None,
-    )
-    if direct is None:
+    left = study.data.asset_a_path
+    right = study.data.asset_b_path
+    cutoff = study.question.safe_cutoff
+    if study.data.status != "ready" or left is None or right is None or cutoff is None:
         raise _issue(
-            SupportReasonCode.REQUIRES_REAL_DIRECT_MARKET,
-            "execution",
-            "This pair needs one ready real direct market for deep economic replay.",
+            SupportReasonCode.REQUIRES_MARKET_DATA,
+            "pair_study",
+            "Pair Study data must be ready before its economic recipe can be frozen.",
         )
-    execution_generation = _generation(direct.generations, interval.label)
-    assert execution_generation is not None
-    evidence: list[GenerationBinding] = []
-    for asset_id in assets:
-        match = _path(
-            current,
-            asset_id=asset_id,
-            venue=direct.venue,
-            interval=interval.label,
+    if (
+        study.question.asset_a,
+        study.question.asset_b,
+    ) != assets or study.question.horizon != horizon.value:
+        raise _issue(
+            SupportReasonCode.INCOMPATIBLE_COMPONENT_COMBINATION,
+            "pair_study",
+            "Pair Study selection does not match the requested recipe question.",
         )
-        if match is None:
-            raise _issue(
-                SupportReasonCode.REQUIRES_MARKET_DATA,
-                f"assets.{asset_id}",
-                (
-                    f"{asset_id} lacks a ready {direct.venue} path for this Product "
-                    "timeframe."
-                ),
-            )
-        evidence.append(match[1])
     if service.data_root is None:
         raise _issue(
             SupportReasonCode.REQUIRES_MARKET_DATA,
             "data",
             "Product market-data storage is not configured.",
         )
-    provenance, series = resolve_immutable_generation(
-        service.data_root,
-        dataset_id=execution_generation.dataset_id,
-        semantic_fingerprint=execution_generation.semantic_fingerprint,
+
+    protocol = current_approved_scanner_protocol((study.question.venue,))
+    rule = protocol.horizon(horizon)
+    interval = rule.graph_interval
+    if study.question.interval != interval.label:
+        raise _issue(
+            SupportReasonCode.REQUIRES_MARKET_DATA,
+            "pair_study.interval",
+            "Pair Study interval does not match the Product horizon contract.",
+        )
+    window_bars = rule.window_bars(TemplateId.BASE, interval)
+    minimum_observations = max(
+        3,
+        math.ceil(window_bars * protocol.minimum_pair_coverage),
     )
-    price = _price_at(series, evaluation_start)
+    evaluation_end = cutoff
+    evaluation_start = evaluation_end - rule.evaluation_window
+    data_start = evaluation_start - window_bars * interval.duration
+    readiness_id = pair_study_readiness_id(study)
+    pair_refs: tuple[tuple[str, PairStudyGenerationRef], ...] = (
+        (assets[0], left),
+        (assets[1], right),
+    )
+
     half = protocol.normalization.total_direct_quote_value / Decimal("2")
-    starting_quantities = {
-        provenance.base_asset: str(divide(half, price)),
-        provenance.quote_asset: str(half),
-    }
+    bindings: list[ResearchGenerationBindingV1] = []
+    direct = study.data.direct_market
+    if direct.status == "ready" and direct.generation is not None:
+        provenance, series = resolve_immutable_generation(
+            service.data_root,
+            dataset_id=direct.generation.dataset_id,
+            semantic_fingerprint=direct.generation.semantic_fingerprint,
+        )
+        if (
+            provenance.venue != study.question.venue
+            or provenance.interval != interval.label
+        ):
+            raise _issue(
+                SupportReasonCode.REQUIRES_MARKET_DATA,
+                "execution",
+                "Selected direct generation no longer matches the Pair Study binding.",
+            )
+        starting_quantities = {
+            provenance.base_asset: str(
+                divide(half, _price_at(series, evaluation_start))
+            ),
+            provenance.quote_asset: str(half),
+        }
+        bindings.extend(
+            ResearchGenerationBindingV1(
+                dataset_id=ref.dataset_id,
+                semantic_fingerprint=ref.semantic_fingerprint,
+                purpose="evidence",
+            )
+            for _asset_id, ref in pair_refs
+        )
+        bindings.append(
+            ResearchGenerationBindingV1(
+                dataset_id=direct.generation.dataset_id,
+                semantic_fingerprint=direct.generation.semantic_fingerprint,
+                purpose="execution",
+            )
+        )
+        analysis_anchor = provenance.quote_asset
+        execution = ResearchExecutionV1(
+            mode="direct",
+            numeraire_asset=provenance.quote_asset,
+            fee_bps=str(protocol.cost_policy.fee_bps),
+            slippage_bps=str(protocol.cost_policy.slippage_bps),
+            minimum_rebalance_notional=str(
+                protocol.normalization.minimum_rebalance_notional
+            ),
+            base_step=(
+                None
+                if protocol.normalization.base_step is None
+                else str(protocol.normalization.base_step)
+            ),
+            adverse_cost_scenario={
+                "fee_bps": str(protocol.cost_policy.adverse_fee_bps),
+                "slippage_bps": str(protocol.cost_policy.adverse_slippage_bps),
+            },
+        )
+    else:
+        starting_quantities: dict[str, str] = {}
+        for asset_id, ref in pair_refs:
+            provenance, series = resolve_immutable_generation(
+                service.data_root,
+                dataset_id=ref.dataset_id,
+                semantic_fingerprint=ref.semantic_fingerprint,
+            )
+            if (
+                provenance.venue != study.question.venue
+                or provenance.interval != interval.label
+                or provenance.base_asset != asset_id
+                or provenance.quote_asset != "USDT"
+            ):
+                raise _issue(
+                    SupportReasonCode.REQUIRES_MARKET_DATA,
+                    f"assets.{asset_id}",
+                    (
+                        "Selected Pair Study leg does not match exact asset/USDT "
+                        "semantics."
+                    ),
+                )
+            starting_quantities[asset_id] = str(
+                divide(half, _price_at(series, evaluation_start))
+            )
+            bindings.append(
+                ResearchGenerationBindingV1(
+                    dataset_id=ref.dataset_id,
+                    semantic_fingerprint=ref.semantic_fingerprint,
+                    purpose="execution",
+                )
+            )
+        analysis_anchor = "USDT"
+        execution = ResearchExecutionV1(
+            mode="multi_asset_bridge",
+            market_metadata_mode="historical_unconstrained",
+            bridge_asset="USDT",
+            numeraire_asset="USDT",
+            fee_bps=str(protocol.cost_policy.fee_bps),
+            slippage_bps=str(protocol.cost_policy.slippage_bps),
+            minimum_rebalance_notional=str(
+                protocol.normalization.minimum_rebalance_notional
+            ),
+            adverse_cost_scenario={
+                "fee_bps": str(protocol.cost_policy.adverse_fee_bps),
+                "slippage_bps": str(protocol.cost_policy.adverse_slippage_bps),
+            },
+        )
+
     policy_config: dict[str, JsonValue] = {
         "base_asset": assets[0],
         "quote_asset": assets[1],
@@ -325,55 +420,24 @@ def _pair_draft(
             ("residual-base", "residual_mean_reversion"),
         )
     )
-    bindings = tuple(
-        ResearchGenerationBindingV1(
-            dataset_id=item.dataset_id,
-            semantic_fingerprint=item.semantic_fingerprint,
-            purpose="evidence",
-        )
-        for item in evidence
-    ) + (
-        ResearchGenerationBindingV1(
-            dataset_id=execution_generation.dataset_id,
-            semantic_fingerprint=execution_generation.semantic_fingerprint,
-            purpose="execution",
-        ),
-    )
     return ResearchRecipeDraftV1(
         research_family_id=_family_id(
             research_object=ResearchObject.PAIR,
             assets=assets,
             horizon=horizon,
-            readiness_id=current.readiness_id,
+            readiness_id=readiness_id,
         ),
         research_object=ResearchObject.PAIR.value,
         assets=assets,
         variants=variants,
         selection=SelectionProtocolV1(kind="precommitted_variants"),
-        execution=ResearchExecutionV1(
-            mode="direct",
-            numeraire_asset=provenance.quote_asset,
-            fee_bps=str(protocol.cost_policy.fee_bps),
-            slippage_bps=str(protocol.cost_policy.slippage_bps),
-            minimum_rebalance_notional=str(
-                protocol.normalization.minimum_rebalance_notional
-            ),
-            base_step=(
-                None
-                if protocol.normalization.base_step is None
-                else str(protocol.normalization.base_step)
-            ),
-            adverse_cost_scenario={
-                "fee_bps": str(protocol.cost_policy.adverse_fee_bps),
-                "slippage_bps": str(protocol.cost_policy.adverse_slippage_bps),
-            },
-        ),
+        execution=execution,
         benchmarks=_benchmarks(protocol),
         data=ResearchDataBindingV1(
-            authority="current_approved",
-            claim_identity=current.claim_identity,
+            authority="pair_study",
+            claim_identity=current_approved_claim_identity(),
             horizon=horizon.value,
-            readiness_id=current.readiness_id,
+            readiness_id=readiness_id,
             data_role=DataRole.DEVELOPMENT,
             interval=interval.label,
             data_window=DataWindowSpec(start=data_start, end=evaluation_end),
@@ -381,8 +445,8 @@ def _pair_draft(
                 start=evaluation_start,
                 end=evaluation_end,
             ),
-            generations=bindings,
-            analysis_anchor=provenance.quote_asset,
+            generations=tuple(bindings),
+            analysis_anchor=analysis_anchor,
             starting_quantities=starting_quantities,
         ),
         fidelity_intent=FidelityIntent.NATIVE_QAP,
@@ -566,6 +630,7 @@ def default_product_recipe_draft(
     research_object: ResearchObject,
     assets: tuple[str, ...],
     horizon: ScannerHorizon,
+    pair_study_context: PairStudyContext | None = None,
 ) -> ResearchRecipeDraftV1:
     """Freeze one backend-owned Product starting recipe over current exact readiness."""
 
@@ -581,14 +646,20 @@ def default_product_recipe_draft(
             "assets",
             "Fixed-basket research requires at least two selected assets.",
         )
-    current = service.current_approved.readiness(horizon)
     if research_object is ResearchObject.PAIR:
+        if pair_study_context is None:
+            raise _issue(
+                SupportReasonCode.REQUIRES_MARKET_DATA,
+                "pair_study",
+                "Pair Research recipe selection requires an exact Pair Study context.",
+            )
         return _pair_draft(
             service,
             assets=(assets[0], assets[1]),
             horizon=horizon,
-            current=current,
+            study=pair_study_context,
         )
+    current = service.current_approved.readiness(horizon)
     return _fixed_basket_draft(
         service,
         assets=assets,

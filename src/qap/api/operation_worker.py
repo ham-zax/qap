@@ -38,6 +38,8 @@ from qap.product_current_evidence import (
     resolve_frozen_instrument,
 )
 from qap.product_market_data import ProductMarketData
+from qap.product_pair_study import ProductPairStudy
+from qap.product_research_authority import ProductResearchAuthority
 from qap.product_universe import ProductUniverse
 from qap.research_recipe_entry import ResearchRecipeService
 from qap.scanner.basket_artifacts import read_basket_generation
@@ -278,15 +280,18 @@ def _research_recipe(
         getattr(settings, "repository_root"),
         field="repository_root",
     )
-    current_approved = CurrentApprovedResearch(
-        ProductUniverse(run_root),
-        ProductMarketData(run_root, data_root),
-    )
+    universe = ProductUniverse(run_root)
+    market_data = ProductMarketData(run_root, data_root)
+    authority = ProductResearchAuthority(universe)
+    pair_study = ProductPairStudy(universe, market_data, authority)
+    current_approved = CurrentApprovedResearch(universe, market_data)
     result = ResearchRecipeService(
         run_root=run_root,
         data_root=data_root,
         repository_root=repository_root,
         current_approved=current_approved,
+        pair_study=pair_study,
+        product_research_authority=authority,
     ).execute(request.recipe)
     return {
         "compilation_sha256": result.compilation_sha256,

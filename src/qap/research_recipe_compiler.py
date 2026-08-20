@@ -72,6 +72,34 @@ def compile_research_recipe(
         for binding, _provenance, _series in resolved
         if binding.purpose == "execution"
     )
+    relationship_ids: tuple[str, ...] = ()
+    if (
+        recipe.research_object.value == "pair"
+        and recipe.execution.mode == "multi_asset_bridge"
+    ):
+        execution_rows = tuple(
+            (binding, provenance)
+            for binding, provenance, _series in resolved
+            if binding.purpose == "execution"
+        )
+        bridge = recipe.execution.bridge_asset
+        if bridge is None or len(execution_rows) != 2:
+            raise ValueError(
+                "pair multi_asset_bridge requires exactly two execution generations"
+            )
+        if len({provenance.venue for _binding, provenance in execution_rows}) != 1:
+            raise ValueError("pair bridge execution generations must share one venue")
+        if {provenance.base_asset for _binding, provenance in execution_rows} != set(
+            recipe.assets
+        ) or any(
+            provenance.quote_asset != bridge for _binding, provenance in execution_rows
+        ):
+            raise ValueError(
+                "pair bridge execution generations must be exact asset/bridge legs"
+            )
+        relationship_ids = tuple(
+            binding.dataset_id for binding, _provenance in execution_rows
+        )
     manifests: list[ExperimentManifest] = []
     for variant in recipe.variants:
         relationship_config = dict(variant.relationship.config)
@@ -126,6 +154,7 @@ def compile_research_recipe(
                 "analysis_anchor": recipe.data.analysis_anchor,
                 "instruments": instruments,
                 "evidence_instrument_ids": list(evidence_ids),
+                "relationship_instrument_ids": list(relationship_ids),
                 "interval": recipe.data.interval,
                 "data_window": recipe.data.data_window.model_dump(mode="json"),
                 "evaluation_window": (
