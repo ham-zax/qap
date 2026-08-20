@@ -12,6 +12,8 @@
 
 **Legacy salvage evidence:** `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`
 
+**Pending Pair Study amendment — 2026-08-20:** `docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md`. The first M10-D `W / PIXEL` walkthrough showed that ordinary Pair Research currently asks an execution-recipe question before exposing relationship evidence. If the amendment is approved, it supersedes the manual Pair Research composition in Sections 13–15 only: relationship study becomes available from exact same-venue `ASSET/USDT` evidence before economic replay, while Scanner-V1 direct replay, strict PIT, identity/admission, HODL/control, and live-capital boundaries remain unchanged.
+
 ### Selective legacy-salvage amendment
 
 The user explicitly authorized the Phase-17 plan to learn from the earlier `tradingview_ratio` QAP repository after a read-only forensic review.

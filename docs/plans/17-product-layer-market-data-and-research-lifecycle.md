@@ -1,6 +1,6 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M9 are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED after two contract reviews. M10-A Typed Research Recipe + Capability Preflight is complete and integrated at `12ed08a`. M10-B Research Cockpit + Experiment Lab is complete and integrated at `f39b4b4`. M10-C Capability/Fidelity Proof is APPROVED and integrated at `3e07878`. The first M10-D representative-user Pair Research walkthrough returned `UX REMEDIATION REQUIRED`; a bounded Product remediation is current before M10-D reruns. No scientific-contract redesign is authorized by this finding.
+**Status:** M0-M9 are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED after two contract reviews. M10-A Typed Research Recipe + Capability Preflight is complete and integrated at `12ed08a`. M10-B Research Cockpit + Experiment Lab is complete and integrated at `f39b4b4`. M10-C Capability/Fidelity Proof is APPROVED and integrated at `3e07878`. The first M10-D representative-user `W / PIXEL` walkthrough returned `UX REMEDIATION REQUIRED`; the bounded remediation branch `6609a1c` then proved useful operational fixes but also exposed a deeper contract mismatch: manual Pair Research is gated by executable direct-market recipe construction before QAP exposes relationship evidence it already owns. The user has explicitly authorized a Pair Study redesign. M10-D human closure is blocked while proposed M11 Pair Study design/implementation is reviewed and completed.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
@@ -9,6 +9,10 @@
 **Legacy salvage evidence:** `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`
 
 **Research cockpit investigation:** `docs/research/2026-08-20-qap-research-cockpit-investigation.md`
+
+**Pair Study design amendment:** `docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md`
+
+**Pair Study implementation plan:** `docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`
 
 **Trigger:** Phase 16 is complete, but a clean QAP workspace still depends on expert/manual preparation of admissible assets, scanner market-data catalog state, longitudinal refreshes, and current public-evidence collection. That makes the application understandable only after hidden operational prerequisites have already been satisfied.
 
@@ -956,13 +960,17 @@ Prove the machinery with deliberately different cases. This milestone validates 
 
 Published methodologies are manually curated into typed recipes with source metadata. Phase 17 does **not** attempt automatic paper-to-code interpretation.
 
-### M10-D - Representative-user comprehension / authority closure - UX REMEDIATION REQUIRED
+### M10-D - Representative-user comprehension / authority closure - BLOCKED BY PAIR STUDY REDESIGN
 
 **Acceptance protocol:** `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/m10d-representative-user-acceptance.md`.
 
-The first representative-user Pair Research walkthrough attempted `W / PIXEL` and explicitly rejected the workflow as too complicated. Exact-first selection itself worked, but the path to research exposed quote-identity administration (`USDT` canonical identity + identity version), sent the user into Research Universe, and fragmented market-data preparation before the Product could reach support/results. That is a presentation/orchestration failure, not a reason to weaken identity or scientific truth.
+The first representative-user Pair Research walkthrough attempted `W / PIXEL` and explicitly rejected the workflow as too complicated. Exact-first selection itself worked, but the path to research exposed quote-identity administration (`USDT` canonical identity + identity version), sent the user into Research Universe, and fragmented market-data preparation before the Product could reach support/results.
 
-Current remediation target: one continuous Pair Research draft with one obvious `Prepare & check research` action that reuses existing identity/admission state, performs every safe routine setup/data preparation step, asks only for genuinely ambiguous identity confirmation inline, refreshes backend support, and then exposes supported experiments and backend-owned result values. Technical provenance remains progressive disclosure. The authoritative remediation mission is `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/agent-a-m10d-pair-research-ux-remediation.md`.
+The bounded remediation mission in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/agent-a-m10d-pair-research-ux-remediation.md` produced candidate commit `6609a1c`. That work remains useful evidence for two operational corrections — Gate archive failure may fall back to the existing official REST path, and one preparation operation should freeze a shared completed cutoff across required resolutions — plus draft-preserving Product orchestration.
+
+The follow-up design review found that the bounded remediation is not sufficient as the Phase-17 closure path. Current Pair Research constructs the default executable recipe by requiring a real direct pair market before it collects the existing `ASSET/USDT` relationship inputs. That turns a Slice-1 replay restriction into a research-entry restriction. The Product design already permits relationship/scout evidence to survive when direct replay is unavailable.
+
+The user has therefore authorized the Pair Study design amendment and implementation plan below. Do not integrate `6609a1c` as the final Pair Research architecture merely to rerun acceptance. Salvage only the fixes that remain valid under the approved Pair Study design.
 
 Only after M10-A/B/C exist should representative users complete realistic tasks without developer coaching. At minimum they must be able to:
 
@@ -982,7 +990,47 @@ Only after M10-A/B/C exist should representative users complete realistic tasks 
 
 Misunderstanding of a protected concept still triggers design review rather than changing scientific meaning in React.
 
-## 14. Performance policy
+## 14. Milestone 11 - Pair Study Research Workflow
+
+**Status:** DESIGN FREEZE CANDIDATE / IMPLEMENTATION BLOCKED PENDING REVIEW.
+
+**Design:** `docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md`
+
+**Implementation plan:** `docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`
+
+M11 corrects the Pair Research composition without reopening Scanner-V1 or replacing M10-A.
+
+The required separation is:
+
+```text
+Research Question
+  -> exact pair-scoped data preparation
+  -> Pair Study / relationship evidence
+  -> hypothesis / method choice
+  -> economic-expression availability
+  -> ResearchRecipeV1 + M10-A support
+  -> existing QAP experiment / HODL / controls
+```
+
+M11 is decomposed sequentially:
+
+```text
+M11-0  Pair Study design freeze
+M11-A  pair-scoped preparation + Pair Study backend/API
+M11-B  Pair Research Product flow + immediate current relationship values
+M11-C  honest two-leg pair economics through existing multi_asset_bridge execution
+M11-D  integrated research-completion presentation/evidence
+```
+
+Pair Study V1 uses current admitted relationship primitives first: ratio/log ratio/normalized paths, rolling log-ratio z-score, and rolling log-price Residual / OLS z-score. Direct-market absence gates direct economic replay only; it does not erase relationship evidence.
+
+M11-C may add one additive manifest concept for exact relationship-input instruments so the same real `A/USDT` and `B/USDT` series can truthfully be both model inputs and execution-reference instruments during `multi_asset_bridge` replay. Existing `evidence_instrument_ids` retain evidence-only semantics for current Scanner Slice-1/direct runs.
+
+Transient USDT bridge ownership must remain explicit operator authority and separate from economic asset admission. No synthetic `A/B` market, hidden bridge, route graph, second executor, or React economics is authorized.
+
+Formal Engle-Granger/ADF cointegration recovery remains a separate method-admission milestone after the Pair Study workflow works. Current Residual / OLS z-score must not be relabeled as cointegration. Student-t Copula remains separately gated by the Phase-10 admission decision.
+
+## 15. Performance policy
 
 The design investigation measured the existing Scanner-V1 benchmark at 2,079 assets / 720 bars:
 
@@ -1004,7 +1052,7 @@ Product consequences:
 
 Market-data preparation follows the same rule: optimize request/source strategy only after measuring realistic approved-universe acquisition. Daily-versus-monthly archive choice, gap-aware incremental refresh, and pacing/backoff are operational optimizations; they may not change admitted bar semantics, provenance, or research scope.
 
-## 15. Verification policy for this phase
+## 16. Verification policy for this phase
 
 Testing is not automatically authorized by this plan.
 
@@ -1016,7 +1064,7 @@ Create/modify/run tests only when the user separately requests them or an indepe
 
 M10 user-comprehension work is product research/acceptance, not an excuse to fabricate quantitative usability metrics.
 
-## 16. Stop conditions
+## 17. Stop conditions
 
 Stop and return to design review before:
 
@@ -1034,7 +1082,7 @@ Stop and return to design review before:
 - recreating a global mutable legacy API guardian, cache/fetcher monolith, or presentation-derived verdict authority;
 - introducing automatic portfolio discovery/optimization.
 
-## 17. Execution order
+## 18. Execution order
 
 ```text
 M0  design freeze                                           COMPLETE
@@ -1052,13 +1100,17 @@ M10-0 Research Cockpit + Experiment Contract design        APPROVED / FROZEN
 M10-A typed Research Recipe + capability preflight         COMPLETE / INTEGRATED 12ed08a
 M10-B Research Cockpit + Experiment Lab                    COMPLETE / INTEGRATED `f39b4b4`
 M10-C capability/fidelity proof with real methods          COMPLETE / APPROVED 3e07878
-M10-D Pair Research UX remediation                         CURRENT / BOUNDED PRODUCT FIX
-M10-D representative-user comprehension/authority closure  BLOCKED / RERUN AFTER REMEDIATION
+M10-D representative-user comprehension/authority closure  BLOCKED / PAIR STUDY REDESIGN
+M11-0 Pair Study design freeze                              CURRENT / REVIEW CANDIDATE
+M11-A pair-scoped preparation + Pair Study backend/API      BLOCKED / AFTER M11-0
+M11-B Pair Research Product flow + current values           BLOCKED / AFTER M11-A
+M11-C real two-leg pair economics via existing bridge       BLOCKED / AFTER M11-B
+M11-D integrated research-completion evidence               BLOCKED / AFTER M11-C
 ```
 
 Do not start M5 visual/React restructuring before M1-M4 make workspace/universe/data/readiness state authoritative.
 
-## 18. Phase-17 exit criteria
+## 19. Phase-17 exit criteria
 
 Phase 17 is complete only when:
 
@@ -1083,9 +1135,16 @@ Phase 17 is complete only when:
 - primary IA is `Home | Research | Portfolios | History` with Activity as a utility;
 - negative research remains first-class evidence;
 - the normal Research page exposes Pair Research and an explicit Scan My Universe flow before setup/audit machinery;
+- the Research page shows one active primary task at a time rather than vertically stacking complete Pair, Scan, and Experiment Lab workflows;
 - exact asset search prioritizes exact matches and selected setup does not disappear below a long mobile result list;
 - Pair Research preserves the selected research draft across identity/admission/data interruptions;
-- default Pair Research uses a versioned admitted fixed-pair QAP recipe, while advanced Experiment Lab may select declared method/parameter variants only for `pair | fixed_basket` recipe objects;
+- Pair Research begins with a backend-owned Pair Study over exact immutable same-venue relationship inputs and can show relationship evidence before a runnable economic recipe exists;
+- pair-scoped preparation cannot be blocked by unrelated approved-universe acquisition/readiness failures, while Universal Scan retains universe-scoped preparation;
+- current Pair Study exposes raw/log ratio, normalized paths, rolling log-ratio z-score, and Residual / OLS values from existing backend owners without calculating them in React;
+- direct-market absence is presented as an economic-expression limitation, not as evidence that the pair cannot be studied;
+- default Pair Research may declare a versioned admitted fixed-pair QAP recipe only after Pair Study, while advanced Experiment Lab may select declared method/parameter variants only for `pair | fixed_basket` recipe objects;
+- when no real direct pair market exists, pair economics may use the existing real `multi_asset_bridge` execution only with exact same-venue quote legs and explicit transient bridge ownership permission; no synthetic pair market is created;
+- existing evidence-only instrument semantics remain protected, while any dual-use relationship/execution instrument role is explicit and additive;
 - Universal Scan remains scanner-owned and uses backend-owned scanner stages without inventing a frontend “interestingness” score; Focus Scan is absent unless it can reuse scanner scope without new mechanics;
 - `ResearchRecipeV1` separates relationship evidence, decision rule, rebalance/allocation, risk overlay, parameter-selection protocol, execution/costs, benchmarks/evaluation, data role, fidelity intent, and source/reference metadata;
 - `SupportReportV1` is read-only and compositionally reports structure, capability, authority, readiness, fidelity, runnable state, and all applicable typed reasons rather than one precedence-based status;
@@ -1095,14 +1154,15 @@ Phase 17 is complete only when:
 - supported pair/fixed-basket recipes compile downward to existing `ExperimentManifest`/replay/economic authority rather than a second backtester or plugin runtime; the capability catalog points at canonical rule owners instead of duplicating them;
 - a published method can be represented as an exact-replication recipe and receive a truthful blocked/unsupported report without being silently adapted;
 - Student-t Copula can be reported as known-but-unimplemented without claiming the selected pair itself is incompatible;
+- current Residual / OLS evidence is not labeled formal cointegration; any Engle-Granger/ADF recovery passes a separate method-admission design;
 - representative users can complete the M10-D research tasks and explain the protected meanings;
 - QAP still has no live-capital/private-exchange authority.
 
-## 19. Fresh-agent implementation mission
+## 20. Fresh-agent implementation mission
 
-> Phase 17 M0-M9 and M10-A/B/C are complete; M10-C is approved at `3e07878`. The first human-led M10-D Pair Research session returned `UX REMEDIATION REQUIRED`, so the current frontier is the bounded remediation in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/agent-a-m10d-pair-research-ux-remediation.md`. Preserve the acceptance protocol in `m10d-representative-user-acceptance.md` and rerun the affected human task after integration. Do not substitute developer self-review, an AI session, or fabricated usability metrics for final acceptance. If remediation would require changing a protected scientific/economic meaning, stop and return to design review instead of inventing React semantics.
+> Phase 17 M0-M9 and M10-A/B/C are complete; M10-C is approved at `3e07878`. The first human-led M10-D Pair Research session returned `UX REMEDIATION REQUIRED`. Candidate remediation `6609a1c` proved useful market-data/orchestration fixes but exposed that Pair Research is incorrectly defined by executable direct-market recipe construction. The current frontier is M11-0 Pair Study design review in `docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md`, followed by the sequential implementation plan in `docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`. Do not start production code until the design is approved. Preserve the M10-D acceptance protocol and rerun human acceptance only after the new Pair Study workflow is integrated. Do not substitute developer self-review, an AI session, or fabricated usability metrics for final acceptance.
 
-## 20. One-screen status
+## 21. One-screen status
 
 ```text
 Research engine / Slices 1-4      COMPLETE
@@ -1136,8 +1196,17 @@ Phase 17 M10-B Research Cockpit + Experiment Lab (`f39b4b4`)
 COMPLETE / APPROVED
 Phase 17 M10-C capability/fidelity proof with real methods (`3e07878`)
 
-CURRENT / FINAL HUMAN GATE
+BLOCKED / FINAL HUMAN GATE
 Phase 17 M10-D representative-user acceptance
+
+CURRENT / DESIGN REVIEW
+Phase 17 M11-0 Pair Study research workflow design
+
+PLANNED / BLOCKED ON DESIGN
+Phase 17 M11-A pair-scoped Pair Study backend/API
+Phase 17 M11-B Pair Research Product flow
+Phase 17 M11-C real two-leg pair economics through existing bridge execution
+Phase 17 M11-D integrated research-completion evidence
 
 CURRENT PRIMARY IA
 Home | Research | Portfolios | History
