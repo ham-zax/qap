@@ -410,6 +410,8 @@ strict_pit_evidence_required
 cannot_claim_faithful_replication
 adaptation_available
 final_oos_requires_single_precommitted_variant
+final_oos_requires_frozen_family_selection
+final_oos_family_mismatch
 ```
 
 Each reason should state:
@@ -462,22 +464,27 @@ The recipe claim itself must be reconstructible, not merely the low-level manife
 ResearchRecipeV1
   schema_version
   recipe_sha256                 # canonical semantic recipe hash
+  research_family_id            # stable research-question/family continuity anchor
   research_object               # pair | fixed_basket
   component declarations
   parameters / precommitted variants
-  data / evaluation role
+  exact immutable data binding / evaluation role
   fidelity_intent               # native QAP | faithful external replication | adaptation
   source / reference metadata
+  selected_from_compilation_sha256?  # required when entering final_oos from a frozen family
   derived_from_recipe_sha256?   # required for an explicit adaptation
 ```
 
-`recipe_sha256` is computed from canonical semantic recipe content, excluding the hash field itself. A changed method declaration, variant set, fidelity intent, source claim, or evaluation role therefore creates a different recipe identity.
+`recipe_sha256` is the exact declaration identity, not the family identity. It is computed from canonical semantic execution content, including the exact immutable compilation-affecting data binding, and excluding lineage-only fields (`recipe_sha256`, `research_family_id`, `selected_from_compilation_sha256`, and `derived_from_recipe_sha256`). A changed method declaration, variant set, fidelity intent, source claim, immutable data binding, or evaluation role therefore creates a different recipe identity.
+
+`research_family_id` is the stable continuity anchor already used by current QAP. It is established once when the research family is first frozen and is reused by every intentionally evaluated sibling and by the one selected final-OOS descendant. It is **not derived from `recipe_sha256`**. Two exact recipes may therefore have different recipe hashes while remaining members of the same research family.
 
 Compilation persists one immutable family-level record before scientific execution:
 
 ```text
 ResearchRecipeCompilationV1
   schema_version
+  compilation_sha256
   recipe_sha256
   research_family_id
   compiler_version
@@ -485,11 +492,11 @@ ResearchRecipeCompilationV1
   ordered_compiled_manifest_sha256[]
 ```
 
-`research_family_id` must be deterministically bound to the canonical recipe identity plus the compiler/catalog versions used to interpret it. Every compiled manifest carries that exact family ID. The compilation record then binds that family to the ordered exact manifest hashes. This avoids a circular identity dependency while still proving which recipe declaration produced which frozen manifests.
+`compilation_sha256` is the canonical hash of the compilation record excluding its own hash field. Every compiled manifest carries the compilation record's exact `research_family_id`. The compilation record binds one exact recipe declaration plus compiler/catalog interpretation to the ordered exact manifest hashes while preserving the pre-existing family identity across multiple exact recipes in the same research question.
 
 The compilation/family record is immutable and family-owned; it is not an unbound `recipe.json` casually placed beside a run. Existing run artifacts can remain recipe-unaware below `research_family_id`: a reader can verify that the run manifest's family ID matches the family record and that its `manifest_sha256` is one of the compilation record's declared hashes.
 
-An adaptation always gets a new `recipe_sha256` and uses `derived_from_recipe_sha256` to retain lineage to the source methodology declaration. It can never inherit a `faithful replication` claim from the parent recipe.
+An adaptation always gets a new `recipe_sha256` and uses `derived_from_recipe_sha256` to retain scientific lineage to the source methodology declaration. That field does not mean “selected for final OOS” and does not by itself authorize reuse of the parent's research family. A final-OOS selection instead uses `selected_from_compilation_sha256` to point at the exact frozen exploratory/development compilation from which the one selected variant came.
 
 ### 4.8 Final-OOS is single-variant only
 
@@ -501,11 +508,15 @@ exploratory / development
 
 final_oos
   exactly ONE already-selected, frozen executable variant
+  selected_from_compilation_sha256 references the frozen prior family compilation
+  SAME research_family_id as that frozen development family
   no grid/search/variant comparison on the holdout
   no second sibling may reuse the same family holdout
 ```
 
-If a `final_oos` recipe declares multiple variants, a parameter search, or another selection protocol that would choose among siblings on the holdout, preflight returns `structure=invalid`, `runnable=false`, and `final_oos_requires_single_precommitted_variant` before compilation/execution. The existing `research_family_id + holdout_id` reservation/consumption mechanism remains the final runtime authority.
+The selected final-OOS recipe normally has a **different** `recipe_sha256` from its development recipe because the role, exact data binding/holdout, and variant set changed. That exact-identity change must not sever family continuity. Preflight resolves `selected_from_compilation_sha256`, verifies the referenced immutable exploratory/development compilation, verifies that the selected variant was predeclared there, and requires the final-OOS recipe to reuse the referenced `research_family_id`.
+
+If a `final_oos` recipe declares multiple variants or holdout-time search/comparison, preflight returns `final_oos_requires_single_precommitted_variant`. If it lacks a valid frozen exploratory/development selection reference, preflight returns `final_oos_requires_frozen_family_selection`. If it attempts to change the referenced family ID, preflight returns `final_oos_family_mismatch`. All are `structure=invalid`, `runnable=false`, and occur before compilation/execution. The existing `research_family_id + holdout_id` reservation/consumption mechanism remains the final runtime authority and therefore blocks a second sibling from consuming the same holdout.
 
 ## 5. Palazzi paper as a preflight acceptance example
 
@@ -1087,9 +1098,10 @@ Required behavior:
 - separate native QAP executability from faithful reproduction of an external methodology;
 - separate method support from identity/data/direct-market readiness;
 - persist the canonical `recipe_sha256` and immutable `ResearchRecipeCompilationV1` before scientific execution;
-- deterministically bind `research_family_id` to recipe identity plus compiler/catalog versions, then bind the family record to the ordered compiled manifest hashes;
+- preserve one stable `research_family_id` across all intentionally evaluated siblings and the selected final-OOS descendant even when exact `recipe_sha256` values change;
+- freeze every compilation-affecting immutable data binding into exact recipe identity, then bind each immutable compilation record to the stable family and ordered compiled manifest hashes;
 - compile only runnable pair/fixed-basket recipes to one or, for exploratory/development only, a finite predeclared family of current `ExperimentManifest` objects;
-- reject `final_oos` recipes unless exactly one already-selected frozen executable variant is declared, returning `final_oos_requires_single_precommitted_variant` before execution when violated;
+- reject `final_oos` recipes unless exactly one already-selected frozen executable variant is declared from an immutable prior family compilation and the same `research_family_id` is reused, returning `final_oos_requires_single_precommitted_variant` before execution for multi-variant/search violations;
 - preserve existing data-role/final-OOS reservation, controls, immutable fingerprints, code provenance, negative results, and runtime authority;
 - never auto-convert an unsupported paper method into a QAP adaptation;
 - remain read-only during check/preflight.
@@ -1121,7 +1133,8 @@ Before claiming the machinery works, exercise it with deliberately different rec
 4. **Palazzi 2025 exact-replication recipe** — should return all applicable truths together: related OLS/z-score capability, constitution blocking for shorting, missing selection/risk methods, `fidelity=adaptation_required`, and `runnable=false`.
 5. **Palazzi-inspired QAP adaptation** — only if manually declared as a new recipe with a new `recipe_sha256` and `derived_from_recipe_sha256`; it must never inherit an exact-replication claim.
 6. **Final-OOS multi-variant recipe** — `structure=invalid`, `runnable=false`, `final_oos_requires_single_precommitted_variant` before compilation.
-7. **Unknown method ID** — `capability=unknown`, `runnable=false`, `unknown_method`; no dynamic dispatch.
+7. **Development-to-final-OOS family continuity** — development `[A,B]` and selected final-OOS `[A]` have different exact `recipe_sha256` values but the final-OOS recipe references the frozen development compilation and reuses the same `research_family_id`; attempting final-OOS sibling `B` on the same holdout remains blocked by existing family-scoped reservation authority.
+8. **Unknown method ID** — `capability=unknown`, `runnable=false`, `unknown_method`; no dynamic dispatch.
 
 This is an acceptance proof of the **research machinery**, not a requirement to implement Copula or Palazzi's strategy.
 
@@ -1141,7 +1154,7 @@ Only after M10-A/B/C are integrated should actual/likely users repeat realistic 
 
 ## 18. Review decisions required before implementation
 
-The four contract-level findings from design review are now resolved in this amendment. The remaining items are product-detail decisions, not reasons for another architecture round.
+The contract-level findings from both M10-0 review rounds are now resolved in this amendment. The remaining items are product-detail decisions, not reasons for another architecture round.
 
 ### D1 — Research-object ownership — FROZEN FOR M10 V1
 
@@ -1153,11 +1166,11 @@ The four contract-level findings from design review are now resolved in this ame
 
 ### D3 — Recipe / compilation identity — FROZEN
 
-**Decision:** `ResearchRecipeV1` has a canonical `recipe_sha256`; adaptations get a new recipe identity and `derived_from_recipe_sha256`. Before execution, `ResearchRecipeCompilationV1` immutably binds the recipe to `research_family_id`, compiler/catalog versions, and ordered compiled `manifest_sha256` values. The family ID is deterministically derived from recipe identity plus compiler/catalog interpretation versions, and every compiled manifest carries it.
+**Decision:** exact recipe identity and research-family identity are separate. `ResearchRecipeV1.recipe_sha256` identifies the exact semantic execution declaration, including immutable compilation-affecting data bindings, and therefore changes when role/holdout/variant-set semantics change. `research_family_id` is a stable pre-existing QAP family-continuity anchor and is not derived from the exact recipe hash. `ResearchRecipeCompilationV1` immutably binds each exact recipe to that stable family, compiler/catalog versions, and ordered compiled `manifest_sha256` values. A final-OOS recipe references the exact frozen exploratory/development compilation through `selected_from_compilation_sha256` and must reuse its `research_family_id`. `derived_from_recipe_sha256` remains reserved for scientifically different adaptations rather than final-OOS selection lineage.
 
 ### D4 — Final-OOS variant rule — FROZEN
 
-**Decision:** exploratory/development recipes may compile finite predeclared sibling variants. `final_oos` requires exactly one already-selected frozen executable variant and permits no grid/search/variant comparison on the holdout. Preflight rejects violations with `final_oos_requires_single_precommitted_variant` before compilation or reservation.
+**Decision:** exploratory/development recipes may compile finite predeclared sibling variants under one stable `research_family_id`. `final_oos` requires exactly one already-selected frozen executable variant from a referenced prior family compilation, reuses that same family ID, and permits no grid/search/variant comparison on the holdout. Preflight rejects multi-variant/search violations with `final_oos_requires_single_precommitted_variant` before compilation or reservation; the unchanged runtime family+holdout guard then remains authoritative against sibling reuse.
 
 ### D5 — Research Recipe envelope
 

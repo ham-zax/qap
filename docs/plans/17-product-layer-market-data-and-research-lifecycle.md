@@ -772,6 +772,7 @@ Do not treat `model` as one catch-all field. The executable recipe object is onl
 ResearchRecipeV1
   schema_version
   recipe_sha256
+  research_family_id             # stable family-continuity anchor; not derived from recipe hash
   research_object                # pair | fixed_basket
   relationship / evidence method
   signal / decision rule
@@ -779,14 +780,15 @@ ResearchRecipeV1
   risk overlays
   selection / calibration protocol
   execution + costs
-  benchmarks + evaluation / data role
+  benchmarks + exact immutable data binding / evaluation role
   fidelity_intent
   source / reference metadata
   parameters / precommitted variants
+  selected_from_compilation_sha256?  # final_oos selection lineage
   derived_from_recipe_sha256?    # required for explicit adaptations
 ```
 
-`recipe_sha256` excludes its own field and changes whenever the semantic declaration, variant set, fidelity intent, source claim, or evaluation role changes.
+`recipe_sha256` is exact recipe identity, not family identity. It hashes canonical semantic execution content including compilation-affecting immutable data bindings while excluding lineage-only fields (`recipe_sha256`, `research_family_id`, `selected_from_compilation_sha256`, `derived_from_recipe_sha256`). It changes whenever the method declaration, variant set, fidelity intent, source claim, immutable data binding, or evaluation role changes. `research_family_id` is established once for the research question/family and remains stable across intentional siblings and the selected final-OOS descendant.
 
 #### SupportReportV1 is compositional
 
@@ -833,6 +835,8 @@ strict_pit_evidence_required
 cannot_claim_faithful_replication
 adaptation_available
 final_oos_requires_single_precommitted_variant
+final_oos_requires_frozen_family_selection
+final_oos_family_mismatch
 ```
 
 Each reason must identify the failing recipe component, distinguish missing implementation from missing setup/data from a protected constitution/research-integrity boundary, and identify the nearest current capability when one exists. Return all applicable reasons together rather than choosing one by precedence.
@@ -864,11 +868,16 @@ Only `pair` and `fixed_basket` recipes compile. Universal/focus discovery remain
 
 `final_oos` requires exactly one already-selected frozen executable variant. A recipe that declares multiple variants, grid/search selection, or holdout-time comparison is rejected in preflight with `structure=invalid`, `runnable=false`, and `final_oos_requires_single_precommitted_variant`. Existing `research_family_id + holdout_id` reservation/consumption remains the runtime authority.
 
+Entering `final_oos` also requires `selected_from_compilation_sha256` to resolve an immutable prior exploratory/development compilation. The selected variant must have been predeclared in that family, and the final-OOS recipe must reuse the referenced `research_family_id`. Its exact `recipe_sha256` is expected to change when the role, holdout/data binding, or variant set changes; that exact-identity change must not create a new research family.
+
+Missing/invalid prior selection returns `final_oos_requires_frozen_family_selection`; changing the referenced family returns `final_oos_family_mismatch`. Both are preflight failures before compilation/reservation. `final_oos_requires_single_precommitted_variant` remains specific to multiple variants or holdout-time grid/search/comparison.
+
 Before execution, persist one immutable family-level compilation record:
 
 ```text
 ResearchRecipeCompilationV1
   schema_version
+  compilation_sha256
   recipe_sha256
   research_family_id
   compiler_version
@@ -876,7 +885,7 @@ ResearchRecipeCompilationV1
   ordered_compiled_manifest_sha256[]
 ```
 
-`research_family_id` is deterministically bound to `recipe_sha256` plus the compiler/catalog versions used to interpret it; every compiled manifest carries that family ID. The compilation record then binds the family to the exact ordered manifest hashes. Existing run artifacts remain authoritative below that boundary and can verify membership through family ID + manifest hash without making the low-level runner recipe-aware.
+`compilation_sha256` is the canonical hash of the compilation record excluding its own hash field. Every compiled manifest carries the compilation record's stable `research_family_id`. The compilation record binds one exact `recipe_sha256` plus compiler/catalog interpretation to the exact ordered manifest hashes without deriving or changing the research family. Existing run artifacts remain authoritative below that boundary and can verify membership through family ID + manifest hash without making the low-level runner recipe-aware.
 
 Existing immutable data fingerprints, code provenance, controls, HODL/economic comparison, negative results, final-OOS reservation/consumption, and artifact ownership remain authoritative.
 
@@ -938,7 +947,8 @@ Prove the machinery with deliberately different cases. This milestone validates 
 4. **Rafael Baptista Palazzi 2025 exact-replication recipe** — returns all applicable truths together: related OLS/z-score capability, constitution blocking for shorting, unimplemented selection/risk semantics, `fidelity=adaptation_required`, and `runnable=false`.
 5. **Palazzi-inspired QAP adaptation** — if intentionally created, it gets a new `recipe_sha256`, `derived_from_recipe_sha256`, and separate fidelity claim.
 6. **Final-OOS multi-variant recipe** — `structure=invalid`, `runnable=false`, `final_oos_requires_single_precommitted_variant` before compilation/reservation.
-7. **Unknown method ID** — `capability=unknown`, `runnable=false`, `unknown_method`; no dynamic dispatch.
+7. **Development-to-final-OOS family continuity** — development `[A,B]` and final-OOS `[A]` have different exact recipe hashes but the final-OOS recipe references the frozen development compilation and reuses the same `research_family_id`; sibling `B` cannot consume the same family holdout afterward.
+8. **Unknown method ID** — `capability=unknown`, `runnable=false`, `unknown_method`; no dynamic dispatch.
 
 Published methodologies are manually curated into typed recipes with source metadata. Phase 17 does **not** attempt automatic paper-to-code interpretation.
 
@@ -1068,8 +1078,9 @@ Phase 17 is complete only when:
 - Universal Scan remains scanner-owned and uses backend-owned scanner stages without inventing a frontend “interestingness” score; Focus Scan is absent unless it can reuse scanner scope without new mechanics;
 - `ResearchRecipeV1` separates relationship evidence, decision rule, rebalance/allocation, risk overlay, parameter-selection protocol, execution/costs, benchmarks/evaluation, data role, fidelity intent, and source/reference metadata;
 - `SupportReportV1` is read-only and compositionally reports structure, capability, authority, readiness, fidelity, runnable state, and all applicable typed reasons rather than one precedence-based status;
-- canonical recipe identity plus immutable compilation lineage binds the declared methodology to `research_family_id`, compiler/catalog interpretation, and exact compiled manifest hashes before execution;
+- canonical exact recipe identity plus immutable compilation lineage binds each declared methodology/data-role instance to a stable `research_family_id`, compiler/catalog interpretation, and exact compiled manifest hashes before execution without deriving family identity from the recipe hash;
 - exploratory/development recipes may compile finite predeclared sibling variants, while `final_oos` accepts exactly one already-selected frozen variant and rejects any grid/search/sibling comparison before reservation;
+- final-OOS selection references the exact frozen exploratory/development compilation and reuses the same research family even though the exact final-OOS recipe hash changes;
 - supported pair/fixed-basket recipes compile downward to existing `ExperimentManifest`/replay/economic authority rather than a second backtester or plugin runtime; the capability catalog points at canonical rule owners instead of duplicating them;
 - a published method can be represented as an exact-replication recipe and receive a truthful blocked/unsupported report without being silently adapted;
 - Student-t Copula can be reported as known-but-unimplemented without claiming the selected pair itself is incompatible;
@@ -1078,7 +1089,7 @@ Phase 17 is complete only when:
 
 ## 19. Fresh-agent implementation mission
 
-> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the frozen Product Layer design, this plan, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and `docs/research/2026-08-20-qap-research-cockpit-investigation.md`. Phase 17 M0-M9 are complete and must not be replayed. M10 is reopened in design review: M10-0 must be approved before executable M10-A work. M10-A owns only the typed `ResearchRecipeV1` / compositional `SupportReportV1` / immutable compilation-lineage boundary for executable `pair | fixed_basket` research. Universal Scan remains under existing scanner authority; Focus Scan stays deferred unless scanner-scope reuse is nearly mechanical. Preserve strict PIT as Advanced Research, current-approved claim/readiness truth, fail-closed identity, immutable data provenance, research-family/final-OOS semantics, longitudinal evidence, manual Portfolio authority, and no-live-trade authority. The capability catalog must reuse canonical validators/composers rather than duplicate runtime rules. `final_oos` must reject multi-variant/search recipes before compilation. Do not build a generic plugin runtime or auto-adapt published research. Copula is an example known-unimplemented method, not a required milestone. Testing remains opt-in under the current execution policy.
+> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the frozen Product Layer design, this plan, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and `docs/research/2026-08-20-qap-research-cockpit-investigation.md`. Phase 17 M0-M9 are complete and must not be replayed. M10 is reopened in design review: M10-0 must be approved before executable M10-A work. M10-A owns only the typed `ResearchRecipeV1` / compositional `SupportReportV1` / immutable compilation-lineage boundary for executable `pair | fixed_basket` research. Universal Scan remains under existing scanner authority; Focus Scan stays deferred unless scanner-scope reuse is nearly mechanical. Preserve strict PIT as Advanced Research, current-approved claim/readiness truth, fail-closed identity, immutable data provenance, research-family/final-OOS semantics, longitudinal evidence, manual Portfolio authority, and no-live-trade authority. Exact recipe hashes may change across development-to-final-OOS selection, but the frozen `research_family_id` must remain continuous; final-OOS must reference the exact prior compilation and reject multi-variant/search use before compilation. The capability catalog must reuse canonical validators/composers rather than duplicate runtime rules. Do not build a generic plugin runtime or auto-adapt published research. Copula is an example known-unimplemented method, not a required milestone. Testing remains opt-in under the current execution policy.
 
 ## 20. One-screen status
 
