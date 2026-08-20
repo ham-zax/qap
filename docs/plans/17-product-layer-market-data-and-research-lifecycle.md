@@ -1,6 +1,6 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M9 are complete and integrated. M10 is REOPENED IN DESIGN REVIEW after a real-user iPhone walkthrough showed that the Product exposes setup/governance machinery before the primary research jobs. Follow-up review clarified that the missing capability is broader than a Pair Research UI: QAP needs a typed Research Recipe / capability-preflight layer so a researcher can declare a method, check whether QAP can reproduce it faithfully, understand exact unsupported/blocked/data-readiness reasons, and only then execute it through existing experiment/scanner authority. M10-0 owns this design amendment; no M10 implementation is authorized until review.
+**Status:** M0-M9 are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED after two contract reviews. M10-A Typed Research Recipe + Capability Preflight is the current executable frontier. M10-B Product cockpit implementation remains blocked on M10-A, though read-only repository/UI reconnaissance may proceed against the frozen contract. The Product correction remains broader than a Pair Research UI: QAP needs a typed Research Recipe / capability-preflight layer so a researcher can declare a method, check whether QAP can reproduce it faithfully, understand exact unsupported/blocked/data-readiness reasons, and only then execute it through existing experiment/scanner authority.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
@@ -707,7 +707,7 @@ M9 completed without a desktop dependency. The mature Product-V1 runtime remains
 
 **Investigation:** `docs/research/2026-08-20-qap-research-cockpit-investigation.md`
 
-### M10-0 - Research Cockpit + Experiment Contract design amendment - CURRENT
+### M10-0 - Research Cockpit + Experiment Contract design amendment - APPROVED
 
 **Purpose:** Freeze the corrected Product research journey and the smallest typed experiment contract before further implementation.
 
@@ -758,9 +758,9 @@ M10-0 freezes these contract decisions before implementation:
 - just-in-time identity/admission/data setup that preserves the user's unfinished research draft;
 - what independent identity evidence can be shown safely to a non-expert user.
 
-No runtime/scientific implementation is authorized by M10-0. Do not amend the frozen design spec until these decisions are reviewed.
+M10-0 is frozen/approved. M10-A may implement only the bounded recipe/preflight/lineage/compiler contract below. Scientific authority beneath `ExperimentManifest` remains unchanged.
 
-### M10-A - Typed Research Recipe + Capability Preflight - BLOCKED ON M10-0 APPROVAL
+### M10-A - Typed Research Recipe + Capability Preflight - CURRENT
 
 Implement the smallest backend domain/API owner that can answer **before execution** whether a declared recipe is representable, executable, claim-compatible, and data-ready.
 
@@ -1038,8 +1038,8 @@ M6  longitudinal idea + evidence-layer semantics/follow-up  COMPLETE
 M7  ownership-safe persistent current-evidence collector    COMPLETE
 M8  objective-aware Portfolios + History + utility Activity COMPLETE
 M9  process/state ownership + packaging decision            COMPLETE
-M10-0 Research Cockpit + Experiment Contract design        CURRENT / REVIEW
-M10-A typed Research Recipe + capability preflight         BLOCKED ON M10-0
+M10-0 Research Cockpit + Experiment Contract design        APPROVED / FROZEN
+M10-A typed Research Recipe + capability preflight         CURRENT / IMPLEMENTATION
 M10-B Research Cockpit + Experiment Lab                    BLOCKED ON M10-A
 M10-C capability/fidelity proof with real methods          BLOCKED ON M10-A/B
 M10-D representative-user comprehension/authority closure  FINAL / BLOCKED
@@ -1113,11 +1113,13 @@ Phase 17 M8-A History / utility Activity                           COMPLETE
 Phase 17 M8-B Product Portfolio presentation                      COMPLETE
 Phase 17 M9 process / state ownership + lifecycle hardening        COMPLETE
 
-CURRENT / DESIGN REVIEW
+APPROVED / FROZEN
 Phase 17 M10-0 Research Cockpit + Experiment Contract design
 
-BLOCKED UNTIL REVIEW / DEPENDENCIES
+CURRENT / IMPLEMENTATION
 Phase 17 M10-A typed Research Recipe + capability preflight
+
+BLOCKED / DEPENDENCIES
 Phase 17 M10-B Research Cockpit + Experiment Lab
 Phase 17 M10-C capability/fidelity proof with real methods
 Phase 17 M10-D representative-user acceptance

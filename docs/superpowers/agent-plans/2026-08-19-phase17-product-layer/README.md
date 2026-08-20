@@ -7,16 +7,17 @@
 **Legacy salvage evidence:** `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`
 **Research cockpit evidence:** `docs/research/2026-08-20-qap-research-cockpit-investigation.md`
 **Frozen design base:** `1bb6e78`
-**Execution shape:** M0-M9 remain integrated; M10 is reopened in design review after real-user feedback exposed both a missing Pair Research / Universal Scan cockpit and a missing typed Research Recipe / capability-preflight layer. No executable writer is authorized until M10-0 is reviewed.
-**Current wave:** 11 — M10-0 Research Cockpit + Experiment Contract design review
+**Execution shape:** M0-M9 remain integrated and M10-0 is approved. Wave 12 is hybrid: Agent B is the single writable M10-A recipe/preflight implementation owner in an isolated worktree, while Agent A performs read-only M10-B Product reconnaissance on stable `main`. M10-B implementation remains blocked until M10-A integrates.
+**Current wave:** 12 — M10-A implementation + M10-B read-only reconnaissance
 
 ## Current frontier
 
 | Mission | Type | Status | Can start | Workspace | Isolation reason | Blocked by |
 |---|---|---|---|---|---|---|
-| M10-0 Research Cockpit + Experiment Contract amendment | read-only/design planning | current / ready for final re-review | now | stable integrated Product V1 on `main` | freezes real execution owners, compositional SupportReport, exact-recipe vs stable-family lineage, final-OOS selection continuity, and cockpit UX | none — M0-M9 integrated |
-| M10-A Typed Research Recipe + capability preflight | executable backend | blocked; reconnaissance complete | after M10-0 approval | not materialized | `pair | fixed_basket` only; read-only SupportReportV1; immutable recipe/compilation binding; stable family continuity; faithful compile to existing experiment authority | M10-0 |
-| M10-B Research Cockpit + Experiment Lab | executable Product | blocked | after M10-A | not materialized | Pair Research/Experiment Lab over recipe contract; Universal Scan remains scanner-owned; exact-first search/JIT setup | M10-A |
+| M10-0 Research Cockpit + Experiment Contract amendment | design contract | complete / approved | complete | `main` | frozen contract | none |
+| Agent B — M10-A Typed Research Recipe + capability preflight | executable backend | ready / current writer | now | `/home/hamza/repo/qap/.worktrees/phase17-m10a-research-recipe` | isolates the only writer from Agent A's stable read-only baseline | M10-0 approved |
+| Agent A — M10-B Product reconnaissance | read-only | ready | now | stable `main` read-only | must not inspect Agent B's in-flight worktree | M10-0 approved; reads frozen M10-A contract only |
+| M10-B Research Cockpit + Experiment Lab implementation | executable Product | blocked | after M10-A integration | not materialized | Pair Research/Experiment Lab over stable recipe contract; Universal Scan remains scanner-owned | M10-A |
 | M10-C capability/fidelity proof | acceptance/research | blocked | after M10-A/B | stable integrated build | proves current, unsupported, constitution-blocked, paper-replication/adaptation cases | M10-A and M10-B |
 | M10-D representative-user closure | human-led acceptance | blocked | after M10-C | stable integrated Product build | validates corrected research/experiment tasks with actual/likely users | M10-C |
 
@@ -53,10 +54,10 @@ M8 Product basket provenance + History/Activity + Portfolio convergence
 M9 process/state lifecycle hardening / no-desktop-shell decision
         |
         v
-M10-0 Research Cockpit + Experiment Contract design         CURRENT
+M10-0 Research Cockpit + Experiment Contract design         APPROVED
         |
         v
-M10-A typed Research Recipe + capability preflight
+M10-A typed Research Recipe + capability preflight          CURRENT WRITER
         |
         v
 M10-B Research Cockpit + Experiment Lab
@@ -86,8 +87,8 @@ Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. The first real-user
 | M8-A History + utility Activity | complete / integrated at `2aa60ea` | — |
 | M8-B Product Portfolio presentation | complete / integrated through `0efd728` plus claim-wording closure `3b7c32d` | — |
 | M9 process/state ownership + packaging decision | complete / integrated at `d9cb44e`; no desktop shell selected | — |
-| M10-0 Research Cockpit + Experiment Contract design | current / review | planner + user review |
-| M10-A typed Research Recipe + capability preflight | blocked on M10-0 | future backend writer after approval |
+| M10-0 Research Cockpit + Experiment Contract design | complete / approved at Wave-12 base | — |
+| M10-A typed Research Recipe + capability preflight | current | Agent B writer |
 | M10-B Research Cockpit + Experiment Lab | blocked on M10-A | future Product writer |
 | M10-C capability/fidelity proof with real methods | blocked on M10-A/B | acceptance/research pass; no method implementation implied |
 | M10-D representative-user comprehension/authority closure | final / blocked | human-led acceptance |
@@ -107,23 +108,23 @@ Full M8 is integrated through `3b7c32d` and M9 at `d9cb44e`. The first real-user
 
 ## Workspace policy
 
-No autonomous writer is currently authorized. M0-M9 are integrated on `main`; former Phase-17 worktrees are historical milestone state. M10-0 is a design-review checkpoint, not an implementation branch. The contract now preserves both exact declaration identity and current QAP family semantics: recipes compile only for `pair | fixed_basket`; Universal Scan remains scanner-owned; `SupportReportV1` is compositional; each exact recipe/compilation is immutable; `research_family_id` remains stable across intentional siblings and the selected final-OOS descendant; and final-OOS is single-precommitted-variant only with an exact frozen prior-compilation reference. Agent B's M10-A reconnaissance is complete, but no writer starts until Agent A approves this final correction. After approval, M10-A should materialize only that bounded backend boundary. Only after it is stable should M10-B build the Product cockpit/Experiment Lab. Copula, Palazzi-style reproduction, Momentum variants, or any other method must be classified by the capability layer; M10 does not preapprove implementing them.
+M10-0 is approved. Agent B owns the only writable M10-A workspace at `/home/hamza/repo/qap/.worktrees/phase17-m10a-research-recipe`; Agent A remains read-only on stable `main` for M10-B reconnaissance and must not inspect the active writer worktree. The frozen contract preserves both exact declaration identity and current QAP family semantics: recipes compile only for `pair | fixed_basket`; Universal Scan remains scanner-owned; `SupportReportV1` is compositional; each exact recipe/compilation is immutable; `research_family_id` remains stable across intentional siblings and the selected final-OOS descendant; and final-OOS is single-precommitted-variant only with an exact frozen prior-compilation reference. Only after M10-A integrates should an executable M10-B writer be materialized. Copula, Palazzi-style reproduction, Momentum variants, or any other method must be classified by the capability layer; M10 does not preapprove implementing them.
 
 ## Integration policy
 
 M1 is integrated at `461a33c`, M2 at `8e45c36`, the M3 shared foundation at `1a476db`, Binance at `f1fab24`, Gate is integrated from original venue commit `30297cd`, final adaptive M3 orchestration at `c1d97eb`, M4 at `d49e597` plus planner closure `c3c81ca`, M5 at `6b40028`, M6 at `c1db648`, M7 at `d5fbddc`, M8-0 at `01e8d3e`, M8-A at `2aa60ea`, M8-B centrally at `0efd728` plus claim-wording closure `3b7c32d`, and M9 at `d9cb44e`.
 
-Full M8 and M9 are closed. No generated-contract conflict remained after M8 integration, and the combined OpenAPI/type/build contract was revalidated centrally. Real-user evidence now explicitly blocks Phase-17 closure: M10-0 must review/freeze the Research Cockpit amendment before any executable M10-A branch is created. The existing scientific design is not implicitly amended by the planning report.
+Full M8 and M9 are closed. M10-0 is approved and frozen. The Wave-12 coordination base contains the approved contract plus the two current mission briefs. Agent B's isolated M10-A branch will integrate back to `main` before M10-B implementation is unlocked; Agent A's concurrent work is read-only reconnaissance only.
 
 ## Execution lifetime policy
 
-M10-0 is a bounded design/review mission. No persistent coding process is needed while the user is reviewing the cockpit/experiment plan. If/when M10-A implementation is approved, return to normal one-writer Persistent Agent Loop execution. M10-D remains human-led acceptance; never fabricate participant reactions or usability metrics.
+Agent B M10-A uses Persistent Agent Loop because it is the current writable vertical slice. Agent A's M10-B reconnaissance uses the loop only for mission continuity and remains read-only. Status questions or compatible steering do not implicitly stop either mission. M10-D remains human-led acceptance; never fabricate participant reactions or usability metrics.
 
 ## Verification policy
 
-### M10-0 — Research Cockpit + Experiment Contract design review
+### M10-A — Typed Research Recipe + capability preflight
 
-Review `docs/research/2026-08-20-qap-research-cockpit-investigation.md` against the current backend and legacy product-intent evidence. Re-review the final corrected contract: `ResearchRecipeV1` executable objects are only `pair | fixed_basket`; Universal Scan stays scanner-owned; `SupportReportV1` carries independent structure/capability/authority/readiness/fidelity/runnable axes plus all reasons; exact recipe identity includes compilation-affecting semantics but does not derive family identity; `ResearchRecipeCompilationV1` binds each exact recipe to the stable family/manifests; and final-OOS selects exactly one variant from a referenced frozen exploratory/development compilation while reusing the same `research_family_id`. No implementation until this corrected M10-0 contract is approved.
+Implement only the approved `pair | fixed_basket` recipe/preflight/lineage/compiler boundary. Preserve compositional SupportReport truth, exact recipe identity versus stable family identity, immutable prior-compilation final-OOS selection, canonical validator/composer ownership, and the existing experiment/final-OOS runtime below `ExperimentManifest`. No new research method or second engine is authorized.
 
 ### M10-C — capability/fidelity proof
 
@@ -150,17 +151,18 @@ The whole Phase-17 implementation is decomposed at low resolution below. Detaile
 | **8 — complete** | **Write M7:** ownership-safe persistent current-evidence collector/qualification bridge | **Read-only M8 objective-aware convergence reconnaissance** | M7 integrated at `d5fbddc`; M8 reconnaissance found a serial basket-provenance foundation is required |
 | **9 — complete** | **Write M8-0:** Product basket source/provenance + immutable M3 generation binding | **Read-only M9 process/state ownership reconnaissance** | M8-0 integrated at `01e8d3e`; M9 recon recommends no desktop shell for Product V1 |
 | **10 — complete** | **Write M8-A:** History + utility Activity with research-learning semantics | **Write M8-B:** objective-aware Product Portfolio presentation convergence | full M8 integrated through `3b7c32d` |
-| **11 — current/design review** | **M10-0 Research Cockpit + Experiment Contract amendment** | user/planner review; no executable agent | Pair/Universe UX + typed recipe/support contract must be frozen |
-| **12 — blocked** | **M10-A typed Research Recipe + capability preflight** | read-only contract review | starts only after M10-0 approval; no new research method implementation |
-| **13 — blocked** | **M10-B Research Cockpit + Experiment Lab** | **M10-C capability/fidelity proof** | Product surface follows stable preflight semantics; proof uses current/unsupported/paper cases |
+| **11 — complete** | **M10-0 Research Cockpit + Experiment Contract amendment/reviews** | contract reconnaissance/review | approved; family continuity and final-OOS selection lineage frozen |
+| **12 — current** | **Agent B writes M10-A typed Research Recipe + capability preflight** | **Agent A read-only M10-B reconnaissance** | M10-A is the only writer; reconnaissance prepares Product work without racing the branch |
+| **13 — blocked** | **M10-B Research Cockpit + Experiment Lab** | **M10-C capability/fidelity proof/review** | starts after M10-A integrates and planner reconciles Agent A reconnaissance |
 | **14 — closure** | integration/remediation only if approved | **M10-D human-led acceptance** | Phase 17 closes only after corrected research/experiment tasks and protected meanings are demonstrated |
 
 This map is a dependency plan, not permission to start future writers early. The planner must re-evaluate each wave from returned commits/reports and may collapse or reshape later waves when repository reality makes the original split unnecessary.
 
 Important remaining work now:
 
-- M10-0 Research Cockpit + Experiment Contract design amendment is the current frontier and is ready for final re-review after the research-family continuity correction.
-- M10-A typed Research Recipe / capability preflight reconnaissance is complete, but implementation is blocked until final M10-0 approval; executable objects remain only `pair | fixed_basket`.
+- M10-0 Research Cockpit + Experiment Contract is approved and frozen.
+- M10-A typed Research Recipe / capability preflight is the current writable frontier; executable objects remain only `pair | fixed_basket`.
+- Agent A concurrently maps M10-B read-only against stable `main`; do not inspect Agent B's active worktree.
 - M10-B Pair Research / Experiment Lab Product work is blocked on M10-A; Universal Scan remains existing scanner authority and Focus Scan is deferred unless mechanically reusable.
 - M10-C must prove compositional support/fidelity reporting using current methods, Student-t Copula as known-unimplemented, Palazzi exact/adapted cases, an invalid final-OOS multi-variant recipe, and an unknown method.
 - M10-D representative-user acceptance remains final and blocked.
@@ -186,3 +188,4 @@ Important remaining work now:
 - `2026-08-20` — First real-user mobile research walkthrough reopened M10 in design review. Follow-up clarified the intended Product: not a Copula-specific UI, but machinery to declare/type-check research recipes, explain exact support/fidelity/readiness/constitution blockers, and run only faithfully supported methods through existing QAP experiment authority. Pair Research, Universal Scan, and an advanced Experiment Lab are now planned on top of that contract; M10-A/B/C/D remain blocked pending M10-0 review.
 - `2026-08-20` — M10-0 contract review requested four major corrections and all four are now incorporated for re-review: recipe compilation is constrained to `pair | fixed_basket` while Universal/Focus discovery stays scanner-owned; `SupportReportV1` is compositional instead of precedence-based; `ResearchRecipeV1` plus immutable compilation lineage binds methodology to family/manifests; and `final_oos` rejects multi-variant/search recipes before compilation. The capability catalog remains explanatory and delegates validation/composition to existing canonical owners.
 - `2026-08-20` — Final M10-0 re-review found one remaining lineage defect: deriving `research_family_id` from exact `recipe_sha256` would sever development-to-final-OOS family continuity and weaken the existing family+holdout guard. The contract now keeps exact recipe identity separate from stable family identity, adds immutable prior-compilation selection lineage for final OOS, and requires the same family ID to survive `[A,B]/development -> [A]/final_oos`. Agent B's M10-A reconnaissance is complete; implementation remains blocked pending Agent A's final approval.
+- `2026-08-20` — Agent A APPROVED M10-0 at `052aaaf` with no remaining blockers. Wave 12 materializes one M10-A writer (Agent B) plus concurrent read-only M10-B reconnaissance (Agent A). M10-B implementation and M10-C remain blocked until M10-A integrates.
