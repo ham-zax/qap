@@ -1,6 +1,6 @@
 # Phase 17 - Product Layer: Market Data and Research Lifecycle
 
-**Status:** M0-M9 are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED after two contract reviews. M10-A Typed Research Recipe + Capability Preflight is complete and integrated at `12ed08a`. M10-B Research Cockpit + Experiment Lab is complete and integrated at `f39b4b4`. M10-C Capability/Fidelity Proof is now the current frontier. M10-C validates the already-integrated machinery with the frozen current/unsupported/constitution/fidelity/final-OOS/unknown-method cases; it does not implement missing methods or change scientific authority.
+**Status:** M0-M9 are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED after two contract reviews. M10-A Typed Research Recipe + Capability Preflight is complete and integrated at `12ed08a`. M10-B Research Cockpit + Experiment Lab is complete and integrated at `f39b4b4`. M10-C Capability/Fidelity Proof is APPROVED and integrated at `3e07878`. M10-D Representative-User Comprehension / Authority Closure is the final current gate; no further technical implementation is authorized unless representative-user evidence requests remediation or returns a protected semantic issue to design review.
 
 **Canonical design:** `docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`
 
@@ -939,7 +939,9 @@ Asset/setup behavior still requires:
 - pair/universe readiness is shown in user-task language;
 - protocol IDs, fingerprints, physical generation paths, and other audit vocabulary remain available under progressive disclosure.
 
-### M10-C - Capability/Fidelity proof with real research methods - CURRENT
+### M10-C - Capability/Fidelity proof with real research methods - COMPLETE / APPROVED `3e07878`
+
+**Evidence:** `docs/research/2026-08-20-qap-m10c-capability-fidelity-proof.md` records direct deterministic and rendered Product evidence for all eight frozen cases. No blocking production defect was found and no production remediation was required.
 
 Prove the machinery with deliberately different cases. This milestone validates the support checker; it does **not** require implementing every method.
 
@@ -954,7 +956,9 @@ Prove the machinery with deliberately different cases. This milestone validates 
 
 Published methodologies are manually curated into typed recipes with source metadata. Phase 17 does **not** attempt automatic paper-to-code interpretation.
 
-### M10-D - Representative-user comprehension / authority closure - FINAL
+### M10-D - Representative-user comprehension / authority closure - CURRENT / FINAL HUMAN GATE
+
+**Acceptance protocol:** `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/m10d-representative-user-acceptance.md`.
 
 Only after M10-A/B/C exist should representative users complete realistic tasks without developer coaching. At minimum they must be able to:
 
@@ -1043,8 +1047,8 @@ M9  process/state ownership + packaging decision            COMPLETE
 M10-0 Research Cockpit + Experiment Contract design        APPROVED / FROZEN
 M10-A typed Research Recipe + capability preflight         COMPLETE / INTEGRATED 12ed08a
 M10-B Research Cockpit + Experiment Lab                    COMPLETE / INTEGRATED `f39b4b4`
-M10-C capability/fidelity proof with real methods          CURRENT / PROOF
-M10-D representative-user comprehension/authority closure  FINAL / BLOCKED
+M10-C capability/fidelity proof with real methods          COMPLETE / APPROVED 3e07878
+M10-D representative-user comprehension/authority closure  CURRENT / HUMAN-LED FINAL GATE
 ```
 
 Do not start M5 visual/React restructuring before M1-M4 make workspace/universe/data/readiness state authoritative.
@@ -1091,7 +1095,7 @@ Phase 17 is complete only when:
 
 ## 19. Fresh-agent implementation mission
 
-> Work in `/home/hamza/repo/qap` using the live coordination arrangement in `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/README.md`. Preserve legitimate concurrent changes. Read the frozen Product Layer design, this plan, `docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`, and `docs/research/2026-08-20-qap-research-cockpit-investigation.md`. Phase 17 M0-M9 and M10-A/B are complete and must not be replayed. M10-C is the current proof frontier over integrated M10-A `12ed08a` and M10-B `f39b4b4`. Exercise the eight frozen capability/fidelity cases and verify Product presentation preserves backend truth. Do not implement Copula, Palazzi, new scanner modes, new research methods, a plugin runtime, or source remediation inside the proof mission; a blocking defect should be documented and returned as `REQUEST CHANGES`. Universal Scan remains scanner-owned, Focus Scan remains deferred, strict PIT remains Advanced Research, final-OOS runtime authority remains unchanged, and testing remains opt-in under the current execution policy.
+> Phase 17 M0-M9 and M10-A/B/C are complete; M10-C is approved at `3e07878`. The only current gate is human-led M10-D. Use `docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/m10d-representative-user-acceptance.md` as the acceptance protocol. Do not substitute developer self-review, an AI session, or fabricated usability metrics for actual/likely representative users. If evidence shows ordinary presentation/discoverability friction, perform only the smallest UX remediation and rerun the affected task. If evidence exposes misunderstanding of a protected scientific/economic meaning, return to design review instead of changing backend truth or inventing React semantics.
 
 ## 20. One-screen status
 
@@ -1124,10 +1128,10 @@ Phase 17 M10-A typed Research Recipe + capability preflight  12ed08a
 COMPLETE / INTEGRATED
 Phase 17 M10-B Research Cockpit + Experiment Lab (`f39b4b4`)
 
-CURRENT / PROOF
-Phase 17 M10-C capability/fidelity proof with real methods
+COMPLETE / APPROVED
+Phase 17 M10-C capability/fidelity proof with real methods (`3e07878`)
 
-BLOCKED / DEPENDENCIES
+CURRENT / FINAL HUMAN GATE
 Phase 17 M10-D representative-user acceptance
 
 CURRENT PRIMARY IA
