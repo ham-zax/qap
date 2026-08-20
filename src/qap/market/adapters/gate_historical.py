@@ -442,12 +442,15 @@ class GateHistoricalAdapter:
             if can_use_archive:
                 month_end = _next_month(cursor)
                 if month_end <= end_utc and month_end <= current_month:
-                    archived = self._fetch_archive_month(
-                        instrument=instrument,
-                        interval=interval,
-                        start=cursor,
-                        end_exclusive=month_end,
-                    )
+                    try:
+                        archived = self._fetch_archive_month(
+                            instrument=instrument,
+                            interval=interval,
+                            start=cursor,
+                            end_exclusive=month_end,
+                        )
+                    except GateHistoricalDataError:
+                        archived = None
                     if archived is not None:
                         series, source = archived
                         bars.extend(series.bars)

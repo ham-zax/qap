@@ -12,6 +12,7 @@ from qap.api.product_schemas import (
     ProductMarketDataDto,
 )
 from qap.api.settings import ApiSettings
+from qap.portfolio import AssetId
 from qap.product_market_data import ProductMarketDataError
 from qap.product_market_data_models import ProductMarketDataProjection
 from qap.product_market_data_prepare import (
@@ -87,11 +88,27 @@ def _execute(
 ) -> ProductMarketDataDto:
     _require_local_market(request)
     horizons = tuple(ScannerHorizon(value) for value in command.horizons)
+    asset_ids = (
+        None
+        if command.asset_ids is None
+        else tuple(AssetId(value) for value in command.asset_ids)
+    )
+    analysis_reference_ids = tuple(
+        AssetId(value) for value in command.analysis_reference_ids
+    )
     try:
         projection = (
-            _owner(request).refresh(horizons)
+            _owner(request).refresh(
+                horizons,
+                asset_ids=asset_ids,
+                analysis_reference_ids=analysis_reference_ids,
+            )
             if refresh
-            else _owner(request).prepare(horizons)
+            else _owner(request).prepare(
+                horizons,
+                asset_ids=asset_ids,
+                analysis_reference_ids=analysis_reference_ids,
+            )
         )
     except ProductUniverseError as exc:
         raise ApiBoundaryError(

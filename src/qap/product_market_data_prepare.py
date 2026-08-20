@@ -18,6 +18,7 @@ from qap.market.adapters.gate_historical import (
     GateHistoricalAdapter,
     GateHistoricalDataError,
 )
+from qap.portfolio import AssetId
 from qap.product_gate_market_data import (
     acquire_gate_historical_generation_input,
     gate_dataset_id,
@@ -334,18 +335,41 @@ class ProductMarketDataPreparation:
         self,
         kind: MaintenanceKind,
         horizons: tuple[ScannerHorizon, ...],
+        *,
+        asset_ids: tuple[AssetId, ...] | None = None,
+        analysis_reference_ids: tuple[AssetId, ...] = (),
     ) -> ProductMarketDataProjection:
         if self._market_data.market_data_root is None:
             raise ProductMarketDataError("Market data root is not configured.")
 
         requirements = market_data_requirements(horizons)
-        scope = self._universe.resolved_scope()
+        scope = self._universe.resolved_scope(
+            asset_ids=asset_ids,
+            analysis_reference_ids=analysis_reference_ids,
+        )
         if not scope.instruments:
             raise ProductMarketDataPreparationError(
                 "Research Universe has no resolved approved/current instruments."
             )
 
         operation_now = datetime.now(UTC)
+        longest_interval = max(
+            requirements,
+            key=lambda item: item.interval.duration,
+        ).interval
+        shared_end_by_venue: dict[str, datetime] = {}
+        if asset_ids is not None:
+            for venue in {item.instrument.venue for item in scope.instruments}:
+                observed_at = min(
+                    item.directory_observed_at
+                    for item in scope.instruments
+                    if item.instrument.venue == venue
+                )
+                shared_end_by_venue[venue] = _aligned_completed_end(
+                    observed_at,
+                    longest_interval,
+                    now=operation_now,
+                )
         self._market_data.start_maintenance(kind)
         try:
             current_by_id = _current_generations(self._market_data.projection())
@@ -358,12 +382,16 @@ class ProductMarketDataPreparation:
                         scope.directory_observed_at,
                         instrument.directory_observed_at,
                     )
-                    for requirement in requirements:
-                        end_exclusive = _aligned_completed_end(
+                    shared_end = shared_end_by_venue.get(
+                        instrument.instrument.venue,
+                        _aligned_completed_end(
                             observed_at,
-                            requirement.interval,
+                            longest_interval,
                             now=operation_now,
-                        )
+                        ),
+                    )
+                    for requirement in requirements:
+                        end_exclusive = shared_end
                         start = end_exclusive - requirement.lookback
                         dataset_id = product_dataset_id(
                             instrument, requirement.interval
@@ -404,8 +432,16 @@ class ProductMarketDataPreparation:
     def prepare(
         self,
         horizons: tuple[ScannerHorizon, ...],
+        *,
+        asset_ids: tuple[AssetId, ...] | None = None,
+        analysis_reference_ids: tuple[AssetId, ...] = (),
     ) -> ProductMarketDataProjection:
-        return self._run("prepare_market_data", horizons)
+        return self._run(
+            "prepare_market_data",
+            horizons,
+            asset_ids=asset_ids,
+            analysis_reference_ids=analysis_reference_ids,
+        )
 
     def projection(self) -> ProductMarketDataProjection:
         return self._market_data.projection()
@@ -413,8 +449,16 @@ class ProductMarketDataPreparation:
     def refresh(
         self,
         horizons: tuple[ScannerHorizon, ...],
+        *,
+        asset_ids: tuple[AssetId, ...] | None = None,
+        analysis_reference_ids: tuple[AssetId, ...] = (),
     ) -> ProductMarketDataProjection:
-        return self._run("refresh_market_data", horizons)
+        return self._run(
+            "refresh_market_data",
+            horizons,
+            asset_ids=asset_ids,
+            analysis_reference_ids=analysis_reference_ids,
+        )
 
 
 __all__ = [

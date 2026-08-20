@@ -595,8 +595,13 @@ class ProductUniverse:
             identity_reviews=identity_reviews,
         )
 
-    def resolved_scope(self) -> ProductResearchScope:
-        """Return the explicit approved/current resolved instrument seam for M3."""
+    def resolved_scope(
+        self,
+        *,
+        asset_ids: tuple[AssetId, ...] | None = None,
+        analysis_reference_ids: tuple[AssetId, ...] = (),
+    ) -> ProductResearchScope:
+        """Return the approved/current scope, optionally bounded to selected assets."""
 
         state = self.read_state()
         directory = self.read_directory()
@@ -607,6 +612,18 @@ class ProductUniverse:
         mappings = _mapping_by_venue_code(state)
         versions = _mapping_versions(state)
         approved = {AssetId(value) for value in state.approved_asset_ids}
+        selected = None if asset_ids is None else frozenset(asset_ids)
+        references = frozenset(analysis_reference_ids)
+        if selected is None and references:
+            raise ProductUniverseError("Analysis references require selected assets.")
+        if selected is not None:
+            assert asset_ids is not None
+            if not selected or len(selected) != len(asset_ids):
+                raise ProductUniverseError("Selected assets must be unique.")
+            if not selected <= approved:
+                raise ProductUniverseError("Selected Product assets are not approved.")
+            if any(len(versions.get(a, ())) != 1 for a in selected | references):
+                raise ProductUniverseError("Selected/reference identity is unresolved.")
         sources = {source.venue: source for source in directory.sources}
         instruments: list[ResolvedProductInstrument] = []
         for market in directory.markets:
@@ -622,9 +639,11 @@ class ProductUniverse:
             base_mapping, quote_mapping = resolved
             base_asset = AssetId(base_mapping.canonical_asset_id)
             quote_asset = AssetId(quote_mapping.canonical_asset_id)
-            is_usdt_path = base_asset in approved and quote_asset == AssetId("USDT")
-            is_approved_direct = base_asset in approved and quote_asset in approved
-            if not (is_usdt_path or is_approved_direct):
+            economic = approved if selected is None else selected
+            is_usdt = quote_asset.key == "USDT"
+            include = base_asset in economic and (is_usdt or quote_asset in economic)
+            include |= selected is not None and base_asset in references and is_usdt
+            if not include:
                 continue
             source = sources[market.venue]
             instruments.append(

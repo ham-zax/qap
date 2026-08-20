@@ -23,6 +23,7 @@ from qap.api.routes import (
     portfolios_router,
     product_current_evidence_router,
     product_market_data_router,
+    product_pair_study_router,
     product_research_router,
     research_recipes_router,
     research_universe_router,
@@ -36,6 +37,7 @@ from qap.product_current_approved import CurrentApprovedResearch
 from qap.product_current_evidence import ProductCurrentEvidenceStore
 from qap.product_market_data import ProductMarketData
 from qap.product_market_data_prepare import ProductMarketDataPreparation
+from qap.product_pair_study import ProductPairStudy
 from qap.product_universe import ProductUniverse
 from qap.research_recipe_entry import ResearchRecipeService
 
@@ -97,6 +99,9 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.state.product_market_data_preparation = ProductMarketDataPreparation(
         product_universe,
         product_market_data,
+    )
+    app.state.product_pair_study = ProductPairStudy(
+        product_universe, product_market_data
     )
     current_approved_research = CurrentApprovedResearch(
         product_universe,
@@ -189,6 +194,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.include_router(workspace_router)
     app.include_router(research_universe_router)
     app.include_router(product_market_data_router)
+    app.include_router(product_pair_study_router)
     app.include_router(product_research_router)
     app.include_router(research_recipes_router)
     app.include_router(product_current_evidence_router)

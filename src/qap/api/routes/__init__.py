@@ -11,6 +11,7 @@ from qap.api.routes.product_current_evidence import (
     router as product_current_evidence_router,
 )
 from qap.api.routes.product_market_data import router as product_market_data_router
+from qap.api.routes.product_pair_study import router as product_pair_study_router
 from qap.api.routes.product_research import router as product_research_router
 from qap.api.routes.research_recipes import router as research_recipes_router
 from qap.api.routes.research_universe import router as research_universe_router
@@ -27,6 +28,7 @@ __all__ = [
     "portfolios_router",
     "product_current_evidence_router",
     "product_market_data_router",
+    "product_pair_study_router",
     "product_research_router",
     "research_recipes_router",
     "research_universe_router",
