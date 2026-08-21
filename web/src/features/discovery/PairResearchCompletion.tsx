@@ -229,7 +229,13 @@ function PairResearchRunResult({
   const primaryControl = primaryControlId
     ? result.roles.find((role) => role.role === `control:${primaryControlId}`)
     : undefined
-  const methodParameters = Object.entries(manifest.relationship.config ?? {})
+  const methodParameters = Object.entries(manifest.relationship.config ?? {}).filter(
+    ([key]) =>
+      key !== 'base_asset' && key !== 'quote_asset' && key !== 'evidence_instrument_ids',
+  )
+  const policyParameters = Object.entries(manifest.policy.config ?? {}).filter(
+    ([key]) => key !== 'base_asset' && key !== 'quote_asset',
+  )
   const ids = executionIds(data)
   const instruments = manifest.instruments.filter((instrument) =>
     ids.includes(instrument.instrument_id),
@@ -265,11 +271,17 @@ function PairResearchRunResult({
         <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-accent">
           Experiment
         </p>
-        <div className="mt-3 grid gap-4 md:grid-cols-2">
+        <div className="mt-3 grid gap-4 md:grid-cols-3">
           <div>
             <p className="m-0 text-xs text-muted">Relationship method</p>
             <p className="mt-1 mb-0 font-semibold text-foreground">
               {humanizeIdentifier(manifest.relationship.component_id)}
+            </p>
+          </div>
+          <div>
+            <p className="m-0 text-xs text-muted">Decision rule</p>
+            <p className="mt-1 mb-0 font-semibold text-foreground">
+              {humanizeIdentifier(manifest.policy.component_id)}
             </p>
           </div>
           <div>
@@ -280,15 +292,37 @@ function PairResearchRunResult({
           </div>
         </div>
         {methodParameters.length ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {methodParameters.map(([key, value]) => (
-              <div key={key} className="rounded-md border border-border bg-canvas/35 p-3">
-                <p className="m-0 text-xs text-muted">{humanizeIdentifier(key)}</p>
-                <p className="mt-1 mb-0 text-sm font-semibold text-foreground">
-                  {configValue(value)}
-                </p>
-              </div>
-            ))}
+          <div className="mt-4">
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+              Relationship parameters
+            </p>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {methodParameters.map(([key, value]) => (
+                <div key={key} className="rounded-md border border-border bg-canvas/35 p-3">
+                  <p className="m-0 text-xs text-muted">{humanizeIdentifier(key)}</p>
+                  <p className="mt-1 mb-0 text-sm font-semibold text-foreground">
+                    {configValue(value)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {policyParameters.length ? (
+          <div className="mt-4">
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+              Decision parameters
+            </p>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {policyParameters.map(([key, value]) => (
+                <div key={key} className="rounded-md border border-border bg-canvas/35 p-3">
+                  <p className="m-0 text-xs text-muted">{humanizeIdentifier(key)}</p>
+                  <p className="mt-1 mb-0 text-sm font-semibold text-foreground">
+                    {configValue(value)}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         ) : null}
         <p className="mt-4 mb-0 text-sm leading-6 text-secondary">
