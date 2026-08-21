@@ -2,11 +2,11 @@
 
 **Repository:** `/home/hamza/repo/qap`
 **Artifact type:** human-led acceptance / qualitative evidence
-**Baseline:** integrated Product through M10-C at `3e07878`
-**Can start:** rerun affected Pair Research task after the current bounded UX remediation integrates
-**Depends on:** M10-A `12ed08a`, M10-B `f39b4b4`, M10-C proof `3e07878`
-**Execution owner:** human moderator + actual/likely representative users
-**Current verdict:** `UX REMEDIATION REQUIRED`
+**Baseline:** integrated Pair Study research workflow through `3528973`
+**Can start:** now, against an isolated Local Market workspace that does not mutate the protected live-session state on `main`
+**Depends on:** M10-A `12ed08a`, M10-B `f39b4b4`, M10-C `3e07878`, M11-A through `2f055d1`, M11-B `9890431`, M11-C through `3095c98`, M11-D through `3528973`
+**Execution owner:** human moderator + actual/likely representative users; an AI session may prepare the isolated runtime and record observations but must not impersonate the participant or self-certify acceptance
+**Current verdict:** `RERUN READY — final human evidence pending`
 
 ## Purpose
 
@@ -29,6 +29,21 @@ Observed:
 - the protected scientific meaning itself was not the reported problem; the failure was task continuity, setup hierarchy, wording, and recoverability.
 
 Disposition: **UX REMEDIATION REQUIRED**. The affected Pair Research task must be rerun after `agent-a-m10d-pair-research-ux-remediation.md` integrates. Do not close M10-D from this session.
+
+## Current rerun baseline — after M11 Pair Study redesign
+
+The technical M11 implementation is now integrated through `3528973`:
+
+- Pair Study relationship evidence is available before recipe/execution readiness;
+- selected-pair preparation is scoped to the selected pair rather than unrelated approved assets;
+- `W / PIXEL · Medium-term` can study exact same-venue `W/USDT + PIXEL/USDT` evidence with no direct `W/PIXEL` market;
+- explicit temporary USDT research-replay authority is separate from economic asset approval;
+- after that authority is granted, the canonical pair recipe can run through the existing real two-leg `multi_asset_bridge` executor;
+- the Research screen keeps the Pair Study visible and presents each completed development variant independently with its relationship method, decision rule/parameters, execution expression, HODL/control economics, limitations, and exact evidence links;
+- the known W/PIXEL development example produces two negative sibling results. Negative evidence is a valid completed research outcome, not an application error;
+- review closure `3528973` specifically exposes the declared decision rule and decision parameters while keeping technical evidence-instrument IDs out of the primary experiment-parameter surface.
+
+The headed M11-D technical walkthrough is implementation evidence only. It does **not** satisfy this M10-D representative-user gate.
 
 ## Representative-user profile
 
@@ -53,16 +68,24 @@ The participant should attempt these realistic tasks against the integrated Prod
    - Locate the asset whose code is exactly `W` rather than a substring match such as `WAL`, `WAN`, `AAVEDOWN`, or `BTCDOWN`.
    - Select it without the result list obscuring the next action on a small/mobile screen when such a device is available.
 
-2. **Start W / BTC Pair Research**
-   - Select `W` and `BTC`.
-   - Choose one Product timeframe.
-   - Understand what QAP will check before it can run.
-   - If identity, approval, or market-data setup is required, complete the prompted task and return to the same unfinished pair research without re-entering the pair/timeframe.
+2. **Start W / PIXEL Pair Study**
+   - Select exact `W` and exact `PIXEL`.
+   - Choose **Medium-term**.
+   - Start the research from the normal `Research a pair` task without being told the click path.
+   - Explain, in the participant's own words, what the Pair Study says before any economic run exists.
+   - Recognize that relationship evidence can be ready even when a real direct `W/PIXEL` market is unavailable.
+   - If identity, approval, or selected-pair market-data setup is required, complete the prompted task and return to the same unfinished pair research without re-entering the pair/timeframe.
 
-3. **Interpret Pair Research support**
-   - Explain whether the recipe can run now and why.
-   - Distinguish a setup/data blocker from a method-capability blocker.
-   - If runnable, launch it and find the resulting sibling experiment runs / Activity status.
+3. **Complete and interpret W / PIXEL development research**
+   - When the exact two-leg economic expression needs temporary USDT authority, explain what the permission appears to mean before granting it.
+   - Confirm from the interface that the permission is for temporary research-replay bridge ownership and is not approval to economically own USDT or live-trading authority.
+   - Explain the M10-A support state before and after that permission and distinguish authority, readiness, and method-capability truth.
+   - Launch the exact default recipe when runnable and remain on Research through completion.
+   - Identify the two sibling development variants without treating the better-looking one as an automatically selected winner.
+   - For at least one variant, explain what was tested from the visible relationship method, decision rule, relationship window/minimum observations, and decision parameters such as entry threshold, neutral threshold/weights, maximum tilt, and neutral mode. Do not explain these terms to the participant before recording their interpretation.
+   - Explain whether each result helped relative to strict HODL and the primary control, and recognize the known negative result as completed research rather than an application failure.
+   - State correctly that development evidence is not final-OOS confirmation.
+   - Find the exact Experiment/Activity evidence and understand why technical hashes are secondary/progressive disclosure.
 
 4. **Scan My Universe**
    - Find and start the normal Universal Scan path.
@@ -109,11 +132,11 @@ Task 1 exact W:
   completed / blocked / misunderstood
   observation:
 
-Task 2 W/BTC Pair Research:
+Task 2 W/PIXEL Pair Study:
   completed / blocked / misunderstood
   observation:
 
-Task 3 support/setup distinction:
+Task 3 W/PIXEL development completion / support distinction:
   completed / blocked / misunderstood
   participant explanation:
 
