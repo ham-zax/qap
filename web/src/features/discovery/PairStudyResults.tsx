@@ -141,6 +141,7 @@ export function PairStudyResults({
   bridgeAuthorityError,
   onGrantBridgeAuthority,
   onVenueChange,
+  backtestMode,
 }: {
   context: ProductPairStudyContextDto
   series: ProductPairStudySeriesDto | null
@@ -150,8 +151,9 @@ export function PairStudyResults({
   bridgeAuthorityError: string | null
   onGrantBridgeAuthority: () => void
   onVenueChange: (venue: 'binance' | 'gate') => void
+  backtestMode: boolean
 }) {
-  const [chartView, setChartView] = useState<ChartView>('ratio')
+  const [chartView, setChartView] = useState<ChartView>('normalized')
   const relationship = context.relationship
   const logCapability = relationshipCapability(capabilities, 'rolling_log_ratio_zscore')
   const residualCapability = relationshipCapability(capabilities, 'residual_mean_reversion')
@@ -528,12 +530,12 @@ export function PairStudyResults({
                 : `No honest economic expression is ready yet. The ${context.question.orientation} relationship evidence above remains valid.`}
         </p>
         {context.economic_expression.direct_status !== 'ready' &&
-        context.economic_expression.bridge_status === 'needs_transient_authority' ? (
+        context.economic_expression.bridge_status === 'needs_transient_authority' && backtestMode ? (
           <div className="mt-4 rounded-md border border-warning/45 bg-subtle p-4">
             <p className="m-0 text-sm leading-6 text-secondary">
-              This permission does not approve USDT as a portfolio target. It only allows QAP
-              to hold real bridge residue temporarily while research-only two-leg Spot replay
-              executes through the selected venue.
+              This permission applies to the current Local Market workspace and verified USDT identity,
+              not only this study. It does not approve USDT as a portfolio target. It only allows QAP
+              to hold real bridge residue temporarily during research-only two-leg Spot replay.
             </p>
             <button
               type="button"

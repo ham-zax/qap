@@ -10,7 +10,9 @@ import type {
 import { PairResearchCompletion } from './PairResearchCompletion'
 import { PairResearchSetup } from './PairResearchSetup'
 import { PairStudyResults } from './PairStudyResults'
+import { PairRelationshipSummary } from './PairRelationshipSummary'
 import { PairExperimentPreview } from './PairExperimentPreview'
+import { pairRecipeMatchesContext, pairStudySeriesMatchesContext } from './pairStudyBinding'
 import { SupportReportPanel } from './SupportReportPanel'
 import { researchAssetOptions, type ResearchAssetSelection } from './researchAssetSearch'
 import { applyStudyParameters, studyQuestion, type ResearchStudy } from './researchStudies'
@@ -20,7 +22,7 @@ interface PairStudyResult {
   series: ProductPairStudySeriesDto | null
   capabilities: CapabilityMetadataV1[]
 }
-interface StudyOptions { venue?: 'binance' | 'gate'; analysisReference?: string }
+interface StudyOptions { venue?: 'binance' | 'gate'; analysisReference?: string; runBacktest?: boolean }
 type Intent = Partial<Omit<ResearchStudy, 'id' | 'attempts'>>
 
 export function PairResearch({ apiClient, queries, workspace, study, onChange, onAttempt, onBusyChange }: {
@@ -33,9 +35,13 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
   const [draft, setDraft] = useState<ResearchRecipeDraftV1 | null>(null)
   const [checked, setChecked] = useState<ResearchRecipeCheckV1 | null>(null)
   const [supportError, setSupportError] = useState<string | null>(null)
+  const [chartError, setChartError] = useState<string | null>(null)
   const [progress, setProgress] = useState('')
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [setupBusy, setSetupBusy] = useState(false)
-  const [operationId, setOperationId] = useState<string | null>(study.attempts.at(-1)?.operationId ?? null)
+  const [operationId, setOperationId] = useState<string | null>(
+    study.mode === 'backtest_comparison' ? study.attempts.at(-1)?.operationId ?? null : null,
+  )
   const universe = useQuery(queries.researchUniverse())
   const options = universe.data ? researchAssetOptions(universe.data) : []
   const currentSelection = (saved: ResearchAssetSelection | null) => saved
@@ -49,19 +55,28 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
     && assetA.canonicalAssetId && assetB.canonicalAssetId
     && assetA.canonicalAssetId !== assetB.canonicalAssetId)
   const operation = useQuery({ ...queries.operation(operationId ?? ''), enabled: operationId !== null })
+  const restoredRecipe = useQuery({
+    ...queries.researchRecipeProductContext({ researchObject: 'pair', horizon: study.horizon,
+      assets: readyToStudy ? [assetA!.canonicalAssetId!, assetB!.canonicalAssetId!] : undefined,
+      orientation: readyToStudy ? `${assetA!.canonicalAssetId}/${assetB!.canonicalAssetId}` : undefined }),
+    enabled: operationId !== null && readyToStudy && study.mode === 'backtest_comparison',
+  })
+  const visibleDraft = draft ?? (restoredRecipe.data?.default_draft
+    ? applyStudyParameters(restoredRecipe.data.default_draft, study.parameters ?? {}) : null)
   const result = operation.data?.result
   const runIds = Array.isArray(result?.run_ids)
     ? result.run_ids.filter((value): value is string => typeof value === 'string') : []
   const compilation = typeof result?.compilation_sha256 === 'string' ? result.compilation_sha256 : null
 
   const comparison = useMutation({
-    mutationFn: async (settings: StudyOptions = {}) => {
+    mutationFn: async ({ runBacktest, ...settings }: StudyOptions = {}) => {
       if (!readyToStudy || !assetA?.canonicalAssetId || !assetB?.canonicalAssetId) {
         throw new Error('Confirm and allow both selected assets first.')
       }
       setChecked(null)
       setDraft(null)
       setSupportError(null)
+      setChartError(null)
       setStudyResult(null)
       setOperationId(null)
       const pairOptions = {
@@ -86,18 +101,27 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
         context = await apiClient.getProductPairStudyContext(pairOptions)
       }
 
+      setStudyResult({ context, series: null, capabilities: [] })
       setProgress('Measuring the relationship…')
-      const series = context.data.status === 'ready'
-        ? await apiClient.getProductPairStudySeries({
+      let series: ProductPairStudySeriesDto | null = null
+      if (context.data.status === 'ready') {
+        try {
+          const loaded = await apiClient.getProductPairStudySeries({
             ...pairOptions,
             venue: context.question.venue,
             analysisReference: context.analysis_lens?.status === 'ready'
               ? settings.analysisReference
               : undefined,
           })
-        : null
+          if (pairStudySeriesMatchesContext(context, loaded)) series = loaded
+          else setChartError('The chart came from a different data snapshot. The relationship summary is retained; retry the chart.')
+        } catch (error) {
+          setChartError(error instanceof Error ? error.message : 'The relationship chart could not be loaded.')
+        }
+      }
       setStudyResult({ context, series, capabilities: [] })
       if (context.data.status !== 'ready') return null
+      if (!runBacktest && study.mode === 'relationship') return null
 
       if (context.economic_expression.direct_status !== 'ready'
         && context.economic_expression.bridge_status === 'needs_transient_authority') {
@@ -117,7 +141,6 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
         const declared = recipe.default_draft
           ? applyStudyParameters(recipe.default_draft, study.parameters ?? {})
           : null
-        setDraft(declared)
         if (recipe.default_issue) {
           setSupportError(recipe.default_issue.detail)
           return null
@@ -126,6 +149,11 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
           setSupportError('An economic comparison is not available for this pair yet.')
           return null
         }
+        if (!pairRecipeMatchesContext(context, declared)) {
+          setSupportError('Comparison data changed while preparing this study. The relationship view is retained; retry to bind a fresh comparison.')
+          return null
+        }
+        setDraft(declared)
 
         const next = await apiClient.checkResearchRecipeSupport({
           schema_version: 'qap.api.research-recipe-check-request.v1',
@@ -135,7 +163,7 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
         if (!next.support.runnable || !next.recipe) return null
 
         setProgress('Starting the comparison…')
-        const question = studyQuestion(study)
+        const question = studyQuestion({ ...study, mode: 'backtest_comparison' })
         const ref = await apiClient.runResearchRecipe({
           schema_version: 'qap.api.research-recipe-run-request.v1',
           recipe: next.recipe,
@@ -156,11 +184,28 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
     },
     onSettled: () => setProgress(''),
   })
+  const chartRetry = useMutation({
+    mutationFn: async () => {
+      const context = studyResult?.context
+      if (!context) return
+      const loaded = await apiClient.getProductPairStudySeries({
+        assetA: context.question.asset_a, assetB: context.question.asset_b,
+        horizon: context.question.horizon, orientation: context.question.orientation,
+        venue: context.question.venue,
+        analysisReference: study.useBtcReference && canUseReference ? 'BTC' : undefined,
+      })
+      if (!pairStudySeriesMatchesContext(context, loaded)) throw new Error('The chart still belongs to a different data snapshot. Try the study again later.')
+      setStudyResult((current) => current ? { ...current, series: loaded } : current)
+      setChartError(null)
+    },
+    onError: (error) => setChartError(error.message),
+  })
   const bridge = useMutation({
     mutationFn: () => apiClient.grantProductPairStudyTransientUsdtAuthority(),
     onSuccess: () => comparison.mutate({
       venue: studyResult?.context.question.venue,
-      analysisReference: study.useBtcReference ? 'BTC' : undefined,
+      analysisReference: study.useBtcReference && canUseReference ? 'BTC' : undefined,
+      runBacktest: true,
     }),
   })
   const busy = setupBusy || comparison.isPending || bridge.isPending
@@ -173,6 +218,7 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
     setDraft(null)
     setChecked(null)
     setSupportError(null)
+    setChartError(null)
     setOperationId(null)
     comparison.reset()
     onChange(patch)
@@ -188,7 +234,8 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
 
   return (
     <section className="min-w-0 space-y-6" aria-label="Pair research study">
-      <div className="rounded-lg border border-border bg-panel p-5 md:p-6">
+      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(19rem,0.36fr)_minmax(0,0.64fr)]">
+      <div className="min-w-0 rounded-lg border border-border bg-panel p-5 md:p-6">
         {universe.data ? <PairResearchSetup apiClient={apiClient} universe={universe.data}
           study={study} assetA={assetA} assetB={assetB} busy={busy} onChange={change} onBusyChange={setSetupBusy} />
           : <p role="status" className="text-secondary">{universe.isPending ? 'Loading available assets…' : universe.error?.message}</p>}
@@ -206,27 +253,50 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" disabled={busy} onClick={() => comparison.mutate(comparisonOptions)}
                 className="min-h-12 rounded-md bg-accent px-6 font-semibold text-canvas disabled:opacity-50">
-                {comparison.isPending ? 'Running comparison…' : operationId ? 'Run comparison again' : 'Run comparison'}
+                {comparison.isPending ? 'Starting research…' : 'Start research'}
               </button>
-              <span className="text-xs text-muted">Two declared methods · holding and simple rebalancing controls · modeled costs</span>
+              <span className="text-xs text-muted">{study.mode === 'relationship' ? 'Historical relationship only · no backtest' : 'Two methods · holding and simple rebalancing controls · modeled costs'}</span>
             </div>
             {progress ? <p role="status" className="mt-3 text-sm text-accent">{progress} Your comparison stays saved.</p> : null}
             {comparison.isError ? <p role="alert" className="mt-3 text-sm text-negative">{comparison.error.message} Your comparison is retained; resolve the setup above and retry.</p> : null}
           </div>
         ) : null}
       </div>
+      <div className="min-w-0 space-y-5" aria-label="Research canvas">
+      {!studyResult && !operationId && !comparison.isPending ? <div className="rounded-lg border border-border bg-panel p-6">
+        <h2 className="m-0 text-lg font-semibold text-foreground">Your research canvas</h2>
+        <p className="mb-0 mt-2 text-sm leading-6 text-secondary">Choose two assets and start research. The relationship view and any backtest result will appear here.</p>
+      </div> : null}
 
-      {studyResult ? <details open={!draft && !operationId} className="rounded-lg border border-border bg-panel p-5">
-        <summary className="cursor-pointer py-2 text-lg font-semibold text-foreground">Relationship study · {studyResult.context.question.orientation}</summary>
-        <p className="text-sm text-secondary">These measurements describe the price relationship. A backtest checks whether acting on it helped after costs.</p>
+      {studyResult && (study.mode === 'relationship' || !operationId) ? <>
+        <PairRelationshipSummary context={studyResult.context} series={studyResult.series} />
+        {chartError ? <p role="alert" className="rounded-md border border-warning/45 p-4 text-sm text-warning">Chart unavailable: {chartError} <button type="button" disabled={chartRetry.isPending} className="min-h-11 font-semibold text-accent" onClick={() => chartRetry.mutate()}>Retry chart</button></p> : null}
+        {study.mode === 'backtest_comparison'
+          && studyResult.context.economic_expression.direct_status !== 'ready'
+          && studyResult.context.economic_expression.bridge_status === 'needs_transient_authority' ? <section className="rounded-lg border border-warning/45 bg-panel p-5">
+            <h2 className="m-0 text-lg font-semibold text-foreground">Allow research-only bridge holdings?</h2>
+            <p className="mt-2 text-sm leading-6 text-secondary">This permission applies to the current Local Market workspace and verified USDT identity, not just this study. It allows temporary owned USDT residue during two-leg spot replay. It does not approve USDT as a portfolio target or place live orders.</p>
+            <button type="button" disabled={busy} onClick={() => bridge.mutate()}
+              className="min-h-11 rounded-md bg-accent px-4 font-semibold text-canvas disabled:opacity-50">{bridge.isPending ? 'Saving permission…' : 'Allow workspace bridge replay and continue'}</button>
+            {bridge.isError ? <p role="alert" className="text-sm text-negative">{bridge.error.message}</p> : null}
+          </section> : null}
+        {study.mode === 'relationship' && studyResult.context.data.status === 'ready' ? <button type="button" disabled={busy}
+          className="min-h-12 rounded-md bg-accent px-5 font-semibold text-canvas disabled:opacity-50"
+          onClick={() => { onChange({ mode: 'backtest_comparison' }); comparison.mutate({ ...comparisonOptions, runBacktest: true }) }}>Backtest this pair</button> : null}
+      </> : null}
+      {studyResult ? <details className="rounded-lg border border-border bg-panel p-5">
+        <summary className="cursor-pointer py-2 text-sm font-semibold text-accent">Evidence, data sources, and technical detail</summary>
         <PairStudyResults context={studyResult.context} series={studyResult.series} capabilities={studyResult.capabilities}
+          backtestMode={study.mode === 'backtest_comparison'}
           busy={busy} bridgeAuthorityBusy={bridge.isPending} bridgeAuthorityError={bridge.isError ? bridge.error.message : null}
           onGrantBridgeAuthority={() => bridge.mutate()} onVenueChange={(venue) => comparison.mutate({ ...comparisonOptions, venue })} />
       </details> : null}
-      {draft ? <PairExperimentPreview recipe={draft} busy={busy} onParameters={(parameters) => {
-        setDraft(applyStudyParameters(draft, parameters))
+      {visibleDraft && study.mode === 'backtest_comparison' && !operationId ? <PairExperimentPreview recipe={visibleDraft} busy={busy}
+        descriptiveWindowBars={studyResult?.context.relationship?.rolling_log_ratio.window_observations}
+        descriptiveMinimumObservations={studyResult?.context.relationship?.rolling_log_ratio.required_observations}
+        open={settingsOpen} onToggle={setSettingsOpen} onParameters={(parameters) => {
+        setDraft(applyStudyParameters(visibleDraft, parameters))
         setChecked(null)
-        setOperationId(null)
         onChange({ parameters })
       }} /> : null}
       {supportError ? <div role="alert" className="rounded-md border border-warning/45 p-4 text-sm text-warning">
@@ -265,7 +335,23 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
       </section> : null}
       {operationId && runIds.length > 0 ? <PairResearchCompletion queries={queries} runIds={runIds}
         operationId={operationId} compilationSha256={compilation} busy={busy}
+        canChangeSettings={visibleDraft !== null} onChangeSettings={() => setSettingsOpen(true)}
         onRunAgain={() => comparison.mutate(comparisonOptions)} /> : null}
+      {operationId && study.mode === 'backtest_comparison' && readyToStudy && !visibleDraft && restoredRecipe.isError ?
+        <p role="alert" className="rounded-md border border-warning/45 p-4 text-sm text-warning">
+          Next-run settings unavailable: {restoredRecipe.error.message}. Your recorded result is unchanged.{' '}
+          <button type="button" className="min-h-11 font-semibold text-accent" onClick={() => void restoredRecipe.refetch()}>Retry loading settings</button>
+        </p> : null}
+      {visibleDraft && study.mode === 'backtest_comparison' && operationId ? <PairExperimentPreview recipe={visibleDraft} busy={busy}
+        descriptiveWindowBars={studyResult?.context.relationship?.rolling_log_ratio.window_observations}
+        descriptiveMinimumObservations={studyResult?.context.relationship?.rolling_log_ratio.required_observations}
+        nextRun open={settingsOpen} onToggle={setSettingsOpen} onParameters={(parameters) => {
+        setDraft(applyStudyParameters(visibleDraft, parameters))
+        setChecked(null)
+        onChange({ parameters })
+      }} /> : null}
+      </div>
+      </div>
     </section>
   )
 }

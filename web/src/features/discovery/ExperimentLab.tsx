@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import type { QapApiClient } from '../../api/client'
@@ -76,6 +76,8 @@ export function ExperimentLab({ apiClient, queries, workspace }: ExperimentLabPr
   const [assets, setAssets] = useState<ResearchAssetSelection[]>([])
   const [horizon, setHorizon] = useState<Horizon>('short')
   const [draft, setDraft] = useState<ResearchRecipeDraftV1 | null>(null)
+  const currentDraft = useRef(draft)
+  useLayoutEffect(() => { currentDraft.current = draft }, [draft])
   const [checked, setChecked] = useState<ResearchRecipeCheckV1 | null>(null)
   const [operationId, setOperationId] = useState<string | null>(null)
 
@@ -126,10 +128,14 @@ export function ExperimentLab({ apiClient, queries, workspace }: ExperimentLabPr
   const launch = useMutation({
     mutationFn: async () => {
       if (!draft) throw new Error('Choose assets and settings before running the experiment.')
+      const submittedDraft = draft
       const next = await apiClient.checkResearchRecipeSupport({
         schema_version: 'qap.api.research-recipe-check-request.v1',
-        recipe: draft,
+        recipe: submittedDraft,
       })
+      if (currentDraft.current !== submittedDraft) {
+        throw new Error('Settings changed while support was checked. Review the current draft and run again.')
+      }
       setChecked(next)
       if (!next.support.runnable || !next.recipe) return null
       return apiClient.runResearchRecipe({
@@ -184,6 +190,7 @@ export function ExperimentLab({ apiClient, queries, workspace }: ExperimentLabPr
         </div>
       </div>
 
+      <fieldset disabled={launch.isPending} className="m-0 min-w-0 border-0 p-0 disabled:opacity-70">
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         <label className="text-sm font-semibold text-secondary">
           Research object
@@ -629,6 +636,7 @@ export function ExperimentLab({ apiClient, queries, workspace }: ExperimentLabPr
       ) : selectionComplete && context.isPending ? (
         <p className="mt-5 text-sm text-secondary">Freezing an exact backend-owned starting recipe…</p>
       ) : null}
+      </fieldset>
 
       {checked ? (
         <details className="mt-6 rounded-md border border-border p-4" open={!checked.support.runnable}>

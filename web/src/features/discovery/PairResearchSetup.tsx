@@ -86,8 +86,20 @@ export function PairResearchSetup({ apiClient, universe, study, assetA, assetB, 
 
   return (
     <fieldset disabled={busy} className="m-0 min-w-0 border-0 p-0 disabled:opacity-70">
-      <legend className="text-xl font-semibold text-foreground">1. Choose your question</legend>
-      <p className="mt-2 text-sm leading-6 text-secondary">Study how two assets move relative to each other, then test whether rebalancing improves on holding them.</p>
+      <legend className="text-xl font-semibold text-foreground">Your research question</legend>
+      <p className="mt-2 text-sm leading-6 text-secondary">Choose two assets and what you want to learn. Nothing here places orders.</p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Research mode">
+        <label className={`cursor-pointer rounded-md border p-4 ${study.mode === 'relationship' ? 'border-accent bg-subtle' : 'border-border'}`}>
+          <input type="radio" name="research-mode" value="relationship" checked={study.mode === 'relationship'}
+            onChange={() => onChange({ mode: 'relationship' })} /> <strong className="text-foreground">Relationship</strong>
+          <span className="mt-1 block text-xs leading-5 text-secondary">See how their historical prices moved together. No strategy is tested.</span>
+        </label>
+        <label className={`cursor-pointer rounded-md border p-4 ${study.mode === 'backtest_comparison' ? 'border-accent bg-subtle' : 'border-border'}`}>
+          <input type="radio" name="research-mode" value="backtest_comparison" checked={study.mode === 'backtest_comparison'}
+            onChange={() => onChange({ mode: 'backtest_comparison' })} /> <strong className="text-foreground">Backtest comparison</strong>
+          <span className="mt-1 block text-xs leading-5 text-secondary">Test whether rebalancing improved wealth against holding and simple rebalancing after modeled costs.</span>
+        </label>
+      </div>
       {universe.directory_status !== 'observed' ? (
         <div className="my-4 rounded-md border border-border bg-subtle p-4">
           <p className="mt-0 text-sm text-secondary">First, load the available spot markets. You choose which assets to include.</p>
@@ -104,7 +116,7 @@ export function PairResearchSetup({ apiClient, universe, study, assetA, assetB, 
           excludeCanonicalAssetIds={assetA?.canonicalAssetId ? [assetA.canonicalAssetId] : []}
           onSelect={(asset) => onChange({ assetB: asset })} onClear={() => onChange({ assetB: null })} />
       </div>
-      <div className="mt-5" role="radiogroup" aria-label="Historical test period">
+      <div className="mt-5" role="radiogroup" aria-label="Research period">
         <p className="mb-2 text-sm font-semibold text-secondary">Period</p>
         <div className="grid gap-2 sm:grid-cols-3">
           {Object.entries(STUDY_PERIODS).map(([value, period]) => (

@@ -32,9 +32,12 @@ export const pairDraft: ResearchRecipeDraftV1 = {
   research_family_id: 'fixture-family', fidelity_intent: 'native_qap', source: { metadata: {} },
   selection: { kind: 'report_all' },
   data: { authority: 'pair_study', claim_identity: 'fixture-claim', data_role: 'development',
+    horizon: 'medium',
     data_window: { start: '2026-03-01T00:00:00Z', end: '2026-09-01T00:00:00Z' },
     evaluation_window: { start: '2026-06-01T00:00:00Z', end: '2026-09-01T00:00:00Z' },
-    generations: [], interval: '4h', starting_quantities: { W: '100', PIXEL: '100' } },
+    generations: [pairContext.data.asset_a_path!, pairContext.data.asset_b_path!].map((source) => ({
+      dataset_id: source.dataset_id, semantic_fingerprint: source.semantic_fingerprint, purpose: 'execution' as const,
+    })), interval: '4h', starting_quantities: { W: '100', PIXEL: '100' } },
   execution: { mode: 'multi_asset_bridge', bridge_asset: 'USDT', numeraire_asset: 'USDT',
     fee_bps: '10', slippage_bps: '5', minimum_rebalance_notional: '10', market_metadata_mode: 'required' },
   benchmarks: { controls: [], primary_incremental_benchmark: 'fixture-control',

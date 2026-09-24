@@ -11,6 +11,24 @@ function storage() {
 }
 
 describe('saved research studies', () => {
+  it('starts new work as a relationship question', () => {
+    expect(emptyStudy('new').mode).toBe('relationship')
+  })
+
+  it('migrates old comparisons without deleting their saved attempts', () => {
+    const store = storage()
+    const old = addAttempt(emptyStudy('old'), 'operation-1', '2026-09-24T10:00:00Z')
+    const legacy = `qap.research-studies.v1:/workspace/a`
+    const raw = JSON.stringify({ version: 1, activeId: 'old', studies: [old] })
+    store.setItem(legacy, raw)
+    const resumed = readStudies(store, '/workspace/a')
+    expect(resumed.library?.studies[0]?.mode).toBe('backtest_comparison')
+    expect(resumed.library?.studies[0]?.attempts[0]?.operationId).toBe('operation-1')
+    expect(saveStudies(store, '/workspace/a', resumed.library!)).toBeNull()
+    expect(store.getItem(legacy)).toBe(raw)
+    expect(JSON.parse(store.getItem(studyStorageKey('/workspace/a'))!).version).toBe(2)
+  })
+
   it('resumes intent and all attempts only in the matching workspace', () => {
     const store = storage()
     const initial = { ...emptyStudy('study-1'), name: 'W and PIXEL', horizon: 'medium' as const }

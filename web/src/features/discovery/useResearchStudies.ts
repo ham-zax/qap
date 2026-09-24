@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import {
-  addAttempt, emptyStudy, readStudies, saveStudies, studyStorageKey,
+  addAttempt, emptyStudy, legacyStudyStorageKey, readStudies, saveStudies, studyStorageKey,
   type ResearchStudy, type StudyLibrary, type StudyStorage,
 } from './researchStudies'
 
@@ -38,7 +38,7 @@ export function useResearchStudies(workspace: string) {
 
   useEffect(() => {
     const receive = (event: StorageEvent) => {
-      if (event.key !== studyStorageKey(workspace) && event.key !== null) return
+      if (event.key !== studyStorageKey(workspace) && event.key !== legacyStudyStorageKey(workspace) && event.key !== null) return
       // Never swap the question underneath an in-flight support check or run.
       // Preserve the other tab's library instead of silently overwriting it.
       externalChange.current = true

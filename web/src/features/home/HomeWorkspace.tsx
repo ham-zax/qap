@@ -97,7 +97,7 @@ export function HomeWorkspace({
         >
           <div>
             <p className="m-0 text-xs font-semibold uppercase tracking-[0.1em] text-accent">Primary research task</p>
-            <h2 className="mt-3 mb-2 text-2xl font-semibold md:text-3xl">Start a comparison</h2>
+            <h2 className="mt-3 mb-2 text-2xl font-semibold md:text-3xl">Start research</h2>
             <p className="m-0 max-w-2xl text-sm leading-6 text-secondary md:text-base">
               Choose two assets and a period. QAP prepares the required history, checks the declared settings, and runs both supported methods against holding and simple rebalancing.
             </p>

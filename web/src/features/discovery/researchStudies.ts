@@ -2,6 +2,7 @@ import type { ResearchAssetSelection } from './researchAssetSearch'
 import type { ResearchRecipeDraftV1 } from '../../api/types'
 
 export type StudyHorizon = 'short' | 'medium' | 'swing'
+export type ResearchMode = 'relationship' | 'backtest_comparison'
 export interface StudyAttempt {
   operationId: string
   createdAt: string
@@ -13,6 +14,7 @@ export interface ResearchStudy {
   assetA: ResearchAssetSelection | null
   assetB: ResearchAssetSelection | null
   horizon: StudyHorizon
+  mode: ResearchMode
   useBtcReference: boolean
   attempts: StudyAttempt[]
   parameters?: Record<string, string>
@@ -33,7 +35,7 @@ export const STUDY_PERIODS = {
 } as const
 
 export function emptyStudy(id: string): ResearchStudy {
-  return { id, name: '', assetA: null, assetB: null, horizon: 'medium', useBtcReference: false, attempts: [] }
+  return { id, name: '', assetA: null, assetB: null, horizon: 'medium', mode: 'relationship', useBtcReference: false, attempts: [] }
 }
 
 export function studyTitle(study: ResearchStudy): string {
@@ -42,7 +44,7 @@ export function studyTitle(study: ResearchStudy): string {
 }
 
 export function studyQuestion(study: ResearchStudy): string {
-  return `${study.assetA?.symbol ?? '?'} / ${study.assetB?.symbol ?? '?'} · ${STUDY_PERIODS[study.horizon].label}`
+  return `${study.assetA?.symbol ?? '?'} / ${study.assetB?.symbol ?? '?'} · ${STUDY_PERIODS[study.horizon].label} · ${study.mode === 'relationship' ? 'Relationship' : 'Backtest comparison'}`
 }
 
 export function addAttempt(study: ResearchStudy, operationId: string, createdAt: string, question = studyQuestion(study)): ResearchStudy {
@@ -57,6 +59,10 @@ export function addAttempt(study: ResearchStudy, operationId: string, createdAt:
 }
 
 export function studyStorageKey(workspace: string): string {
+  return `qap.research-studies.v2:${workspace}`
+}
+
+export function legacyStudyStorageKey(workspace: string): string {
   return `qap.research-studies.v1:${workspace}`
 }
 
@@ -75,10 +81,11 @@ function selection(value: unknown): value is ResearchAssetSelection | null {
     && (value.venueAssetCode === undefined || text(value.venueAssetCode))
     && Array.isArray(value.venueSymbols) && value.venueSymbols.every(text))
 }
-function study(value: unknown): value is ResearchStudy {
+function study(value: unknown, version: 1 | 2): value is ResearchStudy {
   return object(value) && text(value.id) && typeof value.name === 'string'
     && selection(value.assetA) && selection(value.assetB)
     && (value.horizon === 'short' || value.horizon === 'medium' || value.horizon === 'swing')
+    && (version === 1 || value.mode === 'relationship' || value.mode === 'backtest_comparison')
     && typeof value.useBtcReference === 'boolean' && Array.isArray(value.attempts)
     && (value.parameters === undefined || (object(value.parameters)
       && Object.entries(value.parameters).every(([key, item]) => PARAMETER_KEYS.includes(key) && typeof item === 'string')))
@@ -109,16 +116,21 @@ export function readStudies(storage: StudyStorage, workspace: string): {
   library: StudyLibrary | null; warning: string | null
 } {
   try {
-    const raw = storage.getItem(studyStorageKey(workspace))
+    const current = storage.getItem(studyStorageKey(workspace))
+    const raw = current ?? storage.getItem(legacyStudyStorageKey(workspace))
     if (raw === null) return { library: null, warning: null }
     const value: unknown = JSON.parse(raw)
-    if (!object(value) || value.version !== 1 || !text(value.activeId)
-      || !Array.isArray(value.studies) || !value.studies.every(study)
+    const version = current === null ? 1 : 2
+    if (!object(value) || value.version !== version || !text(value.activeId)
+      || !Array.isArray(value.studies) || !value.studies.every((item) => study(item, version))
       || !value.studies.some((item) => item.id === value.activeId)
       || new Set(value.studies.map((item) => item.id)).size !== value.studies.length) {
       throw new Error('Invalid saved studies')
     }
-    return { library: { activeId: value.activeId, studies: value.studies }, warning: null }
+    const studies: ResearchStudy[] = version === 1
+      ? value.studies.map((item: ResearchStudy) => ({ ...item, mode: 'backtest_comparison' }))
+      : value.studies
+    return { library: { activeId: value.activeId, studies }, warning: null }
   } catch {
     return {
       library: null,
@@ -131,7 +143,7 @@ export function saveStudies(storage: StudyStorage, workspace: string, library: S
   const previous = readStudies(storage, workspace)
   if (previous.warning) return previous.warning
   try {
-    storage.setItem(studyStorageKey(workspace), JSON.stringify({ version: 1, ...library }))
+    storage.setItem(studyStorageKey(workspace), JSON.stringify({ version: 2, ...library }))
     return null
   } catch {
     return 'This browser could not save your study. Keep this page open to retain the draft. Started backtests and results remain in History.'

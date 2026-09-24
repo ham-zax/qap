@@ -44,11 +44,11 @@ export function ResearchHome({
       <header className="mb-8 max-w-4xl">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">Research</p>
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          {activeTask === 'pair' ? 'Compare two assets' : activeTask === 'scan' ? 'Scan approved assets' : 'Custom experiment'}
+          {activeTask === 'pair' ? 'Research two assets' : activeTask === 'scan' ? 'Scan approved assets' : 'Custom experiment'}
         </h1>
         <p className="m-0 text-sm leading-6 text-secondary md:text-base">
           {activeTask === 'pair'
-            ? 'Choose two assets and a period. One Run comparison action prepares the required history, checks the declared settings, and starts the supported methods.'
+            ? 'Choose two assets, a period, and a question. Explore their relationship or run a backtest against holding and simple rebalancing.'
             : activeTask === 'scan'
               ? 'Search the approved universe for relationships using the existing scanner contract.'
               : 'Declare advanced methods and settings when the ordinary pair comparison is not enough.'}
@@ -58,7 +58,7 @@ export function ResearchHome({
       {activeTask !== 'pair' ? (
         <button type="button" onClick={() => setActiveTask('pair')}
           className="mb-6 min-h-11 text-sm font-semibold text-accent">
-          ← Back to pair comparison
+          ← Back to research console
         </button>
       ) : null}
       {activeTask === 'pair' ? (

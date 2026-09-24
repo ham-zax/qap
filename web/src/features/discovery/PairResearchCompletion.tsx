@@ -109,9 +109,9 @@ function PairResearchRunResult({ queries, runId, index, total }: {
   </article>
 }
 
-export function PairResearchCompletion({ queries, runIds, operationId, compilationSha256, onRunAgain = () => undefined, busy = false }: {
+export function PairResearchCompletion({ queries, runIds, operationId, compilationSha256, onRunAgain = () => undefined, busy = false, canChangeSettings = false, onChangeSettings }: {
   queries: QapQueries; runIds: string[]; operationId: string; compilationSha256: string | null
-  onRunAgain?: () => void; busy?: boolean
+  onRunAgain?: () => void; busy?: boolean; canChangeSettings?: boolean; onChangeSettings?: () => void
 }) {
   const experiments = useQueries({ queries: runIds.map((runId) => queries.experiment(runId)) })
   const [selectedRunId, setSelectedRunId] = useState(runIds[0] ?? '')
@@ -137,13 +137,14 @@ export function PairResearchCompletion({ queries, runIds, operationId, compilati
         </p>
       </div>
       <div className="flex flex-wrap gap-3">
-        <a href="#comparison-settings" className="inline-flex min-h-11 items-center text-sm font-semibold text-accent">Change settings</a>
+        {canChangeSettings ? <a href="#comparison-settings" onClick={onChangeSettings} className="inline-flex min-h-11 items-center text-sm font-semibold text-accent">Change settings</a> : null}
         <button type="button" disabled={busy} onClick={onRunAgain}
           className="min-h-11 rounded-md border border-border px-4 text-sm font-semibold text-foreground disabled:opacity-50">
           Run again
         </button>
       </div>
     </header>
+    <p className="m-0 text-xs leading-5 text-muted">Run again refreshes trailing completed history before checking support. If the data cutoff moves, it creates a new attempt rather than changing this recorded result.</p>
     <div className="overflow-x-auto rounded-lg border border-border bg-panel">
       <table className="w-full min-w-[42rem] text-left text-sm">
         <caption className="sr-only">Method comparison summary</caption>
