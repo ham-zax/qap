@@ -11,7 +11,7 @@ import { Badge } from '../../components/ui/Badge'
 import { formatResearchTimestamp } from '../../lib/format'
 import { DiscoveryHome } from './DiscoveryHome'
 import { ExperimentLab } from './ExperimentLab'
-import { PairResearch } from './PairResearch'
+import { ResearchStudyWorkspace } from './ResearchStudyWorkspace'
 import { ProductResearch } from './ProductResearch'
 
 interface ResearchHomeProps {
@@ -37,6 +37,7 @@ export function ResearchHome({
   scans,
 }: ResearchHomeProps) {
   const [activeTask, setActiveTask] = useState<'pair' | 'scan' | 'lab'>('pair')
+  const [labVisited, setLabVisited] = useState(false)
 
   return (
     <section className="min-w-0">
@@ -45,12 +46,11 @@ export function ResearchHome({
           Research
         </p>
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          Start from the research question
+          Research, test, and understand
         </h1>
         <p className="m-0 text-sm leading-6 text-secondary md:text-base">
-          Research one pair directly, scan the approved universe, or use Experiment Lab
-          when you need an explicit typed recipe. Scientific and economic decisions remain
-          backend-owned.
+          Start a study, compare a strategy with holding the same assets, and keep your
+          attempts together. Return to a saved study whenever you are ready to continue.
         </p>
       </header>
 
@@ -59,9 +59,9 @@ export function ResearchHome({
         aria-label="Research task"
       >
         {([
-          ['pair', 'Research a pair'],
+          ['pair', 'Pair studies'],
           ['scan', 'Scan my universe'],
-          ['lab', 'Experiment Lab'],
+          ['lab', 'Custom experiments'],
         ] as const).map(([value, label]) => (
           <button
             key={value}
@@ -72,16 +72,18 @@ export function ResearchHome({
                 ? 'bg-accent text-canvas'
                 : 'text-secondary hover:bg-subtle hover:text-foreground'
             }`}
-            onClick={() => setActiveTask(value)}
+            onClick={() => { setActiveTask(value); if (value === 'lab') setLabVisited(true) }}
           >
             {label}
           </button>
         ))}
       </nav>
 
-      {activeTask === 'pair' ? (
-        <PairResearch apiClient={apiClient} queries={queries} workspace={workspace} />
-      ) : activeTask === 'scan' ? (
+      <div hidden={activeTask !== 'pair'}>
+        <ResearchStudyWorkspace key={`${workspace.workspace_mode}:${workspace.workspace_root}`}
+          apiClient={apiClient} queries={queries} workspace={workspace} />
+      </div>
+      {activeTask === 'scan' ? (
         <section aria-labelledby="universal-scan-heading">
           <div className="mb-4 max-w-4xl">
             <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
@@ -91,24 +93,27 @@ export function ResearchHome({
               Scan my universe
             </h2>
             <p className="m-0 text-sm leading-6 text-secondary">
-              Run the existing current-approved scanner over the ready approved scope, one
-              Product timeframe at a time. Scanner stages and Research Ideas remain
-              backend-owned.
+              Look for relationships among assets you have approved. Each scan explains
+              what was evaluated, what was excluded, and which candidates deserve further study.
             </p>
           </div>
           <ProductResearch apiClient={apiClient} queries={queries} workspace={workspace} />
         </section>
-      ) : (
-        <ExperimentLab apiClient={apiClient} queries={queries} workspace={workspace} />
-      )}
+      ) : null}
+      <div hidden={activeTask !== 'lab'}>
+        {labVisited ? <ExperimentLab key={`${workspace.workspace_mode}:${workspace.workspace_root}`}
+          apiClient={apiClient} queries={queries} workspace={workspace} /> : null}
+      </div>
 
-      <section className="mt-10" aria-labelledby="previous-research-heading">
+      <details className="mt-10 rounded-lg border border-border bg-panel p-5">
+        <summary className="cursor-pointer py-2 text-lg font-semibold text-accent">Previous universe scans</summary>
+      <section className="mt-5" aria-labelledby="previous-research-heading">
         <div className="mb-4 max-w-3xl">
           <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
             Completed evidence
           </p>
           <h2 id="previous-research-heading" className="mt-2 mb-2 text-xl font-semibold text-foreground">
-            Previous research
+            Completed scans
           </h2>
           <p className="m-0 text-sm leading-6 text-secondary">
             Each completed scan keeps the claim and data boundary that were frozen when it
@@ -168,6 +173,7 @@ export function ResearchHome({
           </div>
         )}
       </section>
+      </details>
 
       <details className="mt-10 rounded-lg border border-border bg-panel p-5">
         <summary className="min-h-11 cursor-pointer py-2 text-lg font-semibold text-accent">

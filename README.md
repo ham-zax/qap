@@ -21,6 +21,26 @@ Phase 14's analytical-workbench implementation has passed its rendered browser a
 
 **Phase 17 — Product Layer implementation is complete through the Pair Study M11 workflow at `3528973`.** Ordinary Pair Research can study `W / PIXEL` from exact same-venue `ASSET/USDT` evidence before execution, then—after explicit transient USDT research authority—run honest two-leg economics through the existing `multi_asset_bridge` executor without a synthetic `W/PIXEL` market and finish the development conclusion on the Research screen. **M10-D representative-user acceptance rerun is now the final Phase-17 gate.** QAP's Scanner-V1, final-OOS, HODL/control, identity/PIT, and Phase-12 live-capital `NO-GO` boundaries remain unchanged. See [`docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md`](docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md), [`docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`](docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md), [`docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/m10d-representative-user-acceptance.md`](docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/m10d-representative-user-acceptance.md), and [`docs/plans/17-product-layer-market-data-and-research-lifecycle.md`](docs/plans/17-product-layer-market-data-and-research-lifecycle.md).
 
+### Research-flow correction — 2026-09-24
+
+Update context: user research/backtest usability review. This correction changes
+presentation and continuity, not economic or research authority; see the
+[study-workspace design](docs/superpowers/specs/2026-09-24-research-study-workspace.md)
+and [implementation/check record](docs/superpowers/plans/2026-09-24-research-study-workspace.md).
+The historical milestone claims above do not close representative-user acceptance.
+
+Research → Pair studies now groups a saved question and its attempts. Choose the
+assets and period, resolve setup in place, review methods/costs/comparisons, then
+run and read the conclusion. Test assumptions and reproducibility identifiers
+remain available under expandable details. Changes to backtest parameters require
+a new backend support check.
+
+Study drafts and attempt links are local to this browser and workspace. Backend
+results remain independently available in History. Reloading restores the question
+and past attempts; descriptive relationship evidence is fetched again with **Study
+this pair**. Custom-experiment drafts survive switching research tabs, not a page
+reload. Cross-device synchronization and human/browser acceptance are not claimed.
+
 ## Requirements and setup
 
 - Python `>=3.14,<3.15`

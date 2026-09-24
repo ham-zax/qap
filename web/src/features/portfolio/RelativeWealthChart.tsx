@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import type { PortfolioPerformanceDto } from '../../api/types'
 import { TimeSeriesChart } from '../../components/charts/TimeSeriesChart'
 import {
@@ -29,6 +30,7 @@ const PRESENTATION_SERIES: Record<
 }
 
 export function RelativeWealthChart({ performance }: RelativeWealthChartProps) {
+  const headingId = useId()
   const series = performance.series.flatMap((item) => {
     const presentation = PRESENTATION_SERIES[item.name]
     return presentation
@@ -52,9 +54,9 @@ export function RelativeWealthChart({ performance }: RelativeWealthChartProps) {
     return (
       <section
         className="rounded-lg border border-border bg-panel p-5 md:p-6"
-        aria-labelledby="relative-wealth-heading"
+        aria-labelledby={headingId}
       >
-        <h2 id="relative-wealth-heading" className="mb-2 text-lg font-semibold text-foreground">
+        <h2 id={headingId} className="mb-2 text-lg font-semibold text-foreground">
           Relative wealth through time
         </h2>
         <p className="m-0 text-sm text-secondary">No authoritative relative-wealth series is available.</p>
@@ -65,9 +67,9 @@ export function RelativeWealthChart({ performance }: RelativeWealthChartProps) {
   return (
     <section
       className="rounded-lg border border-border bg-panel p-5 md:p-6"
-      aria-labelledby="relative-wealth-heading"
+      aria-labelledby={headingId}
     >
-      <h2 id="relative-wealth-heading" className="mb-2 text-lg font-semibold text-foreground">
+      <h2 id={headingId} className="mb-2 text-lg font-semibold text-foreground">
         Relative wealth through time
       </h2>
       <p className="mt-0 mb-4 max-w-3xl text-sm leading-6 text-secondary">

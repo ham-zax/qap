@@ -2,6 +2,26 @@
 
 **Status:** Implementation is complete through Phase 16. Phase 17 Product Layer M0-M9, M10-A, M10-B, and M10-C are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED. M10-C Capability/Fidelity Proof is approved at `3e07878`. Pair Study M11-A/B/C/D is integrated through `3528973`, including study-first W/PIXEL evidence, honest two-leg economics, and same-screen development completion. M10-D representative-user acceptance rerun is now the final human gate.
 
+Update context — 2026-09-24 (resumable research correction)
+Trigger: the user still cannot easily run and understand research and asked to infer
+the interaction decisions and proceed, with CLI-only verification.
+Purpose: make the research question, test, result and earlier attempts one workflow.
+Impact: the [study-workspace correction](../superpowers/plans/2026-09-24-research-study-workspace.md)
+records the first presentation/continuity iteration before M10-D. It does not reopen the
+economic, identity, admission, holdout or live-authority contracts. Historical
+milestone completion is not evidence of current human acceptance.
+Evidence: [design](../superpowers/specs/2026-09-24-research-study-workspace.md),
+[MFSM read-only experiment assessment](../research/2026-09-24-mfsm-experiment-patterns.md).
+
+Update context — 2026-09-24 (plan-first revision)
+Trigger: the user rejected that iteration's UX and requested an implementation plan
+before further changes.
+Purpose: make the proposed replacement and the implementation pause explicit.
+Impact: the [intuitive research experience plan](../superpowers/plans/2026-09-24-intuitive-research-experience.md)
+is the current proposal for review. Its checklists are not implementation or
+acceptance claims. The first iteration's evidence remains in its original record.
+Evidence: current screen source and the user's simple/minimum-clicks requirement.
+
 Update context — 2026-08-20 (Research Cockpit correction)
 Trigger: the first real-user iPhone walkthrough attempted the concrete job `W vs BTC/ETH` plus a universal scan and instead landed in unresolved identity/provenance administration. Exact-symbol search behaved as substring search, the selected identity task appeared below a long result list, and normal Product Research exposed neither a focused pair launcher nor a clear scanner cockpit.
 Purpose: reopen M10 as a design review so QAP starts from the research question while preserving fail-closed identity, immutable data lineage, current-approved/PIT claim separation, and existing scientific/economic authority.
@@ -31,6 +51,10 @@ Evidence: `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigatio
 Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is implemented and its integrated rendered acceptance is green. **Phase 15 — Research Scanner and Basket Backend** is complete through Scanner V1 Slice 3, including the post-review remediation handoff at `142a18d`; Slice-3 results are in `docs/research/2026-08-18-qap-scanner-slice3-results.md`. The former Slice-3 Candidate Workbench milestone was explicitly superseded by the post-Phase-15 **Slice 4 Unified QAP Workbench**, which is complete and repository/browser-verified; its final rendered executable state is `6961937`, followed by the review-closure state on `main` at `62416cc`. Results are in `docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`. **Phase 16 — Human-Centered Workbench UX Re-architecture** is complete through M8 and remains the protected historical UX/evidence baseline. **Phase 17 — Product Layer** is technically complete through M10-C. The executable primary IA is `Home / Research / Portfolios / History`; strict PIT research remains under Advanced Research and specialist URLs remain stable. M10-0 is approved, M10-A is integrated at `12ed08a`, M10-B at `f39b4b4`, and M10-C proof at `3e07878`. Pair Study M11-A/B/C/D is integrated through `3528973`; **M10-D representative-user acceptance rerun is the current and final Phase-17 gate**. Do not replay earlier Product milestones or port legacy runtime architecture.
 
 ## Implementation waves
+
+The current correction's verification record is in the linked study-workspace
+plan above. Browser/representative-user acceptance remains pending; do not promote
+CLI fixture checks into completion of that gate.
 
 | Wave | Purpose | Phases | Exit condition |
 |---|---|---|---|

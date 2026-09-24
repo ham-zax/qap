@@ -4,7 +4,6 @@ import type { ReactNode } from 'react'
 import type { WorkspaceStatusDto } from '../api/types'
 import { ChartAttribution } from './ChartAttribution'
 import { ScreenGuide, screenGuideForPath } from './ScreenGuide'
-import { Badge } from './ui/Badge'
 
 interface AppShellProps {
   children: ReactNode
@@ -29,30 +28,14 @@ export function AppShell({ children, workspaceMode, collectorStatus }: AppShellP
           <Link className="brand" to="/">
             QAP
           </Link>
-          <p className="text-xs text-muted sm:text-sm">Research evidence workbench</p>
+          <p className="text-xs text-muted sm:text-sm">Research</p>
           {workspaceMode ? (
-            <Badge tone={workspaceMode === 'sample' ? 'warning' : 'neutral'}>
-              {workspaceMode === 'sample' ? 'Sample Workspace' : 'Local Market'}
-            </Badge>
+            <span className="text-xs text-muted">{workspaceMode === 'sample' ? 'Read-only examples' : 'Local workspace'}</span>
           ) : null}
-          {workspaceMode === 'sample' ? (
-            <Badge tone="neutral">Current evidence collection disabled</Badge>
-          ) : workspaceMode === 'local_market' && collectorStatus ? (
-            <Badge
-              tone={
-                collectorStatus === 'running'
-                  ? 'positive'
-                  : collectorStatus === 'failed'
-                    ? 'negative'
-                    : 'warning'
-              }
-            >
-              {collectorStatus === 'running'
-                ? 'Current evidence collector running'
-                : collectorStatus === 'failed'
-                  ? 'Current evidence collector failed'
-                  : 'Current evidence collector not running'}
-            </Badge>
+          {workspaceMode === 'local_market' && collectorStatus && collectorStatus !== 'running' ? (
+            <Link className="text-xs text-warning" to="/operations">
+              {collectorStatus === 'failed' ? 'Background collection failed' : 'Background collection is stopped'}
+            </Link>
           ) : null}
           <Link className="text-xs font-semibold text-muted hover:text-foreground" to="/operations">
             Activity
@@ -77,13 +60,12 @@ export function AppShell({ children, workspaceMode, collectorStatus }: AppShellP
         </nav>
       </header>
       <main id="main-content" tabIndex={-1}>
-        {guide ? <ScreenGuide guide={guide} /> : null}
         {children}
+        {guide ? <ScreenGuide guide={guide} /> : null}
       </main>
       <footer>
         <p>
-          Local research application. Portfolio state, economics, and scientific
-          evidence remain authoritative in QAP artifacts.
+          Research only · Simulated trades · No live orders
         </p>
         <ChartAttribution />
       </footer>

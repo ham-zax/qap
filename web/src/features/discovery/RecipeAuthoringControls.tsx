@@ -86,3 +86,27 @@ export function ComponentSelect({
     </label>
   )
 }
+
+const PARAMETERS: Record<string, { label: string; description: string; integer?: boolean }> = {
+  window_bars: { label: 'Relationship lookback (bars)', description: 'Completed observations used to estimate the relationship.', integer: true },
+  min_observations: { label: 'Minimum observations', description: 'Required observations before the method can produce evidence.', integer: true },
+  enter_threshold: { label: 'Entry threshold', description: 'Score magnitude at which the declared tilt rule responds.' },
+  neutral_threshold: { label: 'Neutral threshold', description: 'Score magnitude below which the neutral rule applies.' },
+  maximum_tilt: { label: 'Maximum allocation tilt', description: 'Maximum weight adjustment as a fraction; 0.10 means ten percentage points.' },
+}
+
+export function ResearchParameterControls({ config, onChange }: {
+  config: Record<string, unknown>; onChange: (config: Record<string, unknown>) => void
+}) {
+  return <div className="mt-4 grid gap-3 sm:grid-cols-2">
+    {Object.entries(PARAMETERS).filter(([key]) => key in config).map(([key, field]) => (
+      <label key={key} className="text-sm font-medium text-secondary">
+        {field.label}
+        <input type="number" step={field.integer ? '1' : 'any'} value={String(config[key] ?? '')}
+          onChange={(event) => onChange({ ...config, [key]: field.integer && event.target.value !== '' ? Number(event.target.value) : event.target.value })}
+          className="mt-1 min-h-11 w-full rounded-md border border-border bg-canvas px-3 text-foreground" />
+        <span className="mt-1 block text-xs font-normal leading-5 text-muted">{field.description}</span>
+      </label>
+    ))}
+  </div>
+}

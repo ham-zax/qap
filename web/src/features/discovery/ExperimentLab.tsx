@@ -18,6 +18,7 @@ import {
 import {
   ComponentSelect,
   JsonConfigEditor,
+  ResearchParameterControls,
 } from './RecipeAuthoringControls'
 import { SupportReportPanel } from './SupportReportPanel'
 
@@ -181,12 +182,10 @@ export function ExperimentLab({ apiClient, queries, workspace }: ExperimentLabPr
             Experiment Lab
           </h2>
           <p className="m-0 max-w-4xl text-sm leading-6 text-secondary">
-            Declare a pair or fixed-basket recipe using backend-described components.
-            Check support before execution; the browser does not decide scientific
-            compatibility or runnable status.
+            Choose a method and adjust its settings, then check whether the experiment
+            can run. Each attempt uses a declared comparison and records its assumptions.
           </p>
         </div>
-        {context.data ? <Badge tone="info">{context.data.capability_catalog_version}</Badge> : null}
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -372,6 +371,14 @@ export function ExperimentLab({ apiClient, queries, workspace }: ExperimentLabPr
                     ) : null}
                   </div>
 
+                  <ResearchParameterControls config={variant.relationship.config} onChange={(config) => {
+                    setDraft(updateVariant(draft, index, { ...variant, relationship: { ...variant.relationship, config: config as Variant['relationship']['config'] } }))
+                    setChecked(null)
+                  }} />
+                  <ResearchParameterControls config={variant.decision_rule.config} onChange={(config) => {
+                    setDraft(updateVariant(draft, index, { ...variant, decision_rule: { ...variant.decision_rule, config: config as Variant['decision_rule']['config'] } }))
+                    setChecked(null)
+                  }} />
                   <div className="mt-4 grid gap-3 md:grid-cols-3">
                     <ComponentSelect
                       label="Relationship / evidence"

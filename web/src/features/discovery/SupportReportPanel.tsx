@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import type { SupportReportV1 } from '../../api/types'
 import { Badge, type BadgeTone } from '../../components/ui/Badge'
 
@@ -24,6 +25,7 @@ function toneForAxis(axis: string, value: string): BadgeTone {
 }
 
 export function SupportReportPanel({ report }: { report: SupportReportV1 }) {
+  const headingId = useId()
   const axes = [
     ['structure', report.structure],
     ['capability', report.capability],
@@ -33,13 +35,13 @@ export function SupportReportPanel({ report }: { report: SupportReportV1 }) {
   ] as const
 
   return (
-    <section className="rounded-lg border border-border bg-panel p-5" aria-labelledby="support-report-heading">
+    <section className="rounded-lg border border-border bg-panel p-5" aria-labelledby={headingId}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
             Backend support check
           </p>
-          <h3 id="support-report-heading" className="mt-2 mb-0 text-lg font-semibold text-foreground">
+          <h3 id={headingId} className="mt-2 mb-0 text-lg font-semibold text-foreground">
             Recipe support
           </h3>
         </div>

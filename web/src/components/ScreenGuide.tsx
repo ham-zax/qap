@@ -33,9 +33,9 @@ const guides = {
     intent:
       'Start from a concrete research question: research one pair, scan the approved universe, or declare an advanced typed experiment.',
     action:
-      'Choose one Research task. For a pair, select two assets and one timeframe, resolve only genuine identity or approval setup, then use Research this pair. QAP prepares only that pair when needed and shows relationship evidence before economic replay support.',
+      'Choose two assets and a period, then Run comparison. QAP prepares history, checks the declared settings and runs the supported comparison. Resolve identity or permission requests only if they appear.',
     example:
-      'Select W and PIXEL, choose Medium-term, and research the relationship on their same-venue USDT paths. A missing direct W/PIXEL market limits economic replay; it does not erase the relationship study.',
+      'Choose a pair and 90 days, then compare both methods with holding and simple rebalancing after costs. Review settings first if you want to change the default test.',
     next:
       'Pair Research shows current backend relationship values first and only checks a default economic recipe when one can be truthfully declared. Universal Scan and Experiment Lab keep their existing authorities.',
     boundary:
@@ -231,9 +231,9 @@ function GuideItem({ label, children }: { label: string; children: string }) {
 
 export function ScreenGuide({ guide }: { guide: ScreenGuideContent }) {
   return (
-    <details open className="mb-8 rounded-lg border border-accent/35 bg-subtle p-5">
-      <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold text-accent">
-        How to use this screen
+    <details className="mt-12 border-t border-border pt-4">
+      <summary className="min-h-11 cursor-pointer py-2 text-sm text-muted">
+        Help with this page
       </summary>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <GuideItem label="Intent">{guide.intent}</GuideItem>
