@@ -29,17 +29,35 @@ presentation and continuity, not economic or research authority; see the
 and [implementation/check record](docs/superpowers/plans/2026-09-24-research-study-workspace.md).
 The historical milestone claims above do not close representative-user acceptance.
 
-Research → Pair studies now groups a saved question and its attempts. Choose the
-assets and period, resolve setup in place, review methods/costs/comparisons, then
-run and read the conclusion. Test assumptions and reproducibility identifiers
-remain available under expandable details. Changes to backtest parameters require
-a new backend support check.
+The 2026-09-24 first iteration grouped a saved pair question and its attempts,
+but still exposed too many backend stages as separate user actions. Its persistence
+and evidence behavior remains the implementation base; its presentation direction is
+superseded by the approved simple-research plan below.
 
-Study drafts and attempt links are local to this browser and workspace. Backend
-results remain independently available in History. Reloading restores the question
-and past attempts; descriptive relationship evidence is fetched again with **Study
-this pair**. Custom-experiment drafts survive switching research tabs, not a page
-reload. Cross-device synchronization and human/browser acceptance are not claimed.
+### Simple research experience — 2026-09-25
+
+Update context: the user approved the plan-first revision and asked to complete the
+remaining implementation. See the
+[intuitive research experience plan](docs/superpowers/plans/2026-09-24-intuitive-research-experience.md)
+for the implemented scope and verification record.
+
+Research now starts with one pair comparison: choose two assets and a period, then
+**Run comparison**. QAP prepares the selected history when needed, performs the
+backend support check, and launches the declared methods without exposing those
+stages as separate confirmations. Real identity/admission decisions and temporary
+USDT bridge authority remain explicit. Changing settings invalidates prior support;
+the next Run comparison obtains a fresh backend check automatically.
+
+Results show the declared methods together against HODL and the primary simple
+rebalancing control, then one selected method's detail. Earlier runs stay reopenable,
+and History prioritizes recognizable assets, dates and recorded outcomes while exact
+lineage remains available. Drafts remain browser-local; authoritative backend results
+remain independently available in History.
+
+The production frontend build and diff check pass. The repository source-size gate
+still fails on the pre-existing 758-line Binance public adapter outside this change.
+No automated interaction suite or representative-user visual acceptance was run in
+this implementation pass, so those gates remain pending.
 
 ## Requirements and setup
 

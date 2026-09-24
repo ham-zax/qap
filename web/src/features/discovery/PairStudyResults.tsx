@@ -543,7 +543,7 @@ export function PairStudyResults({
             >
               {bridgeAuthorityBusy
                 ? 'Saving permission…'
-                : 'Allow temporary USDT in research replay'}
+                : 'Allow and run comparison'}
             </button>
             {bridgeAuthorityError ? (
               <p className="mt-3 mb-0 text-sm text-negative">{bridgeAuthorityError}</p>

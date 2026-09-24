@@ -250,7 +250,7 @@ function OtherRunCard({ run }: { run: RunSummaryDto }) {
         className="mt-4 inline-flex min-h-11 items-center font-semibold text-accent"
         href={`/experiments/${run.run_id}`}
       >
-        Review specialist QAP run
+        Open result
       </a>
     </article>
   )
@@ -274,9 +274,7 @@ function OtherRunGroup({
         {runs[0]?.basket?.join(' · ') ?? 'Manual QAP research family'}
       </h3>
       <p className="m-0 text-sm leading-6 text-secondary">
-        These exact runs share the existing QAP research-family identity. They remain
-        separate attempts with separate persisted outcomes; History does not combine them
-        into a new verdict or Research Idea.
+        These runs are earlier attempts from the same recorded research family. Each keeps its own dates, settings and outcome.
       </p>
       <div className="mt-4 space-y-3">
         {runs.map((run) => (
@@ -327,7 +325,10 @@ function Section({
 }
 
 export function HistoryView({ history }: HistoryViewProps) {
-  const otherRunGroups = groupOtherRuns(history.other_research_runs)
+  const recentRuns = [...history.other_research_runs].sort((left, right) =>
+    (right.created_timestamp ?? '').localeCompare(left.created_timestamp ?? ''),
+  )
+  const otherRunGroups = groupOtherRuns(recentRuns)
   return (
     <section aria-labelledby="history-heading" className="min-w-0">
       <header className="mb-8 max-w-4xl">
@@ -347,6 +348,18 @@ export function HistoryView({ history }: HistoryViewProps) {
           exact specialist artifacts remain available without becoming separate Product verdicts.
         </p>
       </header>
+
+      <Section
+        eyebrow="Recent work"
+        title="Recent results"
+        description="Recognizable assets, dates and recorded outcomes come first. Exact family identity and reproducibility details remain available inside each result."
+        empty={history.other_research_runs.length === 0}
+        emptyText="No standalone research results are available yet."
+      >
+        {otherRunGroups.map((group) => (
+          <OtherRunGroup key={group.key} familyId={group.familyId} runs={group.runs} />
+        ))}
+      </Section>
 
       <Section
         eyebrow="Research generations"
@@ -471,22 +484,6 @@ export function HistoryView({ history }: HistoryViewProps) {
               Review exact forward evidence
             </a>
           </article>
-        ))}
-      </Section>
-
-      <Section
-        eyebrow="Other specialist research"
-        title="Unowned QAP research runs"
-        description="QAP runs already referenced by a Research Idea or portfolio are shown through those higher-level objects above. Remaining exact runs stay available here for audit."
-        empty={history.other_research_runs.length === 0}
-        emptyText="No additional unowned QAP research runs are available."
-      >
-        {otherRunGroups.map((group) => (
-          <OtherRunGroup
-            key={group.key}
-            familyId={group.familyId}
-            runs={group.runs}
-          />
         ))}
       </Section>
 

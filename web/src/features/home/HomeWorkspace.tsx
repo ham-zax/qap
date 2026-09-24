@@ -28,11 +28,6 @@ const researchUniverseGoal = {
 
 const goals = [
   {
-    title: 'Research a pair or scan the market',
-    description: 'Start with a pair question, scan your approved universe, or open the advanced Experiment Lab.',
-    to: '/scanner' as const,
-  },
-  {
     title: 'Continue validation',
     description: 'Return to ideas being checked against genuinely later evidence.',
     to: '/prospective' as const,
@@ -96,41 +91,42 @@ export function HomeWorkspace({
           </p>
         </header>
 
+        <Link
+          className="group mb-6 flex min-h-44 flex-col justify-between rounded-xl border border-accent/45 bg-panel p-6 text-foreground no-underline transition-[background-color,border-color] duration-150 hover:border-accent hover:bg-subtle"
+          to="/scanner"
+        >
+          <div>
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.1em] text-accent">Primary research task</p>
+            <h2 className="mt-3 mb-2 text-2xl font-semibold md:text-3xl">Start a comparison</h2>
+            <p className="m-0 max-w-2xl text-sm leading-6 text-secondary md:text-base">
+              Choose two assets and a period. QAP prepares the required history, checks the declared settings, and runs both supported methods against holding and simple rebalancing.
+            </p>
+          </div>
+          <span className="mt-5 text-sm font-semibold text-accent">Compare two assets →</span>
+        </Link>
+
         {workspace.workspace_mode === 'local_market' && !productResearchReady ? (
-          <section
-            aria-labelledby="local-market-setup-heading"
-            className="mb-8 rounded-lg border border-warning/45 bg-panel p-5"
-          >
-            <Badge tone={readinessUnavailable ? 'negative' : 'warning'}>
-              {readinessUnavailable ? 'Readiness unavailable' : 'Research setup'}
-            </Badge>
-            <h2
-              id="local-market-setup-heading"
-              className="mt-3 mb-2 text-xl font-semibold text-foreground"
-            >
-              {readinessUnavailable
-                ? 'Research readiness could not be checked'
-                : 'Current-approved research is not ready yet'}
-            </h2>
+          <details className="mb-8 rounded-lg border border-warning/35 bg-panel px-5 py-3">
+            <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-warning">
+              {readinessUnavailable ? 'Universe scan readiness could not be checked' : 'Universe scan needs setup'}
+            </summary>
             <p className="m-0 max-w-3xl text-sm leading-6 text-secondary">
               {readinessUnavailable
-                ? 'QAP could not confirm readiness for every Research timeframe, so Home does not infer a ready/not-ready conclusion. Open Research to inspect the backend error directly.'
-                : 'This guidance comes from backend research readiness rather than catalog presence. Open Research to choose one timeframe and see the backend-owned identity, current-market, history, maintenance, and direct-market evidence.'}
+                ? 'The pair-comparison flow can still resolve pair-specific setup in context. Open the universe scan only when you want to inspect its broader readiness state.'
+                : 'This applies to scanning the approved universe. Pair comparison resolves its own selected-asset requirements when you start it.'}
             </p>
-            <Link
-              className="mt-4 inline-flex min-h-11 items-center font-semibold text-accent"
-              to="/scanner"
-            >
-              Review research readiness →
+            <Link className="mt-3 inline-flex min-h-11 items-center font-semibold text-accent" to="/scanner">
+              Open Research
             </Link>
-          </section>
+          </details>
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <h2 className="mb-4 text-lg font-semibold text-foreground">Other work</h2>
+        <div className="grid gap-3 md:grid-cols-2">
           {availableGoals.map((goal) => (
             <Link
               key={goal.to}
-              className="group flex min-h-40 flex-col justify-between rounded-lg border border-border bg-panel p-5 text-foreground no-underline transition-[background-color,border-color] duration-150 hover:border-border-strong hover:bg-subtle"
+              className="group flex min-h-32 flex-col justify-between rounded-lg border border-border bg-panel p-5 text-foreground no-underline transition-[background-color,border-color] duration-150 hover:border-border-strong hover:bg-subtle"
               to={goal.to}
             >
               <div>

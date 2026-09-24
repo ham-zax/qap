@@ -125,20 +125,9 @@ export function ProductResearch({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-border bg-panel p-5">
-        <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-          What QAP will research
-        </p>
-        <h2 className="mt-2 mb-2 text-xl font-semibold text-foreground">
-          Approved universe scope
-        </h2>
-        <p className="m-0 max-w-4xl text-sm leading-6 text-secondary">
-          QAP researches assets you explicitly approved and that are currently resolved on
-          supported Spot venues, using admitted historical data through a backend-selected
-          safe cutoff. This retrospective claim does not assert that today&apos;s entire scope
-          existed throughout the historical window.
-        </p>
-      </section>
+      <p className="m-0 max-w-4xl text-sm leading-6 text-secondary">
+        Scan the assets you explicitly approved on supported Spot venues. QAP freezes the eligible scope and safe data cutoff before the scan starts.
+      </p>
 
       <section className="rounded-lg border border-border bg-panel p-5" aria-labelledby="timeframe-heading">
         <h2 id="timeframe-heading" className="mt-0 text-lg font-semibold text-foreground">
@@ -172,7 +161,14 @@ export function ProductResearch({
         </div>
       </section>
 
-      <ReadinessPanel readiness={readiness.data} isLoading={readiness.isPending} error={readiness.error} />
+      {readiness.data?.ready_for_research ? (
+        <details className="rounded-lg border border-border bg-panel px-5 py-3">
+          <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-secondary">
+            Ready · {readiness.data.ready_asset_count} assets · data through {readiness.data.safe_cutoff ? formatResearchTimestamp(readiness.data.safe_cutoff) : 'available cutoff'}
+          </summary>
+          <ReadinessPanel readiness={readiness.data} isLoading={false} error={null} />
+        </details>
+      ) : <ReadinessPanel readiness={readiness.data} isLoading={readiness.isPending} error={readiness.error} />}
 
       <section className="rounded-lg border border-border bg-panel p-5" aria-labelledby="find-ideas-heading">
         <h2 id="find-ideas-heading" className="mt-0 text-lg font-semibold text-foreground">

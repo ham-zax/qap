@@ -42,47 +42,42 @@ export function ResearchHome({
   return (
     <section className="min-w-0">
       <header className="mb-8 max-w-4xl">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
-          Research
-        </p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">Research</p>
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          Research, test, and understand
+          {activeTask === 'pair' ? 'Compare two assets' : activeTask === 'scan' ? 'Scan approved assets' : 'Custom experiment'}
         </h1>
         <p className="m-0 text-sm leading-6 text-secondary md:text-base">
-          Start a study, compare a strategy with holding the same assets, and keep your
-          attempts together. Return to a saved study whenever you are ready to continue.
+          {activeTask === 'pair'
+            ? 'Choose two assets and a period. One Run comparison action prepares the required history, checks the declared settings, and starts the supported methods.'
+            : activeTask === 'scan'
+              ? 'Search the approved universe for relationships using the existing scanner contract.'
+              : 'Declare advanced methods and settings when the ordinary pair comparison is not enough.'}
         </p>
       </header>
 
-      <nav
-        className="mb-6 flex flex-wrap gap-2 rounded-lg border border-border bg-panel p-2"
-        aria-label="Research task"
-      >
-        {([
-          ['pair', 'Pair studies'],
-          ['scan', 'Scan my universe'],
-          ['lab', 'Custom experiments'],
-        ] as const).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            aria-pressed={activeTask === value}
-            className={`min-h-11 rounded-md px-4 text-sm font-semibold transition-colors ${
-              activeTask === value
-                ? 'bg-accent text-canvas'
-                : 'text-secondary hover:bg-subtle hover:text-foreground'
-            }`}
-            onClick={() => { setActiveTask(value); if (value === 'lab') setLabVisited(true) }}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-
-      <div hidden={activeTask !== 'pair'}>
+      {activeTask !== 'pair' ? (
+        <button type="button" onClick={() => setActiveTask('pair')}
+          className="mb-6 min-h-11 text-sm font-semibold text-accent">
+          ← Back to pair comparison
+        </button>
+      ) : null}
+      {activeTask === 'pair' ? (
+        <>
         <ResearchStudyWorkspace key={`${workspace.workspace_mode}:${workspace.workspace_root}`}
           apiClient={apiClient} queries={queries} workspace={workspace} />
-      </div>
+          <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-border pt-5">
+            <span className="mr-2 text-sm text-muted">Other research tools</span>
+            <button type="button" onClick={() => setActiveTask('scan')}
+              className="min-h-11 rounded-md border border-border px-4 text-sm font-semibold text-secondary hover:text-foreground">
+              Scan assets
+            </button>
+            <button type="button" onClick={() => { setActiveTask('lab'); setLabVisited(true) }}
+              className="min-h-11 rounded-md border border-border px-4 text-sm font-semibold text-secondary hover:text-foreground">
+              Custom experiment
+            </button>
+          </div>
+        </>
+      ) : null}
       {activeTask === 'scan' ? (
         <section aria-labelledby="universal-scan-heading">
           <div className="mb-4 max-w-4xl">
@@ -100,11 +95,12 @@ export function ResearchHome({
           <ProductResearch apiClient={apiClient} queries={queries} workspace={workspace} />
         </section>
       ) : null}
-      <div hidden={activeTask !== 'lab'}>
-        {labVisited ? <ExperimentLab key={`${workspace.workspace_mode}:${workspace.workspace_root}`}
-          apiClient={apiClient} queries={queries} workspace={workspace} /> : null}
-      </div>
+      {activeTask === 'lab' && labVisited ? (
+        <ExperimentLab key={`${workspace.workspace_mode}:${workspace.workspace_root}`}
+          apiClient={apiClient} queries={queries} workspace={workspace} />
+      ) : null}
 
+      {activeTask === 'scan' ? <>
       <details className="mt-10 rounded-lg border border-border bg-panel p-5">
         <summary className="cursor-pointer py-2 text-lg font-semibold text-accent">Previous universe scans</summary>
       <section className="mt-5" aria-labelledby="previous-research-heading">
@@ -188,6 +184,7 @@ export function ResearchHome({
           />
         </div>
       </details>
+      </> : null}
     </section>
   )
 }

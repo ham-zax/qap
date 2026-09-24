@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useQueries, useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 
 import type { QapQueries } from '../../api/queries'
 import type { ExperimentDetailDto } from '../../api/types'
@@ -89,10 +89,6 @@ function PairResearchRunResult({ queries, runId, index, total }: {
         {' '}{isFinal ? 'This result used the committed final holdout; that holdout is now consumed.' : 'This does not establish untouched final-holdout confirmation.'}</p>
       <p className="mt-2 mb-0 text-xs text-muted">{experimentDataRoleLabel(result.data_role, result.final_oos_consumed)} · {manifest.basket.join(' / ')}</p>
     </section>
-    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-      <div className="rounded-md border border-border p-4"><p className="m-0 text-sm text-muted">Compared with holding (HODL)</p><p className="mt-2 mb-0 text-2xl font-semibold text-foreground"><Value value={result.strategy_vs_hodl} percent /></p></div>
-      <div className="rounded-md border border-border p-4"><p className="m-0 text-sm text-muted">Compared with simple rebalancing</p><p className="mt-2 mb-0 text-2xl font-semibold text-foreground"><Value value={result.strategy_vs_primary_control} percent /></p></div>
-    </div>
     <div className="mt-5 overflow-x-auto">
       <table className="w-full text-left text-sm">
         <caption className="mb-3 text-left font-semibold text-foreground">Ending wealth after modeled costs · {unit}</caption>
@@ -103,20 +99,87 @@ function PairResearchRunResult({ queries, runId, index, total }: {
     </div>
     <p className="mt-4 text-sm text-secondary">Strategy costs: <Value value={strategy?.fees_value} unit={unit} /> in fees; <Value value={strategy?.slippage_value} unit={unit} /> in slippage. Maximum relative drawdown against holding: {formatPercent(result.maximum_relative_drawdown_vs_hodl).display}.</p>
     {performance.data ? <div className="mt-5"><RelativeWealthChart performance={performance.data} /></div>
-      : <p className="text-sm text-muted">{performance.isPending ? 'Loading comparison chart…' : 'Comparison chart unavailable; the recorded summary above remains available.'}</p>}
+      : performance.isError ? <p className="text-sm text-muted">Comparison chart unavailable; the recorded summary above remains available.{' '}
+          <button type="button" onClick={() => void performance.refetch()} className="min-h-11 font-semibold text-accent">Retry chart</button>
+        </p>
+        : <p className="text-sm text-muted">Loading comparison chart…</p>}
     <TestDetails data={data} />
     <ReproducibilityDetails data={data} queries={queries} />
     <a className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-accent" href={`/experiments/${encodeURIComponent(runId)}`}>Open full experiment</a>
   </article>
 }
 
-export function PairResearchCompletion({ queries, runIds, operationId, compilationSha256 }: {
+export function PairResearchCompletion({ queries, runIds, operationId, compilationSha256, onRunAgain = () => undefined, busy = false }: {
   queries: QapQueries; runIds: string[]; operationId: string; compilationSha256: string | null
+  onRunAgain?: () => void; busy?: boolean
 }) {
+  const experiments = useQueries({ queries: runIds.map((runId) => queries.experiment(runId)) })
+  const [selectedRunId, setSelectedRunId] = useState(runIds[0] ?? '')
+
+  useEffect(() => {
+    if (!runIds.includes(selectedRunId)) setSelectedRunId(runIds[0] ?? '')
+  }, [runIds, selectedRunId])
+
+  const selectedIndex = Math.max(0, runIds.indexOf(selectedRunId))
+  const firstAvailable = experiments.find((query) => query.data)?.data
+  const selected = experiments[selectedIndex]?.data ?? firstAvailable
+  const window = selected ? selected.manifest.evaluation_window ?? selected.manifest.data_window : null
+
   return <section className="space-y-5" aria-label="Research results">
-    <header><h2 className="mb-2 text-2xl font-semibold text-foreground">3. What did the test show?</h2>
-      <p className="m-0 text-sm leading-6 text-secondary">Each method is reported against its declared comparisons. A better-looking result here is not an automatically selected winner.</p></header>
-    {runIds.map((runId, index) => <PairResearchRunResult key={runId} queries={queries} runId={runId} index={index} total={runIds.length} />)}
+    <header className="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.08em] text-muted">Results</p>
+        <h2 className="m-0 text-2xl font-semibold text-foreground">
+          {selected?.manifest.basket.join(' / ') ?? 'Comparison'}
+        </h2>
+        <p className="mt-2 mb-0 text-sm text-secondary">
+          {window ? <>{formatResearchTimestamp(window.start)} to {formatResearchTimestamp(window.end)}</> : 'Loading tested dates…'}
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-3">
+        <a href="#comparison-settings" className="inline-flex min-h-11 items-center text-sm font-semibold text-accent">Change settings</a>
+        <button type="button" disabled={busy} onClick={onRunAgain}
+          className="min-h-11 rounded-md border border-border px-4 text-sm font-semibold text-foreground disabled:opacity-50">
+          Run again
+        </button>
+      </div>
+    </header>
+    <div className="overflow-x-auto rounded-lg border border-border bg-panel">
+      <table className="w-full min-w-[42rem] text-left text-sm">
+        <caption className="sr-only">Method comparison summary</caption>
+        <thead><tr className="border-b border-border text-muted">
+          <th scope="col" className="px-4 py-3">Method</th>
+          <th scope="col" className="px-4 py-3">vs Holding</th>
+          <th scope="col" className="px-4 py-3">vs Rebalancing</th>
+          <th scope="col" className="px-4 py-3">Recorded result</th>
+        </tr></thead>
+        <tbody>
+          {experiments.map((query, index) => {
+            const runId = runIds[index]
+            if (!runId) return null
+            if (query.isPending) return <tr key={runId} className="border-b border-border"><td className="px-4 py-4 text-secondary" colSpan={4}>Loading method {index + 1}…</td></tr>
+            if (query.isError) return <tr key={runId} className="border-b border-border"><td className="px-4 py-4 text-warning" colSpan={4}>
+              Result unavailable. <button type="button" className="min-h-11 font-semibold text-accent" onClick={() => void query.refetch()}>Retry</button>
+            </td></tr>
+            if (!query.data) return null
+            const status = researchStatusPresentation(query.data.result.status)
+            return <tr key={runId} className={selectedRunId === runId ? 'bg-subtle' : 'border-b border-border'}>
+              <th scope="row" className="px-4 py-3">
+                <button type="button" onClick={() => setSelectedRunId(runId)} aria-pressed={selectedRunId === runId}
+                  className="min-h-11 text-left font-semibold text-accent">
+                  {researchMethodName(query.data.manifest.relationship.component_id)}
+                </button>
+              </th>
+              <td className="px-4 py-3 tabular-nums text-foreground"><Value value={query.data.result.strategy_vs_hodl} percent /></td>
+              <td className="px-4 py-3 tabular-nums text-foreground"><Value value={query.data.result.strategy_vs_primary_control} percent /></td>
+              <td className="px-4 py-3"><Badge tone={status.tone}>{status.label}</Badge></td>
+            </tr>
+          })}
+        </tbody>
+      </table>
+    </div>
+    {runIds[selectedIndex] ? <PairResearchRunResult key={runIds[selectedIndex]} queries={queries}
+      runId={runIds[selectedIndex]} index={selectedIndex} total={runIds.length} /> : null}
     <section className="rounded-lg border border-border bg-subtle p-5">
       <h3 className="m-0 text-lg font-semibold text-foreground">What this lets you conclude</h3>
       <p className="mb-0 text-sm leading-6 text-secondary">These results describe the stated assets, history, rules and modeled costs. They do not prove future profitability, live execution capacity, or that a relationship caused the difference. Changing settings creates another development attempt; keep earlier attempts in the comparison.</p>

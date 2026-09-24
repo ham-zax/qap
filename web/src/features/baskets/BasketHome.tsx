@@ -485,18 +485,20 @@ export function BasketHome({ apiClient, baskets, scans }: BasketHomeProps) {
                 </Badge>
               )}
             </div>
-            <h2 className="mt-4 text-lg font-semibold text-foreground">
-              Relationship availability
-            </h2>
-            <BasketGraph assets={assets} edges={topologyEdges} />
+            <h2 className="mt-4 text-lg font-semibold text-foreground">Relationship evidence</h2>
             <p className="text-sm leading-6 text-secondary">
-              Lines show only admitted relationship evidence among the selected assets.
-              They do not preview direction, resolver pressure, or target weights.
-            </p>
-            <p className="text-xs text-muted">
               {pairs.length} admitted relationship{pairs.length === 1 ? '' : 's'} available ·{' '}
               {selectedCandidateIds.length} selected for analysis.
             </p>
+            <details className="mt-4 rounded-md border border-border p-3">
+              <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-accent">
+                Inspect relationship map
+              </summary>
+              <BasketGraph assets={assets} edges={topologyEdges} />
+              <p className="text-sm leading-6 text-secondary">
+                Lines show admitted relationship evidence only. They do not preview direction, resolver pressure, or target weights.
+              </p>
+            </details>
 
             {productSource ? (
               <div className="mt-4 border-t border-border pt-4">

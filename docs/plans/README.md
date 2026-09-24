@@ -18,9 +18,21 @@ Trigger: the user rejected that iteration's UX and requested an implementation p
 before further changes.
 Purpose: make the proposed replacement and the implementation pause explicit.
 Impact: the [intuitive research experience plan](../superpowers/plans/2026-09-24-intuitive-research-experience.md)
-is the current proposal for review. Its checklists are not implementation or
-acceptance claims. The first iteration's evidence remains in its original record.
+became the proposal for review. Its checklists were not implementation or acceptance
+claims at that point. The first iteration's evidence remains in its original record.
 Evidence: current screen source and the user's simple/minimum-clicks requirement.
+
+Update context — 2026-09-25 (simple research experience implementation)
+Trigger: the user approved the plan-first revision and asked to complete the remaining work.
+Purpose: record the new Product interaction frontier without conflating implementation
+checks with representative-user acceptance.
+Impact: the pair path now uses one Run comparison action for preparation, backend
+support checking and launch; Home prioritizes that task; results compare all declared
+methods before one selected detail; History starts with recognizable recent work; and
+scanner, custom-experiment and portfolio surfaces use the same progressive hierarchy.
+The economic, identity, admission, holdout and live-authority contracts are unchanged.
+Representative-user visual acceptance and automated interaction checks remain pending.
+Evidence: [implementation plan and verification record](../superpowers/plans/2026-09-24-intuitive-research-experience.md).
 
 Update context — 2026-08-20 (Research Cockpit correction)
 Trigger: the first real-user iPhone walkthrough attempted the concrete job `W vs BTC/ETH` plus a universal scan and instead landed in unresolved identity/provenance administration. Exact-symbol search behaved as substring search, the selected identity task appeared below a long result list, and normal Product Research exposed neither a focused pair launcher nor a clear scanner cockpit.

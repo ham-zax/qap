@@ -104,13 +104,23 @@ export function PairResearchSetup({ apiClient, universe, study, assetA, assetB, 
           excludeCanonicalAssetIds={assetA?.canonicalAssetId ? [assetA.canonicalAssetId] : []}
           onSelect={(asset) => onChange({ assetB: asset })} onClear={() => onChange({ assetB: null })} />
       </div>
-      <label className="mt-5 block text-sm font-semibold text-secondary">Historical test period
-        <select value={study.horizon} onChange={(event) => onChange({ horizon: event.target.value as ResearchStudy['horizon'] })}
-          className="mt-2 min-h-11 w-full rounded-md border border-border bg-canvas px-3">
-          {Object.entries(STUDY_PERIODS).map(([value, period]) => <option key={value} value={value}>{period.label} · {period.detail}</option>)}
-        </select>
-      </label>
-      <p className="mt-2 text-xs leading-5 text-muted">Trailing completed history. These are development tests, not predictions or untouched holdout confirmation.</p>
+      <div className="mt-5" role="radiogroup" aria-label="Historical test period">
+        <p className="mb-2 text-sm font-semibold text-secondary">Period</p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {Object.entries(STUDY_PERIODS).map(([value, period]) => (
+            <label key={value}
+              className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-md border px-4 py-2 ${study.horizon === value ? 'border-accent bg-subtle text-foreground' : 'border-border text-secondary'}`}>
+              <input type="radio" name="pair-period" value={value} checked={study.horizon === value}
+                onChange={() => onChange({ horizon: value as ResearchStudy['horizon'] })} />
+              <span>
+                <strong className="block text-sm">{period.label}</strong>
+                <span className="block text-xs text-muted">{period.detail}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-muted">Trailing completed history. Development comparison only; this is not untouched holdout confirmation.</p>
       {unresolved ? (
         <IdentityConfirmation key={unresolved.key} selection={unresolved} apiClient={apiClient}
           onBusyChange={setIdentityBusy}

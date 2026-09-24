@@ -1,6 +1,6 @@
 # QAP: simple research experience — implementation plan
 
-**Status: proposed for review. Implementation is paused at the user's request.**
+**Status: implementation complete for usability review. Automated interaction checks and representative-user visual acceptance remain pending.**
 
 Update context — 2026-09-24
 Trigger: the user rejected the first research-workspace revision as unintuitive,
@@ -11,6 +11,18 @@ Economic methods, benchmarks, identity/admission rules and holdout roles retain
 their existing owners. This document does not approve a new research method.
 Evidence: current React screens, the user's feedback, and the
 [earlier implementation record](2026-09-24-research-study-workspace.md).
+
+Update context — 2026-09-25
+Trigger: the user approved this plan and asked to complete the remaining implementation.
+Purpose: record the implemented interaction contract without promoting code checks into
+representative-user acceptance.
+Impact: the primary pair path now uses one Run comparison action for preparation,
+backend support checking and launch; Home/Research/History and the secondary research
+surfaces follow the same primary-task hierarchy. Economic, identity, admission,
+holdout and live-authority contracts are unchanged.
+Evidence: the React surfaces named in Sections B–E; `pnpm build` and
+`git diff --check` pass. The source-size gate still reports the pre-existing
+758-line `src/qap/market/adapters/binance_public.py` failure outside this change.
 
 ## 1. The outcome
 
@@ -201,27 +213,27 @@ include inputs, execution and results, not stop at a styled empty form.
 
 ### A. Review the proposed experience
 
-- [ ] Review the research and result arrangements above and the click targets.
-- [ ] Treat this plan as the current proposal; the earlier technical checklist is
+- [x] Review the research and result arrangements above and the click targets.
+- [x] Treat this plan as the approved interaction direction; the earlier technical checklist is
   historical evidence and does not establish usability acceptance.
-- [ ] Preserve the current dirty branch. The partial header/help changes already
-  made are provisional and should be assessed against this plan before integration.
+- [x] Preserve the first-iteration branch history. The earlier header/help changes
+  were assessed against this plan rather than treated as usability acceptance.
 
 ### B. Build the complete pair-comparison path
 
-- [ ] Refactor `PairResearch.tsx` so one explicit action coordinates preparation,
+- [x] Refactor `PairResearch.tsx` so one explicit action coordinates preparation,
   support and launch. Prefer a bounded feature-owned hook if the controller grows;
   avoid a generic workflow engine. No React effect starts a scientific operation.
-- [ ] Simplify `PairResearchSetup.tsx`, `ResearchAssetSelector.tsx`,
+- [x] Simplify `PairResearchSetup.tsx`, `ResearchAssetSelector.tsx`,
   `ResearchStudyWorkspace.tsx` and `PairExperimentPreview.tsx`: asset selection,
   period, compact saved-work control, optional settings, generated title.
-- [ ] Use the existing APIs in `api/client.ts` and `api/queries.ts`. Inspect their
+- [x] Use the existing APIs in `api/client.ts` and `api/queries.ts`. Inspect their
   error and operation contracts before composing calls. Backend support remains
   the execution gate; do not duplicate scientific validation in React.
-- [ ] Rework `PairResearchCompletion.tsx` into a joint method summary and selected
+- [x] Rework `PairResearchCompletion.tsx` into a joint method summary and selected
   detail view using existing experiment/performance responses. Keep exact values,
   provenance access and all method results.
-- [ ] Preserve and adapt `researchStudies.ts` / `useResearchStudies.ts` continuity
+- [x] Preserve and adapt `researchStudies.ts` / `useResearchStudies.ts` continuity
   behavior. A browser draft remains a convenience, not a new research ledger.
 
 Exit: a prepared pair reaches results with one launch action; an unsupported pair
@@ -229,12 +241,12 @@ stops with a useful reason; editing settings reruns through a fresh support chec
 
 ### C. Give the application a consistent frame
 
-- [ ] Refine `AppShell.tsx`, `ScreenGuide.tsx`, `HomeWorkspace.tsx` and
+- [x] Refine `AppShell.tsx`, `ScreenGuide.tsx`, `HomeWorkspace.tsx` and
   `ResearchHome.tsx`: primary task first, concise navigation, optional help and
   recent work that can be recognized without identifiers.
-- [ ] Apply the visual rules through `styles/tokens.css`, `styles/global.css` and
-  small shared UI pieces only where multiple screens actually need them.
-- [ ] Keep specialist routes reachable and existing links valid. Do not preload
+- [x] Apply the visual rules through existing tokens/classes and small shared UI pieces
+  only where multiple screens actually need them; no new styling dependency is required.
+- [x] Keep specialist routes reachable and existing links valid. Do not preload
   advanced mutation-capable work or make the default screen depend on every
   optional history/scanner endpoint succeeding.
 
@@ -243,14 +255,14 @@ details no longer displace the task; layout works with keyboard and small screen
 
 ### D. Make returning and comparing understandable
 
-- [ ] Simplify `HistoryView.tsx` around recognizable work and dates. Use existing
+- [x] Simplify `HistoryView.tsx` around recognizable work and dates. Use existing
   family/compilation relationships to group records; do not invent lineage from names.
-- [ ] Surface earlier runs from the current comparison in a compact selector.
+- [x] Surface earlier runs from the current comparison in a compact selector.
   The displayed result always identifies its own tested assets, dates and settings,
   even when the current draft has changed.
-- [ ] Keep historical/later/current evidence distinctions when present. Preserve
+- [x] Keep historical/later/current evidence distinctions when present. Preserve
   rejected and unavailable results as well as positive ones.
-- [ ] Retain local-storage limitations in an unobtrusive explanation. Existing
+- [x] Retain local-storage limitations in an unobtrusive explanation. Existing
   backend records remain accessible without the browser draft index.
 
 Exit: the user can leave, return and recognize earlier work without reconstructing
@@ -258,22 +270,28 @@ it from operation IDs or treating a newly edited draft as an old result's input.
 
 ### E. Apply the same pattern to secondary research tools
 
-- [ ] In `ProductResearch.tsx`, prioritize scope, period, one scan action and an
+- [x] In `ProductResearch.tsx`, prioritize scope, period, one scan action and an
   understandable result count. Collapse successful readiness detail; show actual
   blockers where they can be resolved. Keep preparation bounded to the chosen scope.
-- [ ] In `ExperimentLab.tsx` and `RecipeAuthoringControls.tsx`, prioritize supported
+- [x] In `ExperimentLab.tsx` and `RecipeAuthoringControls.tsx`, prioritize supported
   method choices and labeled settings. Retain exact JSON access under technical detail.
   Continue to report unsupported requested methods honestly.
-- [ ] In `BasketHome.tsx` and `BasketScopeControls.tsx`, simplify the presentation
+- [x] In `BasketHome.tsx` and `BasketScopeControls.tsx`, simplify the presentation
   of source selection, assets and required relationships. Keep the graph as an
   inspection aid where possible. Do not invent or auto-approve portfolio edges.
-- [ ] Reuse the result presentation vocabulary on these screens while rendering
+- [x] Reuse the result presentation vocabulary on these screens while rendering
   each domain's own authoritative outputs.
 
 Exit: secondary tools follow the same choose → run → read pattern wherever their
 existing contracts permit it, with clearly explained additional decisions.
 
 ### F. Verify behavior and record acceptance honestly
+
+Verification record — 2026-09-25: `pnpm build` passes, including TypeScript
+checking, and `git diff --check` passes. The source-size gate was rerun and still
+fails only on the pre-existing 758-line Binance public adapter recorded below.
+No test suite, CLI DOM interaction suite, or browser/representative-user acceptance
+was run in this implementation pass; those remain separate gates.
 
 - [ ] Use focused CLI interaction tests for the new orchestration and persistence
   risks. Adapt existing tests to user behavior; do not merely assert new copy.
@@ -283,11 +301,11 @@ existing contracts permit it, with clearly explained additional decisions.
 - [ ] Run frontend typecheck/build, relevant route/component checks, diff checks
   and the source-size gate. Keep new handwritten modules below 500 lines where
   practical; no new module may exceed 700 without an approved exception.
-- [ ] Compare failures with the existing baseline. Repair failures caused by this
+- [x] Compare failures with the existing baseline. Repair failures caused by this
   change; report independent debt without relabeling the repository as green.
 - [ ] Inspect accessible structure and keyboard interactions through CLI DOM tests.
   Browser automation remains prohibited by the user's instruction.
-- [ ] Record visual and representative-user acceptance as pending until it is
+- [x] Record visual and representative-user acceptance as pending until it is
   actually observed. Passing DOM tests cannot prove a good visual experience.
 
 ## 8. Boundaries and known limitations
@@ -301,7 +319,8 @@ patterns are already documented in the [read-only assessment](../../research/202
 The previous revision's CLI baseline was 64 passing / 6 failing frontend tests;
 the six failures also reproduced on unchanged `dfaa8c2`. The source-size gate
 failed on unchanged `src/qap/market/adapters/binance_public.py` at 758 lines.
-These are historical baseline observations, not verification of this proposed work.
+The frontend-test counts remain historical baseline observations. The 2026-09-25
+source-size rerun confirms the same unrelated 758-line failure.
 
 The main product constraint is first-use identity evidence: the current backend
 requires explicit verified mappings. Improving its wording and placement is in

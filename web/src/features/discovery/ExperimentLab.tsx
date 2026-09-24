@@ -123,27 +123,23 @@ export function ExperimentLab({ apiClient, queries, workspace }: ExperimentLabPr
     [capabilities, researchObject],
   )
 
-  const checkSupport = useMutation({
-    mutationFn: () => {
-      if (!draft) throw new Error('An exact draft is required before support can be checked.')
-      return apiClient.checkResearchRecipeSupport({
+  const launch = useMutation({
+    mutationFn: async () => {
+      if (!draft) throw new Error('Choose assets and settings before running the experiment.')
+      const next = await apiClient.checkResearchRecipeSupport({
         schema_version: 'qap.api.research-recipe-check-request.v1',
         recipe: draft,
       })
-    },
-    onSuccess: setChecked,
-  })
-  const launch = useMutation({
-    mutationFn: () => {
-      if (!checked?.support.runnable || !checked.recipe) {
-        throw new Error('Run is available only for the canonical recipe the backend marked runnable.')
-      }
+      setChecked(next)
+      if (!next.support.runnable || !next.recipe) return null
       return apiClient.runResearchRecipe({
         schema_version: 'qap.api.research-recipe-run-request.v1',
-        recipe: checked.recipe,
+        recipe: next.recipe,
       })
     },
-    onSuccess: (ref) => setOperationId(ref.operation_id),
+    onSuccess: (ref) => {
+      if (ref) setOperationId(ref.operation_id)
+    },
   })
   const prepare = useMutation({
     mutationFn: () => apiClient.prepareProductMarketData({ horizons: [horizon] }),
@@ -616,10 +612,10 @@ export function ExperimentLab({ apiClient, queries, workspace }: ExperimentLabPr
             <button
               type="button"
               className="min-h-11 rounded-md bg-accent px-5 font-semibold text-canvas disabled:opacity-50"
-              disabled={checkSupport.isPending}
-              onClick={() => checkSupport.mutate()}
+              disabled={launch.isPending || operation.data?.status === 'running'}
+              onClick={() => launch.mutate()}
             >
-              {checkSupport.isPending ? 'Checking…' : checked ? 'Check support again' : 'Check support'}
+              {launch.isPending ? 'Checking and starting…' : 'Run experiment'}
             </button>
             <details className="rounded-md border border-border px-4 py-2 text-sm">
               <summary className="cursor-pointer font-semibold text-accent">Exact structured draft</summary>
@@ -628,25 +624,19 @@ export function ExperimentLab({ apiClient, queries, workspace }: ExperimentLabPr
               </pre>
             </details>
           </div>
-          {checkSupport.isError ? <p className="text-sm text-negative">{checkSupport.error.message}</p> : null}
+          {launch.isError ? <p className="text-sm text-negative">{launch.error.message}</p> : null}
         </div>
       ) : selectionComplete && context.isPending ? (
         <p className="mt-5 text-sm text-secondary">Freezing an exact backend-owned starting recipe…</p>
       ) : null}
 
       {checked ? (
-        <div className="mt-6 space-y-4">
+        <details className="mt-6 rounded-md border border-border p-4" open={!checked.support.runnable}>
+          <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-accent">
+            {checked.support.runnable ? 'Support details' : 'Why this experiment cannot run'}
+          </summary>
           <SupportReportPanel report={checked.support} />
-          <button
-            type="button"
-            className="min-h-11 rounded-md bg-accent px-5 font-semibold text-canvas disabled:opacity-50"
-            disabled={!checked.support.runnable || !checked.recipe || launch.isPending || operation.data?.status === 'running'}
-            onClick={() => launch.mutate()}
-          >
-            {launch.isPending ? 'Starting…' : 'Run canonical recipe'}
-          </button>
-          {launch.isError ? <p className="text-sm text-negative">{launch.error.message}</p> : null}
-        </div>
+        </details>
       ) : null}
 
       {operationId ? (

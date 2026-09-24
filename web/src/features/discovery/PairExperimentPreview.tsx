@@ -9,8 +9,8 @@ export function PairExperimentPreview({ recipe, busy, onParameters }: {
 }) {
   const window = recipe.data.evaluation_window ?? recipe.data.data_window
   return (
-    <section className="rounded-lg border border-border-strong bg-panel p-5 md:p-6" aria-label="Backtest preview">
-      <h2 className="m-0 text-xl font-semibold text-foreground">2. Understand the test</h2>
+    <section id="comparison-settings" className="rounded-lg border border-border-strong bg-panel p-5 md:p-6" aria-label="Comparison settings">
+      <h2 className="m-0 text-xl font-semibold text-foreground">Comparison settings</h2>
       <p className="mt-2 text-sm leading-6 text-secondary">
         Does rebalancing {recipe.assets.join(' / ')} improve wealth after costs, compared with holding the same assets and a simple rebalancing rule?
       </p>
@@ -27,8 +27,8 @@ export function PairExperimentPreview({ recipe, busy, onParameters }: {
         <div><dt className="font-semibold text-foreground">Execution</dt><dd className="ml-0 mt-1 text-secondary">{recipe.execution.mode === 'direct' ? 'Simulated fills in the real direct market.' : `Simulated fills through two real markets, temporarily using ${recipe.execution.bridge_asset}. Each leg incurs costs.`}</dd></div>
       </dl>
       {recipe.variants[0] ? <details className="mt-5 rounded-md border border-border p-4">
-        <summary className="cursor-pointer text-sm font-semibold text-accent">Adjust the experiment</summary>
-        <p className="text-sm leading-6 text-secondary">These settings apply to both backtest methods. The descriptive relationship study above retains its default window. Every change needs another support check before running.</p>
+        <summary className="cursor-pointer text-sm font-semibold text-accent">Change settings</summary>
+        <p className="text-sm leading-6 text-secondary">These settings apply to both methods. The next Run comparison action automatically obtains a fresh backend support check.</p>
         <fieldset disabled={busy} className="min-w-0 border-0 p-0">
           <ResearchParameterControls config={{ ...recipe.variants[0].relationship.config, ...recipe.variants[0].decision_rule.config }}
             onChange={(config) => onParameters(Object.fromEntries(PARAMETER_KEYS.filter((key) => key in config).map((key) => [key, String(config[key])])))} />
