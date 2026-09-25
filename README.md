@@ -34,30 +34,38 @@ but still exposed too many backend stages as separate user actions. Its persiste
 and evidence behavior remains the implementation base; its presentation direction is
 superseded by the approved simple-research plan below.
 
-### Simple research experience — 2026-09-25
+### Research Console — 2026-09-24 implementation continuation
 
-Update context: the user approved the plan-first revision and asked to complete the
-remaining implementation. See the
-[intuitive research experience plan](docs/superpowers/plans/2026-09-24-intuitive-research-experience.md)
-for the implemented scope and verification record.
+Update context — 2026-09-24
+Trigger: the first simple-research iteration remained too technical for ordinary users.
+Purpose: put the question, human interpretation, chart and economic answer into one console.
+Impact: presentation and browser-local continuity changed; scientific, economic, identity,
+holdout, and execution authority did not.
+Evidence: the [first iteration](docs/superpowers/plans/2026-09-24-intuitive-research-experience.md),
+the [Research Console plan](docs/superpowers/plans/2026-09-25-research-console-semantic-layer.md),
+and focused CLI interaction checks. Representative-user visual acceptance remains pending.
 
-Research now starts with one pair comparison: choose two assets and a period, then
-**Run comparison**. QAP prepares the selected history when needed, performs the
-backend support check, and launches the declared methods without exposing those
-stages as separate confirmations. Real identity/admission decisions and temporary
-USDT bridge authority remain explicit. Changing settings invalidates prior support;
-the next Run comparison obtains a fresh backend check automatically.
+Ordinary Research now opens the Research Console. Choose two assets, a research type
+(Relationship or Backtest comparison), and a period, then select **Start research**.
+Relationship mode reads historical measurements and stops; it does not create a backtest.
+Backtest comparison continues through the backend-declared recipe, support check, and
+simulated economic comparison without extra confirmation when runnable. Asset admission,
+identity verification, and workspace-scoped USDT bridge authority still require explicit
+decisions when relevant. Nothing here places live orders.
 
-Results show the declared methods together against HODL and the primary simple
-rebalancing control, then one selected method's detail. Earlier runs stay reopenable,
-and History prioritizes recognizable assets, dates and recorded outcomes while exact
-lineage remains available. Drafts remain browser-local; authoritative backend results
-remain independently available in History.
+The descriptive view leads with a plain-language interpretation and a normalized price
+chart; ratio and further chart views are available. Model details, dataset fingerprints,
+and provenance remain behind named disclosures. The relationship interpretation is a
+deterministic presentation of backend values, not a trading signal or economic verdict.
+When a backtest finishes, the recorded method comparison against matched HODL and the
+declared simple-rebalancing control leads. Its relative-wealth chart remains prominent;
+fills, costs, exact assumptions, and run identifiers remain accessible in details.
 
-The production frontend build and diff check pass. The repository source-size gate
-still fails on the pre-existing 758-line Binance public adapter outside this change.
-No automated interaction suite or representative-user visual acceptance was run in
-this implementation pass, so those gates remain pending.
+Drafts are saved in this browser; backend result records remain authoritative and
+independently available in History. Reopening a completed run does not reinterpret its
+historical evidence using newly fetched relationship data. Running again may use a later
+trailing-history cutoff and creates another attempt rather than changing the old result.
+The CLI test/build record is not a substitute for representative-user usability review.
 
 ## Requirements and setup
 

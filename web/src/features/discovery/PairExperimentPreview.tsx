@@ -19,9 +19,8 @@ export function PairExperimentPreview({ recipe, busy, onParameters, nextRun = fa
     && Number.isFinite(backtestWindowBars) && Number.isFinite(backtestMinimumObservations)
     && (descriptiveWindowBars !== backtestWindowBars || descriptiveMinimumObservations !== backtestMinimumObservations)
   return (
-    <section className="rounded-lg border border-border-strong bg-panel p-5 md:p-6" aria-label="Comparison settings">
-      <h2 className="m-0 text-lg font-semibold text-foreground">{nextRun ? 'Next run settings' : 'Backtest settings'}</h2>
-      <p className="mt-2 mb-0 text-sm leading-6 text-secondary">Two declared methods compare wealth after modeled costs against holding and simple rebalancing.</p>
+    <section className="mb-4 border-t border-border pt-4" aria-label="Comparison settings">
+      <h2 className="m-0 text-sm font-semibold text-foreground">{nextRun ? 'Next run settings' : 'Backtest settings'}</h2>
       {settingsDiffer ? <div className="mt-3 rounded-md border border-warning/45 p-3 text-xs leading-5 text-secondary">
         <p className="m-0">Descriptive view: {descriptiveWindowBars}-bar window, {descriptiveMinimumObservations} observations required.</p>
         <p className="m-0">{nextRun ? 'Next backtest settings' : 'Backtest settings'}: {backtestWindowBars}-bar window, {backtestMinimumObservations} observations required. These are separate calculations.</p>
@@ -29,13 +28,13 @@ export function PairExperimentPreview({ recipe, busy, onParameters, nextRun = fa
       <details id="comparison-settings" open={open} onToggle={(event) => onToggle?.(event.currentTarget.open)} className="mt-3">
       <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-accent">Advanced settings and assumptions</summary>
       <p className="mt-2 text-sm leading-6 text-secondary">{nextRun ? 'These editable settings apply only to a future attempt. The result above remains unchanged.' : 'Defaults are checked by the backend when you start the backtest.'}</p>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="mt-4 grid gap-3">
         {recipe.variants.map((variant) => <article key={variant.variant_id} className="rounded-md border border-border bg-subtle p-4">
           <h3 className="m-0 text-base font-semibold text-foreground">{researchMethodName(variant.relationship.component_id)}</h3>
           <p className="mt-2 mb-0 text-sm leading-6 text-secondary">{researchMethodDescription(variant.relationship.component_id)}</p>
         </article>)}
       </div>
-      <dl className="mt-5 grid gap-4 text-sm md:grid-cols-2">
+      <dl className="mt-5 grid gap-4 text-sm">
         <div><dt className="font-semibold text-foreground">Period and observations</dt><dd className="ml-0 mt-1 text-secondary">{formatResearchTimestamp(window.start)} to {formatResearchTimestamp(window.end)} · {recipe.data.interval} bars</dd></div>
         <div><dt className="font-semibold text-foreground">Comparisons</dt><dd className="ml-0 mt-1 text-secondary">Hold the same starting assets (HODL), plus the declared simple rebalancing control. Both methods use the same starting holdings and cost assumptions.</dd></div>
         <div><dt className="font-semibold text-foreground">Trading costs</dt><dd className="ml-0 mt-1 text-secondary">{recipe.execution.fee_bps} basis points in fees + {recipe.execution.slippage_bps} basis points in slippage per fill. 1 basis point = 0.01%.</dd></div>
@@ -43,7 +42,7 @@ export function PairExperimentPreview({ recipe, busy, onParameters, nextRun = fa
       </dl>
       {recipe.variants[0] ? <div className="mt-5 rounded-md border border-border p-4">
         <h3 className="m-0 text-sm font-semibold text-foreground">Change settings</h3>
-        <p className="text-sm leading-6 text-secondary">These settings apply to both methods. The next Run comparison action automatically obtains a fresh backend support check.</p>
+        <p className="text-sm leading-6 text-secondary">These settings apply to both methods. Running again obtains a fresh backend support check.</p>
         <fieldset disabled={busy} className="min-w-0 border-0 p-0">
           <ResearchParameterControls config={{ ...recipe.variants[0].relationship.config, ...recipe.variants[0].decision_rule.config }}
             onChange={(config) => onParameters(Object.fromEntries(PARAMETER_KEYS.filter((key) => key in config).map((key) => [key, String(config[key])])))} />

@@ -12,6 +12,7 @@ import { PairResearchSetup } from './PairResearchSetup'
 import { PairStudyResults } from './PairStudyResults'
 import { PairRelationshipSummary } from './PairRelationshipSummary'
 import { PairExperimentPreview } from './PairExperimentPreview'
+import { ResearchStageStrip, type ResearchStage } from './ResearchStageStrip'
 import { pairRecipeMatchesContext, pairStudySeriesMatchesContext } from './pairStudyBinding'
 import { SupportReportPanel } from './SupportReportPanel'
 import { researchAssetOptions, type ResearchAssetSelection } from './researchAssetSearch'
@@ -36,8 +37,9 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
   const [checked, setChecked] = useState<ResearchRecipeCheckV1 | null>(null)
   const [supportError, setSupportError] = useState<string | null>(null)
   const [chartError, setChartError] = useState<string | null>(null)
-  const [progress, setProgress] = useState('')
+  const [progress, setProgress] = useState<ResearchStage>('idle')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsChanged, setSettingsChanged] = useState(false)
   const [setupBusy, setSetupBusy] = useState(false)
   const [operationId, setOperationId] = useState<string | null>(
     study.mode === 'backtest_comparison' ? study.attempts.at(-1)?.operationId ?? null : null,
@@ -87,11 +89,11 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
         ...settings,
       }
 
-      setProgress('Checking price history…')
+      setProgress('resolving_data')
       let context = await apiClient.getProductPairStudyContext(pairOptions)
       if (context.data.status === 'needs_setup'
         || (settings.analysisReference && context.analysis_lens?.status === 'needs_data')) {
-        setProgress('Preparing the selected price history…')
+        setProgress('resolving_data')
         await apiClient.prepareProductMarketData({
           horizons: [study.horizon],
           asset_ids: [pairOptions.assetA, pairOptions.assetB],
@@ -102,7 +104,7 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
       }
 
       setStudyResult({ context, series: null, capabilities: [] })
-      setProgress('Measuring the relationship…')
+      setProgress('measuring_relationship')
       let series: ProductPairStudySeriesDto | null = null
       if (context.data.status === 'ready') {
         try {
@@ -120,15 +122,22 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
         }
       }
       setStudyResult({ context, series, capabilities: [] })
-      if (context.data.status !== 'ready') return null
-      if (!runBacktest && study.mode === 'relationship') return null
-
-      if (context.economic_expression.direct_status !== 'ready'
-        && context.economic_expression.bridge_status === 'needs_transient_authority') {
+      if (context.data.status !== 'ready') {
+        setProgress('blocked')
+        return null
+      }
+      if (!runBacktest && study.mode === 'relationship') {
+        setProgress('complete')
         return null
       }
 
-      setProgress('Checking the declared settings…')
+      if (context.economic_expression.direct_status !== 'ready'
+        && context.economic_expression.bridge_status === 'needs_transient_authority') {
+        setProgress('waiting_for_authority')
+        return null
+      }
+
+      setProgress('checking_comparison')
       try {
         const recipe = await apiClient.getResearchRecipeProductContext({
           researchObject: 'pair',
@@ -143,14 +152,17 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
           : null
         if (recipe.default_issue) {
           setSupportError(recipe.default_issue.detail)
+          setProgress('blocked')
           return null
         }
         if (!context.economic_expression.default_recipe_declarable || !declared) {
           setSupportError('An economic comparison is not available for this pair yet.')
+          setProgress('blocked')
           return null
         }
         if (!pairRecipeMatchesContext(context, declared)) {
           setSupportError('Comparison data changed while preparing this study. The relationship view is retained; retry to bind a fresh comparison.')
+          setProgress('blocked')
           return null
         }
         setDraft(declared)
@@ -160,9 +172,12 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
           recipe: declared,
         })
         setChecked(next)
-        if (!next.support.runnable || !next.recipe) return null
+        if (!next.support.runnable || !next.recipe) {
+          setProgress('blocked')
+          return null
+        }
 
-        setProgress('Starting the comparison…')
+        setProgress('running_comparison')
         const question = studyQuestion({ ...study, mode: 'backtest_comparison' })
         const ref = await apiClient.runResearchRecipe({
           schema_version: 'qap.api.research-recipe-run-request.v1',
@@ -173,6 +188,7 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
         setSupportError(
           error instanceof Error ? error.message : 'The comparison settings could not be checked.',
         )
+        setProgress('failed')
         return null
       }
     },
@@ -180,9 +196,10 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
       if (!launched) return
       onAttempt(launched.ref.operation_id, launched.question)
       setOperationId(launched.ref.operation_id)
+      setSettingsChanged(false)
       void client.invalidateQueries({ queryKey: ['operations'] })
     },
-    onSettled: () => setProgress(''),
+    onError: () => setProgress('failed'),
   })
   const chartRetry = useMutation({
     mutationFn: async () => {
@@ -220,6 +237,8 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
     setSupportError(null)
     setChartError(null)
     setOperationId(null)
+    setProgress('idle')
+    setSettingsChanged(false)
     comparison.reset()
     onChange(patch)
   }
@@ -229,13 +248,23 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
     venue: studyResult?.context.question.venue,
     analysisReference: study.useBtcReference && canUseReference ? 'BTC' : undefined,
   }
+  const displayedStage: ResearchStage = operationId
+    ? operation.isError ? 'failed'
+      : operation.isPending ? 'loading_results'
+        : operation.data?.status === 'running' ? 'running_comparison'
+          : operation.data?.status === 'completed' ? 'complete' : 'blocked'
+    : progress
+  const completion = operationId && runIds.length > 0 ? <PairResearchCompletion queries={queries} runIds={runIds}
+    operationId={operationId} compilationSha256={compilation} busy={busy}
+    canChangeSettings={visibleDraft !== null} onChangeSettings={() => setSettingsOpen(true)}
+    onRunAgain={() => comparison.mutate(comparisonOptions)} /> : null
 
   if (workspace.workspace_mode === 'sample') return <p className="rounded-lg border border-warning/45 p-5 text-secondary">This sample workspace contains read-only examples. Use Local Market to start your own study.</p>
 
   return (
     <section className="min-w-0 space-y-6" aria-label="Pair research study">
-      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(19rem,0.36fr)_minmax(0,0.64fr)]">
-      <div className="min-w-0 rounded-lg border border-border bg-panel p-5 md:p-6">
+      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(18rem,20rem)_minmax(0,1fr)]">
+      <div role="region" aria-label="Research controls" className="min-w-0 rounded-lg border border-border bg-panel p-5 md:p-6">
         {universe.data ? <PairResearchSetup apiClient={apiClient} universe={universe.data}
           study={study} assetA={assetA} assetB={assetB} busy={busy} onChange={change} onBusyChange={setSetupBusy} />
           : <p role="status" className="text-secondary">{universe.isPending ? 'Loading available assets…' : universe.error?.message}</p>}
@@ -250,25 +279,38 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
               {!canUseReference ? <p className="text-xs text-muted">Requires a separately identified BTC reference distinct from the selected pair.</p> : null}
               <button type="button" disabled={busy} className="min-h-11 text-accent" onClick={() => change({ assetA: study.assetB, assetB: study.assetA })}>Reverse pair orientation</button>
             </details>
+            {visibleDraft && study.mode === 'backtest_comparison' ? <PairExperimentPreview recipe={visibleDraft} busy={busy}
+              descriptiveWindowBars={studyResult?.context.relationship?.rolling_log_ratio.window_observations}
+              descriptiveMinimumObservations={studyResult?.context.relationship?.rolling_log_ratio.required_observations}
+              nextRun={operationId !== null} open={settingsOpen} onToggle={setSettingsOpen} onParameters={(parameters) => {
+              setDraft(applyStudyParameters(visibleDraft, parameters))
+              setChecked(null)
+              setSettingsChanged(true)
+              onChange({ parameters })
+            }} /> : null}
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" disabled={busy} onClick={() => comparison.mutate(comparisonOptions)}
                 className="min-h-12 rounded-md bg-accent px-6 font-semibold text-canvas disabled:opacity-50">
-                {comparison.isPending ? 'Starting research…' : 'Start research'}
+                {comparison.isPending ? 'Starting research…' : settingsChanged ? 'Run updated settings' : displayedStage === 'complete' ? 'Run again' : 'Start research'}
               </button>
               <span className="text-xs text-muted">{study.mode === 'relationship' ? 'Historical relationship only · no backtest' : 'Two methods · holding and simple rebalancing controls · modeled costs'}</span>
             </div>
-            {progress ? <p role="status" className="mt-3 text-sm text-accent">{progress} Your comparison stays saved.</p> : null}
+            {comparison.isPending ? <p role="status" className="mt-3 text-sm text-accent">Research is working with the selected history and settings…</p> : null}
+            {settingsChanged && operationId ? <p className="mt-3 text-xs text-warning">Settings changed — run to update this result. The earlier recorded run remains available.</p> : null}
             {comparison.isError ? <p role="alert" className="mt-3 text-sm text-negative">{comparison.error.message} Your comparison is retained; resolve the setup above and retry.</p> : null}
           </div>
         ) : null}
       </div>
       <div className="min-w-0 space-y-5" aria-label="Research canvas">
+      <div className="rounded-lg border border-border bg-panel px-5 pt-5"><ResearchStageStrip mode={study.mode} stage={displayedStage}
+        hasRelationship={studyResult?.context.data.status === 'ready'} /></div>
       {!studyResult && !operationId && !comparison.isPending ? <div className="rounded-lg border border-border bg-panel p-6">
         <h2 className="m-0 text-lg font-semibold text-foreground">Your research canvas</h2>
         <p className="mb-0 mt-2 text-sm leading-6 text-secondary">Choose two assets and start research. The relationship view and any backtest result will appear here.</p>
       </div> : null}
+      {operation.data?.status === 'completed' ? completion : null}
 
-      {studyResult && (study.mode === 'relationship' || !operationId) ? <>
+      {studyResult ? <>
         <PairRelationshipSummary context={studyResult.context} series={studyResult.series} />
         {chartError ? <p role="alert" className="rounded-md border border-warning/45 p-4 text-sm text-warning">Chart unavailable: {chartError} <button type="button" disabled={chartRetry.isPending} className="min-h-11 font-semibold text-accent" onClick={() => chartRetry.mutate()}>Retry chart</button></p> : null}
         {study.mode === 'backtest_comparison'
@@ -284,21 +326,8 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
           className="min-h-12 rounded-md bg-accent px-5 font-semibold text-canvas disabled:opacity-50"
           onClick={() => { onChange({ mode: 'backtest_comparison' }); comparison.mutate({ ...comparisonOptions, runBacktest: true }) }}>Backtest this pair</button> : null}
       </> : null}
-      {studyResult ? <details className="rounded-lg border border-border bg-panel p-5">
-        <summary className="cursor-pointer py-2 text-sm font-semibold text-accent">Evidence, data sources, and technical detail</summary>
-        <PairStudyResults context={studyResult.context} series={studyResult.series} capabilities={studyResult.capabilities}
-          backtestMode={study.mode === 'backtest_comparison'}
-          busy={busy} bridgeAuthorityBusy={bridge.isPending} bridgeAuthorityError={bridge.isError ? bridge.error.message : null}
-          onGrantBridgeAuthority={() => bridge.mutate()} onVenueChange={(venue) => comparison.mutate({ ...comparisonOptions, venue })} />
-      </details> : null}
-      {visibleDraft && study.mode === 'backtest_comparison' && !operationId ? <PairExperimentPreview recipe={visibleDraft} busy={busy}
-        descriptiveWindowBars={studyResult?.context.relationship?.rolling_log_ratio.window_observations}
-        descriptiveMinimumObservations={studyResult?.context.relationship?.rolling_log_ratio.required_observations}
-        open={settingsOpen} onToggle={setSettingsOpen} onParameters={(parameters) => {
-        setDraft(applyStudyParameters(visibleDraft, parameters))
-        setChecked(null)
-        onChange({ parameters })
-      }} /> : null}
+      {studyResult ? <PairStudyResults context={studyResult.context} series={studyResult.series}
+        capabilities={studyResult.capabilities} /> : null}
       {supportError ? <div role="alert" className="rounded-md border border-warning/45 p-4 text-sm text-warning">
         <p className="mt-0">The relationship study is available. The comparison needs attention: {supportError}</p>
         <button type="button" disabled={busy} className="min-h-11 font-semibold text-accent" onClick={() => comparison.mutate(comparisonOptions)}>Retry comparison</button>
@@ -312,19 +341,26 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
         <details className="mt-4"><summary className="cursor-pointer py-2 text-sm text-accent">Technical support details</summary><SupportReportPanel report={checked.support} /></details>
       </section> : null}
 
-      {study.attempts.length > 0 ? <details className="rounded-lg border border-border bg-panel px-5 py-3">
+      {study.mode === 'backtest_comparison' && study.attempts.length > 0 ? <details className="rounded-lg border border-border bg-panel px-5 py-3">
         <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-accent">
           Earlier runs · {study.attempts.length}
         </summary>
         <p className="text-sm text-secondary">Reopen a recorded run without changing the current draft.</p>
         <div className="flex flex-wrap gap-2">{study.attempts.map((attempt, i) => <button key={attempt.operationId} type="button"
-          disabled={busy} aria-pressed={operationId === attempt.operationId} onClick={() => setOperationId(attempt.operationId)}
+          disabled={busy} aria-pressed={operationId === attempt.operationId} onClick={() => {
+            if (attempt.operationId !== operationId) {
+              setStudyResult(null)
+              setChartError(null)
+              setDraft(null)
+            }
+            setOperationId(attempt.operationId)
+          }}
           className={`min-h-11 rounded-md border px-4 py-2 text-left text-sm ${operationId === attempt.operationId ? 'border-accent text-accent' : 'border-border text-secondary'}`}>
           <span className="block font-semibold">Run {i + 1} · {attempt.question}</span>
           <span className="text-xs">{new Date(attempt.createdAt).toLocaleString()}</span>
         </button>)}</div>
       </details> : null}
-      {operationId ? <section aria-live="polite" className="rounded-lg border border-border bg-panel p-5">
+      {operationId && !(operation.data?.status === 'completed' && completion) ? <section aria-live="polite" className="rounded-lg border border-border bg-panel p-5">
         <h2 className="m-0 text-lg font-semibold text-foreground">{operation.isError ? 'Could not load this attempt' : operation.isPending ? 'Loading your attempt…' : operation.data.status === 'running' ? 'Backtest in progress' : operation.data.status === 'completed' ? 'Backtest complete' : 'Backtest needs attention'}</h2>
         <p className="text-sm leading-6 text-secondary">{operation.isError ? operation.error.message : operation.data?.status === 'running'
           ? 'QAP is simulating the declared methods and comparisons. You can return to this study later.'
@@ -333,23 +369,11 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
         <a className="inline-flex min-h-11 items-center text-sm font-semibold text-accent" href={`/operations/${encodeURIComponent(operationId)}`}>Run details</a>
         {operation.isError ? <button type="button" className="ml-4 min-h-11 text-accent" onClick={() => void operation.refetch()}>Retry loading</button> : null}
       </section> : null}
-      {operationId && runIds.length > 0 ? <PairResearchCompletion queries={queries} runIds={runIds}
-        operationId={operationId} compilationSha256={compilation} busy={busy}
-        canChangeSettings={visibleDraft !== null} onChangeSettings={() => setSettingsOpen(true)}
-        onRunAgain={() => comparison.mutate(comparisonOptions)} /> : null}
       {operationId && study.mode === 'backtest_comparison' && readyToStudy && !visibleDraft && restoredRecipe.isError ?
         <p role="alert" className="rounded-md border border-warning/45 p-4 text-sm text-warning">
           Next-run settings unavailable: {restoredRecipe.error.message}. Your recorded result is unchanged.{' '}
           <button type="button" className="min-h-11 font-semibold text-accent" onClick={() => void restoredRecipe.refetch()}>Retry loading settings</button>
         </p> : null}
-      {visibleDraft && study.mode === 'backtest_comparison' && operationId ? <PairExperimentPreview recipe={visibleDraft} busy={busy}
-        descriptiveWindowBars={studyResult?.context.relationship?.rolling_log_ratio.window_observations}
-        descriptiveMinimumObservations={studyResult?.context.relationship?.rolling_log_ratio.required_observations}
-        nextRun open={settingsOpen} onToggle={setSettingsOpen} onParameters={(parameters) => {
-        setDraft(applyStudyParameters(visibleDraft, parameters))
-        setChecked(null)
-        onChange({ parameters })
-      }} /> : null}
       </div>
       </div>
     </section>

@@ -15,7 +15,7 @@ export function ResearchStudyWorkspace({ apiClient, queries, workspace }: {
   const study = saved.library.studies.find((item) => item.id === saved.library.activeId)!
 
   return (
-    <div className="mx-auto min-w-0 max-w-[1000px]">
+    <div className="mx-auto min-w-0 max-w-[1500px]">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">Research console</p>
@@ -23,7 +23,7 @@ export function ResearchStudyWorkspace({ apiClient, queries, workspace }: {
         </div>
         <details className="relative">
           <summary className="min-h-11 cursor-pointer rounded-md border border-border px-4 py-2 text-sm font-semibold text-secondary">
-            Saved studies · {saved.library.studies.length}
+            Saved research · {saved.library.studies.length}
           </summary>
           <div className="mt-2 w-full rounded-lg border border-border bg-panel p-4 sm:min-w-[22rem]">
             <div className="flex items-center justify-between gap-3">

@@ -44,7 +44,7 @@ export function ResearchHome({
       <header className="mb-8 max-w-4xl">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">Research</p>
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          {activeTask === 'pair' ? 'Research two assets' : activeTask === 'scan' ? 'Scan approved assets' : 'Custom experiment'}
+          {activeTask === 'pair' ? 'Research Console' : activeTask === 'scan' ? 'Scan approved assets' : 'Custom experiment'}
         </h1>
         <p className="m-0 text-sm leading-6 text-secondary md:text-base">
           {activeTask === 'pair'

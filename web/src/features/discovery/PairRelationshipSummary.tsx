@@ -1,9 +1,10 @@
 import type { ProductPairStudyContextDto, ProductPairStudySeriesDto } from '../../api/types'
-import { TimeSeriesChart } from '../../components/charts/TimeSeriesChart'
 import { formatResearchTimestamp, formatSignedDecimal } from '../../lib/format'
 import { interpretRelationshipScore, relationshipSummary } from './researchPresentation'
 
-export function PairRelationshipSummary({ context, series }: {
+const toneClass = { neutral: 'text-secondary', info: 'text-info', warning: 'text-warning' } as const
+
+export function PairRelationshipSummary({ context }: {
   context: ProductPairStudyContextDto; series: ProductPairStudySeriesDto | null
 }) {
   const relationship = context.relationship
@@ -23,29 +24,31 @@ export function PairRelationshipSummary({ context, series }: {
       {relationshipSummary(ratioMeaning, residualMeaning)}{' '}
       <span className="text-secondary">Descriptive relationship evidence only; not a trading recommendation or proof of profitable economics.</span>
     </p>
-    {relationship ? <div className="mt-5 grid gap-3 sm:grid-cols-2">
-      <div className="rounded-md border border-border bg-subtle p-4">
+    {relationship ? <div className="mt-5 flex flex-wrap gap-x-10 gap-y-4 border-t border-border pt-4">
+      <div className="min-w-[13rem] flex-1">
         <p className="m-0 text-sm text-muted">Distance from recent reference level</p>
-        <p className="mt-2 mb-1 text-2xl font-semibold tabular-nums text-foreground">{ratioMeaning.score === null ? 'Unavailable' : `${formatSignedDecimal(String(ratioMeaning.score), 2).display} standard deviations`}</p>
-        <p className="mt-1 mb-2 text-sm text-secondary">{ratioMeaning.label}{ratioMeaning.direction ? ` · ${ratioMeaning.direction}` : ''}</p>
+        <p className="mt-2 mb-1 text-xl font-semibold tabular-nums text-foreground">{ratioMeaning.score === null ? 'Unavailable' : `${formatSignedDecimal(String(ratioMeaning.score), 2).display} standard deviations`}</p>
+        <p data-tone={ratioMeaning.tone} className={`mt-1 mb-2 text-sm ${toneClass[ratioMeaning.tone]}`}>{ratioMeaning.label}{ratioMeaning.direction ? ` · ${ratioMeaning.direction}` : ''}</p>
         <p className="m-0 text-xs text-secondary">{ratioMeaning.score === null ? ratioMeaning.explanation : `Based on the log price ratio over ${score?.window_observations} bars. Positive and negative describe direction, not a trading signal by themselves.`}</p>
+        <details className="mt-2 text-xs text-secondary">
+          <summary className="min-h-11 cursor-pointer py-2 text-accent">What does this measure?</summary>
+          <p className="mt-1">How far the current log price ratio is from its rolling average, in standard deviations. A negative value means below that reference.</p>
+        </details>
       </div>
-      <div className="rounded-md border border-border bg-subtle p-4">
+      <div className="min-w-[13rem] flex-1">
         <p className="m-0 text-sm text-muted">Against the fitted relationship</p>
-        <p className="mt-2 mb-1 text-2xl font-semibold tabular-nums text-foreground">{residualMeaning.score === null ? 'Unavailable' : `${formatSignedDecimal(String(residualMeaning.score), 2).display} standard deviations`}</p>
-        <p className="mt-1 mb-2 text-sm text-secondary">{residualMeaning.label}{residualMeaning.direction ? ` · ${residualMeaning.direction}` : ''}</p>
+        <p className="mt-2 mb-1 text-xl font-semibold tabular-nums text-foreground">{residualMeaning.score === null ? 'Unavailable' : `${formatSignedDecimal(String(residualMeaning.score), 2).display} standard deviations`}</p>
+        <p data-tone={residualMeaning.tone} className={`mt-1 mb-2 text-sm ${toneClass[residualMeaning.tone]}`}>{residualMeaning.label}{residualMeaning.direction ? ` · ${residualMeaning.direction}` : ''}</p>
         <p className="m-0 text-xs text-secondary">{residualMeaning.score === null ? residualMeaning.explanation : 'Rolling regression residual; this is not a formal cointegration test.'}</p>
+        <details className="mt-2 text-xs text-secondary">
+          <summary className="min-h-11 cursor-pointer py-2 text-accent">What does this measure?</summary>
+          <p className="mt-1">How far the latest relationship is from the rolling fitted pattern, in standard deviations. This is not a formal cointegration test.</p>
+        </details>
       </div>
     </div> : <p className="mt-5 rounded-md border border-warning/45 p-4 text-sm text-secondary">
       {context.data.status === 'ready' ? 'The relationship score is unavailable at this cutoff.' : 'Price history still needs setup.'}
       {' '}A missing score is not evidence for or against this pair.
     </p>}
-    {series ? <div className="mt-6"><TimeSeriesChart title={`${context.question.orientation} normalized paths`}
-      description="Both backend price paths rebased to one at the start. A visual comparison, not a backtest."
-      series={[
-        { name: context.question.asset_a, unit: 'normalized path', points: series.normalized_base },
-        { name: context.question.asset_b, unit: 'normalized path', points: series.normalized_quote },
-      ]} /></div> : null}
     <p className="mt-5 mb-0 text-xs leading-5 text-muted">Descriptive measurements use the backend's default window for this period. Advanced backtest settings can use a different window; changing those settings does not recalculate this view.</p>
   </section>
 }

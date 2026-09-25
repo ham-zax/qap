@@ -89,7 +89,14 @@ function PairResearchRunResult({ queries, runId, index, total }: {
         {' '}{isFinal ? 'This result used the committed final holdout; that holdout is now consumed.' : 'This does not establish untouched final-holdout confirmation.'}</p>
       <p className="mt-2 mb-0 text-xs text-muted">{experimentDataRoleLabel(result.data_role, result.final_oos_consumed)} · {manifest.basket.join(' / ')}</p>
     </section>
-    <div className="mt-5 overflow-x-auto">
+    {performance.data ? <div className="mt-5"><RelativeWealthChart performance={performance.data} /></div>
+      : performance.isError ? <p className="text-sm text-muted">Comparison chart unavailable; the recorded summary above remains available.{' '}
+          <button type="button" onClick={() => void performance.refetch()} className="min-h-11 font-semibold text-accent">Retry chart</button>
+        </p>
+        : <p className="text-sm text-muted">Loading comparison chart…</p>}
+    <details className="mt-5 rounded-md border border-border p-4">
+      <summary className="min-h-11 cursor-pointer py-2 font-semibold text-accent">Ending wealth, fills and costs</summary>
+    <div className="mt-4 overflow-x-auto">
       <table className="w-full text-left text-sm">
         <caption className="mb-3 text-left font-semibold text-foreground">Ending wealth after modeled costs · {unit}</caption>
         <thead><tr className="border-b border-border text-muted"><th scope="col" className="py-3 pr-4">Approach</th><th scope="col" className="py-3 pr-4">Ending value</th><th scope="col" className="py-3">Fills</th></tr></thead>
@@ -98,11 +105,7 @@ function PairResearchRunResult({ queries, runId, index, total }: {
       </table>
     </div>
     <p className="mt-4 text-sm text-secondary">Strategy costs: <Value value={strategy?.fees_value} unit={unit} /> in fees; <Value value={strategy?.slippage_value} unit={unit} /> in slippage. Maximum relative drawdown against holding: {formatPercent(result.maximum_relative_drawdown_vs_hodl).display}.</p>
-    {performance.data ? <div className="mt-5"><RelativeWealthChart performance={performance.data} /></div>
-      : performance.isError ? <p className="text-sm text-muted">Comparison chart unavailable; the recorded summary above remains available.{' '}
-          <button type="button" onClick={() => void performance.refetch()} className="min-h-11 font-semibold text-accent">Retry chart</button>
-        </p>
-        : <p className="text-sm text-muted">Loading comparison chart…</p>}
+    </details>
     <TestDetails data={data} />
     <ReproducibilityDetails data={data} queries={queries} />
     <a className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-accent" href={`/experiments/${encodeURIComponent(runId)}`}>Open full experiment</a>

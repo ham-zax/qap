@@ -88,18 +88,6 @@ export function PairResearchSetup({ apiClient, universe, study, assetA, assetB, 
     <fieldset disabled={busy} className="m-0 min-w-0 border-0 p-0 disabled:opacity-70">
       <legend className="text-xl font-semibold text-foreground">Your research question</legend>
       <p className="mt-2 text-sm leading-6 text-secondary">Choose two assets and what you want to learn. Nothing here places orders.</p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Research mode">
-        <label className={`cursor-pointer rounded-md border p-4 ${study.mode === 'relationship' ? 'border-accent bg-subtle' : 'border-border'}`}>
-          <input type="radio" name="research-mode" value="relationship" checked={study.mode === 'relationship'}
-            onChange={() => onChange({ mode: 'relationship' })} /> <strong className="text-foreground">Relationship</strong>
-          <span className="mt-1 block text-xs leading-5 text-secondary">See how their historical prices moved together. No strategy is tested.</span>
-        </label>
-        <label className={`cursor-pointer rounded-md border p-4 ${study.mode === 'backtest_comparison' ? 'border-accent bg-subtle' : 'border-border'}`}>
-          <input type="radio" name="research-mode" value="backtest_comparison" checked={study.mode === 'backtest_comparison'}
-            onChange={() => onChange({ mode: 'backtest_comparison' })} /> <strong className="text-foreground">Backtest comparison</strong>
-          <span className="mt-1 block text-xs leading-5 text-secondary">Test whether rebalancing improved wealth against holding and simple rebalancing after modeled costs.</span>
-        </label>
-      </div>
       {universe.directory_status !== 'observed' ? (
         <div className="my-4 rounded-md border border-border bg-subtle p-4">
           <p className="mt-0 text-sm text-secondary">First, load the available spot markets. You choose which assets to include.</p>
@@ -108,7 +96,7 @@ export function PairResearchSetup({ apiClient, universe, study, assetA, assetB, 
         </div>
       ) : null}
       {refresh.isError ? <p role="alert" className="text-sm text-negative">{refresh.error.message}</p> : null}
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <div className="mt-4 grid gap-4">
         <ResearchAssetSelector label="First asset" universe={universe} selected={assetA}
           excludeCanonicalAssetIds={assetB?.canonicalAssetId ? [assetB.canonicalAssetId] : []}
           onSelect={(asset) => onChange({ assetA: asset })} onClear={() => onChange({ assetA: null })} />
@@ -116,18 +104,28 @@ export function PairResearchSetup({ apiClient, universe, study, assetA, assetB, 
           excludeCanonicalAssetIds={assetA?.canonicalAssetId ? [assetA.canonicalAssetId] : []}
           onSelect={(asset) => onChange({ assetB: asset })} onClear={() => onChange({ assetB: null })} />
       </div>
+      <div className="mt-5 grid gap-2" role="radiogroup" aria-label="Research mode">
+        <p className="mb-0 text-sm font-semibold text-secondary">What do you want to learn?</p>
+        <label className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 ${study.mode === 'relationship' ? 'border-accent bg-subtle' : 'border-border'}`}>
+          <input type="radio" name="research-mode" value="relationship" checked={study.mode === 'relationship'}
+            onChange={() => onChange({ mode: 'relationship' })} />
+          <span><strong className="text-sm text-foreground">Relationship</strong><span className="mt-1 block text-xs leading-5 text-secondary">See how historical prices moved together.</span></span>
+        </label>
+        <label className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 ${study.mode === 'backtest_comparison' ? 'border-accent bg-subtle' : 'border-border'}`}>
+          <input type="radio" name="research-mode" value="backtest_comparison" checked={study.mode === 'backtest_comparison'}
+            onChange={() => onChange({ mode: 'backtest_comparison' })} />
+          <span><strong className="text-sm text-foreground">Backtest comparison</strong><span className="mt-1 block text-xs leading-5 text-secondary">Compare two declared methods with holding and simple rebalancing after costs.</span></span>
+        </label>
+      </div>
       <div className="mt-5" role="radiogroup" aria-label="Research period">
         <p className="mb-2 text-sm font-semibold text-secondary">Period</p>
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2">
           {Object.entries(STUDY_PERIODS).map(([value, period]) => (
             <label key={value}
-              className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-md border px-4 py-2 ${study.horizon === value ? 'border-accent bg-subtle text-foreground' : 'border-border text-secondary'}`}>
+              className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-2 py-2 text-xs ${study.horizon === value ? 'border-accent bg-subtle text-foreground' : 'border-border text-secondary'}`}>
               <input type="radio" name="pair-period" value={value} checked={study.horizon === value}
                 onChange={() => onChange({ horizon: value as ResearchStudy['horizon'] })} />
-              <span>
-                <strong className="block text-sm">{period.label}</strong>
-                <span className="block text-xs text-muted">{period.detail}</span>
-              </span>
+              <strong>{period.label}</strong>
             </label>
           ))}
         </div>

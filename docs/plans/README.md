@@ -34,6 +34,28 @@ The economic, identity, admission, holdout and live-authority contracts are unch
 Representative-user visual acceptance and automated interaction checks remain pending.
 Evidence: [implementation plan and verification record](../superpowers/plans/2026-09-24-intuitive-research-experience.md).
 
+Update context — 2026-09-25 (Research Console + human semantic layer)
+Trigger: live browser walkthrough of the implemented simple-research revision showed that
+ordinary Research still expands into backend-oriented relationship/evidence sections,
+and the user asked to make real measurements understandable without losing expert detail.
+Purpose: reshape ordinary Research around one persistent console and a deterministic
+human semantic layer over authoritative backend values.
+Impact: the [Research Console + human semantic layer plan](../superpowers/plans/2026-09-25-research-console-semantic-layer.md)
+was the proposed interaction frontier. It introduces no new mathematical model,
+economic rule, evidence authority, live-market streaming claim, or automated recommendation.
+The 2026-09-24 implementation remains historical evidence until this successor plan is executed.
+Evidence: 2026-09-25 live W/PIXEL browser walkthrough and current Pair Research source.
+
+Implementation update — current branch, 2026-09-24
+Trigger: approved correction pass and subsequent CLI-only console implementation.
+Purpose: distinguish the implemented presentation from the still-pending human UX gate.
+Impact: ordinary Research now has Relationship and Backtest comparison modes, a chart-first
+semantic view, real progress stages, and an economic-first completed comparison. Browser-local
+drafts and backend result authority remain distinct. The earlier proposal is retained as
+the design record; representative-user visual acceptance is not claimed.
+Evidence: focused web interaction tests, production frontend build, and the Research
+Console implementation on `feat/research-study-workspace`.
+
 Update context — 2026-08-20 (Research Cockpit correction)
 Trigger: the first real-user iPhone walkthrough attempted the concrete job `W vs BTC/ETH` plus a universal scan and instead landed in unresolved identity/provenance administration. Exact-symbol search behaved as substring search, the selected identity task appeared below a long result list, and normal Product Research exposed neither a focused pair launcher nor a clear scanner cockpit.
 Purpose: reopen M10 as a design review so QAP starts from the research question while preserving fail-closed identity, immutable data lineage, current-approved/PIT claim separation, and existing scientific/economic authority.
