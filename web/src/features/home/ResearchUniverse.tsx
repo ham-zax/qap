@@ -31,7 +31,7 @@ function identityReasonLabel(
 ) {
   if (reason === 'identity_version_conflict') return 'Identity versions conflict'
   if (reason === 'mapping_unavailable') return 'Identity mapping unavailable'
-  return 'Identity resolved'
+  return 'Operator mapping recorded'
 }
 
 export function ResearchUniverse({
@@ -257,7 +257,7 @@ export function ResearchUniverse({
                     <p className="m-0 text-sm text-secondary">
                       {dataStateLabel(asset.data_state)}
                       {asset.asset_identity_version
-                        ? ` · identity ${asset.asset_identity_version}`
+                        ? ` · recorded version ${asset.asset_identity_version}`
                         : ''}
                     </p>
                   </div>
@@ -276,6 +276,12 @@ export function ResearchUniverse({
                   </button>
                 </div>
 
+                {asset.venues.some((venue) => venue.venue_asset_code && venue.venue_asset_code !== asset.canonical_asset_id) ? (
+                  <p role="alert" className="mt-4 rounded-md border border-warning/45 p-3 text-sm text-warning">
+                    A venue code differs from {asset.canonical_asset_id}: {asset.venues.filter((venue) => venue.venue_asset_code && venue.venue_asset_code !== asset.canonical_asset_id).map((venue) => `${venue.venue} ${venue.venue_asset_code}`).join(', ')}. This may be a valid alias or a wrong mapping. QAP has not independently verified it.
+                  </p>
+                ) : null}
+
                 {asset.venues.length ? (
                   <details className="mt-4 border-t border-border pt-3">
                     <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-accent">
@@ -285,8 +291,8 @@ export function ResearchUniverse({
                     <ul className="m-0 space-y-2 pl-5 text-sm text-secondary">
                       {asset.venues.map((venue) => (
                         <li key={`${venue.venue}:${venue.venue_symbol}`}>
-                          {venue.venue} · {venue.trading ? 'Trading' : venue.status} · symbol{' '}
-                          <code>{venue.venue_symbol}</code>
+                          {venue.venue} · {venue.trading ? 'Trading' : venue.status} · code{' '}
+                          <code>{venue.venue_asset_code ?? 'not reported'}</code> · market <code>{venue.venue_symbol}</code>
                         </li>
                       ))}
                     </ul>
@@ -317,10 +323,7 @@ export function ResearchUniverse({
           </summary>
           <div className="mt-3 max-w-4xl">
             <p className="text-sm leading-6 text-secondary">
-              Venue asset codes are not canonical economic identity. Confirm a mapping
-              only when you have independent reason to treat that venue code as the same
-              economic asset and identity version. QAP does not infer this from matching
-              ticker text.
+              Venue codes are observed market data, not proof of economic identity. QAP records your mapping but does not independently check the asset or identity reference. Use an independent source before recording it; matching ticker text is insufficient.
             </p>
 
             <div className="mt-4 rounded-md border border-accent/35 bg-canvas/35 p-4">
@@ -331,8 +334,7 @@ export function ResearchUniverse({
                 <li>Resolve the venue&apos;s USDT quote identity when QAP asks for it.</li>
                 <li>Search for the base-asset code you want to review.</li>
                 <li>
-                  Confirm the canonical asset and identity version only after independent
-                  verification.
+                  Record the canonical asset and identity version only after checking an independent source.
                 </li>
                 <li>Approve the canonical asset separately in the list above.</li>
               </ol>
@@ -340,7 +342,7 @@ export function ResearchUniverse({
                 <strong className="text-foreground">Example:</strong> after independently
                 confirming that Binance <code>BTC</code> is the canonical <code>BTC</code>
                 identity you intend to research, map that venue code to <code>BTC</code> and
-                its confirmed identity version. The mapping says “these are the same
+                its recorded identity version. The mapping says “the operator considers these the same
                 economic identity”; the separate approval says “QAP may research this
                 asset.”
               </p>
@@ -389,11 +391,11 @@ export function ResearchUniverse({
             {identityDraft ? (
               <div className="mt-5 rounded-md border border-border bg-subtle p-4">
                 <h3 className="m-0 text-base font-semibold text-foreground">
-                  Confirm {identityDraft.venue} {identityDraft.venue_asset_code}
+                  Record {identityDraft.venue} {identityDraft.venue_asset_code} mapping
                 </h3>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <label className="text-sm font-medium text-secondary">
-                    Canonical economic asset
+                    Canonical economic asset (your assessment)
                     <span className="mt-1 block text-xs font-normal leading-5 text-muted">
                       The QAP asset key this venue code belongs to, for example BTC.
                     </span>
@@ -410,10 +412,9 @@ export function ResearchUniverse({
                     />
                   </label>
                   <label className="text-sm font-medium text-secondary">
-                    Identity version
+                    Identity version or reference (your record)
                     <span className="mt-1 block text-xs font-normal leading-5 text-muted">
-                      The confirmed token/contract identity label. Do not copy the venue
-                      ticker here unless that is truly your confirmed identity version.
+                      A stable identity record you checked independently. QAP validates only that this is non-empty and does not fetch a contract address.
                     </span>
                     <input
                       className="mt-2 min-h-11 w-full rounded-md border border-border bg-canvas px-3 text-foreground"
@@ -439,7 +440,7 @@ export function ResearchUniverse({
                     }
                     onClick={submitIdentity}
                   >
-                    {identity.isPending ? 'Saving…' : 'Confirm identity mapping'}
+                    {identity.isPending ? 'Saving…' : 'Record identity mapping'}
                   </button>
                   <button
                     className="min-h-11 rounded-md border border-border px-4 text-sm font-semibold text-foreground"

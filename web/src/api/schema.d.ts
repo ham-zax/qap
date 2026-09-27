@@ -3854,6 +3854,8 @@ export interface components {
              * @enum {string}
              */
             venue: "binance" | "gate";
+            /** Venue Asset Code */
+            venue_asset_code: string;
             /** Venue Symbol */
             venue_symbol: string;
         };

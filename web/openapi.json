@@ -8558,6 +8558,10 @@
             "title": "Venue",
             "type": "string"
           },
+          "venue_asset_code": {
+            "title": "Venue Asset Code",
+            "type": "string"
+          },
           "venue_symbol": {
             "title": "Venue Symbol",
             "type": "string"
@@ -8566,6 +8570,7 @@
         "required": [
           "venue",
           "venue_symbol",
+          "venue_asset_code",
           "status",
           "trading"
         ],

@@ -21,23 +21,23 @@ const guides = {
     intent:
       'Tell QAP which venue asset codes represent the economic assets you mean and which canonical assets it is allowed to research.',
     action:
-      'Load current markets, resolve required quote identities first, confirm base-asset identities only with independent evidence, then approve canonical assets separately.',
+      'Load current markets, check required quote and base-asset identities against independent evidence, record your mappings, then approve canonical assets separately.',
     example:
-      'After independently confirming that Binance BTC is the same canonical BTC identity you intend to research, map that venue code to canonical BTC and its confirmed identity version. Approve BTC separately.',
+      'After independently checking a Binance asset code, record the canonical asset and identity version you found. QAP records but does not verify that claim. Approve the asset separately.',
     next:
       'Resolved and approved markets can move into market-data preparation and timeframe readiness checks.',
     boundary:
-      'Matching ticker text is not identity evidence. An identity mapping is not approval, and approval is not the same as data readiness.',
+      'Matching ticker text is not identity evidence. QAP does not verify operator-entered references. A mapping is not approval, and approval is not data readiness.',
   },
   research: {
     intent:
       'Start from a concrete research question: research one pair, scan the approved universe, or declare an advanced typed experiment.',
     action:
-      'Choose two assets and a period, then Run comparison. QAP prepares history, checks the declared settings and runs the supported comparison. Resolve identity or permission requests only if they appear.',
+      'Choose two assets, a research type, and a period, then Start research. QAP prepares history and runs a supported comparison only in Backtest mode. Resolve mapping or permission requests only if they appear.',
     example:
       'Choose a pair and 90 days, then compare both methods with holding and simple rebalancing after costs. Review settings first if you want to change the default test.',
     next:
-      'Pair Research shows current backend relationship values first and only checks a default economic recipe when one can be truthfully declared. Universal Scan and Experiment Lab keep their existing authorities.',
+      'Relationship research shows current descriptive measurements. Backtest comparison leads with the recorded economic result when complete. Universal Scan and Experiment Lab keep their existing authorities.',
     boundary:
       'The browser does not decide method support, scientific compatibility, or trade attractiveness, and no Research action authorizes a live trade.',
   },

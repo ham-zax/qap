@@ -81,7 +81,7 @@ export function ProductResearch({
   const launch = useMutation({
     mutationFn: () => {
       if (!readiness.data?.ready_for_research) {
-        throw new Error('The backend has not authorized research for this timeframe.')
+        throw new Error('This timeframe is not ready for research yet.')
       }
       return apiClient.runCurrentApprovedResearch({
         horizon,
@@ -192,7 +192,7 @@ export function ProductResearch({
         </button>
         {!readiness.data?.ready_for_research && !readiness.isPending ? (
           <p className="mt-3 mb-0 text-sm text-secondary">
-            The backend has not authorized this timeframe yet. Review the exclusions above
+            This timeframe is not ready for research yet. Review the exclusions above
             or manage the Research Universe.
           </p>
         ) : null}

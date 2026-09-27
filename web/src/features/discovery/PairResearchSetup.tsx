@@ -29,27 +29,27 @@ function IdentityConfirmation({ selection, apiClient, onResolved, onBusyChange }
   useEffect(() => () => onBusyChange(false), [onBusyChange])
   return (
     <section className="mt-4 rounded-md border border-warning/40 bg-subtle p-4">
-      <h3 className="m-0 font-semibold text-foreground">Confirm which asset {selection.symbol} represents</h3>
+      <h3 className="m-0 font-semibold text-foreground">Record which asset {selection.symbol} represents</h3>
       <p className="mt-2 text-sm leading-6 text-secondary">
-        {selection.venue} uses this code for {selection.venueSymbols.slice(0, 3).join(', ')}.
-        Verify the asset using the venue listing and an independent identity source. Matching names alone are insufficient.
+        {selection.venue} lists this code in {selection.venueSymbols.slice(0, 3).join(', ')}.
+        The market code is observed, but QAP cannot verify the economic asset or a contract address from this directory. Check an independent identity source before recording your mapping.
         {selection.symbol === 'USDT' ? ' This identifies the price quote currency; it does not approve holding it or grant permission to trade.' : ''}
       </p>
       <div className="grid gap-3 md:grid-cols-2">
-        <label className="text-sm text-secondary">Verified asset identifier
+        <label className="text-sm text-secondary">Canonical asset identifier (your assessment)
           <input value={assetId} onChange={(event) => setAssetId(event.target.value.toUpperCase())}
             placeholder={selection.symbol} className="mt-1 min-h-11 w-full rounded-md border border-border bg-canvas px-3" />
         </label>
-        <label className="text-sm text-secondary">Verified identity reference
+        <label className="text-sm text-secondary">Identity version or reference (your record)
           <input value={reference} onChange={(event) => setReference(event.target.value)}
             placeholder="Contract address or versioned identity record"
             className="mt-1 min-h-11 w-full rounded-md border border-border bg-canvas px-3" />
         </label>
       </div>
-      <p className="mt-2 text-xs leading-5 text-muted">Use the same identity reference for the same asset across venues. If you cannot verify it, leave it unresolved.</p>
+      <p className="mt-2 text-xs leading-5 text-muted">QAP checks that the venue code exists and these fields are non-empty; it does not validate your reference. Use the same version for the same asset across venues. If you cannot establish identity, leave it unresolved.</p>
       <button type="button" disabled={!assetId.trim() || !reference.trim() || identity.isPending}
         onClick={() => identity.mutate()} className="mt-3 min-h-11 rounded-md bg-accent px-4 font-semibold text-canvas disabled:opacity-50">
-        {identity.isPending ? 'Saving confirmation…' : `Confirm ${selection.symbol} identity`}
+        {identity.isPending ? 'Saving mapping…' : `Record ${selection.symbol} mapping`}
       </button>
       {identity.isError ? <p role="alert" className="text-sm text-negative">{identity.error.message}</p> : null}
     </section>

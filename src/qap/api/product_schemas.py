@@ -22,6 +22,7 @@ class DirectorySourceDto(ProductApiDto):
 class ResearchUniverseVenueDto(ProductApiDto):
     venue: Literal["binance", "gate"]
     venue_symbol: str
+    venue_asset_code: str
     status: str
     trading: bool
 

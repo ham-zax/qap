@@ -22,7 +22,7 @@ const universe: ResearchUniverseDto = {
   assets: ['W', 'PIXEL'].map((asset) => ({
     canonical_asset_id: asset, approved: true, identity_state: 'resolved', identity_reason: 'resolved',
     asset_identity_version: `${asset}-verified`, data_state: 'needs_data',
-    venues: [{ venue: 'gate', venue_symbol: `${asset}_USDT`, status: 'trading', trading: true }],
+    venues: [{ venue: 'gate', venue_symbol: `${asset}_USDT`, venue_asset_code: asset, status: 'trading', trading: true }],
   })),
 }
 
@@ -36,9 +36,9 @@ function mount(overrides: Partial<QapApiClient> = {}) {
 
 async function selectPair(user: ReturnType<typeof userEvent.setup>) {
   await user.type(await screen.findByRole('textbox', { name: 'First asset' }), 'W')
-  await user.click(screen.getByRole('button', { name: /W\s*ready identity/ }))
+  await user.click(screen.getByRole('button', { name: /W.*mapping recorded/i }))
   await user.type(screen.getByRole('textbox', { name: 'Second asset' }), 'PIXEL')
-  await user.click(screen.getByRole('button', { name: /PIXEL\s*ready identity/ }))
+  await user.click(screen.getByRole('button', { name: /PIXEL.*mapping recorded/i }))
 }
 
 beforeEach(() => { window.localStorage.clear() })
@@ -226,10 +226,10 @@ describe('research study continuity', () => {
     }) })
     await selectPair(user)
     expect(screen.getByRole('heading', { name: 'Finish price-data setup' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Confirm USDT identity' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Record USDT mapping' })).toBeDisabled()
   })
 
-  it('requires explicit quote identity evidence and locks setup while saving it', async () => {
+  it('requires an operator-entered quote identity mapping and locks setup while saving it', async () => {
     let resolve!: (value: ResearchUniverseDto) => void
     const pending = new Promise<ResearchUniverseDto>((done) => { resolve = done })
     const save = vi.fn().mockReturnValue(pending)
@@ -240,13 +240,13 @@ describe('research study continuity', () => {
         identity_reviews: [{ venue: 'gate', venue_asset_code: 'USDT', venue_symbols: ['W_USDT', 'PIXEL_USDT'] }],
       }) })
     await selectPair(user)
-    await user.type(screen.getByRole('textbox', { name: 'Verified asset identifier' }), 'USDT')
-    await user.type(screen.getByRole('textbox', { name: 'Verified identity reference' }), 'verified-record-v1')
-    await user.click(screen.getByRole('button', { name: 'Confirm USDT identity' }))
+    await user.type(screen.getByRole('textbox', { name: 'Canonical asset identifier (your assessment)' }), 'USDT')
+    await user.type(screen.getByRole('textbox', { name: 'Identity version or reference (your record)' }), 'verified-record-v1')
+    await user.click(screen.getByRole('button', { name: 'Record USDT mapping' }))
     expect(save).toHaveBeenCalledWith({ venue: 'gate', venue_asset_code: 'USDT', canonical_asset_id: 'USDT', asset_identity_version: 'verified-record-v1' })
     await user.click(screen.getByText(/Saved research ·/))
     await waitFor(() => expect(screen.getByRole('button', { name: 'New study' })).toBeDisabled())
-    expect(screen.getByRole('textbox', { name: 'Verified identity reference' })).toBeDisabled()
+    expect(screen.getByRole('textbox', { name: 'Identity version or reference (your record)' })).toBeDisabled()
     resolve(universe)
     await waitFor(() => expect(screen.getByRole('button', { name: 'Start research' })).toBeEnabled())
     expect(screen.queryByRole('heading', { name: 'Finish price-data setup' })).not.toBeInTheDocument()
@@ -321,7 +321,7 @@ describe('research study continuity', () => {
     await selectPair(user)
     await user.click(screen.getByRole('radio', { name: /Backtest comparison/ }))
     await user.click(screen.getByRole('button', { name: 'Start research' }))
-    expect(await screen.findByText(/permission applies to the current Local Market workspace and verified USDT identity, not just this study/i)).toBeInTheDocument()
+    expect(await screen.findByText(/permission applies to the current Local Market workspace and recorded USDT identity, not just this study/i)).toBeInTheDocument()
     expect(grant).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: /Allow workspace bridge replay and continue/ })).toBeEnabled()
   })

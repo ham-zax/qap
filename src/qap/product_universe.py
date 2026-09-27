@@ -255,6 +255,7 @@ class ProductMarketDirectory(_FrozenModel):
 class ResearchUniverseVenue:
     venue: str
     venue_symbol: str
+    venue_asset_code: str
     status: str
     trading: bool
 
@@ -527,6 +528,7 @@ class ProductUniverse:
                 ResearchUniverseVenue(
                     venue=market.venue,
                     venue_symbol=market.venue_symbol,
+                    venue_asset_code=market.venue_base_asset,
                     status=market.status,
                     trading=market.trading,
                 )

@@ -46,6 +46,12 @@ export function ResearchAssetSelector({
     () => rankResearchAssetOptions(options, query).slice(0, 16),
     [options, query],
   )
+  const selectedAsset = selected?.canonicalAssetId
+    ? universe.assets.find((asset) => asset.canonical_asset_id === selected.canonicalAssetId)
+    : null
+  const differingCodes = selectedAsset?.venues.filter(
+    (venue) => venue.venue_asset_code && venue.venue_asset_code !== selected?.canonicalAssetId,
+  ) ?? []
 
   if (selected) {
     return (
@@ -62,7 +68,7 @@ export function ResearchAssetSelector({
                   {selected.approved ? 'Approved' : 'Needs approval'}
                 </Badge>
               ) : (
-                <Badge tone="warning">Needs identity confirmation</Badge>
+                <Badge tone="warning">Needs identity mapping</Badge>
               )}
               {selected.venue ? <Badge tone="neutral">{selected.venue}</Badge> : null}
             </div>
@@ -78,6 +84,22 @@ export function ResearchAssetSelector({
             Change
           </button>
         </div>
+        {selectedAsset?.venues.length || selected.venueSymbols.length ? (
+          <p className="mt-3 mb-0 text-xs leading-5 text-secondary">
+            Observed markets: {selectedAsset?.venues.length
+              ? selectedAsset.venues.map((venue) => `${venue.venue} ${venue.venue_symbol}${venue.venue_asset_code ? ` (code ${venue.venue_asset_code})` : ''}`).join(' · ')
+              : selected.venueSymbols.map((symbol) => `${selected.venue ?? 'venue'} ${symbol}`).join(' · ')}
+          </p>
+        ) : null}
+        {selectedAsset?.asset_identity_version ? (
+          <p className="mt-2 mb-0 break-all text-xs leading-5 text-secondary">
+            Operator-entered identity reference: {selectedAsset.asset_identity_version}
+          </p>
+        ) : null}
+        {differingCodes.length ? <p role="alert" className="mt-3 mb-0 text-sm leading-6 text-warning">
+          A recorded venue code differs from {selected.symbol}: {differingCodes.map((venue) => `${venue.venue} ${venue.venue_asset_code}`).join(', ')}.
+          This may be a valid alias or an incorrect mapping. QAP has not independently verified it; review the identity record before trusting results.
+        </p> : null}
       </div>
     )
   }
@@ -112,13 +134,14 @@ export function ResearchAssetSelector({
                   {option.venue ? (
                     <span className="ml-2 text-xs text-muted">{option.venue}</span>
                   ) : null}
+                  {option.venueSymbols.length ? <span className="mt-1 block text-xs text-muted">Markets: {option.venueSymbols.slice(0, 2).join(' · ')}</span> : null}
                 </span>
                 <span className="text-xs text-muted">
                   {option.canonicalAssetId
                     ? option.approved
-                      ? 'ready identity'
-                      : 'canonical · approval needed'
-                    : 'identity setup needed'}
+                      ? 'mapping recorded'
+                      : 'mapping recorded · approval needed'
+                    : 'identity mapping needed'}
                 </span>
               </button>
             ))}

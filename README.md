@@ -50,7 +50,7 @@ Ordinary Research now opens the Research Console. Choose two assets, a research 
 Relationship mode reads historical measurements and stops; it does not create a backtest.
 Backtest comparison continues through the backend-declared recipe, support check, and
 simulated economic comparison without extra confirmation when runnable. Asset admission,
-identity verification, and workspace-scoped USDT bridge authority still require explicit
+operator-recorded identity mapping, and workspace-scoped USDT bridge authority still require explicit
 decisions when relevant. Nothing here places live orders.
 
 The descriptive view leads with a plain-language interpretation and a normalized price

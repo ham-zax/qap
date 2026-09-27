@@ -91,6 +91,7 @@ def _dto(projection: ResearchUniverseProjection) -> ResearchUniverseDto:
                     ResearchUniverseVenueDto(
                         venue=cast(Venue, venue.venue),
                         venue_symbol=venue.venue_symbol,
+                        venue_asset_code=venue.venue_asset_code,
                         status=venue.status,
                         trading=venue.trading,
                     )

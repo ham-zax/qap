@@ -317,7 +317,7 @@ export function PairResearch({ apiClient, queries, workspace, study, onChange, o
           && studyResult.context.economic_expression.direct_status !== 'ready'
           && studyResult.context.economic_expression.bridge_status === 'needs_transient_authority' ? <section className="rounded-lg border border-warning/45 bg-panel p-5">
             <h2 className="m-0 text-lg font-semibold text-foreground">Allow research-only bridge holdings?</h2>
-            <p className="mt-2 text-sm leading-6 text-secondary">This permission applies to the current Local Market workspace and verified USDT identity, not just this study. It allows temporary owned USDT residue during two-leg spot replay. It does not approve USDT as a portfolio target or place live orders.</p>
+            <p className="mt-2 text-sm leading-6 text-secondary">This permission applies to the current Local Market workspace and recorded USDT identity, not just this study. It allows temporary owned USDT residue during two-leg spot replay. It does not approve USDT as a portfolio target or place live orders.</p>
             <button type="button" disabled={busy} onClick={() => bridge.mutate()}
               className="min-h-11 rounded-md bg-accent px-4 font-semibold text-canvas disabled:opacity-50">{bridge.isPending ? 'Saving permission…' : 'Allow workspace bridge replay and continue'}</button>
             {bridge.isError ? <p role="alert" className="text-sm text-negative">{bridge.error.message}</p> : null}
