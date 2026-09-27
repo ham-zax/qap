@@ -1,6 +1,47 @@
 # QAP Plan Map
 
-**Status:** Implementation is complete through Phase 16. Phase 17 Product Layer M0-M9, M10-A, M10-B, and M10-C are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED. M10-C Capability/Fidelity Proof is approved at `3e07878`. Pair Study M11-A/B/C/D is integrated through `3528973`, including study-first W/PIXEL evidence, honest two-leg economics, and same-screen development completion. M10-D representative-user acceptance rerun is now the final human gate.
+**Status:** Implementation is complete through Phase 16. Phase 17 Product Layer M0-M9, M10-A, M10-B, and M10-C are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED. M10-C Capability/Fidelity Proof is approved at `3e07878`. Pair Study M11-A/B/C/D is integrated through `3528973`, including study-first W/PIXEL evidence, honest two-leg economics, and same-screen development completion. M10-D representative-user acceptance rerun is now the final human gate. **Phase 18** (research experience and automatic asset resolution) is the current phase; its M7 acceptance closes M10-D.
+
+Update context — 2026-09-27 (Phase 18 approved)
+Trigger: Hamza delegated investigation decisions D1–D7 and asked for implementation
+plus a UI regeneration.
+Purpose: make Phase 18 the current phase and the single tracker for decisions and
+implementation.
+Impact: [Phase 18](18-research-experience-and-asset-resolution.md) replaces the
+overhaul proposal and the September 25 console contract. Its M7 acceptance also
+closes the open Phase 17 M10-D representative-user gate.
+Evidence: [investigation findings](../research/2026-09-27-research-product-investigation-findings.md).
+
+Update context — 2026-09-27 (investigation findings)
+Trigger: the research product investigation was executed.
+Purpose: record where the results live and what blocks the master plan.
+Impact: the [investigation findings](../research/2026-09-27-research-product-investigation-findings.md)
+recommend evidence-backed asset resolution plus backend-owned research requests.
+The replacement master plan waits on owner decisions D1–D7 in that report.
+Evidence: live Binance/Gate/CoinGecko measurements, isolated-workspace
+reproduction and source inspection at `ee9100d`.
+
+Update context — 2026-09-27 (investigation before the master redesign plan)
+Trigger: Hamza clarified that the app must handle asset discovery and its internal
+setup without manual per-coin support or user-authored identity/provenance records.
+Purpose: investigate the complete research journey and the causes of repeated UX
+failures before selecting a replacement architecture.
+Impact: the [Research Product Investigation Plan](../research/2026-09-27-research-product-investigation-plan.md)
+is the current work sequence. The overhaul proposal below is provisional; its
+catalog, navigation and orchestration choices await investigation. M10-D remains
+unaccepted, and historical implementation completion does not close that gap.
+Evidence: supplied walkthroughs, earlier product decisions and source at `ee9100d`.
+
+Update context — 2026-09-27 (research experience overhaul proposal)
+Trigger: Hamza's walkthrough rejected the current console, asset search, setup and
+scanner experience and requested an overhaul plan before further implementation.
+Purpose: make the current product-design frontier explicit.
+Impact: the [Research Experience Overhaul proposal](../superpowers/plans/2026-09-27-research-experience-overhaul.md)
+recorded proposed journeys, asset-catalog/resolution changes and delivery gates.
+Those choices are now provisional under the investigation-first correction above,
+including the proposed identity-policy design amendment;
+historical technical completion does not establish usability acceptance.
+Evidence: supplied QAP and Uniswap screenshots and source inspection at `ee9100d`.
 
 Update context — 2026-09-24 (resumable research correction)
 Trigger: the user still cannot easily run and understand research and asked to infer
@@ -82,6 +123,10 @@ Evidence: `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigatio
 
 ## Current wave
 
+The current phase is [Phase 18 — Research Experience and Automatic Asset Resolution](18-research-experience-and-asset-resolution.md);
+its tracker records decisions and implementation progress. The integrated milestone
+record below describes historical implementation, not acceptance of the present experience.
+
 Phases 00–13 produced the financial/research core, paper hardening, readiness decision, and autonomous-development harness. Phase 14 is implemented and its integrated rendered acceptance is green. **Phase 15 — Research Scanner and Basket Backend** is complete through Scanner V1 Slice 3, including the post-review remediation handoff at `142a18d`; Slice-3 results are in `docs/research/2026-08-18-qap-scanner-slice3-results.md`. The former Slice-3 Candidate Workbench milestone was explicitly superseded by the post-Phase-15 **Slice 4 Unified QAP Workbench**, which is complete and repository/browser-verified; its final rendered executable state is `6961937`, followed by the review-closure state on `main` at `62416cc`. Results are in `docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`. **Phase 16 — Human-Centered Workbench UX Re-architecture** is complete through M8 and remains the protected historical UX/evidence baseline. **Phase 17 — Product Layer** is technically complete through M10-C. The executable primary IA is `Home / Research / Portfolios / History`; strict PIT research remains under Advanced Research and specialist URLs remain stable. M10-0 is approved, M10-A is integrated at `12ed08a`, M10-B at `f39b4b4`, and M10-C proof at `3e07878`. Pair Study M11-A/B/C/D is integrated through `3528973`; **M10-D representative-user acceptance rerun is the current and final Phase-17 gate**. Do not replay earlier Product milestones or port legacy runtime architecture.
 
 ## Implementation waves
@@ -104,6 +149,7 @@ CLI fixture checks into completion of that gate.
 | 10 | Make QAP human-operable | Slice 4 | One local web application can initiate and inspect the admitted Slice-1/2/3 workflows while immutable QAP/scanner artifacts remain authoritative |
 | 11 | Make QAP understandable without internal expertise | 16 | Goal-oriented navigation, plain-language task flows, progressive disclosure, and human-centered acceptance preserve the same authoritative evidence while reducing implementation vocabulary from the primary UX |
 | 12 | Make a clean local workspace product-operational | 17 | Explicit asset admission, honest market-data/readiness ownership, immutable refreshable inputs, longitudinal research evidence, and persistent current-evidence collection make the existing research engine usable without expert fixture/catalog preparation |
+| 13 | Make research simple without hiding depth | 18 | Assets are found by name, ticker or market symbol and identified automatically from evidence; research requests are backend-owned, fresh and resumable; the regenerated UI passes the Phase 18 journeys and Hamza's acceptance |
 
 ## Phase plans
 
@@ -126,8 +172,9 @@ CLI fixture checks into completion of that gate.
 17. Slice 4: `docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md`
 18. `16-human-centered-workbench-ux-rearchitecture.md` (post-Slice-4 presentation/IA phase; current-state evidence is in `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`; fresh-agent execution handoff is `docs/research/2026-08-19-qap-phase16-implementation-handoff.md`)
 19. `17-product-layer-market-data-and-research-lifecycle.md` (Product Layer phase; M0-M9 and M10-A/B/C complete, M10-0 approved, M11 Pair Study redesign current before M10-D human closure; Pair Study design is `docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md`; implementation plan is `docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`; original Product investigation is `docs/research/2026-08-19-qap-product-layer-investigation.md`; cockpit investigation is `docs/research/2026-08-20-qap-research-cockpit-investigation.md`; M10-C proof is `docs/research/2026-08-20-qap-m10c-capability-fidelity-proof.md`)
+20. `18-research-experience-and-asset-resolution.md` (current phase: automatic asset resolution, backend research requests, UI regeneration; decision log D1–D7 and milestone tracker; evidence is `docs/research/2026-09-27-research-product-investigation-findings.md`)
 
-The original cross-phase master implementation plan at `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md` closes the 00–15 research-engine mission. Phases 16 and 17 are explicitly authorized post-master product phases and do not alter the original economic/research completion definition.
+The original cross-phase master implementation plan at `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md` closes the 00–15 research-engine mission. Phases 16, 17 and 18 are explicitly authorized post-master product phases and do not alter the original economic/research completion definition.
 
 Decision records that affect multiple phases:
 

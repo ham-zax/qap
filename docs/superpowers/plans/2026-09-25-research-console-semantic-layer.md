@@ -8,6 +8,26 @@
 
 **Status:** Approved interaction plan. The current branch implements the console presentation and flow; this document's task list remains a design record, not evidence of representative-user acceptance. CLI verification and remaining limitations are reported with the implementation.
 
+Update context — 2026-09-27 (superseded by Phase 18)
+Trigger: investigation decisions D1–D7 were approved and Phase 18 was planned.
+Purpose: point readers to the current plan.
+Impact: superseded. [Phase 18](../../plans/18-research-experience-and-asset-resolution.md) is the current plan and tracker; this
+document remains a historical record.
+Evidence: Phase 18 decision log.
+
+Update context — 2026-09-27 (owner walkthrough rejection)
+Trigger: the implemented console still required users to navigate asset identity,
+data readiness and fragmented research tasks; Hamza rejected that experience.
+Purpose: retain the implementation rationale while recording the requested redesign.
+Impact: this document remains the historical implementation contract. The
+[Research Experience Overhaul](2026-09-27-research-experience-overhaul.md) proposes
+its replacement and supporting asset-resolution changes. Hamza's subsequent
+investigation-first correction makes that proposal provisional; the
+[Research Product Investigation Plan](../../research/2026-09-27-research-product-investigation-plan.md)
+now defines the work required before a replacement master plan.
+Evidence: supplied walkthrough screenshots and source at `ee9100d`; no human
+acceptance or successor implementation is claimed.
+
 Update context — 2026-09-24
 Trigger: review of the proposed console against the current UI, backend authority, relationship calculations, and failing interaction checks.
 Purpose: make saved-result behavior, data binding, permission scope, and verification explicit before implementation.

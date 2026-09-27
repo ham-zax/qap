@@ -1,6 +1,6 @@
 # QAP Product Layer Design Freeze
 
-**Status:** FROZEN IMPLEMENTATION BASELINE - 2026-08-19; SELECTIVE LEGACY-SALVAGE AMENDMENT APPROVED - 2026-08-19
+**Status:** FROZEN IMPLEMENTATION BASELINE - 2026-08-19; SELECTIVE LEGACY-SALVAGE AMENDMENT APPROVED - 2026-08-19; PHASE 18 IDENTITY/ELIGIBILITY AMENDMENT APPROVED - 2026-09-27 (§5, §6)
 
 **Phase:** 17 - Product Layer: Market Universe, Data Workspace, and Research Lifecycle
 
@@ -151,6 +151,11 @@ QAP researches only economic assets the operator has explicitly approved as asse
 
 The current exchange directory is discovery input, **not** automatic QAP admission.
 
+**Phase 18 amendment — 2026-09-27 (D4):** leveraged tokens and tokenized stocks,
+metals and forex tokens are excluded from research discovery as outside the
+owned-spot action space; fiat codes are excluded. Admission itself remains an
+explicit operator decision. See `docs/plans/18-research-experience-and-asset-resolution.md`.
+
 The Product Layer must therefore provide an operator-controlled Research Universe containing:
 
 - canonical economic asset identity;
@@ -177,6 +182,20 @@ The Product Layer must preserve QAP's existing concepts of:
 - explicit continuity.
 
 Known mappings may be automated.
+
+**Phase 18 amendment — 2026-09-27 (D1–D3, D7):** evidence-backed mappings are
+automated and are the ordinary path; operator-authored canonical IDs and
+identity versions are no longer asked in ordinary flows. A Product-owned resolver
+proposes bindings from venue metadata and a supplemental registry (ticker
+mappings, contract addresses) and `ProductUniverse` accepts them under policy.
+Identity versions are evidence-derived. Conflicts, migrations and ambiguous
+evidence still fail closed and go to review with the evidence attached. A
+relationship study on one venue may use venue-local listing identity before
+cross-venue equivalence is resolved; economic replay, admission-dependent scans
+and portfolios still require full economic identity. USDT quote identity is
+seeded by policy on Binance and Gate. New research refreshes history to the
+latest completed bar first. Ticker equality still never establishes identity.
+Evidence: `docs/research/2026-09-27-research-product-investigation-findings.md`.
 
 Ambiguous ticker collisions, renames, migrations, contract changes, or uncertain cross-venue equivalence must be excluded from official automatic research until resolved or explicitly treated under an already-authorized forensic boundary.
 
