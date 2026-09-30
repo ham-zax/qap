@@ -221,7 +221,7 @@ th {
 
 main {
   min-height: 70vh;
-  padding: clamp(2rem, 6vw, 5rem) 0;
+  padding: clamp(1.5rem, 3vw, 2.5rem) 0 clamp(2rem, 6vw, 5rem);
 }
 
 main > section > header {

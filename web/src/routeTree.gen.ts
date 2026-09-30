@@ -22,6 +22,7 @@ import { Route as PaperOperationsOperationIdRouteImport } from './routes/paper-o
 import { Route as PortfolioRunIdRouteImport } from './routes/portfolio.$runId'
 import { Route as ProspectiveIndexRouteImport } from './routes/prospective.index'
 import { Route as ProspectiveCohortIdRouteImport } from './routes/prospective.$cohortId'
+import { Route as ResearchIndexRouteImport } from './routes/research.index'
 import { Route as ScannerIndexRouteImport } from './routes/scanner.index'
 import { Route as ScannerScanIdRouteImport } from './routes/scanner.$scanId'
 import { Route as CandidateScanIdCandidateIdRouteImport } from './routes/candidate.$scanId.$candidateId'
@@ -93,6 +94,11 @@ const ProspectiveCohortIdRoute = ProspectiveCohortIdRouteImport.update({
   path: '/prospective/$cohortId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResearchIndexRoute = ResearchIndexRouteImport.update({
+  id: '/research/',
+  path: '/research/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ScannerIndexRoute = ScannerIndexRouteImport.update({
   id: '/scanner/',
   path: '/scanner/',
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/operations/': typeof OperationsIndexRoute
   '/paper-operations/': typeof PaperOperationsIndexRoute
   '/prospective/': typeof ProspectiveIndexRoute
+  '/research/': typeof ResearchIndexRoute
   '/scanner/': typeof ScannerIndexRoute
   '/candidate/$scanId/$candidateId': typeof CandidateScanIdCandidateIdRoute
   '/pair/$runId/$assetX/$assetY': typeof PairRunIdAssetXAssetYRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/operations': typeof OperationsIndexRoute
   '/paper-operations': typeof PaperOperationsIndexRoute
   '/prospective': typeof ProspectiveIndexRoute
+  '/research': typeof ResearchIndexRoute
   '/scanner': typeof ScannerIndexRoute
   '/candidate/$scanId/$candidateId': typeof CandidateScanIdCandidateIdRoute
   '/pair/$runId/$assetX/$assetY': typeof PairRunIdAssetXAssetYRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/operations/': typeof OperationsIndexRoute
   '/paper-operations/': typeof PaperOperationsIndexRoute
   '/prospective/': typeof ProspectiveIndexRoute
+  '/research/': typeof ResearchIndexRoute
   '/scanner/': typeof ScannerIndexRoute
   '/candidate/$scanId/$candidateId': typeof CandidateScanIdCandidateIdRoute
   '/pair/$runId/$assetX/$assetY': typeof PairRunIdAssetXAssetYRoute
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/operations/'
     | '/paper-operations/'
     | '/prospective/'
+    | '/research/'
     | '/scanner/'
     | '/candidate/$scanId/$candidateId'
     | '/pair/$runId/$assetX/$assetY'
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/operations'
     | '/paper-operations'
     | '/prospective'
+    | '/research'
     | '/scanner'
     | '/candidate/$scanId/$candidateId'
     | '/pair/$runId/$assetX/$assetY'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/operations/'
     | '/paper-operations/'
     | '/prospective/'
+    | '/research/'
     | '/scanner/'
     | '/candidate/$scanId/$candidateId'
     | '/pair/$runId/$assetX/$assetY'
@@ -248,6 +260,7 @@ export interface RootRouteChildren {
   OperationsIndexRoute: typeof OperationsIndexRoute
   PaperOperationsIndexRoute: typeof PaperOperationsIndexRoute
   ProspectiveIndexRoute: typeof ProspectiveIndexRoute
+  ResearchIndexRoute: typeof ResearchIndexRoute
   ScannerIndexRoute: typeof ScannerIndexRoute
   CandidateScanIdCandidateIdRoute: typeof CandidateScanIdCandidateIdRoute
   PairRunIdAssetXAssetYRoute: typeof PairRunIdAssetXAssetYRoute
@@ -346,6 +359,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProspectiveCohortIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/research/': {
+      id: '/research/'
+      path: '/research'
+      fullPath: '/research/'
+      preLoaderRoute: typeof ResearchIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/scanner/': {
       id: '/scanner/'
       path: '/scanner'
@@ -392,6 +412,7 @@ const rootRouteChildren: RootRouteChildren = {
   OperationsIndexRoute: OperationsIndexRoute,
   PaperOperationsIndexRoute: PaperOperationsIndexRoute,
   ProspectiveIndexRoute: ProspectiveIndexRoute,
+  ResearchIndexRoute: ResearchIndexRoute,
   ScannerIndexRoute: ScannerIndexRoute,
   CandidateScanIdCandidateIdRoute: CandidateScanIdCandidateIdRoute,
   PairRunIdAssetXAssetYRoute: PairRunIdAssetXAssetYRoute,

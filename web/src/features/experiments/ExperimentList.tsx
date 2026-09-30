@@ -107,6 +107,12 @@ function ExperimentCard({ run }: { run: RunSummaryDto }) {
             {humanizeIdentifier(run.relationship_id ?? 'Unavailable')}
           </p>
         </div>
+        <div className="min-w-0">
+          <p className="m-0 text-xs text-muted">Policy</p>
+          <p className="mt-1 mb-0 font-medium text-foreground">
+            {humanizeIdentifier(run.policy_id ?? 'Unavailable')}
+          </p>
+        </div>
       </div>
       <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
         {run.created_timestamp ? (
@@ -115,6 +121,13 @@ function ExperimentCard({ run }: { run: RunSummaryDto }) {
         <span className="break-all" title={run.run_id}>
           Run {shortId(run.run_id)}
         </span>
+        {run.research_family_id ? <span>Family {run.research_family_id}</span> : null}
+        {run.family_attempt_count ? (
+          <span>
+            {run.family_attempt_count} family {run.family_attempt_count === 1 ? 'attempt' : 'attempts'}
+          </span>
+        ) : null}
+        {run.git_dirty ? <span>Dirty snapshot</span> : null}
       </div>
       <a
         className="mt-5 inline-flex min-h-11 w-fit items-center rounded-md bg-accent px-4 py-2 text-sm font-semibold text-canvas no-underline hover:opacity-90"

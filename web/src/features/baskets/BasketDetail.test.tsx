@@ -54,6 +54,20 @@ const basket: BasketDetailDto = {
 }
 
 const portfolio = {
+  strategy_costs: {
+    fill_count: 4,
+    fees_value: '0.002',
+    slippage_value: '0.001',
+    turnover_value: '2',
+  },
+  concentration: { terminal_max_weight: '0.34', terminal_herfindahl: '0.3302' },
+  starting: {
+    holdings: [
+      { asset: 'AAA', quantity: '1', value: '0.33', weight: '0.33' },
+      { asset: 'BBB', quantity: '1', value: '0.33', weight: '0.33' },
+      { asset: 'CCC', quantity: '1', value: '0.34', weight: '0.34' },
+    ],
+  },
   terminal: {
     holdings: [
       { asset: 'AAA', quantity: '1', value: '0.34', weight: '0.34' },
@@ -76,6 +90,7 @@ const portfolio = {
 describe('BasketDetail', () => {
   it('renders authoritative resolver evidence and bridge residue from QAP artifacts', () => {
     render(<BasketDetail basket={basket} experiment={null} portfolio={portfolio} />)
+    for (const details of document.querySelectorAll('details')) details.open = true
 
     expect(screen.getByText('basket-opinions:AAA/BBB=1')).toBeVisible()
     expect(screen.getByText('basket-resolver:maximum_tilt=0.10')).toBeVisible()

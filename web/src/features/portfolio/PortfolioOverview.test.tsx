@@ -284,7 +284,7 @@ describe('PortfolioOverview', () => {
         'Contribution timing underperformed matched-contribution static HODL by 0.60%.',
       ),
     ).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'What changed vs HODL?' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Terminal holdings differences vs HODL' })).toBeInTheDocument()
     expect(screen.getByText('−15,000')).toBeInTheDocument()
     expect(screen.getByText('+10,500')).toBeInTheDocument()
     expect(screen.getByText('Time below HODL')).toBeInTheDocument()

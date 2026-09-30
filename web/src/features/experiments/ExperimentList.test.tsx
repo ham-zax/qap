@@ -53,7 +53,7 @@ describe('ExperimentList', () => {
     expect(within(card).getByText(/Family family-alpha/)).toBeInTheDocument()
     expect(within(card).getByText(/Dirty snapshot/)).toBeInTheDocument()
     expect(
-      within(card).getByRole('link', { name: 'View result' }),
+      within(card).getByRole('link', { name: 'Review research run' }),
     ).toHaveAttribute(
       'href',
       '/experiments/run-0123456789abcdef01234567',

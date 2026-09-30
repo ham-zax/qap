@@ -13,6 +13,7 @@ import {
 } from 'lightweight-charts'
 import { useEffect, useId, useRef, useState } from 'react'
 
+import { useTheme } from '../../lib/theme'
 import {
   findPresentationPointAtTimestamp,
   fromChartVisibleRange,
@@ -116,6 +117,7 @@ export function TimeSeriesChart({
   const lastCursorTime = useRef<string | null>(null)
   const [cursor, setCursor] = useState<CursorSnapshot | null>(null)
   const titleId = useId()
+  const { resolved: theme } = useTheme()
 
   useEffect(() => {
     const container = containerRef.current
@@ -235,6 +237,7 @@ export function TimeSeriesChart({
   }, [
     height,
     markers,
+    theme,
     onCursorTimeChange,
     onVisibleRangeChange,
     series,

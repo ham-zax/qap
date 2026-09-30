@@ -93,7 +93,7 @@ export function HomeWorkspace({
 
         <Link
           className="group mb-6 flex min-h-44 flex-col justify-between rounded-xl border border-accent/45 bg-panel p-6 text-foreground no-underline transition-[background-color,border-color] duration-150 hover:border-accent hover:bg-subtle"
-          to="/scanner"
+          to="/research"
         >
           <div>
             <p className="m-0 text-xs font-semibold uppercase tracking-[0.1em] text-accent">Primary research task</p>
@@ -115,7 +115,7 @@ export function HomeWorkspace({
                 ? 'The pair-comparison flow can still resolve pair-specific setup in context. Open the universe scan only when you want to inspect its broader readiness state.'
                 : 'This applies to scanning the approved universe. Pair comparison resolves its own selected-asset requirements when you start it.'}
             </p>
-            <Link className="mt-3 inline-flex min-h-11 items-center font-semibold text-accent" to="/scanner">
+            <Link className="mt-3 inline-flex min-h-11 items-center font-semibold text-accent" to="/research">
               Open Research
             </Link>
           </details>

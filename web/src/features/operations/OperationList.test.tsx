@@ -30,13 +30,13 @@ describe('OperationList', () => {
   it('keeps operational completion separate from research result references', () => {
     render(<OperationList data={data} />)
 
-    expect(screen.getByText('completed')).toBeVisible()
-    expect(screen.getByText('Run Basket')).toBeVisible()
-    expect(screen.getByRole('link', { name: 'Basket evidence' })).toHaveAttribute(
+    expect(screen.getByText('Completed')).toBeVisible()
+    expect(screen.getAllByText('Analyze portfolio')[0]).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Portfolio result' })).toHaveAttribute(
       'href',
       `/baskets/${'b'.repeat(64)}`,
     )
-    expect(screen.getByRole('link', { name: 'QAP experiment' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Research run' })).toHaveAttribute(
       'href',
       '/experiments/run-negative-basket',
     )
