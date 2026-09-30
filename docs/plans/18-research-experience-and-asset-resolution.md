@@ -1,8 +1,17 @@
 # Phase 18 — Research Experience and Automatic Asset Resolution
 
-**Status:** M1 committed (`438b3d9`); M2 implemented in the working tree; M3–M5 remain incomplete.
-Stop before M6 UI generation. Repository-wide verification remains open. Decisions D1–D7 are recorded below. The
-milestone tracker (Section 5) is the single place to record progress.
+**Status:** M1 committed (`438b3d9`); M2 committed (`62dd8e0`). The experience direction
+of M4–M7 is superseded by [Phase 19](19-pair-rotation-lab-mvp.md) (approved 2026-09-30). Decisions D1–D7 are recorded below. The milestone tracker
+(Section 5) records Phase 18 progress.
+
+Update context — 2026-09-30 (direction change)
+Trigger: design interview; Hamza rejected the research console experience and chose a
+two-coin dashboard with verified real edge ([decision record](../product/decisions-2026-09-30.md)).
+Purpose: point Phase 18's remaining work to its successor without erasing its history.
+Impact: M1 and M2 stand. From M3, only the `W → BTC` repair continues; M4 search moves
+to Phase 19 M2; M5 and M6 are replaced by Phase 19. D1–D7 remain in force except that
+Phase 19 (Q9, approved) allows researching any eligible coin without admission.
+Evidence: [vision](../product/vision.md), [MVP design](../superpowers/specs/2026-09-30-pair-rotation-lab-mvp-design.md).
 
 Update context — 2026-09-30 (cleanup and wrap-up)
 Trigger: Hamza authorized committing M1 and continuing to the M6 boundary, then

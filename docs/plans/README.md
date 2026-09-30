@@ -1,5 +1,14 @@
 # QAP Plan Map
 
+Update context — 2026-09-30 (product direction)
+Trigger: design interview with Hamza after the research console was rejected.
+Purpose: introduce the product vision and the proposed next phase.
+Impact: [Phase 19 — Pair Rotation Lab MVP](19-pair-rotation-lab-mvp.md) is the current
+phase (approved 2026-09-30) and supersedes the Phase 18 M4–M7 experience direction. Product
+intent now lives in [docs/product/vision.md](../product/vision.md). Economic and
+research contracts are unchanged.
+Evidence: [decision record](../product/decisions-2026-09-30.md).
+
 Update context — 2026-09-30 (authorized cleanup)
 Trigger: Hamza requested removal of legacy and stale code, data and documents,
 then requested wrap-up before UI generation.
