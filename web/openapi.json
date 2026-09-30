@@ -2088,6 +2088,52 @@
         "title": "DirectMarketReadinessDto",
         "type": "object"
       },
+      "DirectoryRefreshResultDto": {
+        "additionalProperties": false,
+        "properties": {
+          "attempted_at": {
+            "format": "date-time",
+            "title": "Attempted At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "status": {
+            "enum": [
+              "refreshed",
+              "stale",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "venue",
+          "attempted_at",
+          "status",
+          "error"
+        ],
+        "title": "DirectoryRefreshResultDto",
+        "type": "object"
+      },
       "DirectorySourceDto": {
         "additionalProperties": false,
         "properties": {
@@ -8498,6 +8544,14 @@
               }
             ],
             "title": "Directory Observed At"
+          },
+          "directory_refreshes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/DirectoryRefreshResultDto"
+            },
+            "title": "Directory Refreshes",
+            "type": "array"
           },
           "directory_status": {
             "enum": [

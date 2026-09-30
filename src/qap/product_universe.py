@@ -17,12 +17,19 @@ from pydantic import (
     model_validator,
 )
 
-from qap.market.adapters.binance_public import BinancePublicAdapter
-from qap.market.adapters.gate_public import GatePublicAdapter
-from qap.market.directory import CurrentSpotDirectoryObservation
+from qap.market.adapters.binance_public import (
+    BinancePublicAdapter,
+    BinancePublicDataError,
+)
+from qap.market.adapters.gate_public import GatePublicAdapter, GatePublicDataError
 from qap.market.instruments import VenueInstrument
-from qap.market.microstructure import public_payload_fingerprint
 from qap.portfolio import AssetId
+from qap.product_directory_models import (
+    DirectoryMarket,
+    DirectoryRefreshResult,
+    DirectorySource,
+    ProductMarketDirectory,
+)
 
 Venue = Literal["binance", "gate"]
 IdentityState = Literal["resolved", "review_required"]
@@ -32,6 +39,10 @@ DataState = Literal["not_approved", "needs_data"]
 
 class ProductUniverseError(RuntimeError):
     """Raised when Product universe state cannot be read or changed safely."""
+
+
+class ProductDirectoryRefreshError(ProductUniverseError):
+    """No current or previously observed public directory is available."""
 
 
 def _utc(value: object, *, field: str) -> datetime:
@@ -48,15 +59,6 @@ def _text(value: object, *, field: str) -> str:
     normalized = value.strip()
     if not normalized:
         raise ValueError(f"{field} must not be empty")
-    return normalized
-
-
-def _fingerprint(value: object, *, field: str) -> str:
-    normalized = _text(value, field=field).lower()
-    if len(normalized) != 64 or any(
-        character not in "0123456789abcdef" for character in normalized
-    ):
-        raise ValueError(f"{field} must be a SHA-256 hex string")
     return normalized
 
 
@@ -136,121 +138,6 @@ class ProductUniverseState(_FrozenModel):
         return self
 
 
-class DirectorySource(_FrozenModel):
-    venue: Venue
-    observed_at: datetime
-    source_id: str
-    source_fingerprint: str
-
-    @field_validator("observed_at")
-    @classmethod
-    def validate_observed_at(cls, value: datetime) -> datetime:
-        return _utc(value, field="observed_at")
-
-    @field_validator("source_id", mode="before")
-    @classmethod
-    def validate_source_id(cls, value: object) -> str:
-        return _text(value, field="source_id")
-
-    @field_validator("source_fingerprint", mode="before")
-    @classmethod
-    def validate_source_fingerprint(cls, value: object) -> str:
-        return _fingerprint(value, field="source_fingerprint")
-
-
-class DirectoryMarket(_FrozenModel):
-    venue: Venue
-    venue_symbol: str
-    venue_base_asset: str
-    venue_quote_asset: str
-    status: str
-    trading: bool
-
-    @field_validator(
-        "venue_symbol",
-        "venue_base_asset",
-        "venue_quote_asset",
-        mode="before",
-    )
-    @classmethod
-    def normalize_venue_code(cls, value: object) -> str:
-        return _text(value, field="venue market value").upper()
-
-    @field_validator("status", mode="before")
-    @classmethod
-    def normalize_status(cls, value: object) -> str:
-        return _text(value, field="status")
-
-
-class ProductMarketDirectory(_FrozenModel):
-    schema_version: Literal["qap.product.market-directory.v1"] = (
-        "qap.product.market-directory.v1"
-    )
-    sources: tuple[DirectorySource, ...]
-    markets: tuple[DirectoryMarket, ...]
-
-    @model_validator(mode="after")
-    def validate_directory(self) -> Self:
-        source_venues = tuple(source.venue for source in self.sources)
-        if set(source_venues) != {"binance", "gate"} or len(source_venues) != 2:
-            raise ValueError("directory requires one Binance and one Gate source")
-        market_keys = tuple(
-            (market.venue, market.venue_symbol) for market in self.markets
-        )
-        if len(market_keys) != len(set(market_keys)):
-            raise ValueError("directory markets must be unique by venue and symbol")
-        if any(market.venue not in set(source_venues) for market in self.markets):
-            raise ValueError("directory markets must reference an observed venue")
-        return self
-
-    @classmethod
-    def from_observations(
-        cls,
-        observations: tuple[CurrentSpotDirectoryObservation, ...],
-    ) -> Self:
-        sources = tuple(
-            sorted(
-                (
-                    DirectorySource(
-                        venue=cast(Venue, observation.venue),
-                        observed_at=observation.observed_at,
-                        source_id=observation.source_id,
-                        source_fingerprint=observation.source_fingerprint,
-                    )
-                    for observation in observations
-                ),
-                key=lambda source: source.venue,
-            )
-        )
-        markets = tuple(
-            sorted(
-                (
-                    DirectoryMarket(
-                        venue=cast(Venue, market.venue),
-                        venue_symbol=market.venue_symbol,
-                        venue_base_asset=market.venue_base_asset,
-                        venue_quote_asset=market.venue_quote_asset,
-                        status=market.status,
-                        trading=market.trading,
-                    )
-                    for observation in observations
-                    for market in observation.markets
-                ),
-                key=lambda market: (market.venue, market.venue_symbol),
-            )
-        )
-        return cls(sources=sources, markets=markets)
-
-    @property
-    def observed_at(self) -> datetime:
-        return max(source.observed_at for source in self.sources)
-
-    @property
-    def directory_id(self) -> str:
-        payload = self.model_dump(mode="json")
-        return public_payload_fingerprint(payload)
-
-
 @dataclass(frozen=True, slots=True)
 class ResearchUniverseVenue:
     venue: str
@@ -285,6 +172,7 @@ class ResearchUniverseProjection:
     sources: tuple[DirectorySource, ...]
     assets: tuple[ResearchUniverseAsset, ...]
     identity_reviews: tuple[IdentityReview, ...]
+    directory_refreshes: tuple[DirectoryRefreshResult, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -389,18 +277,62 @@ class ProductUniverse:
             ) from exc
 
     def refresh_directory(self) -> ProductMarketDirectory:
-        """Refresh both supported public venues, publishing only a complete result."""
+        """Publish each venue immediately; keep exact last-good evidence on outage."""
 
-        with BinancePublicAdapter() as binance:
-            binance_observation = binance.fetch_spot_directory()
-        with GatePublicAdapter() as gate:
-            gate_observation = gate.fetch_spot_directory()
-        directory = ProductMarketDirectory.from_observations(
-            (binance_observation, gate_observation)
-        )
         with self._lock:
-            self._write_model(self.directory_path, directory)
-        return directory
+            # Validate before acquisition so corrupt persisted truth is never replaced.
+            directory = self.read_directory()
+            sources = (
+                {} if directory is None else {s.venue: s for s in directory.sources}
+            )
+            markets = () if directory is None else directory.markets
+            results = (
+                {}
+                if directory is None
+                else {result.venue: result for result in directory.refresh_results}
+            )
+            for venue, adapter_type in (
+                ("binance", BinancePublicAdapter),
+                ("gate", GatePublicAdapter),
+            ):
+                venue = cast(Venue, venue)
+                attempted_at = datetime.now(UTC)
+                try:
+                    with adapter_type() as adapter:
+                        observation = adapter.fetch_spot_directory()
+                    current = ProductMarketDirectory.from_observations((observation,))
+                    sources[venue] = current.sources[0]
+                    markets = (
+                        tuple(m for m in markets if m.venue != venue) + current.markets
+                    )
+                    result = DirectoryRefreshResult(
+                        venue=venue, attempted_at=attempted_at, status="refreshed"
+                    )
+                except (BinancePublicDataError, GatePublicDataError) as exc:
+                    result = DirectoryRefreshResult(
+                        venue=venue,
+                        attempted_at=attempted_at,
+                        status="stale" if venue in sources else "unavailable",
+                        error=str(exc),
+                    )
+                results[venue] = result
+                if sources:
+                    directory = ProductMarketDirectory(
+                        sources=tuple(sorted(sources.values(), key=lambda s: s.venue)),
+                        markets=tuple(
+                            sorted(markets, key=lambda m: (m.venue, m.venue_symbol))
+                        ),
+                        refresh_results=tuple(
+                            sorted(results.values(), key=lambda r: r.venue)
+                        ),
+                    )
+                    self._write_model(self.directory_path, directory)
+            if directory is None:
+                raise ProductDirectoryRefreshError(
+                    "Current public Spot markets could not be refreshed: "
+                    + "; ".join(f"{r.venue}: {r.error}" for r in results.values())
+                )
+            return directory
 
     def set_identity_mapping(
         self,
@@ -595,6 +527,7 @@ class ProductUniverse:
             sources=() if directory is None else directory.sources,
             assets=tuple(assets),
             identity_reviews=identity_reviews,
+            directory_refreshes=() if directory is None else directory.refresh_results,
         )
 
     def resolved_scope(
@@ -687,6 +620,7 @@ __all__ = [
     "IdentityReview",
     "IdentityState",
     "ProductMarketDirectory",
+    "ProductDirectoryRefreshError",
     "ProductResearchScope",
     "ProductUniverse",
     "ProductUniverseError",

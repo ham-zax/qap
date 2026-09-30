@@ -19,6 +19,13 @@ class DirectorySourceDto(ProductApiDto):
     source_fingerprint: str
 
 
+class DirectoryRefreshResultDto(ProductApiDto):
+    venue: Literal["binance", "gate"]
+    attempted_at: datetime
+    status: Literal["refreshed", "stale", "unavailable"]
+    error: str | None
+
+
 class ResearchUniverseVenueDto(ProductApiDto):
     venue: Literal["binance", "gate"]
     venue_symbol: str
@@ -57,6 +64,7 @@ class ResearchUniverseDto(ProductApiDto):
     sources: tuple[DirectorySourceDto, ...]
     assets: tuple[ResearchUniverseAssetDto, ...]
     identity_reviews: tuple[IdentityReviewDto, ...]
+    directory_refreshes: tuple[DirectoryRefreshResultDto, ...] = ()
 
 
 class IdentityMappingRequestDto(ProductApiDto):

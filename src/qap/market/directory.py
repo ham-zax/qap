@@ -30,6 +30,63 @@ def _fingerprint(value: object) -> str:
     return normalized
 
 
+def _boolean(value: object, *, field: str) -> bool:
+    if not isinstance(value, bool):
+        raise TypeError(f"{field} must be a boolean")
+    return value
+
+
+@dataclass(frozen=True, slots=True)
+class CurrencyChainEvidence:
+    """Venue-reported chain and address, preserving case-sensitive addresses."""
+
+    chain: str
+    contract_address: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "chain", _text(self.chain, field="chain"))
+        if self.contract_address is not None:
+            object.__setattr__(
+                self,
+                "contract_address",
+                _text(self.contract_address, field="contract_address"),
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class SpotCurrencyEvidence:
+    """Descriptive evidence only; this does not establish economic identity."""
+
+    venue_asset_code: str
+    name: str | None = None
+    chain: str | None = None
+    chains: tuple[CurrencyChainEvidence, ...] = ()
+    categories: tuple[str, ...] = ()
+    delisted: bool | None = None
+    trade_disabled: bool | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "venue_asset_code",
+            _text(self.venue_asset_code, field="venue_asset_code").upper(),
+        )
+        for field in ("name", "chain"):
+            value = getattr(self, field)
+            if value is not None:
+                object.__setattr__(self, field, _text(value, field=field))
+        for field in ("delisted", "trade_disabled"):
+            value = getattr(self, field)
+            if value is not None and not isinstance(value, bool):
+                raise TypeError(f"{field} must be a boolean when present")
+        object.__setattr__(self, "chains", tuple(self.chains))
+        object.__setattr__(
+            self,
+            "categories",
+            tuple(_text(v, field="category") for v in self.categories),
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class CurrentSpotMarket:
     """One venue-local Spot market without assuming economic asset identity."""
@@ -40,6 +97,15 @@ class CurrentSpotMarket:
     venue_quote_asset: str
     status: str
     trading: bool
+    base_name: str | None = None
+    quote_name: str | None = None
+    buy_start: datetime | None = None
+    pair_type: str | None = None
+    spot_trading_allowed: bool | None = None
+    permissions: tuple[str, ...] = ()
+    permission_sets: tuple[tuple[str, ...], ...] = ()
+    base_currency: SpotCurrencyEvidence | None = None
+    quote_currency: SpotCurrencyEvidence | None = None
 
     def __post_init__(self) -> None:
         venue = _text(self.venue, field="venue", lower=True)
@@ -53,6 +119,27 @@ class CurrentSpotMarket:
         object.__setattr__(self, "venue_base_asset", venue_base)
         object.__setattr__(self, "venue_quote_asset", venue_quote)
         object.__setattr__(self, "status", _text(self.status, field="status"))
+        for field in ("base_name", "quote_name", "pair_type"):
+            value = getattr(self, field)
+            if value is not None:
+                object.__setattr__(self, field, _text(value, field=field))
+        if self.buy_start is not None:
+            object.__setattr__(
+                self, "buy_start", _utc(self.buy_start, field="buy_start")
+            )
+        _boolean(self.trading, field="trading")
+        if self.spot_trading_allowed is not None:
+            _boolean(self.spot_trading_allowed, field="spot_trading_allowed")
+        for code, currency in (
+            (venue_base, self.base_currency),
+            (venue_quote, self.quote_currency),
+        ):
+            if currency is not None and currency.venue_asset_code != code:
+                raise ValueError("currency evidence must match the venue asset code")
+        object.__setattr__(self, "permissions", tuple(self.permissions))
+        object.__setattr__(
+            self, "permission_sets", tuple(tuple(s) for s in self.permission_sets)
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,4 +174,9 @@ class CurrentSpotDirectoryObservation:
         object.__setattr__(self, "markets", markets)
 
 
-__all__ = ["CurrentSpotDirectoryObservation", "CurrentSpotMarket"]
+__all__ = [
+    "CurrencyChainEvidence",
+    "CurrentSpotDirectoryObservation",
+    "CurrentSpotMarket",
+    "SpotCurrencyEvidence",
+]

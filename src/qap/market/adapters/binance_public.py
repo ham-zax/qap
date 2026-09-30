@@ -6,23 +6,42 @@ rows preserve source open/close millisecond timestamps; QAP derives its own
 exclusive completion boundary from the declared interval.
 """
 
-import math
 import os
 from collections.abc import Mapping
-from datetime import UTC, datetime, timedelta
-from decimal import Decimal, InvalidOperation
-from typing import Self, cast
+from datetime import UTC, datetime
+from decimal import Decimal
+from typing import Self
 
 import httpx
 
+from qap.market.adapters.binance_payload import (
+    BinancePublicDataError as BinancePublicDataError,
+)
+from qap.market.adapters.binance_payload import (
+    as_bool,
+    as_float,
+    as_list,
+    as_mapping,
+    as_milliseconds,
+    as_non_negative_int,
+    as_string,
+    datetime_from_milliseconds,
+    enabled_decimal,
+    filter,
+    milliseconds_from_datetime,
+    normalized_symbol,
+    positive_decimal,
+    validate_limit,
+    validated_utc,
+)
+from qap.market.adapters.spot_directory import binance_directory_from_payload
 from qap.market.bars import BarInterval, MarketBar
-from qap.market.directory import CurrentSpotDirectoryObservation, CurrentSpotMarket
+from qap.market.directory import CurrentSpotDirectoryObservation
 from qap.market.instruments import VenueInstrument
 from qap.market.metadata import MarketMetadata
 from qap.market.microstructure import (
     PublicBookSnapshot,
     public_book_snapshot_from_rows,
-    public_payload_fingerprint,
 )
 from qap.market.validation import ValidatedBarSeries, validate_bar_series
 from qap.portfolio import AssetId
@@ -31,142 +50,7 @@ _PUBLIC_BASE_URL = os.environ.get(
     "QAP_BINANCE_PUBLIC_BASE_URL",
     "https://data-api.binance.vision",
 ).rstrip("/")
-_EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 _MAX_KLINE_LIMIT = 1000
-
-
-class BinancePublicDataError(RuntimeError):
-    """Raised for explicit public-source, response, or contract failures."""
-
-
-def _as_mapping(value: object, *, field: str) -> Mapping[str, object]:
-    if not isinstance(value, Mapping):
-        raise BinancePublicDataError(f"{field} must be a JSON object")
-    return cast(Mapping[str, object], value)
-
-
-def _as_list(value: object, *, field: str) -> list[object]:
-    if not isinstance(value, list):
-        raise BinancePublicDataError(f"{field} must be a JSON array")
-    return cast(list[object], value)
-
-
-def _as_string(value: object, *, field: str) -> str:
-    if not isinstance(value, str) or not value:
-        raise BinancePublicDataError(f"{field} must be a non-empty string")
-    return value
-
-
-def _as_bool(value: object, *, field: str) -> bool:
-    if not isinstance(value, bool):
-        raise BinancePublicDataError(f"{field} must be a boolean")
-    return value
-
-
-def _as_milliseconds(value: object, *, field: str) -> int:
-    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
-        raise BinancePublicDataError(f"{field} must be a non-negative integer")
-    return value
-
-
-def _as_non_negative_int(value: object, *, field: str) -> int:
-    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
-        raise BinancePublicDataError(f"{field} must be a non-negative integer")
-    return value
-
-
-def _as_decimal(value: object, *, field: str) -> Decimal:
-    if not isinstance(value, str):
-        raise BinancePublicDataError(f"{field} must be an exact decimal string")
-    try:
-        parsed = Decimal(value)
-    except InvalidOperation as exc:
-        raise BinancePublicDataError(
-            f"{field} must be an exact decimal string"
-        ) from exc
-    if not parsed.is_finite() or parsed < 0:
-        raise BinancePublicDataError(f"{field} must be finite and non-negative")
-    return parsed
-
-
-def _positive_decimal(value: object, *, field: str) -> Decimal:
-    parsed = _as_decimal(value, field=field)
-    if parsed <= 0:
-        raise BinancePublicDataError(f"{field} must be positive")
-    return parsed
-
-
-def _enabled_decimal(value: object, *, field: str) -> Decimal | None:
-    parsed = _as_decimal(value, field=field)
-    return parsed if parsed > 0 else None
-
-
-def _filter(
-    filters: list[object],
-    *,
-    filter_type: str,
-    required: bool,
-) -> Mapping[str, object] | None:
-    matches: list[Mapping[str, object]] = []
-    for raw_filter in filters:
-        item = _as_mapping(raw_filter, field="symbol filter")
-        if item.get("filterType") == filter_type:
-            matches.append(item)
-    if len(matches) > 1 or (required and len(matches) != 1):
-        raise BinancePublicDataError(
-            f"exchangeInfo must contain exactly one {filter_type} filter"
-        )
-    return matches[0] if matches else None
-
-
-def _as_float(value: object, *, field: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
-        raise BinancePublicDataError(f"{field} must be numeric")
-    try:
-        parsed = float(value)
-    except ValueError as exc:
-        raise BinancePublicDataError(f"{field} must be numeric") from exc
-    if not math.isfinite(parsed):
-        raise BinancePublicDataError(f"{field} must be finite")
-    return parsed
-
-
-def _validated_utc(timestamp: object, *, field: str) -> datetime:
-    if not isinstance(timestamp, datetime):
-        raise TypeError(f"{field} must be a datetime")
-    if timestamp.tzinfo is None or timestamp.utcoffset() != timedelta(0):
-        raise ValueError(f"{field} must be timezone-aware UTC")
-    return timestamp.astimezone(UTC)
-
-
-def _datetime_from_milliseconds(value: int) -> datetime:
-    return _EPOCH + timedelta(milliseconds=value)
-
-
-def _milliseconds_from_datetime(value: datetime, *, field: str) -> int:
-    timestamp = _validated_utc(value, field=field)
-    delta = timestamp - _EPOCH
-    microseconds = (
-        delta.days * 86_400_000_000 + delta.seconds * 1_000_000 + delta.microseconds
-    )
-    if microseconds % 1000 != 0:
-        raise ValueError(f"{field} must be aligned to a whole millisecond")
-    return microseconds // 1000
-
-
-def _normalized_symbol(value: object) -> str:
-    symbol = _as_string(value, field="venue symbol").strip().upper()
-    if not symbol:
-        raise BinancePublicDataError("venue symbol must not be empty")
-    return symbol
-
-
-def _validated_limit(value: object) -> int:
-    if not isinstance(value, int) or isinstance(value, bool):
-        raise TypeError("kline limit must be an integer")
-    if not 1 <= value <= _MAX_KLINE_LIMIT:
-        raise ValueError(f"kline limit must be between 1 and {_MAX_KLINE_LIMIT}")
-    return value
 
 
 class BinancePublicAdapter:
@@ -252,7 +136,7 @@ class BinancePublicAdapter:
     ) -> VenueInstrument:
         """Verify one current Spot symbol against an explicit QAP orientation."""
 
-        symbol = _normalized_symbol(venue_symbol)
+        symbol = normalized_symbol(venue_symbol)
         payload = self._get_json(
             "/api/v3/exchangeInfo",
             params={"symbol": symbol},
@@ -284,44 +168,12 @@ class BinancePublicAdapter:
     ) -> CurrentSpotDirectoryObservation:
         """Normalize raw exchangeInfo rows while preserving venue-local codes."""
 
-        document = _as_mapping(payload, field="exchangeInfo response")
-        symbols = _as_list(document.get("symbols"), field="exchangeInfo symbols")
-        markets: list[CurrentSpotMarket] = []
-        for raw_symbol in symbols:
-            item = _as_mapping(raw_symbol, field="exchangeInfo symbol")
-            symbol = _normalized_symbol(item.get("symbol"))
-            status = _as_string(item.get("status"), field="symbol status")
-            spot_allowed = _as_bool(
-                item.get("isSpotTradingAllowed"),
-                field="isSpotTradingAllowed",
-            )
-            markets.append(
-                CurrentSpotMarket(
-                    venue="binance",
-                    venue_symbol=symbol,
-                    venue_base_asset=_as_string(
-                        item.get("baseAsset"), field="baseAsset"
-                    ),
-                    venue_quote_asset=_as_string(
-                        item.get("quoteAsset"), field="quoteAsset"
-                    ),
-                    status=status,
-                    trading=status == "TRADING" and spot_allowed,
-                )
-            )
-
-        timestamp = (
-            datetime.now(UTC)
-            if observed_at is None
-            else _validated_utc(observed_at, field="observed_at")
-        )
-        return CurrentSpotDirectoryObservation(
-            venue="binance",
-            observed_at=timestamp,
-            source_id="binance:/api/v3/exchangeInfo",
-            source_fingerprint=public_payload_fingerprint(payload),
-            markets=tuple(markets),
-        )
+        try:
+            return binance_directory_from_payload(payload, observed_at=observed_at)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise BinancePublicDataError(
+                f"Binance directory is invalid: {exc}"
+            ) from exc
 
     def fetch_market_metadata(
         self,
@@ -335,7 +187,7 @@ class BinancePublicAdapter:
     ) -> MarketMetadata:
         """Fetch normalized public Spot precision/filter metadata for one symbol."""
 
-        symbol = _normalized_symbol(venue_symbol)
+        symbol = normalized_symbol(venue_symbol)
         payload = self._get_json(
             "/api/v3/exchangeInfo",
             params={"symbol": symbol},
@@ -364,13 +216,13 @@ class BinancePublicAdapter:
             "/api/v3/ticker/bookTicker",
             params={"symbol": instrument.venue_symbol},
         )
-        item = _as_mapping(payload, field="bookTicker response")
-        if _normalized_symbol(item.get("symbol")) != instrument.venue_symbol.upper():
+        item = as_mapping(payload, field="bookTicker response")
+        if normalized_symbol(item.get("symbol")) != instrument.venue_symbol.upper():
             raise BinancePublicDataError("bookTicker symbol does not match instrument")
         timestamp = (
             datetime.now(UTC)
             if observed_at is None
-            else _validated_utc(observed_at, field="observed_at")
+            else validated_utc(observed_at, field="observed_at")
         )
         return public_book_snapshot_from_rows(
             instrument=instrument,
@@ -398,19 +250,19 @@ class BinancePublicAdapter:
             "/api/v3/depth",
             params={"symbol": instrument.venue_symbol, "limit": limit},
         )
-        item = _as_mapping(payload, field="depth response")
+        item = as_mapping(payload, field="depth response")
         timestamp = (
             datetime.now(UTC)
             if observed_at is None
-            else _validated_utc(observed_at, field="observed_at")
+            else validated_utc(observed_at, field="observed_at")
         )
         return public_book_snapshot_from_rows(
             instrument=instrument,
             observed_at=timestamp,
             source_id=f"binance:/api/v3/depth?limit={limit}",
             source_payload=payload,
-            bids=_as_list(item.get("bids"), field="depth bids"),
-            asks=_as_list(item.get("asks"), field="depth asks"),
+            bids=as_list(item.get("bids"), field="depth bids"),
+            asks=as_list(item.get("asks"), field="depth asks"),
         )
 
     @staticmethod
@@ -426,12 +278,12 @@ class BinancePublicAdapter:
     ) -> VenueInstrument:
         """Map recorded exchange-info JSON without guessing inverses or history."""
 
-        symbol = _normalized_symbol(venue_symbol)
-        document = _as_mapping(payload, field="exchangeInfo response")
-        symbols = _as_list(document.get("symbols"), field="exchangeInfo symbols")
+        symbol = normalized_symbol(venue_symbol)
+        document = as_mapping(payload, field="exchangeInfo response")
+        symbols = as_list(document.get("symbols"), field="exchangeInfo symbols")
         matches: list[Mapping[str, object]] = []
         for raw_symbol in symbols:
-            item = _as_mapping(raw_symbol, field="exchangeInfo symbol")
+            item = as_mapping(raw_symbol, field="exchangeInfo symbol")
             if item.get("symbol") == symbol:
                 matches.append(item)
         if len(matches) != 1:
@@ -441,21 +293,19 @@ class BinancePublicAdapter:
 
         item = matches[0]
         if require_trading:
-            if _as_string(item.get("status"), field="symbol status") != "TRADING":
+            if as_string(item.get("status"), field="symbol status") != "TRADING":
                 raise BinancePublicDataError(f"{symbol} is not currently TRADING")
-            if not _as_bool(
+            if not as_bool(
                 item.get("isSpotTradingAllowed"),
                 field="isSpotTradingAllowed",
             ):
                 raise BinancePublicDataError(f"{symbol} does not allow Spot trading")
 
-        expected_venue_base = _normalized_symbol(venue_base_asset)
-        expected_venue_quote = _normalized_symbol(venue_quote_asset)
-        venue_base = (
-            _as_string(item.get("baseAsset"), field="baseAsset").strip().upper()
-        )
+        expected_venue_base = normalized_symbol(venue_base_asset)
+        expected_venue_quote = normalized_symbol(venue_quote_asset)
+        venue_base = as_string(item.get("baseAsset"), field="baseAsset").strip().upper()
         venue_quote = (
-            _as_string(item.get("quoteAsset"), field="quoteAsset").strip().upper()
+            as_string(item.get("quoteAsset"), field="quoteAsset").strip().upper()
         )
         if venue_base != expected_venue_base or venue_quote != expected_venue_quote:
             raise BinancePublicDataError(
@@ -495,12 +345,12 @@ class BinancePublicAdapter:
             venue_quote_asset=venue_quote_asset,
             require_trading=require_trading,
         )
-        document = _as_mapping(payload, field="exchangeInfo response")
-        symbols = _as_list(document.get("symbols"), field="exchangeInfo symbols")
-        symbol = _normalized_symbol(venue_symbol)
+        document = as_mapping(payload, field="exchangeInfo response")
+        symbols = as_list(document.get("symbols"), field="exchangeInfo symbols")
+        symbol = normalized_symbol(venue_symbol)
         matches: list[Mapping[str, object]] = []
         for raw_item in symbols:
-            symbol_item = _as_mapping(raw_item, field="exchangeInfo symbol")
+            symbol_item = as_mapping(raw_item, field="exchangeInfo symbol")
             if symbol_item.get("symbol") == symbol:
                 matches.append(symbol_item)
         if len(matches) != 1:
@@ -508,16 +358,16 @@ class BinancePublicAdapter:
                 f"exchangeInfo must contain exactly one {symbol} symbol"
             )
         item = matches[0]
-        filters = _as_list(item.get("filters"), field="symbol filters")
-        status = _as_string(item.get("status"), field="symbol status")
-        if not _as_bool(
+        filters = as_list(item.get("filters"), field="symbol filters")
+        status = as_string(item.get("status"), field="symbol status")
+        if not as_bool(
             item.get("isSpotTradingAllowed"),
             field="isSpotTradingAllowed",
         ):
             status = f"{status}_SPOT_DISABLED"
-        price_filter = _filter(filters, filter_type="PRICE_FILTER", required=True)
-        lot_filter = _filter(filters, filter_type="LOT_SIZE", required=True)
-        market_lot_filter = _filter(
+        price_filter = filter(filters, filter_type="PRICE_FILTER", required=True)
+        lot_filter = filter(filters, filter_type="LOT_SIZE", required=True)
+        market_lot_filter = filter(
             filters,
             filter_type="MARKET_LOT_SIZE",
             required=False,
@@ -525,8 +375,8 @@ class BinancePublicAdapter:
         assert price_filter is not None
         assert lot_filter is not None
 
-        notional_filter = _filter(filters, filter_type="NOTIONAL", required=False)
-        legacy_notional = _filter(
+        notional_filter = filter(filters, filter_type="NOTIONAL", required=False)
+        legacy_notional = filter(
             filters,
             filter_type="MIN_NOTIONAL",
             required=False,
@@ -537,36 +387,36 @@ class BinancePublicAdapter:
         maximum_applies_to_market = False
         average_price_minutes = 0
         if notional_filter is not None:
-            minimum_notional = _enabled_decimal(
+            minimum_notional = enabled_decimal(
                 notional_filter.get("minNotional"),
                 field="NOTIONAL minNotional",
             )
-            maximum_notional = _enabled_decimal(
+            maximum_notional = enabled_decimal(
                 notional_filter.get("maxNotional"),
                 field="NOTIONAL maxNotional",
             )
-            minimum_applies_to_market = _as_bool(
+            minimum_applies_to_market = as_bool(
                 notional_filter.get("applyMinToMarket"),
                 field="NOTIONAL applyMinToMarket",
             )
-            maximum_applies_to_market = _as_bool(
+            maximum_applies_to_market = as_bool(
                 notional_filter.get("applyMaxToMarket"),
                 field="NOTIONAL applyMaxToMarket",
             )
-            average_price_minutes = _as_non_negative_int(
+            average_price_minutes = as_non_negative_int(
                 notional_filter.get("avgPriceMins"),
                 field="NOTIONAL avgPriceMins",
             )
         elif legacy_notional is not None:
-            minimum_notional = _enabled_decimal(
+            minimum_notional = enabled_decimal(
                 legacy_notional.get("minNotional"),
                 field="MIN_NOTIONAL minNotional",
             )
-            minimum_applies_to_market = _as_bool(
+            minimum_applies_to_market = as_bool(
                 legacy_notional.get("applyToMarket"),
                 field="MIN_NOTIONAL applyToMarket",
             )
-            average_price_minutes = _as_non_negative_int(
+            average_price_minutes = as_non_negative_int(
                 legacy_notional.get("avgPriceMins"),
                 field="MIN_NOTIONAL avgPriceMins",
             )
@@ -575,27 +425,27 @@ class BinancePublicAdapter:
             return MarketMetadata(
                 instrument=instrument,
                 status=status,
-                price_tick=_positive_decimal(
+                price_tick=positive_decimal(
                     price_filter.get("tickSize"),
                     field="PRICE_FILTER tickSize",
                 ),
-                minimum_price=_enabled_decimal(
+                minimum_price=enabled_decimal(
                     price_filter.get("minPrice"),
                     field="PRICE_FILTER minPrice",
                 ),
-                maximum_price=_enabled_decimal(
+                maximum_price=enabled_decimal(
                     price_filter.get("maxPrice"),
                     field="PRICE_FILTER maxPrice",
                 ),
-                quantity_step=_positive_decimal(
+                quantity_step=positive_decimal(
                     lot_filter.get("stepSize"),
                     field="LOT_SIZE stepSize",
                 ),
-                minimum_quantity=_enabled_decimal(
+                minimum_quantity=enabled_decimal(
                     lot_filter.get("minQty"),
                     field="LOT_SIZE minQty",
                 ),
-                maximum_quantity=_enabled_decimal(
+                maximum_quantity=enabled_decimal(
                     lot_filter.get("maxQty"),
                     field="LOT_SIZE maxQty",
                 ),
@@ -607,7 +457,7 @@ class BinancePublicAdapter:
                 market_quantity_step=(
                     None
                     if market_lot_filter is None
-                    else _enabled_decimal(
+                    else enabled_decimal(
                         market_lot_filter.get("stepSize"),
                         field="MARKET_LOT_SIZE stepSize",
                     )
@@ -615,7 +465,7 @@ class BinancePublicAdapter:
                 market_minimum_quantity=(
                     None
                     if market_lot_filter is None
-                    else _enabled_decimal(
+                    else enabled_decimal(
                         market_lot_filter.get("minQty"),
                         field="MARKET_LOT_SIZE minQty",
                     )
@@ -623,7 +473,7 @@ class BinancePublicAdapter:
                 market_maximum_quantity=(
                     None
                     if market_lot_filter is None
-                    else _enabled_decimal(
+                    else enabled_decimal(
                         market_lot_filter.get("maxQty"),
                         field="MARKET_LOT_SIZE maxQty",
                     )
@@ -647,18 +497,18 @@ class BinancePublicAdapter:
 
         if instrument.venue != "binance":
             raise ValueError("Binance adapter requires a binance VenueInstrument")
-        start_utc = _validated_utc(start, field="start")
-        end_utc = _validated_utc(end_exclusive, field="end_exclusive")
+        start_utc = validated_utc(start, field="start")
+        end_utc = validated_utc(end_exclusive, field="end_exclusive")
         if start_utc >= end_utc:
             raise ValueError("start must be before end_exclusive")
         if end_utc > datetime.now(UTC):
             raise ValueError(
                 "end_exclusive must contain completed historical bars only"
             )
-        validated_limit = _validated_limit(limit)
+        validated_limit = validate_limit(limit)
 
-        start_millis = _milliseconds_from_datetime(start_utc, field="start")
-        end_millis = _milliseconds_from_datetime(
+        start_millis = milliseconds_from_datetime(start_utc, field="start")
+        end_millis = milliseconds_from_datetime(
             end_utc,
             field="end_exclusive",
         )
@@ -708,19 +558,19 @@ class BinancePublicAdapter:
     ) -> tuple[MarketBar, ...]:
         """Parse the documented kline array fields into QAP-owned observations."""
 
-        rows = _as_list(payload, field="klines response")
+        rows = as_list(payload, field="klines response")
         if not rows:
             raise BinancePublicDataError("Binance returned no klines")
 
         bars: list[MarketBar] = []
         for position, raw_row in enumerate(rows):
-            row = _as_list(raw_row, field=f"kline row {position}")
+            row = as_list(raw_row, field=f"kline row {position}")
             if len(row) != 12:
                 raise BinancePublicDataError(
                     f"kline row {position} must contain exactly twelve fields"
                 )
-            candle_open = _datetime_from_milliseconds(
-                _as_milliseconds(row[0], field=f"kline row {position} open time")
+            candle_open = datetime_from_milliseconds(
+                as_milliseconds(row[0], field=f"kline row {position} open time")
             )
             if candle_open < start or candle_open >= end_exclusive:
                 raise BinancePublicDataError(
@@ -731,16 +581,16 @@ class BinancePublicAdapter:
                     instrument=instrument,
                     interval=interval,
                     candle_open_time=candle_open,
-                    open=_as_float(row[1], field=f"kline row {position} open"),
-                    high=_as_float(row[2], field=f"kline row {position} high"),
-                    low=_as_float(row[3], field=f"kline row {position} low"),
-                    close=_as_float(row[4], field=f"kline row {position} close"),
-                    volume=_as_float(
+                    open=as_float(row[1], field=f"kline row {position} open"),
+                    high=as_float(row[2], field=f"kline row {position} high"),
+                    low=as_float(row[3], field=f"kline row {position} low"),
+                    close=as_float(row[4], field=f"kline row {position} close"),
+                    volume=as_float(
                         row[5],
                         field=f"kline row {position} volume",
                     ),
-                    source_close_time=_datetime_from_milliseconds(
-                        _as_milliseconds(
+                    source_close_time=datetime_from_milliseconds(
+                        as_milliseconds(
                             row[6],
                             field=f"kline row {position} close time",
                         )

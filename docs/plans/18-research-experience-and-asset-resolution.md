@@ -1,7 +1,17 @@
 # Phase 18 — Research Experience and Automatic Asset Resolution
 
-**Status:** Approved; M0 done, M1 next. Decisions D1–D7 are recorded below. The
+**Status:** Approved; M0 done, M1 implemented with its repository-wide verification
+gate open, M2 next. Decisions D1–D7 are recorded below. The
 milestone tracker (Section 5) is the single place to record progress.
+
+Update context — 2026-09-30
+Trigger: resumed the Claude handoff at `be22d2f` and implemented M1.
+Purpose: record the implementation and distinguish focused verification from the
+still-open requirement for green repository-wide checks.
+Impact: none to D1–D7 or the remaining milestones; M1 implementation is committed
+with the verification limitations recorded below.
+Evidence: directory/API regression tests, recorded Gate fixtures, live read-only
+adapter checks and baseline reproductions described in Section 5.
 
 **Investigation evidence:** [research product investigation findings](../research/2026-09-27-research-product-investigation-findings.md)
 (causes R1–R12, measured coverage, target journeys, options).
@@ -195,14 +205,64 @@ Update this table in the same commit as the work it records.
 
 | Milestone | Status | Commits | Notes |
 | --- | --- | --- | --- |
-| M0 Decisions and contract amendments | Done | `docs(plans): record Phase 18` | D1–D7 recorded; Product design §5/§6 amended; index, findings, investigation plan, overhaul and console plans point here |
-| M1 Exchange metadata, per-venue publishing | Not started | — | |
+| M0 Decisions and contract amendments | Done | `be22d2f` | D1–D7 recorded; Product design §5/§6 amended; index, findings, investigation plan, overhaul and console plans point here |
+| M1 Exchange metadata, per-venue publishing | Implemented; repository-wide verification gate open | `feat(market): preserve directory evidence and publish venues independently` | Names and currency evidence preserved; v2 directory, stable v1 hashes, independent publication and typed outage outcomes; verification below |
 | M2 Registry, resolver, eligibility | Not started | — | |
 | M3 Automatic bindings, reconciliation | Not started | — | |
 | M4 Search and availability API | Not started | — | |
 | M5 Backend research requests | Not started | — | |
 | M6 UI regeneration | Not started | — | |
 | M7 Acceptance | Not started | — | |
+
+### M1 implementation and verification — 2026-09-30
+
+Gate directory acquisition now includes `/spot/currencies`. Listings retain names,
+`buy_start` as UTC, pair type, trade status, category, delisting/trade-disabled
+flags and chain/address evidence. Addresses preserve case; these fields establish
+no canonical identity. Binance retains spot permission flags and permission sets;
+names and listing times it does not provide remain unknown.
+
+The directory writes schema v2 and reads v1 without changing its historical hash.
+Each venue is published before the next attempt. Failures retain the failed
+venue's exact last-good source and markets, with separate attempted-at/status/error
+records. An empty workspace can publish one successful venue. Total outage keeps
+saved data stale, or returns a typed 502 if no observation exists. Corrupt saved
+state is rejected before refresh. The Research Universe API exposes these outcomes;
+its OpenAPI and generated frontend types have been updated.
+
+Directory models and parsing helpers were separated to reduce the touched owners'
+size. `product_universe.py` remains 632 lines and `binance_public.py` 610 lines:
+both retain their existing owner responsibilities; new directory models/parsing
+live in separate files. No touched file exceeds 700 lines. Extracted Binance
+validation helpers match their original ASTs after symbol renaming.
+
+| Check | Outcome |
+| --- | --- |
+| `uv sync`, `uv run python -V` | Passed; Python 3.14.4 |
+| Focused directory/API/public-adapter tests | 51 passed, 1 opt-in live-network test skipped |
+| Focused web tests for updated DTO fixtures | 26 passed |
+| Ruff lint/format, import-linter, source-size, `git diff --check` | Passed; source-size reports 39 review warnings |
+| Pyright on changed source and new tests | Passed |
+| Frontend typecheck and production build | Passed |
+| Read-only live adapter smoke | Gate: 2,202 markets, all named; Binance: 3,720 markets; no workspace publication |
+| Full Python suite | 698 passed, 3 failed, 1 skipped |
+| Full web suite | 110 passed, 6 failed |
+| Repository-wide Pyright | 15 errors in the existing scanner qualification test |
+
+Every full-suite failure was reproduced from an isolated archive of `be22d2f`.
+Python failures: outdated exact OpenAPI operation-ID set in
+`tests/contract/api/test_openapi.py`, an outdated expected message in
+`tests/unit/experiment/test_model_policies.py`, and the obsolete `_capture_state`
+call in `tests/unit/scanner/test_qualification_run.py` (also all 15 Pyright errors).
+Web failures: two route-error tests plus BasketDetail, ExperimentList,
+OperationList and PortfolioOverview. Those files' failing assertions and production
+behavior were left outside the M1 change. The requirement for fully green Phase 00
+checks remains open; implementation is not recorded as full milestone acceptance.
+
+Raw Gate fixture subsets and provenance are in
+[`tests/fixtures/gate/`](../../tests/fixtures/gate/README.md). Open Web Search
+discovery failed; official Gate/Binance documentation was checked through the web
+fallback. Khiip capture was unavailable, so no upstream Markdown archive is claimed.
 
 ## 6. Constraints
 

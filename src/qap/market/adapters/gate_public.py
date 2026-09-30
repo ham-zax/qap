@@ -7,13 +7,16 @@ from typing import Self, cast
 
 import httpx
 
-from qap.market.directory import CurrentSpotDirectoryObservation, CurrentSpotMarket
+from qap.market.adapters.spot_directory import (
+    gate_currencies_from_payload,
+    gate_directory_from_payload,
+)
+from qap.market.directory import CurrentSpotDirectoryObservation, SpotCurrencyEvidence
 from qap.market.instruments import VenueInstrument
 from qap.market.metadata import MarketMetadata
 from qap.market.microstructure import (
     PublicBookSnapshot,
     public_book_snapshot_from_rows,
-    public_payload_fingerprint,
 )
 from qap.portfolio import AssetId
 
@@ -28,12 +31,6 @@ def _mapping(value: object, *, field: str) -> Mapping[str, object]:
     if not isinstance(value, Mapping):
         raise GatePublicDataError(f"{field} must be a JSON object")
     return cast(Mapping[str, object], value)
-
-
-def _list(value: object, *, field: str) -> list[object]:
-    if not isinstance(value, list):
-        raise GatePublicDataError(f"{field} must be a JSON array")
-    return cast(list[object], value)
 
 
 def _text(value: object, *, field: str) -> str:
@@ -174,46 +171,39 @@ class GatePublicAdapter:
         """Fetch current normal Gate Spot markets without guessing identity."""
 
         payload = self._get_json("/spot/currency_pairs", params={})
-        return self.spot_directory_from_payload(payload, observed_at=observed_at)
+        currencies_payload = self._get_json("/spot/currencies", params={})
+        return self.spot_directory_from_payload(
+            payload, currencies_payload=currencies_payload, observed_at=observed_at
+        )
 
     @staticmethod
     def spot_directory_from_payload(
         payload: object,
         *,
         observed_at: datetime | None = None,
+        currencies_payload: object | None = None,
     ) -> CurrentSpotDirectoryObservation:
         """Normalize raw Gate pairs while preserving venue-local asset codes."""
 
-        markets: list[CurrentSpotMarket] = []
-        for raw_pair in _list(payload, field="currency pairs response"):
-            item = _mapping(raw_pair, field="currency pair")
-            pair_type = item.get("type")
-            if pair_type is not None and _text(pair_type, field="type") != "normal":
-                continue
-            status = _text(item.get("trade_status"), field="trade_status")
-            markets.append(
-                CurrentSpotMarket(
-                    venue="gate",
-                    venue_symbol=_normalized_pair(item.get("id")),
-                    venue_base_asset=_text(item.get("base"), field="base"),
-                    venue_quote_asset=_text(item.get("quote"), field="quote"),
-                    status=status,
-                    trading=status.lower() == "tradable",
-                )
+        try:
+            return gate_directory_from_payload(
+                payload, currencies_payload=currencies_payload, observed_at=observed_at
             )
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise GatePublicDataError(f"Gate directory is invalid: {exc}") from exc
 
-        timestamp = (
-            datetime.now(UTC)
-            if observed_at is None
-            else _validated_utc(observed_at, field="observed_at")
-        )
-        return CurrentSpotDirectoryObservation(
-            venue="gate",
-            observed_at=timestamp,
-            source_id="gate:/api/v4/spot/currency_pairs",
-            source_fingerprint=public_payload_fingerprint(payload),
-            markets=tuple(markets),
-        )
+    def fetch_spot_currencies(self) -> tuple[SpotCurrencyEvidence, ...]:
+        payload = self._get_json("/spot/currencies", params={})
+        return self.spot_currencies_from_payload(payload)
+
+    @staticmethod
+    def spot_currencies_from_payload(
+        payload: object,
+    ) -> tuple[SpotCurrencyEvidence, ...]:
+        try:
+            return gate_currencies_from_payload(payload)
+        except (TypeError, ValueError) as exc:
+            raise GatePublicDataError(f"Gate currencies are invalid: {exc}") from exc
 
     @staticmethod
     def market_metadata_from_payload(

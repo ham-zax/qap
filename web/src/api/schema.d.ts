@@ -1549,6 +1549,26 @@ export interface components {
             /** Venue Symbol */
             venue_symbol: string | null;
         };
+        /** DirectoryRefreshResultDto */
+        DirectoryRefreshResultDto: {
+            /**
+             * Attempted At
+             * Format: date-time
+             */
+            attempted_at: string;
+            /** Error */
+            error: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "refreshed" | "stale" | "unavailable";
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+        };
         /** DirectorySourceDto */
         DirectorySourceDto: {
             /**
@@ -3827,6 +3847,11 @@ export interface components {
             directory_id: string | null;
             /** Directory Observed At */
             directory_observed_at: string | null;
+            /**
+             * Directory Refreshes
+             * @default []
+             */
+            directory_refreshes: components["schemas"]["DirectoryRefreshResultDto"][];
             /**
              * Directory Status
              * @enum {string}

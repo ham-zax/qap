@@ -18,7 +18,7 @@ const workspace: WorkspaceStatusDto = {
 }
 const universe: ResearchUniverseDto = {
   schema_version: 'qap.api.research_universe.v1', directory_status: 'observed', directory_id: 'directory',
-  directory_observed_at: '2026-09-24T00:00:00Z', sources: [], identity_reviews: [],
+  directory_observed_at: '2026-09-24T00:00:00Z', sources: [], identity_reviews: [], directory_refreshes: [],
   assets: ['W', 'PIXEL'].map((asset) => ({
     canonical_asset_id: asset, approved: true, identity_state: 'resolved', identity_reason: 'resolved',
     asset_identity_version: `${asset}-verified`, data_state: 'needs_data',

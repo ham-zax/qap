@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request
 from qap.api.errors import ApiBoundaryError
 from qap.api.product_schemas import (
     AssetAdmissionRequestDto,
+    DirectoryRefreshResultDto,
     DirectorySourceDto,
     IdentityMappingRequestDto,
     IdentityReviewDto,
@@ -15,9 +16,8 @@ from qap.api.product_schemas import (
     ResearchUniverseVenueDto,
 )
 from qap.api.settings import ApiSettings
-from qap.market.adapters.binance_public import BinancePublicDataError
-from qap.market.adapters.gate_public import GatePublicDataError
 from qap.product_universe import (
+    ProductDirectoryRefreshError,
     ProductUniverse,
     ProductUniverseError,
     ResearchUniverseProjection,
@@ -70,6 +70,15 @@ def _dto(projection: ResearchUniverseProjection) -> ResearchUniverseDto:
         ),
         directory_id=projection.directory_id,
         directory_observed_at=projection.directory_observed_at,
+        directory_refreshes=tuple(
+            DirectoryRefreshResultDto(
+                venue=result.venue,
+                attempted_at=result.attempted_at,
+                status=result.status,
+                error=result.error,
+            )
+            for result in projection.directory_refreshes
+        ),
         sources=tuple(
             DirectorySourceDto(
                 venue=source.venue,
@@ -125,11 +134,18 @@ def refresh_directory(request: Request) -> ResearchUniverseDto:
     _require_local_market(request)
     try:
         _universe(request).refresh_directory()
-    except (BinancePublicDataError, GatePublicDataError) as exc:
+    except ProductDirectoryRefreshError as exc:
         raise ApiBoundaryError(
             code="market_directory_refresh_failed",
             message="Current public Spot markets could not be refreshed.",
             status_code=502,
+            context={},
+        ) from exc
+    except ProductUniverseError as exc:
+        raise ApiBoundaryError(
+            code="research_universe_state_invalid",
+            message=str(exc),
+            status_code=409,
             context={},
         ) from exc
     return _dto(_projection(request))
