@@ -1,0 +1,76 @@
+{
+  "symbols": [
+    {
+      "symbol": "BTCUSDT",
+      "status": "TRADING",
+      "baseAsset": "BTC",
+      "quoteAsset": "USDT",
+      "isSpotTradingAllowed": true,
+      "permissions": []
+    },
+    {
+      "symbol": "ETHUSDT",
+      "status": "TRADING",
+      "baseAsset": "ETH",
+      "quoteAsset": "USDT",
+      "isSpotTradingAllowed": true,
+      "permissions": []
+    },
+    {
+      "symbol": "USDCUSDT",
+      "status": "TRADING",
+      "baseAsset": "USDC",
+      "quoteAsset": "USDT",
+      "isSpotTradingAllowed": true,
+      "permissions": []
+    },
+    {
+      "symbol": "BTCUPUSDT",
+      "status": "BREAK",
+      "baseAsset": "BTCUP",
+      "quoteAsset": "USDT",
+      "isSpotTradingAllowed": false,
+      "permissions": []
+    },
+    {
+      "symbol": "DAIUSDT",
+      "status": "BREAK",
+      "baseAsset": "DAI",
+      "quoteAsset": "USDT",
+      "isSpotTradingAllowed": true,
+      "permissions": []
+    },
+    {
+      "symbol": "DYDXUSDT",
+      "status": "TRADING",
+      "baseAsset": "DYDX",
+      "quoteAsset": "USDT",
+      "isSpotTradingAllowed": true,
+      "permissions": []
+    },
+    {
+      "symbol": "WUSDT",
+      "status": "TRADING",
+      "baseAsset": "W",
+      "quoteAsset": "USDT",
+      "isSpotTradingAllowed": true,
+      "permissions": []
+    },
+    {
+      "symbol": "ONDOUSDT",
+      "status": "TRADING",
+      "baseAsset": "ONDO",
+      "quoteAsset": "USDT",
+      "isSpotTradingAllowed": true,
+      "permissions": []
+    },
+    {
+      "symbol": "AAPLBUSDT",
+      "status": "TRADING",
+      "baseAsset": "AAPLB",
+      "quoteAsset": "USDT",
+      "isSpotTradingAllowed": true,
+      "permissions": []
+    }
+  ]
+}

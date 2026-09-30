@@ -1,6 +1,6 @@
 # Phase 18 — Research Experience and Automatic Asset Resolution
 
-**Status:** Wrapped up at M1 (`438b3d9`); M2–M5 remain incomplete.
+**Status:** M1 committed (`438b3d9`); M2 implemented in the working tree; M3–M5 remain incomplete.
 Stop before M6 UI generation. Repository-wide verification remains open. Decisions D1–D7 are recorded below. The
 milestone tracker (Section 5) is the single place to record progress.
 
@@ -216,7 +216,7 @@ Update this table in the same commit as the work it records.
 | --- | --- | --- | --- |
 | M0 Decisions and contract amendments | Done | `be22d2f` | D1–D7 recorded; Product design §5/§6 amended; index, findings, investigation plan, overhaul and console plans point here |
 | M1 Exchange metadata, per-venue publishing | Implemented; repository-wide verification gate open | `438b3d9` | Names and currency evidence preserved; v2 directory, stable v1 hashes, independent publication and typed outage outcomes; verification below |
-| M2 Registry, resolver, eligibility | Draft only; incomplete | — | Interrupted untested draft preserved in the handoff stash |
+| M2 Registry, resolver, eligibility | Implemented and tested; uncommitted at time of writing | — | Registry client, resolver and eligibility with recorded fixtures; Phase 00 checks green (below); Binance tokenized-stock residue and bridged-variant policy open |
 | M3 Automatic bindings, reconciliation | Draft only; incomplete | — | Interrupted untested draft; no actual workspace cleanup performed |
 | M4 Search and availability API | Not started | — | |
 | M5 Backend research requests | Not started | — | Investigation only before interruption |
@@ -272,6 +272,54 @@ Raw Gate fixture subsets and provenance are in
 [`tests/fixtures/gate/`](../../tests/fixtures/gate/README.md). Open Web Search
 discovery failed; official Gate/Binance documentation was checked through the web
 fallback. Khiip capture was unavailable, so no upstream Markdown archive is claimed.
+
+### M2 implementation and verification — 2026-09-30
+
+Update context — 2026-09-30 (M2 completion)
+Trigger: Hamza asked to continue from the wrap-up handoff to the M6 boundary.
+Purpose: record what M2 delivered and what its recorded evidence does and does not show.
+Impact: none to D1–D7 or financial semantics; M3 drafts in the stash are untouched.
+Evidence: tests in `tests/unit/asset_registry/`; fixtures and provenance in
+[`tests/fixtures/registry/`](../../tests/fixtures/registry/README.md).
+
+Delivered: `src/qap/asset_registry.py` (evidence contracts, `AssetRegistry`),
+`asset_registry_coingecko.py` (paced, budgeted, injectable-transport client with
+provenance per request, disk snapshot, last-good fallback returning typed
+`stale`/`unavailable` results, `cached` reuse within `min_age`, optional
+`COINGECKO_DEMO_API_KEY`), `asset_resolver.py` (evidence-only proposals) and
+`asset_eligibility.py` (D4 classifier with typed reasons). No registry state is
+mutable or authoritative; `ProductUniverse` is unchanged.
+
+Behaviour: the venue ticker mapping outranks an address that only matches a reviewed
+wrapped or bridged representation (`binance-bitcoin`, `binance-peg-weth`, and the
+other allowlisted forms, including bridged USDC and DAI); any other disagreement
+(DYDX, HOLDSTATION) is a `review` proposal with both candidate sets and no identity.
+A unique address match resolves when no ticker exists, as does an address set whose
+other members are reviewed representations of one asset (Gate DAI). Stale and anomalous tickers are
+not evidence. Fixtures are real recordings from 2026-09-30, not synthetic.
+
+Measured on the recorded snapshot (tradable USDT bases): Binance 415 resolved of
+503 with 88 excluded and 0 unresolved (study 413 of 414; tolerance +-10), Gate 1,421
+of 1,461 non-excluded (97.3%; study 98.1%; tolerance +-1.5 points), 5 reviews (0.3%),
+393 cross-venue bases with 386 resolved on both and none disagreeing.
+
+Hamza's decisions (2026-09-30): tokenized stocks are not needed, so Binance's
+stock permission group `TRD_GRP_261` excludes every `...B` stock token, including
+those the registry does not name; bridged USDC and DAI need no manual review and
+are on the reviewed representation list. Gate `forex`, `metals`, `commodities` and
+`indices` tags are venue metadata, with the forex tag overridden by registry crypto
+evidence (USDC).
+
+| Check | Outcome |
+| --- | --- |
+| `uv run pytest -q` | `761 passed, 1 skipped in 297.01s (0:04:57)` |
+| `uv run ruff check .` | `All checks passed!` |
+| `uv run ruff format --check .` | `473 files already formatted` |
+| `uv run pyright src tests scripts` | `0 errors, 0 warnings, 0 informations` |
+| `uv run python scripts/check_source_size.py` | `source-size: ok (39 review warning(s))` |
+| `uv run lint-imports` | `Contracts: 8 kept, 0 broken.` |
+
+The web suite was not run for M2.
 
 ### Wrap-up handoff — 2026-09-30
 
