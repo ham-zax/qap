@@ -1,5 +1,14 @@
 # QAP Research Product — Investigation Before Redesign
 
+Update context — 2026-09-30 (authorized cleanup)
+Trigger: Hamza requested removal of legacy and stale code, data and documents,
+then requested wrap-up before UI generation.
+Purpose: point references to the current Phase 18 plan after retiring the two
+explicitly superseded research proposals; preserve their decision context in Git.
+Impact: no economic or research contract change here.
+Evidence: [Phase 18 handoff](../plans/18-research-experience-and-asset-resolution.md).
+
+
 **Date:** 2026-09-27
 
 **Status:** Investigation executed. Results are in the
@@ -23,8 +32,9 @@ not require manually adding coin support, authoring identity records, or checkin
 hashes/evidence. He requested investigation before a master redesign plan.
 Purpose: establish how to discover the causes of the friction and the feasibility
 of the desired experience before choosing screens or architecture.
-Impact: the [overhaul proposal](../superpowers/plans/2026-09-27-research-experience-overhaul.md)
-becomes provisional design hypotheses. Its catalog, navigation and orchestration
+Impact: the overhaul proposal (retired 2026-09-30; its successor is
+[Phase 18](../plans/18-research-experience-and-asset-resolution.md))
+became provisional design hypotheses. Its catalog, navigation and orchestration
 choices must be tested by this investigation; a manually maintained coin list is
 not the accepted answer to asset coverage.
 Evidence: supplied QAP/Uniswap screenshots, this conversation, the historical plans

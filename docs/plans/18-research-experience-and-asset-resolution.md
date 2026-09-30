@@ -1,15 +1,24 @@
 # Phase 18 — Research Experience and Automatic Asset Resolution
 
-**Status:** Approved; M0 done, M1 implemented with its repository-wide verification
-gate open, M2 next. Decisions D1–D7 are recorded below. The
+**Status:** Wrapped up at M1 (`438b3d9`); M2–M5 remain incomplete.
+Stop before M6 UI generation. Repository-wide verification remains open. Decisions D1–D7 are recorded below. The
 milestone tracker (Section 5) is the single place to record progress.
+
+Update context — 2026-09-30 (cleanup and wrap-up)
+Trigger: Hamza authorized committing M1 and continuing to the M6 boundary, then
+requested removal of legacy/stale code, data and documents and finally wrap-up.
+Purpose: record the executable checkpoint, partial-work recovery and remaining work.
+Impact: D6 cleanup direction now includes verified retirement rather than indefinite
+quarantine; v1 compatibility and stored-data cleanup remain unimplemented. M6 is
+not authorized to begin in this handoff. No financial semantics changed.
+Evidence: M1 commit `438b3d9`; interrupted drafts and verification below.
 
 Update context — 2026-09-30
 Trigger: resumed the Claude handoff at `be22d2f` and implemented M1.
 Purpose: record the implementation and distinguish focused verification from the
 still-open requirement for green repository-wide checks.
 Impact: none to D1–D7 or the remaining milestones; M1 implementation is committed
-with the verification limitations recorded below.
+with the verification limitations recorded below (historical M1 check results).
 Evidence: directory/API regression tests, recorded Gate fixtures, live read-only
 adapter checks and baseline reproductions described in Section 5.
 
@@ -18,10 +27,9 @@ adapter checks and baseline reproductions described in Section 5.
 
 **Investigation method:** [investigation plan](../research/2026-09-27-research-product-investigation-plan.md)
 
-**Superseded proposals:** the [research experience overhaul](../superpowers/plans/2026-09-27-research-experience-overhaul.md)
-(provisional hypotheses, now resolved here) and the
-[research console plan](../superpowers/plans/2026-09-25-research-console-semantic-layer.md)
-(historical implementation contract).
+**Retired proposals:** the September 27 research experience overhaul and the
+September 25 research console plan were removed on 2026-09-30 at Hamza's request.
+Their historical content remains in Git; this phase is the current contract.
 
 Update context — 2026-09-27
 Trigger: the investigation found that the rejected experience comes from manual
@@ -63,7 +71,7 @@ recommendations. Each decision traces to the findings.
 | D3 | **USDT quote identity is seeded by policy** on Binance and Gate. | No workspace asks the user to map USDT. USDT stays a protocol coordinate, never an automatic economic target. | §5 |
 | D4 | **Discovery eligibility:** leveraged tokens and tokenized stocks, metals and forex tokens are excluded from research discovery as outside the owned-spot action space (leverage, synthetic exposure). Fiat codes are excluded. | Eligibility classifier from venue metadata (Gate `category`, leveraged naming, registry classification). Excluded listings never appear as research candidates. | R11, §4.2 |
 | D5 | **CoinGecko is the first supplemental registry**, behind a replaceable interface. An optional demo key is read from configuration; keyless access is paced and cached. A Binance API key is deferred. | Registry snapshots are recorded with provenance and reused; outages fall back to the last good snapshot and never block discovery. Attribution shown where registry data appears. | §4.1, §4.2 |
-| D6 | **Legacy reconciliation:** quarantine `binance:W → BTC`, mark the two affected generations with an integrity note, re-confirm BTC admission. | Reconciliation preview first; no in-place relabeling; old dataset IDs remain readable; saved results keep their lineage. | §3, §4.4 |
+| D6 | **Legacy cleanup (amended 2026-09-30):** retire the contradicted `binance:W → BTC` binding and verified contaminated/stale data after a preview and dependency check; re-confirm BTC admission. The original decision was quarantine/preservation; Hamza now requests removal of legacy/stale records and compatibility. | Reconciliation preview and dependency inventory first; no in-place relabeling. Stored-data deletion and compatibility retirement need completion; do not claim them done. | §3, §4.4 |
 | D7 | **Freshness:** new research tops up history to the latest completed bar before running. Readiness older than two graph intervals reports "needs refresh". | Research requests include a refresh step. Every result shows its data cutoff. Saved results keep their original cutoff. | R9, R12 |
 
 Unchanged user decisions: admission ("willing to own", Product design §5) and the
@@ -133,9 +141,10 @@ snapshot; all fixture cases behave as specified.
   accepted_by `policy` or `review`), USDT policy seed, admission unchanged.
 - Resolution runs after each directory refresh; accepted bindings apply
   automatically; conflicts are listed for review.
-- Reconciliation preview and apply for legacy state (D6): quarantine records,
-  generation integrity notes, BTC admission re-confirmation.
-- Dataset IDs for new generations use evidence versions; old IDs stay readable.
+- Reconciliation preview and apply for legacy state (D6): verified retirement,
+  dependency checks, integrity protection during cleanup, BTC admission re-confirmation.
+- Dataset IDs for new generations use evidence versions. Remove obsolete v1
+  compatibility after retiring or explicitly converting the affected workspace state.
 
 **Exit:** a clean workspace resolves W, BTC and PIXEL with no manual step; the
 walkthrough workspace shows and repairs the `W → BTC` conflict without relabeling
@@ -206,11 +215,11 @@ Update this table in the same commit as the work it records.
 | Milestone | Status | Commits | Notes |
 | --- | --- | --- | --- |
 | M0 Decisions and contract amendments | Done | `be22d2f` | D1–D7 recorded; Product design §5/§6 amended; index, findings, investigation plan, overhaul and console plans point here |
-| M1 Exchange metadata, per-venue publishing | Implemented; repository-wide verification gate open | `feat(market): preserve directory evidence and publish venues independently` | Names and currency evidence preserved; v2 directory, stable v1 hashes, independent publication and typed outage outcomes; verification below |
-| M2 Registry, resolver, eligibility | Not started | — | |
-| M3 Automatic bindings, reconciliation | Not started | — | |
+| M1 Exchange metadata, per-venue publishing | Implemented; repository-wide verification gate open | `438b3d9` | Names and currency evidence preserved; v2 directory, stable v1 hashes, independent publication and typed outage outcomes; verification below |
+| M2 Registry, resolver, eligibility | Draft only; incomplete | — | Interrupted untested draft preserved in the handoff stash |
+| M3 Automatic bindings, reconciliation | Draft only; incomplete | — | Interrupted untested draft; no actual workspace cleanup performed |
 | M4 Search and availability API | Not started | — | |
-| M5 Backend research requests | Not started | — | |
+| M5 Backend research requests | Not started | — | Investigation only before interruption |
 | M6 UI regeneration | Not started | — | |
 | M7 Acceptance | Not started | — | |
 
@@ -264,6 +273,50 @@ Raw Gate fixture subsets and provenance are in
 discovery failed; official Gate/Binance documentation was checked through the web
 fallback. Khiip capture was unavailable, so no upstream Markdown archive is claimed.
 
+### Wrap-up handoff — 2026-09-30
+
+M1 is committed as `438b3d9`. The continued lanes were interrupted with
+`Fatal error: application network permission was revoked`. Hamza then requested
+wrap-up; M2–M5 and cleanup are not reported as completed. No UI generation began.
+
+Untested M2/M3 drafts are preserved outside the executable working tree in Git
+stash **`85278dcc93a02268a4fd7a7fa41968cf3169bc6e`**
+(`wip: interrupted Phase 18 M2-M3 backend drafts before wrap-up`). This includes
+registry/resolver/eligibility modules, integrity/reconciliation drafts, and an
+unintegrated v2 universe-model extraction. It contains no acceptance tests or
+recorded coverage fixture and must be reviewed before reuse. Inspect with
+`git stash show --include-untracked --stat 85278dcc93a02268a4fd7a7fa41968cf3169bc6e`.
+Do not apply it blindly to newer owner changes.
+
+Wrap-up cleanup corrects three proven stale Python tests: the OpenAPI check now
+protects required core/product operation IDs and uniqueness while allowing new
+endpoints; qualification passes the authoritative instrument; model-policy
+rejection checks the current error while preserving the rejection assertion.
+Two explicitly superseded proposals were removed, with references redirected here.
+
+Latest wrap-up checks: 36 focused Python tests passed, including all three repaired
+baseline failures and the directory/API regressions. Repository-wide Pyright,
+Ruff lint/format, import-linter, source-size and diff checks passed. The full Python
+and web suites were not rerun during wrap-up; the earlier full-run evidence above
+remains historical, and the six web failures remain unresolved.
+
+Remaining work, in dependency order:
+
+1. Finish M2 with recorded evidence, resolver fixture cases and measured coverage.
+2. Finish M3 automatic policy bindings/USDT seed and evidence versions. Inventory
+   actual workspaces and dependencies, retire verified corruption/stale records,
+   remove obsolete compatibility/manual setup paths, and re-confirm BTC admission.
+3. Implement M4 search and typed availability, then M5 durable research intents,
+   freshness, scan preparation and authoritative custom-run lineage.
+4. Resolve the six pre-existing web failures (route-error mocks, BasketDetail,
+   ExperimentList, OperationList, PortfolioOverview) without weakening their
+   evidence and economic assertions; run complete repository acceptance again.
+5. **Stop before M6 and hand off.** UI generation and human acceptance stay pending.
+
+No stored workspace data was deleted, no v1 compatibility was removed, and no
+legacy reference corpus was changed in this checkpoint. Those authorized cleanup
+items remain pending.
+
 ## 6. Constraints
 
 - `ProductUniverse` remains the single authority for accepted bindings and
@@ -283,6 +336,6 @@ fallback. Khiip capture was unavailable, so no upstream Markdown archive is clai
 | --- | --- |
 | Registry rate limits or outage | Snapshot cache, last-good fallback, optional demo key, discovery never waits on the registry |
 | Registry misclassification | Two-source agreement, precedence rule, review queue, recorded evidence per binding |
-| Migration breaks saved results | Old dataset IDs readable, reconciliation preview before apply, no in-place edits |
+| Retirement breaks saved references | Dependency inventory and reconciliation preview before authorized retirement; no in-place relabeling |
 | UI rewrite regresses expert flows | Existing specialist routes stay reachable; M6 wires modes incrementally behind the new surface |
 | Scope creep | Every change traces to a finding and a journey; anything else goes to a later phase |

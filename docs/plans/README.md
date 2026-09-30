@@ -1,5 +1,14 @@
 # QAP Plan Map
 
+Update context — 2026-09-30 (authorized cleanup)
+Trigger: Hamza requested removal of legacy and stale code, data and documents,
+then requested wrap-up before UI generation.
+Purpose: point references to the current Phase 18 plan after retiring the two
+explicitly superseded research proposals; preserve their decision context in Git.
+Impact: no economic or research contract change here.
+Evidence: [Phase 18 handoff](18-research-experience-and-asset-resolution.md).
+
+
 **Status:** Implementation is complete through Phase 16. Phase 17 Product Layer M0-M9, M10-A, M10-B, and M10-C are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED. M10-C Capability/Fidelity Proof is approved at `3e07878`. Pair Study M11-A/B/C/D is integrated through `3528973`, including study-first W/PIXEL evidence, honest two-leg economics, and same-screen development completion. M10-D representative-user acceptance rerun is now the final human gate. **Phase 18** (research experience and automatic asset resolution) is the current phase; its M7 acceptance closes M10-D.
 
 Update context — 2026-09-27 (Phase 18 approved)
@@ -36,8 +45,8 @@ Update context — 2026-09-27 (research experience overhaul proposal)
 Trigger: Hamza's walkthrough rejected the current console, asset search, setup and
 scanner experience and requested an overhaul plan before further implementation.
 Purpose: make the current product-design frontier explicit.
-Impact: the [Research Experience Overhaul proposal](../superpowers/plans/2026-09-27-research-experience-overhaul.md)
-recorded proposed journeys, asset-catalog/resolution changes and delivery gates.
+Impact: the retired Research Experience Overhaul proposal
+(replaced by [Phase 18](18-research-experience-and-asset-resolution.md)) recorded proposed journeys, asset-catalog/resolution changes and delivery gates.
 Those choices are now provisional under the investigation-first correction above,
 including the proposed identity-policy design amendment;
 historical technical completion does not establish usability acceptance.
@@ -81,8 +90,8 @@ ordinary Research still expands into backend-oriented relationship/evidence sect
 and the user asked to make real measurements understandable without losing expert detail.
 Purpose: reshape ordinary Research around one persistent console and a deterministic
 human semantic layer over authoritative backend values.
-Impact: the [Research Console + human semantic layer plan](../superpowers/plans/2026-09-25-research-console-semantic-layer.md)
-was the proposed interaction frontier. It introduces no new mathematical model,
+Impact: the retired Research Console + human semantic layer plan
+(replaced by [Phase 18](18-research-experience-and-asset-resolution.md)) was the proposed interaction frontier. It introduces no new mathematical model,
 economic rule, evidence authority, live-market streaming claim, or automated recommendation.
 The 2026-09-24 implementation remains historical evidence until this successor plan is executed.
 Evidence: 2026-09-25 live W/PIXEL browser walkthrough and current Pair Research source.

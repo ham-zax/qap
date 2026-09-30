@@ -306,6 +306,6 @@ def test_relationship_evidence_ids_must_be_declared_evidence_instruments() -> No
     changed = ExperimentManifest.model_validate(raw)
 
     with pytest.raises(
-        ExperimentSetupError, match="declared evidence-only instruments"
+        ExperimentSetupError, match="relationship input instruments must be declared"
     ):
         compose_model_strategy_policy(changed, _loaded())

@@ -96,8 +96,7 @@ def test_capture_state_excludes_observations_after_qualification_as_of(
 
     l1, depth, selected_metadata, satisfied = _capture_state(
         capture_root=capture_root,
-        venue="gate",
-        venue_symbol="BTC_ETH",
+        instrument=INSTRUMENT,
         as_of=AS_OF,
     )
 

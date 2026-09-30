@@ -1,5 +1,14 @@
 # QAP
 
+Update context — 2026-09-30 (authorized cleanup)
+Trigger: Hamza requested removal of legacy and stale code, data and documents,
+then requested wrap-up before UI generation.
+Purpose: point references to the current Phase 18 plan after retiring the two
+explicitly superseded research proposals; preserve their decision context in Git.
+Impact: no economic or research contract change here.
+Evidence: [Phase 18 handoff](docs/plans/18-research-experience-and-asset-resolution.md).
+
+
 QAP is a deterministic, spot-only crypto inventory-rebalancing research system built around explicit owned inventory, causal evidence, realistic costs, and matched passive counterfactuals.
 
 The primary product objective is **portfolio wealth growth relative to the correct matched passive HODL/control after costs**. Coin-unit accumulation is a secondary attribution lens, not permission to destroy wealth. A numeraire is used to value heterogeneous holdings consistently; it is a measurement coordinate, not a directional market-prediction objective.
@@ -42,7 +51,8 @@ Purpose: put the question, human interpretation, chart and economic answer into 
 Impact: presentation and browser-local continuity changed; scientific, economic, identity,
 holdout, and execution authority did not.
 Evidence: the [first iteration](docs/superpowers/plans/2026-09-24-intuitive-research-experience.md),
-the [Research Console plan](docs/superpowers/plans/2026-09-25-research-console-semantic-layer.md),
+the retired Research Console plan (replaced by
+[Phase 18](docs/plans/18-research-experience-and-asset-resolution.md)),
 and focused CLI interaction checks. Representative-user visual acceptance remains pending.
 
 Ordinary Research now opens the Research Console. Choose two assets, a research type

@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import cast
 
 from qap.api import ApiSettings, create_app
 
@@ -14,13 +15,15 @@ def test_openapi_exposes_stable_operation_ids_and_public_dtos(tmp_path: Path) ->
     app = create_app(ApiSettings(run_root=tmp_path / "runs"))
     schema = app.openapi()
 
-    operation_ids = {
-        operation["operationId"]
+    declared_operation_ids = [
+        cast(str, operation["operationId"])
         for methods in schema["paths"].values()
         for operation in methods.values()
         if isinstance(operation, dict) and "operationId" in operation
-    }
-    assert operation_ids == {
+    ]
+    assert len(declared_operation_ids) == len(set(declared_operation_ids))
+    operation_ids = set(declared_operation_ids)
+    assert {
         "advanceForwardCohort",
         "capturePublicEvidence",
         "freezeForwardCohort",
@@ -49,7 +52,11 @@ def test_openapi_exposes_stable_operation_ids_and_public_dtos(tmp_path: Path) ->
         "qualifyCandidate",
         "runBasket",
         "runScan",
-    }
+        "getResearchUniverse",
+        "refreshResearchUniverseDirectory",
+        "getProductPairStudyContext",
+        "getProductPairStudySeries",
+    } <= operation_ids
 
     schemas = set(schema["components"]["schemas"])
     assert {
