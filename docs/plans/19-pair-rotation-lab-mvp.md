@@ -112,7 +112,7 @@ stop and escalate with the diffs before continuing.
 
 | Milestone | Status | Evidence |
 | --- | --- | --- |
-| M0 | Ready to start | Direction accepted 2026-09-30 |
+| M0 | Done 2026-09-30 | Docs `8a42983`; spike and tokens in §5 |
 | M1 | Not started | |
 | M2 | Not started | |
 | M3 | Not started | |
@@ -121,3 +121,39 @@ stop and escalate with the diffs before continuing.
 | M6 | Not started | |
 | M7 | Not started | |
 | M8 | Not started | |
+
+## 5. M0 record (2026-09-30)
+
+### Dependency spike (Python 3.14.4, uv)
+
+| Package | Version | Smoke check | Result |
+| --- | --- | --- | --- |
+| `statsmodels` | 0.15.0 | `coint` on synthetic cointegrated pair | Works |
+| `arch` | 8.0.0 | `SPA` test on synthetic losses | Works |
+| `pyvinecopulib` | 1.0.0 | `Bicop.from_data` fit | Works |
+| `bt` (with `ffn` 1.2.2) | 1.2.3 | Periodic rebalance backtest with commissions | Works |
+
+Environment at spike time: numpy 2.5, pandas 3.0, scipy 1.18.1. No blockers, so the
+fallback independent minimal engine is not needed; `bt` is the M1 reference engine.
+
+- Caveat: under pandas 3, `bt` emits `ChainedAssignmentError` from
+  `bt.core.get_transactions` (`positions[x.name] = x.positions` in Cython code). It
+  is a false positive of pandas' reference-count check on compiled code; the
+  transactions are populated correctly. The M1 harness also derives trades from
+  position differences as a cross-check rather than trusting that table alone.
+- Only `bt` is added now (dev dependency group; M1 test/reference use only).
+  `statsmodels`, `arch` and `pyvinecopulib` are added to project dependencies by
+  the milestones that first use them (M4, M4, M6).
+
+### Tokens
+
+- `web/src/styles/tokens.css` carries the design-direction palette (dark default,
+  light by system preference or `data-theme`), the series colours as
+  `--chart-series-1..5` plus named aliases (`--chart-strategy`, `--chart-hodl`,
+  `--chart-rebalancing`, `--chart-coin-a`, `--chart-coin-b`, `--chart-anchor`,
+  `--chart-band`), the 22/28 title/display sizes and 8 px panel radius. Token names
+  and the theme mechanism are unchanged.
+- `subtle`, `border-strong`, `info` and `context` are not specified by the direction;
+  they are interpolated from the neighbouring specified tones.
+- Geist Sans and Geist Mono are self-hosted through `@fontsource-variable/geist` and
+  `@fontsource-variable/geist-mono` 5.3.0 (bundled by Vite, `font-display: swap`).

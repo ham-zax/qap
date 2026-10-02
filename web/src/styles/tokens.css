@@ -5,9 +5,9 @@
  * user pins a theme with data-theme on <html>.
  */
 @theme inline {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+  --font-sans: "Geist Variable", "Geist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", monospace;
 
   --color-canvas: var(--qap-canvas);
@@ -26,16 +26,18 @@
   --color-warning: var(--qap-warning);
   --color-info: var(--qap-info);
 
+  /* Buttons 6px, panels and inputs 8px (design-direction §5). */
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
 
-  --text-display: 2.25rem;
-  --text-display--line-height: 2.625rem;
+  /* Type scale 12/13/14/16/22/28 (design-direction §4): title 22, display 28. */
+  --text-display: 1.75rem;
+  --text-display--line-height: 2.25rem;
   --text-display--letter-spacing: -0.02em;
-  --text-title: 1.5rem;
-  --text-title--line-height: 2rem;
+  --text-title: 1.375rem;
+  --text-title--line-height: 1.75rem;
   --text-title--letter-spacing: -0.015em;
 
   --shadow-card: var(--qap-shadow-card);
@@ -44,31 +46,32 @@
 
 :root {
   color-scheme: dark;
-  --qap-canvas: #0b0e13;
-  --qap-panel: #121720;
-  --qap-subtle: #1a2230;
-  --qap-raised: #202a38;
-  --qap-foreground: #edf1f7;
-  --qap-secondary: #c4ccd8;
-  --qap-muted: #9ca8b8;
-  --qap-border: #303a4a;
-  --qap-border-strong: #4a586b;
-  --qap-accent: #78a9ff;
-  --qap-accent-contrast: #0b0e13;
-  --qap-positive: #68d391;
-  --qap-negative: #ff9b9b;
-  --qap-warning: #f6d365;
-  --qap-info: #78a9ff;
-  --qap-context: #111821;
+  --qap-canvas: #0b0f14;
+  --qap-panel: #11161d;
+  --qap-subtle: #141a22;
+  --qap-raised: #18202a;
+  --qap-foreground: #e6ebf2;
+  --qap-secondary: #a9b3c1;
+  --qap-muted: #8390a2;
+  --qap-border: #232c38;
+  --qap-border-strong: #3a4658;
+  --qap-accent: #5aa0ff;
+  --qap-accent-contrast: #0b0f14;
+  --qap-positive: #3ecf8e;
+  --qap-negative: #f2757a;
+  --qap-warning: #e8b94a;
+  --qap-info: #5aa0ff;
+  --qap-context: #0f141a;
   --qap-shadow-card: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.4);
   --qap-shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.5);
 
-  --chart-series-1: #78a9ff;
-  --chart-series-2: #c4a7e7;
-  --chart-series-3: #7dd3c7;
-  --chart-series-4: #f6d365;
-  --chart-series-5: #9fb7ff;
-  --chart-grid: #242d3b;
+  --chart-series-1: #5aa0ff;
+  --chart-series-2: #d8dde5;
+  --chart-series-3: #f0a94b;
+  --chart-series-4: #34c4b4;
+  --chart-series-5: #b394f7;
+  --chart-grid: #1b222c;
+  --chart-anchor: rgb(107 118 134 / 0.3);
 }
 
 @media (prefers-color-scheme: light) {
@@ -76,29 +79,30 @@
     color-scheme: light;
     --qap-canvas: #f6f7f9;
     --qap-panel: #ffffff;
-    --qap-subtle: #eef1f5;
-    --qap-raised: #e4e8ee;
-    --qap-foreground: #111723;
-    --qap-secondary: #354052;
-    --qap-muted: #5b6678;
-    --qap-border: #d6dce4;
+    --qap-subtle: #f2f4f7;
+    --qap-raised: #eef1f5;
+    --qap-foreground: #101722;
+    --qap-secondary: #3a4556;
+    --qap-muted: #5f6b7d;
+    --qap-border: #dde2e9;
     --qap-border-strong: #aab4c2;
-    --qap-accent: #2f5fd0;
+    --qap-accent: #1f5fd6;
     --qap-accent-contrast: #ffffff;
-    --qap-positive: #1d7a45;
-    --qap-negative: #b42828;
-    --qap-warning: #8a5a00;
-    --qap-info: #2f5fd0;
+    --qap-positive: #12804a;
+    --qap-negative: #c2323a;
+    --qap-warning: #9a6400;
+    --qap-info: #1f5fd6;
     --qap-context: #f0f3f7;
     --qap-shadow-card: 0 1px 2px rgb(17 23 35 / 0.06), 0 1px 1px rgb(17 23 35 / 0.04);
     --qap-shadow-overlay: 0 12px 32px rgb(17 23 35 / 0.16);
 
-    --chart-series-1: #2f5fd0;
-    --chart-series-2: #7c4dbd;
-    --chart-series-3: #0f8a7e;
-    --chart-series-4: #a66a00;
-    --chart-series-5: #5577c9;
+    --chart-series-1: #1f5fd6;
+    --chart-series-2: #394150;
+    --chart-series-3: #b86a00;
+    --chart-series-4: #0e8a7e;
+    --chart-series-5: #7a4fd6;
     --chart-grid: #e6eaf0;
+    --chart-anchor: rgb(154 164 178 / 0.3);
   }
 }
 
@@ -106,29 +110,30 @@
   color-scheme: light;
   --qap-canvas: #f6f7f9;
   --qap-panel: #ffffff;
-  --qap-subtle: #eef1f5;
-  --qap-raised: #e4e8ee;
-  --qap-foreground: #111723;
-  --qap-secondary: #354052;
-  --qap-muted: #5b6678;
-  --qap-border: #d6dce4;
+  --qap-subtle: #f2f4f7;
+  --qap-raised: #eef1f5;
+  --qap-foreground: #101722;
+  --qap-secondary: #3a4556;
+  --qap-muted: #5f6b7d;
+  --qap-border: #dde2e9;
   --qap-border-strong: #aab4c2;
-  --qap-accent: #2f5fd0;
+  --qap-accent: #1f5fd6;
   --qap-accent-contrast: #ffffff;
-  --qap-positive: #1d7a45;
-  --qap-negative: #b42828;
-  --qap-warning: #8a5a00;
-  --qap-info: #2f5fd0;
+  --qap-positive: #12804a;
+  --qap-negative: #c2323a;
+  --qap-warning: #9a6400;
+  --qap-info: #1f5fd6;
   --qap-context: #f0f3f7;
   --qap-shadow-card: 0 1px 2px rgb(17 23 35 / 0.06), 0 1px 1px rgb(17 23 35 / 0.04);
   --qap-shadow-overlay: 0 12px 32px rgb(17 23 35 / 0.16);
 
-  --chart-series-1: #2f5fd0;
-  --chart-series-2: #7c4dbd;
-  --chart-series-3: #0f8a7e;
-  --chart-series-4: #a66a00;
-  --chart-series-5: #5577c9;
+  --chart-series-1: #1f5fd6;
+  --chart-series-2: #394150;
+  --chart-series-3: #b86a00;
+  --chart-series-4: #0e8a7e;
+  --chart-series-5: #7a4fd6;
   --chart-grid: #e6eaf0;
+  --chart-anchor: rgb(154 164 178 / 0.3);
 }
 
 :root {
@@ -162,7 +167,15 @@
   --negative: var(--status-negative);
   --warning: var(--status-warning);
 
-  --radius: 0.75rem;
+  /* Named series (design-direction §3); chart-series-1..5 use the same order. */
+  --chart-strategy: var(--chart-series-1);
+  --chart-hodl: var(--chart-series-2);
+  --chart-rebalancing: var(--chart-series-3);
+  --chart-coin-a: var(--chart-series-4);
+  --chart-coin-b: var(--chart-series-5);
+  --chart-band: var(--qap-border-strong);
+
+  --radius: 0.5rem;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
