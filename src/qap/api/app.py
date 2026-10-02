@@ -30,6 +30,7 @@ from qap.api.routes import (
     scanner_router,
     workspace_router,
 )
+from qap.api.routes.pair_rotation import router as pair_rotation_router
 from qap.api.scanner_views import ScannerArtifactReader
 from qap.api.schemas import ErrorDetailDto, ErrorEnvelopeDto
 from qap.api.settings import ApiSettings
@@ -202,6 +203,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.include_router(workspace_router)
     app.include_router(research_universe_router)
     app.include_router(product_market_data_router)
+    app.include_router(pair_rotation_router)
     app.include_router(product_pair_study_router)
     app.include_router(product_research_router)
     app.include_router(research_recipes_router)

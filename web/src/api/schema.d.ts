@@ -243,6 +243,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/pair-rotation/bootstrap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Research Coins */
+        post: operations["refreshResearchCoins"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pair-rotation/coins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Research Coins */
+        get: operations["searchResearchCoins"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pair-rotation/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Open Pair Rotation */
+        post: operations["openPairRotationData"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pairs/{asset_x}/{asset_y}/anchor": {
         parameters: {
             query?: never;
@@ -1334,6 +1385,33 @@ export interface components {
              */
             window_start: string;
         };
+        /** CoinSearchDto */
+        CoinSearchDto: {
+            /** Coins */
+            coins: components["schemas"]["ResearchCoin"][];
+            /** Directory Observed At */
+            directory_observed_at: string | null;
+            /**
+             * Directory Status
+             * @enum {string}
+             */
+            directory_status: "not_refreshed" | "observed";
+            /** Registry Attribution */
+            registry_attribution: string | null;
+            /** Registry Observed At */
+            registry_observed_at: string | null;
+            /**
+             * Registry Status
+             * @enum {string}
+             */
+            registry_status: "unavailable" | "cached";
+            /**
+             * Schema Version
+             * @default qap.api.coin-search.v1
+             * @constant
+             */
+            schema_version: "qap.api.coin-search.v1";
+        };
         /** CompletedResearchScopeStagesDto */
         CompletedResearchScopeStagesDto: {
             /** Completed Replay Count */
@@ -2316,6 +2394,10 @@ export interface components {
             kind: string;
             /** Operation Id */
             operation_id: string;
+            /** Progress */
+            progress?: {
+                [key: string]: components["schemas"]["JsonValue"];
+            } | null;
             /** Request Summary */
             request_summary: {
                 [key: string]: components["schemas"]["JsonValue"];
@@ -2403,6 +2485,18 @@ export interface components {
             schema_version: "qap.api.pair_evidence.v1";
             /** Series */
             series: components["schemas"]["RelationshipEvidenceSeriesDto"][];
+        };
+        /** PairRotationRequestDto */
+        PairRotationRequestDto: {
+            /** Coin A */
+            coin_a: string;
+            /** Coin B */
+            coin_b: string;
+            /**
+             * Lookback Days
+             * @default 365
+             */
+            lookback_days: number;
         };
         /** PairSeriesDto */
         PairSeriesDto: {
@@ -3351,6 +3445,43 @@ export interface components {
             label: string;
             /** Scope Identity */
             scope_identity: string | null;
+        };
+        /** ResearchCoin */
+        ResearchCoin: {
+            /** Call Available */
+            call_available: boolean;
+            /** Canonical Asset Id */
+            canonical_asset_id: string | null;
+            /** Identity Reason */
+            identity_reason: string;
+            /**
+             * Identity State
+             * @enum {string}
+             */
+            identity_state: "resolved" | "review" | "unresolved";
+            /** Identity Version */
+            identity_version: string;
+            /** Listing Id */
+            listing_id: string;
+            /** Listing Time */
+            listing_time: string | null;
+            /** Name */
+            name: string;
+            /** Relationship Available */
+            relationship_available: boolean;
+            /** Source */
+            source: string;
+            /** Trading */
+            trading: boolean;
+            /**
+             * Venue
+             * @enum {string}
+             */
+            venue: "binance" | "gate";
+            /** Venue Asset Code */
+            venue_asset_code: string;
+            /** Venue Symbol */
+            venue_symbol: string;
         };
         /** ResearchComponentV1 */
         ResearchComponentV1: {
@@ -4723,6 +4854,91 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OperationDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refreshResearchCoins: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+        };
+    };
+    searchResearchCoins: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoinSearchDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openPairRotationData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PairRotationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationRefDto"];
                 };
             };
             /** @description Validation Error */

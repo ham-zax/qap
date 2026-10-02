@@ -201,7 +201,7 @@ class ProductMarketDataPreparation:
             f"Unsupported Product market-data venue: {venue}"
         )
 
-    def _extended_generation(
+    def extended_generation(
         self,
         *,
         scope: ProductResearchScope,
@@ -396,7 +396,7 @@ class ProductMarketDataPreparation:
                         dataset_id = product_dataset_id(
                             instrument, requirement.interval
                         )
-                        generation = self._extended_generation(
+                        generation = self.extended_generation(
                             scope=scope,
                             instrument=instrument,
                             dataset_id=dataset_id,

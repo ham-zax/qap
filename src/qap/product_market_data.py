@@ -15,6 +15,11 @@ from qap.market import (
     read_parquet_bar_series,
     write_parquet_bar_series,
 )
+from qap.product_identity_retirement import (
+    IdentityRetirementPlan,
+    contained_file,
+    preview_retirement,
+)
 from qap.product_maintenance import (
     MaintenanceKind,
     MarketDataMaintenanceState,
@@ -72,6 +77,70 @@ class ProductMarketData:
         if self.market_data_root is None:
             raise ProductMarketDataError("Market-data root is not configured.")
         return self.market_data_root
+
+    def identity_retirement_preview(self) -> IdentityRetirementPlan:
+        """Inventory contradicted W→BTC generations and saved dependencies."""
+        try:
+            return preview_retirement(self._require_data_root(), self.workspace_root)
+        except (OSError, ValueError, ScannerCatalogError) as exc:
+            raise ProductMarketDataError(
+                "Identity retirement inventory failed."
+            ) from exc
+
+    def retire_identity_data(self, plan: IdentityRetirementPlan) -> None:
+        """Apply an unchanged, dependency-free preview through the data owner."""
+        data_root = self._require_data_root()
+        self.start_maintenance("refresh_market_data")
+        try:
+            with self._lock:
+                current = self.identity_retirement_preview()
+                if current != plan:
+                    raise ProductMarketDataError(
+                        "Retirement preview is stale; preview again."
+                    )
+                if plan.dependencies:
+                    raise ProductMarketDataError(
+                        "Saved research depends on contaminated data."
+                    )
+                if not plan.generations:
+                    self.finish_maintenance()
+                    return
+                audit = (
+                    self.workspace_root
+                    / "product/identity-retirements"
+                    / (f"{plan.fingerprint}.json")
+                )
+                if audit.is_file():
+                    if audit.read_text().strip() != plan.model_dump_json(indent=2):
+                        raise ProductMarketDataError(
+                            "Retirement audit differs from preview."
+                        )
+                else:
+                    self._write_model_create_only(audit, plan)
+                catalog = self._current_catalog(data_root)
+                if catalog is not None:
+                    removed = {item.relative_path for item in plan.generations}
+                    retained = tuple(
+                        item
+                        for item in catalog.sources
+                        if item.relative_path not in removed
+                    )
+                    if retained:
+                        next_catalog = ScannerCatalog.model_validate(
+                            catalog.model_copy(
+                                update={"sources": retained}
+                            ).model_dump()
+                        )
+                        self._write_catalog(data_root / "catalog.json", next_catalog)
+                    else:
+                        (data_root / "catalog.json").unlink()
+                # Revoke catalog authority before removing verified, unreferenced bytes.
+                for relative, _ in plan.file_hashes:
+                    contained_file(data_root, relative).unlink()
+            self.finish_maintenance()
+        except Exception as exc:
+            self.fail_maintenance(str(exc).strip() or type(exc).__name__)
+            raise
 
     @staticmethod
     def _write_model_create_only(path: Path, model: BaseModel) -> None:

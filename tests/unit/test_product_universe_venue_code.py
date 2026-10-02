@@ -52,12 +52,12 @@ def test_recorded_asset_keeps_observed_venue_code_visible(tmp_path: Path) -> Non
     universe.set_identity_mapping(
         venue="binance",
         venue_asset_code="W",
-        canonical_asset_id="BTC",
-        asset_identity_version="operator-btc-1",
+        canonical_asset_id="W",
+        asset_identity_version="operator-wormhole-1",
     )
 
     assets = universe.projection().assets
-    asset = next(item for item in assets if item.asset.key == "BTC")
+    asset = next(item for item in assets if item.asset.key == "W")
     venue = asset.venues[0]
     dto = ResearchUniverseVenueDto(
         venue="binance",

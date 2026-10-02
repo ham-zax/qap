@@ -1,7 +1,7 @@
 # QAP Plan Map
 
 Update context — 2026-10-02
-Trigger: continued approved Phase 19 after M0 and M1 verification.
+Trigger: continued approved Phase 19 through M0, M1 and the M2 backend.
 Purpose: remove stale current-phase labels while preserving historical plans.
 Impact: none; the September 30 decision remains authoritative.
 Evidence: [Phase 19](19-pair-rotation-lab-mvp.md), [parity report](../research/2026-10-02-engine-parity.md).
@@ -24,7 +24,11 @@ Impact: no economic or research contract change here.
 Evidence: [Phase 18 handoff](18-research-experience-and-asset-resolution.md).
 
 
-**Status:** Phase 19 — Pair Rotation Lab MVP is current. M0 foundation and M1 engine parity are complete; M2 coin/data setup is next. Phase 18 M1/M2 remain the asset-evidence foundation. Phase 17 representative-user acceptance remains open and is not satisfied by automated checks.
+**Status:** Phase 19 — Pair Rotation Lab MVP is current. M0 foundation and M1 engine
+parity are complete; M2's coin/data backend is implemented. Rendered-answer
+acceptance and M3 dashboard/analysis remain pending. This continuation stops before
+UI generation. Phase 18 M1/M2 remain the asset-evidence foundation. Phase 17
+representative-user acceptance remains open and is not satisfied by automated checks.
 
 Update context — 2026-09-27 (Phase 18 approved)
 Trigger: Hamza delegated investigation decisions D1–D7 and asked for implementation
@@ -173,7 +177,8 @@ CLI fixture checks into completion of that gate.
 | 10 | Make QAP human-operable | Slice 4 | One local web application can initiate and inspect the admitted Slice-1/2/3 workflows while immutable QAP/scanner artifacts remain authoritative |
 | 11 | Make QAP understandable without internal expertise | 16 | Goal-oriented navigation, plain-language task flows, progressive disclosure, and human-centered acceptance preserve the same authoritative evidence while reducing implementation vocabulary from the primary UX |
 | 12 | Make a clean local workspace product-operational | 17 | Explicit asset admission, honest market-data/readiness ownership, immutable refreshable inputs, longitudinal research evidence, and persistent current-evidence collection make the existing research engine usable without expert fixture/catalog preparation |
-| 13 | Make research simple without hiding depth | 18 | Assets are found by name, ticker or market symbol and identified automatically from evidence; research requests are backend-owned, fresh and resumable; the regenerated UI passes the Phase 18 journeys and Hamza's acceptance |
+| 13 | Establish automatic asset evidence | 18 | Venue metadata, registry/resolver and D1–D7 form the foundation; remaining experience work is superseded by Phase 19 |
+| 14 | Prove and explain pair rotation | 19 | Independent engine parity, admission-free coin discovery and fresh data support the two-coin dashboard, honest proof and benchmarks; Hamza accepts the rendered experience |
 
 ## Phase plans
 

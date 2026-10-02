@@ -15,6 +15,7 @@ from qap.api.errors import ApiBoundaryError
 from qap.api.scanner_schemas import OperationDto, OperationListDto, OperationRefDto
 from qap.api.schemas import ErrorDetailDto
 from qap.api.settings import ApiSettings
+from qap.file_lock import FileLock
 from qap.process_identity import process_start_marker
 
 _REQUEST_FILE = "request.json"
@@ -31,6 +32,8 @@ class OperationKind(StrEnum):
     CAPTURE_PUBLIC_EVIDENCE = "capture_public_evidence"
     QUALIFY_CANDIDATE = "qualify_candidate"
     RUN_BASKET = "run_basket"
+    REFRESH_COIN_DIRECTORY = "refresh_coin_directory"
+    PREPARE_PAIR_ROTATION_DATA = "prepare_pair_rotation_data"
 
 
 class OperationStatus(StrEnum):
@@ -73,6 +76,7 @@ class OperationStateRecord(_FrozenModel):
     failure_message: str | None = None
     worker_pid: int | None = None
     process_start_marker: str | None = None
+    progress: dict[str, JsonValue] | None = None
 
 
 def _utc_now() -> datetime:
@@ -182,15 +186,43 @@ class OperationStore:
         directory = self._directory(state.operation_id)
         _atomic_write(directory / _STATUS_FILE, _json_bytes(state))
 
-    def attach_worker(self, operation_id: str, *, pid: int, marker: str) -> None:
-        current = self.read_state(operation_id)
-        if current.status is not OperationStatus.RUNNING:
-            return
-        self.update_state(
-            current.model_copy(
-                update={"worker_pid": pid, "process_start_marker": marker}
+    def _record_guard(self, operation_id: str) -> FileLock:
+        return FileLock(self._directory(operation_id) / "record.lock")
+
+    def update_progress(
+        self, operation_id: str, stage: str, completed: int, total: int
+    ) -> None:
+        if not stage.strip() or not 0 <= completed <= total:
+            raise ValueError("Operation progress must name a valid completed stage.")
+        with self._record_guard(operation_id):
+            current = self.read_state(operation_id)
+            if current.status is not OperationStatus.RUNNING:
+                return
+            self.update_state(
+                current.model_copy(
+                    update={
+                        "progress": {
+                            "stage": stage,
+                            "completed": completed,
+                            "total": total,
+                        }
+                    }
+                )
             )
-        )
+
+    def attach_worker(self, operation_id: str, *, pid: int, marker: str) -> None:
+        with self._record_guard(operation_id):
+            current = self.read_state(operation_id)
+            if current.status is not OperationStatus.RUNNING:
+                return
+            self.update_state(
+                current.model_copy(
+                    update={
+                        "worker_pid": pid,
+                        "process_start_marker": marker,
+                    }
+                )
+            )
 
     def finish(
         self,
@@ -203,20 +235,21 @@ class OperationStore:
     ) -> None:
         if status is OperationStatus.RUNNING:
             raise ValueError("terminal operation update requires terminal status")
-        current = self.read_state(operation_id)
-        if current.status is not OperationStatus.RUNNING:
-            return
-        self.update_state(
-            current.model_copy(
-                update={
-                    "status": status,
-                    "finished_at": _utc_now(),
-                    "result": result,
-                    "failure_code": failure_code,
-                    "failure_message": failure_message,
-                }
+        with self._record_guard(operation_id):
+            current = self.read_state(operation_id)
+            if current.status is not OperationStatus.RUNNING:
+                return
+            self.update_state(
+                current.model_copy(
+                    update={
+                        "status": status,
+                        "finished_at": _utc_now(),
+                        "result": result,
+                        "failure_code": failure_code,
+                        "failure_message": failure_message,
+                    }
+                )
             )
-        )
 
     def _directories(self) -> tuple[Path, ...]:
         if not self.root.is_dir():
@@ -287,11 +320,18 @@ class OperationManager:
         self.settings = settings
         self.store = OperationStore(settings.run_root)
         self._launch_lock = Lock()
-        with self._launch_lock:
+        with self._launch_guard():
             self.store.reconcile_running()
 
+    def _launch_guard(self) -> FileLock:
+        """Serialize launches/reconciliation across API instances and processes."""
+        return FileLock(self.store.root / "launch.lock", self._launch_lock)
+
     def _worker_settings(self, kind: OperationKind) -> OperationWorkerSettings:
-        data_required = kind is not OperationKind.CAPTURE_PUBLIC_EVIDENCE
+        data_required = kind not in {
+            OperationKind.CAPTURE_PUBLIC_EVIDENCE,
+            OperationKind.REFRESH_COIN_DIRECTORY,
+        }
         if data_required and self.settings.market_data_root is None:
             raise ApiBoundaryError(
                 code="operation_unavailable",
@@ -336,10 +376,21 @@ class OperationManager:
         kind: OperationKind,
         request_summary: dict[str, JsonValue],
     ) -> OperationRefDto:
-        with self._launch_lock:
+        with self._launch_guard():
             self.store.reconcile_running()
             active = self.store.active()
             if active is not None:
+                if (
+                    kind
+                    in {
+                        OperationKind.REFRESH_COIN_DIRECTORY,
+                        OperationKind.PREPARE_PAIR_ROTATION_DATA,
+                    }
+                    and active.kind is kind
+                    and self.store.read_request(active.operation_id).request_summary
+                    == request_summary
+                ):
+                    return OperationRefDto(operation_id=active.operation_id)
                 raise ApiBoundaryError(
                     code="operation_busy",
                     message="Another research operation is already running.",
@@ -351,6 +402,16 @@ class OperationManager:
                 request_summary=request_summary,
                 settings=self._worker_settings(kind),
             )
+            if kind in {
+                OperationKind.REFRESH_COIN_DIRECTORY,
+                OperationKind.PREPARE_PAIR_ROTATION_DATA,
+            }:
+                self.store.update_progress(
+                    request.operation_id,
+                    "queued",
+                    0,
+                    8 if kind is OperationKind.PREPARE_PAIR_ROTATION_DATA else 1,
+                )
             log_path = self.store.log_path(request.operation_id)
             try:
                 with log_path.open("ab") as log:
@@ -417,17 +478,18 @@ class OperationManager:
             request_summary=request.request_summary,
             result=state.result,
             failure=failure,
+            progress=state.progress,
         )
 
     def get(self, operation_id: str) -> OperationDto:
-        with self._launch_lock:
+        with self._launch_guard():
             self.store.reconcile_running()
             state = self.store.read_state(operation_id)
             request = self.store.read_request(operation_id)
         return self._dto(request, state)
 
     def list(self) -> OperationListDto:
-        with self._launch_lock:
+        with self._launch_guard():
             self.store.reconcile_running()
             states = self.store.list_states()
             items = tuple(

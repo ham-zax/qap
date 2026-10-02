@@ -470,6 +470,7 @@ class OperationDto(ApiDto):
     request_summary: dict[str, JsonValue]
     result: dict[str, JsonValue] | None
     failure: ErrorDetailDto | None
+    progress: dict[str, JsonValue] | None = None
 
 
 class OperationListDto(ApiDto):

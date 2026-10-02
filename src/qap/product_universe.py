@@ -2,21 +2,22 @@
 
 from __future__ import annotations
 
+import fcntl
 import os
-from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from collections.abc import Generator
+from contextlib import contextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 from threading import Lock
-from typing import Literal, Self, cast
+from typing import cast
 
 from pydantic import (
     BaseModel,
-    ConfigDict,
     ValidationError,
-    field_validator,
-    model_validator,
 )
 
+from qap.asset_registry import RegistryRefreshResult, RegistrySnapshot
+from qap.asset_registry_coingecko import CoinGeckoRegistry, RegistryCacheError
 from qap.market.adapters.binance_public import (
     BinancePublicAdapter,
     BinancePublicDataError,
@@ -24,213 +25,64 @@ from qap.market.adapters.binance_public import (
 from qap.market.adapters.gate_public import GatePublicAdapter, GatePublicDataError
 from qap.market.instruments import VenueInstrument
 from qap.portfolio import AssetId
+from qap.product_coin_search import ResearchCoin, coins, search_coins
 from qap.product_directory_models import (
-    DirectoryMarket,
+    DirectoryMarket as DirectoryMarket,
+)
+from qap.product_directory_models import (
     DirectoryRefreshResult,
     DirectorySource,
     ProductMarketDirectory,
 )
-
-Venue = Literal["binance", "gate"]
-IdentityState = Literal["resolved", "review_required"]
-IdentityReason = Literal["resolved", "mapping_unavailable", "identity_version_conflict"]
-DataState = Literal["not_approved", "needs_data"]
-
-
-class ProductUniverseError(RuntimeError):
-    """Raised when Product universe state cannot be read or changed safely."""
-
-
-class ProductDirectoryRefreshError(ProductUniverseError):
-    """No current or previously observed public directory is available."""
-
-
-def _utc(value: object, *, field: str) -> datetime:
-    if not isinstance(value, datetime):
-        raise TypeError(f"{field} must be a datetime")
-    if value.tzinfo is None or value.utcoffset() != timedelta(0):
-        raise ValueError(f"{field} must be timezone-aware UTC")
-    return value.astimezone(UTC)
-
-
-def _text(value: object, *, field: str) -> str:
-    if not isinstance(value, str):
-        raise TypeError(f"{field} must be a string")
-    normalized = value.strip()
-    if not normalized:
-        raise ValueError(f"{field} must not be empty")
-    return normalized
-
-
-class _FrozenModel(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
-
-
-class AssetIdentityMapping(_FrozenModel):
-    venue: Venue
-    venue_asset_code: str
-    canonical_asset_id: str
-    asset_identity_version: str
-    confirmed_at: datetime
-
-    @field_validator("venue", mode="before")
-    @classmethod
-    def normalize_venue(cls, value: object) -> str:
-        return _text(value, field="venue").lower()
-
-    @field_validator("venue_asset_code", mode="before")
-    @classmethod
-    def normalize_venue_asset_code(cls, value: object) -> str:
-        return _text(value, field="venue_asset_code").upper()
-
-    @field_validator("canonical_asset_id", mode="before")
-    @classmethod
-    def normalize_canonical_asset_id(cls, value: object) -> str:
-        return AssetId(_text(value, field="canonical_asset_id")).key
-
-    @field_validator("asset_identity_version", mode="before")
-    @classmethod
-    def normalize_identity_version(cls, value: object) -> str:
-        return _text(value, field="asset_identity_version")
-
-    @field_validator("confirmed_at")
-    @classmethod
-    def validate_confirmed_at(cls, value: datetime) -> datetime:
-        return _utc(value, field="confirmed_at")
-
-
-class ProductUniverseState(_FrozenModel):
-    schema_version: Literal["qap.product.research-universe.v1"] = (
-        "qap.product.research-universe.v1"
-    )
-    updated_at: datetime | None = None
-    approved_asset_ids: tuple[str, ...] = ()
-    identity_mappings: tuple[AssetIdentityMapping, ...] = ()
-
-    @field_validator("updated_at")
-    @classmethod
-    def validate_updated_at(cls, value: datetime | None) -> datetime | None:
-        return None if value is None else _utc(value, field="updated_at")
-
-    @field_validator("approved_asset_ids", mode="before")
-    @classmethod
-    def normalize_approved_assets(cls, value: object) -> tuple[str, ...]:
-        if not isinstance(value, (tuple, list)):
-            raise TypeError("approved_asset_ids must be a list or tuple")
-        items = cast(list[object] | tuple[object, ...], value)
-        assets = tuple(
-            sorted(
-                AssetId(_text(item, field="approved_asset_id")).key for item in items
-            )
-        )
-        if len(assets) != len(set(assets)):
-            raise ValueError("approved_asset_ids must not contain duplicates")
-        return assets
-
-    @model_validator(mode="after")
-    def validate_mapping_keys(self) -> Self:
-        keys = tuple(
-            (mapping.venue, mapping.venue_asset_code)
-            for mapping in self.identity_mappings
-        )
-        if len(keys) != len(set(keys)):
-            raise ValueError("identity mappings must be unique by venue and asset code")
-        return self
-
-
-@dataclass(frozen=True, slots=True)
-class ResearchUniverseVenue:
-    venue: str
-    venue_symbol: str
-    venue_asset_code: str
-    status: str
-    trading: bool
-
-
-@dataclass(frozen=True, slots=True)
-class ResearchUniverseAsset:
-    asset: AssetId
-    approved: bool
-    identity_state: IdentityState
-    identity_reason: IdentityReason
-    asset_identity_version: str | None
-    data_state: DataState
-    venues: tuple[ResearchUniverseVenue, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class IdentityReview:
-    venue: str
-    venue_asset_code: str
-    venue_symbols: tuple[str, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class ResearchUniverseProjection:
-    directory_id: str | None
-    directory_observed_at: datetime | None
-    sources: tuple[DirectorySource, ...]
-    assets: tuple[ResearchUniverseAsset, ...]
-    identity_reviews: tuple[IdentityReview, ...]
-    directory_refreshes: tuple[DirectoryRefreshResult, ...] = ()
-
-
-@dataclass(frozen=True, slots=True)
-class ResolvedProductInstrument:
-    instrument: VenueInstrument
-    base_asset_identity_version: str
-    quote_asset_identity_version: str
-    directory_observed_at: datetime
-    source_id: str
-    source_fingerprint: str
-
-
-@dataclass(frozen=True, slots=True)
-class ProductResearchScope:
-    directory_id: str
-    directory_observed_at: datetime
-    approved_assets: tuple[AssetId, ...]
-    instruments: tuple[ResolvedProductInstrument, ...]
-
-
-def _mapping_versions(
-    state: ProductUniverseState,
-) -> dict[AssetId, frozenset[str]]:
-    versions: dict[AssetId, set[str]] = {}
-    for mapping in state.identity_mappings:
-        asset = AssetId(mapping.canonical_asset_id)
-        versions.setdefault(asset, set()).add(mapping.asset_identity_version)
-    return {asset: frozenset(values) for asset, values in versions.items()}
-
-
-def _mapping_by_venue_code(
-    state: ProductUniverseState,
-) -> dict[tuple[str, str], AssetIdentityMapping]:
-    return {
-        (mapping.venue, mapping.venue_asset_code): mapping
-        for mapping in state.identity_mappings
-    }
-
-
-def _resolved_market(
-    market: DirectoryMarket,
-    *,
-    mappings: dict[tuple[str, str], AssetIdentityMapping],
-    versions: dict[AssetId, frozenset[str]],
-) -> tuple[AssetIdentityMapping, AssetIdentityMapping] | None:
-    base = mappings.get((market.venue, market.venue_base_asset))
-    quote = mappings.get((market.venue, market.venue_quote_asset))
-    if base is None or quote is None:
-        return None
-    base_asset = AssetId(base.canonical_asset_id)
-    quote_asset = AssetId(quote.canonical_asset_id)
-    if base_asset == quote_asset:
-        return None
-    if len(versions.get(base_asset, frozenset())) != 1:
-        return None
-    if len(versions.get(quote_asset, frozenset())) != 1:
-        return None
-    return base, quote
+from qap.product_identity_policy import accept_evidence
+from qap.product_universe_models import (
+    AssetIdentityMapping as AssetIdentityMapping,
+)
+from qap.product_universe_models import (
+    DataState as DataState,
+)
+from qap.product_universe_models import (
+    IdentityReason as IdentityReason,
+)
+from qap.product_universe_models import (
+    IdentityReview as IdentityReview,
+)
+from qap.product_universe_models import (
+    IdentityState as IdentityState,
+)
+from qap.product_universe_models import (
+    ProductDirectoryRefreshError as ProductDirectoryRefreshError,
+)
+from qap.product_universe_models import (
+    ProductResearchScope as ProductResearchScope,
+)
+from qap.product_universe_models import (
+    ProductUniverseError as ProductUniverseError,
+)
+from qap.product_universe_models import (
+    ProductUniverseState as ProductUniverseState,
+)
+from qap.product_universe_models import (
+    ResearchUniverseAsset as ResearchUniverseAsset,
+)
+from qap.product_universe_models import (
+    ResearchUniverseProjection as ResearchUniverseProjection,
+)
+from qap.product_universe_models import (
+    ResearchUniverseVenue as ResearchUniverseVenue,
+)
+from qap.product_universe_models import (
+    ResolvedProductInstrument as ResolvedProductInstrument,
+)
+from qap.product_universe_models import (
+    Venue as Venue,
+)
+from qap.product_universe_models import (
+    mapping_by_venue_code,
+    mapping_versions,
+    resolved_market,
+    universe_utc,
+)
 
 
 class ProductUniverse:
@@ -241,7 +93,19 @@ class ProductUniverse:
         self.root = self.workspace_root / "product"
         self.state_path = self.root / "research-universe.json"
         self.directory_path = self.root / "market-directory.json"
-        self._lock = Lock()
+        self._thread_lock = Lock()
+
+    @contextmanager
+    def _state_guard(self) -> Generator[None]:
+        # API and worker processes share one state; serialize read/modify/write.
+        with self._thread_lock:
+            self.root.mkdir(parents=True, exist_ok=True)
+            with (self.root / "universe.lock").open("a+b") as handle:
+                fcntl.flock(handle, fcntl.LOCK_EX)
+                try:
+                    yield
+                finally:
+                    fcntl.flock(handle, fcntl.LOCK_UN)
 
     @staticmethod
     def _write_model(path: Path, model: BaseModel) -> None:
@@ -276,10 +140,105 @@ class ProductUniverse:
                 "Current market directory state is invalid."
             ) from exc
 
+    def registry_snapshot(self) -> RegistrySnapshot | None:
+        try:
+            return CoinGeckoRegistry(self.root / "asset-registry.json").snapshot()
+        except RegistryCacheError:
+            return None
+
+    def refresh_identity_evidence(self) -> RegistryRefreshResult:
+        result = CoinGeckoRegistry(self.root / "asset-registry.json").refresh()
+        self.apply_policy_bindings(result.snapshot)
+        return result
+
+    def apply_policy_bindings(
+        self,
+        snapshot: RegistrySnapshot | None = None,
+    ) -> ProductUniverseState:
+        with self._state_guard():
+            state = self.read_state()
+            directory = self.read_directory()
+            if directory is None:
+                return state
+            evidence = self.registry_snapshot() if snapshot is None else snapshot
+            next_state = accept_evidence(
+                state, directory, evidence, now=datetime.now(UTC)
+            )
+            if next_state != state:
+                self._write_model(self.state_path, next_state)
+            return next_state
+
+    def search(self, query: str = "", *, limit: int = 50) -> tuple[ResearchCoin, ...]:
+        """Search atomic cached snapshots without waiting on refresh writers."""
+        if not 1 <= limit <= 100:
+            raise ProductUniverseError("Search limit must be between 1 and 100.")
+        rows = coins(self.read_directory(), self.registry_snapshot(), self.read_state())
+        return search_coins(rows, query, limit)
+
+    def research_scope(self, listing_ids: tuple[str, str]) -> ProductResearchScope:
+        """Eligible venue-local research needs no portfolio admission (approved Q9)."""
+        self.apply_policy_bindings()
+        directory = self.read_directory()
+        if directory is None:
+            raise ProductUniverseError(
+                "Current market directory has not been refreshed."
+            )
+        state = self.read_state()
+        rows = coins(directory, self.registry_snapshot(), state)
+        selected = tuple(
+            next((row for row in rows if row.listing_id == key), None)
+            for key in listing_ids
+        )
+        if listing_ids[0] == listing_ids[1] or any(row is None for row in selected):
+            raise ProductUniverseError("Choose two distinct eligible spot listings.")
+        instruments: list[ResolvedProductInstrument] = []
+        venues: set[str] = set()
+        for row in selected:
+            assert row is not None
+            if not row.trading:
+                raise ProductUniverseError("Selected listing is not currently trading.")
+            venues.add(row.venue)
+            source = next(
+                source for source in directory.sources if source.venue == row.venue
+            )
+            # Unresolved listings use an explicit local coordinate, never a
+            # guessed cross-venue economic identity. Their call remains blocked.
+            asset = AssetId(
+                row.canonical_asset_id or f"VENUE:{row.venue}:{row.venue_asset_code}"
+            )
+            instruments.append(
+                ResolvedProductInstrument(
+                    instrument=VenueInstrument(
+                        venue=row.venue,
+                        venue_symbol=row.venue_symbol,
+                        base=asset,
+                        quote=AssetId("USDT"),
+                    ),
+                    base_asset_identity_version=row.identity_version,
+                    quote_asset_identity_version="usdt-policy-v1",
+                    directory_observed_at=source.observed_at,
+                    source_id=source.source_id,
+                    source_fingerprint=source.source_fingerprint,
+                )
+            )
+        if len(venues) != 1:
+            raise ProductUniverseError("The two coins must have a common venue.")
+        if instruments[0].instrument.base == instruments[1].instrument.base:
+            raise ProductUniverseError("The two listings represent the same asset.")
+        return ProductResearchScope(
+            directory_id=directory.directory_id,
+            directory_observed_at=directory.observed_at,
+            approved_assets=tuple(AssetId(key) for key in state.approved_asset_ids),
+            instruments=tuple(instruments),
+            economic_identity_confirmed=all(
+                row is not None and row.call_available for row in selected
+            ),
+        )
+
     def refresh_directory(self) -> ProductMarketDirectory:
         """Publish each venue immediately; keep exact last-good evidence on outage."""
 
-        with self._lock:
+        with self._state_guard():
             # Validate before acquisition so corrupt persisted truth is never replaced.
             directory = self.read_directory()
             sources = (
@@ -332,7 +291,8 @@ class ProductUniverse:
                     "Current public Spot markets could not be refreshed: "
                     + "; ".join(f"{r.venue}: {r.error}" for r in results.values())
                 )
-            return directory
+        self.apply_policy_bindings()
+        return directory
 
     def set_identity_mapping(
         self,
@@ -353,6 +313,12 @@ class ProductUniverse:
             asset_identity_version=asset_identity_version,
             confirmed_at=timestamp,
         )
+        if (mapping.venue, mapping.venue_asset_code, mapping.canonical_asset_id) == (
+            "binance",
+            "W",
+            "BTC",
+        ):
+            raise ProductUniverseError("Wormhole cannot be bound to Bitcoin.")
         directory = self.read_directory()
         if directory is None or not any(
             market.venue == mapping.venue
@@ -364,7 +330,7 @@ class ProductUniverse:
                 "Identity mapping requires a currently observed venue asset code."
             )
 
-        with self._lock:
+        with self._state_guard():
             state = self.read_state()
             retained = tuple(
                 item
@@ -372,15 +338,23 @@ class ProductUniverse:
                 if (item.venue, item.venue_asset_code)
                 != (mapping.venue, mapping.venue_asset_code)
             )
-            next_state = ProductUniverseState(
-                updated_at=timestamp,
-                approved_asset_ids=state.approved_asset_ids,
-                identity_mappings=tuple(
-                    sorted(
-                        (*retained, mapping),
-                        key=lambda item: (item.venue, item.venue_asset_code),
-                    )
-                ),
+            next_state = state.model_copy(
+                update={
+                    "schema_version": "qap.product.research-universe.v2",
+                    "updated_at": timestamp,
+                    "identity_mappings": tuple(
+                        sorted(
+                            (*retained, mapping),
+                            key=lambda item: (item.venue, item.venue_asset_code),
+                        )
+                    ),
+                    "resolution_reviews": tuple(
+                        item
+                        for item in state.resolution_reviews
+                        if (item.venue, item.venue_asset_code)
+                        != (mapping.venue, mapping.venue_asset_code)
+                    ),
+                }
             )
             self._write_model(self.state_path, next_state)
             return next_state
@@ -398,9 +372,9 @@ class ProductUniverse:
         timestamp = (
             datetime.now(UTC)
             if updated_at is None
-            else _utc(updated_at, field="updated_at")
+            else universe_utc(updated_at, field="updated_at")
         )
-        with self._lock:
+        with self._state_guard():
             state = self.read_state()
             known_assets = {
                 AssetId(mapping.canonical_asset_id)
@@ -417,10 +391,19 @@ class ProductUniverse:
                 approved_assets.add(asset)
             else:
                 approved_assets.discard(asset)
-            next_state = ProductUniverseState(
-                updated_at=timestamp,
-                approved_asset_ids=tuple(item.key for item in sorted(approved_assets)),
-                identity_mappings=state.identity_mappings,
+            next_state = state.model_copy(
+                update={
+                    "schema_version": "qap.product.research-universe.v2",
+                    "updated_at": timestamp,
+                    "approved_asset_ids": tuple(
+                        item.key for item in sorted(approved_assets)
+                    ),
+                    "pending_admission_asset_ids": tuple(
+                        key
+                        for key in state.pending_admission_asset_ids
+                        if key != asset.key or not approved
+                    ),
+                }
             )
             self._write_model(self.state_path, next_state)
             return next_state
@@ -430,8 +413,8 @@ class ProductUniverse:
 
         state = self.read_state()
         directory = self.read_directory()
-        mappings = _mapping_by_venue_code(state)
-        versions = _mapping_versions(state)
+        mappings = mapping_by_venue_code(state)
+        versions = mapping_versions(state)
         approved = {AssetId(value) for value in state.approved_asset_ids}
         directory_markets = () if directory is None else directory.markets
         candidate_assets = {
@@ -445,7 +428,7 @@ class ProductUniverse:
 
         venue_rows: dict[AssetId, list[ResearchUniverseVenue]] = {}
         for market in directory_markets:
-            resolved = _resolved_market(
+            resolved = resolved_market(
                 market,
                 mappings=mappings,
                 versions=versions,
@@ -544,8 +527,8 @@ class ProductUniverse:
             raise ProductUniverseError(
                 "Current market directory has not been refreshed."
             )
-        mappings = _mapping_by_venue_code(state)
-        versions = _mapping_versions(state)
+        mappings = mapping_by_venue_code(state)
+        versions = mapping_versions(state)
         approved = {AssetId(value) for value in state.approved_asset_ids}
         selected = None if asset_ids is None else frozenset(asset_ids)
         references = frozenset(analysis_reference_ids)
@@ -564,7 +547,7 @@ class ProductUniverse:
         for market in directory.markets:
             if not market.trading:
                 continue
-            resolved = _resolved_market(
+            resolved = resolved_market(
                 market,
                 mappings=mappings,
                 versions=versions,

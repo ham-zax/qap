@@ -6,11 +6,22 @@
 
 **Tech Stack:** Python 3.14, `uv`, pytest, Ruff, Pyright, Decimal-based accounting, NumPy/Pandas/PyArrow where data/model work requires them, Pydantic at external manifest/HTTP boundaries, FastAPI for the HTTP boundary, React 19.2 latest patched line, TypeScript, Vite 8.1 line, TanStack Router/Query, and TradingView Lightweight Charts 5.2 line. Additional visualization libraries are not dependencies until a concrete research view earns them.
 
+Update context — 2026-10-02
+Trigger: implementation of the approved Phase 19 research path exposed a stale
+admission constraint here.
+Purpose: align its scope with Hamza's September 30 Q9 decision.
+Impact: research needs eligibility, while portfolio and automation still require
+admission; no economic, action-space, benchmark, cost or holdout changes.
+Evidence: [Q9 decision](../../product/decisions-2026-09-30.md),
+[Phase 19](../../plans/19-pair-rotation-lab-mvp.md).
+
 ## Global Constraints
 
 - QAP's primary objective is portfolio wealth growth relative to matched passive HODL after realistic costs; inventory is the owned state being reallocated, and coin-unit accumulation is secondary attribution.
 - Portfolio inventory is the economic object; pairs are evidence/execution atoms.
-- Operate only on explicitly admitted assets the operator is willing to own.
+- Portfolio and automation operate only on explicitly admitted assets the operator
+  is willing to own. Pair Rotation Lab research may study any eligible spot coin
+  without admission (approved Phase 19 Q9).
 - Spot-only, long-only, no leverage, no borrowing, no derivatives, no interest-bearing trading mechanics.
 - QAP v1/v2 are read-only historical references. No runtime imports or architecture inheritance by default.
 - Models are replaceable evidence instruments and cannot mutate holdings directly.

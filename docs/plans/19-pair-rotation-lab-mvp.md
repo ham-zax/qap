@@ -18,8 +18,8 @@ Evidence: [decision record](../product/decisions-2026-09-30.md).
 
 - **Kept and done:** M1 exchange metadata (`438b3d9`); M2 registry, resolver and
   eligibility (`62dd8e0`); web foundation, themes and passing web suite (`6ae7f00`).
-- **Kept, still to do:** repair the contradicted `W → BTC` binding (D6); coin search
-  by name, ticker and market alias (M4 search).
+- **Completed in M2 below:** repair the contradicted `W → BTC` binding (D6); coin
+  search by name, ticker and market alias (M4 search).
 - **Dropped from the MVP path:** durable multi-stage research requests, scan
   preparation, custom-experiment lineage UI, stored-data retirement beyond the
   corrupt binding. Revisit for portfolio and automation horizons.
@@ -114,7 +114,7 @@ stop and escalate with the diffs before continuing.
 | --- | --- | --- |
 | M0 | Done | Docs `8a42983`; dependencies/tokens `9434143`; spike in §5 |
 | M1 | Done 2026-10-02 | [Independent parity report](../research/2026-10-02-engine-parity.md); 12/12 comparisons, 5/5 exact hand cases; verification below |
-| M2 | Not started | |
+| M2 | Backend implemented; rendered-answer acceptance pending | API and cleanup record in §7; dashboard/analysis remains M3 onward |
 | M3 | Not started | |
 | M4 | Not started | |
 | M5 | Not started | |
@@ -183,3 +183,71 @@ passed. An independent read-only Muse review found no verified blockers; its
 inventory-coordinate suggestion was incorporated. The verification-runner timeout
 test now allows interpreter startup under suite load while preserving its timeout
 assertions. M2 receives its own integrated verification after owner changes.
+
+## 7. M2 backend record (2026-10-02)
+
+Update context — 2026-10-02
+Trigger: Hamza asked to continue and finish the backend before UI generation.
+Purpose: record the admission-free data path and bounded D6 cleanup accurately.
+Impact: implements Q9/D1–D7 through existing universe, data and operation owners.
+Criterion 3's rendered answer remains unaccepted until M3/M4; no dashboard work
+starts in this continuation. Broader Phase 18 retirement remains outside the MVP.
+Evidence: API contract tests `tests/contract/api/test_pair_rotation.py`, data and
+universe unit tests, and retirement tests `tests/contract/api/test_identity_retirement.py`.
+
+- `GET /api/pair-rotation/coins` searches names, tickers and market aliases from
+  cached evidence; leveraged and synthetic listings are excluded. Responses expose
+  identity/call availability, observation times and registry attribution. GET does
+  neither fetches the network nor changes state or waits on refresh writer locks.
+- `POST /api/pair-rotation/bootstrap` refreshes public directory/registry evidence;
+  `POST /api/pair-rotation/open` opens two Binance spot USDT listings without
+  admission. Existing operation records carry queued/download/derived progress,
+  exact dataset fingerprints/cutoffs and typed errors. Identical running requests
+  reuse the same operation across API instances; interruption permits retry.
+- Data preparation starts with a year of 15m history and tops up to the latest
+  completed bar, independently of a stale directory timestamp. Complete UTC 1h,
+  4h and 1d buckets derive from exact immutable 15m parents. Reopening current
+  data makes no upstream history request; partial download/client failure releases
+  maintenance for retry. Longer explicit lookbacks extend existing generations.
+- The universe owner accepts evidence-derived bindings, seeds USDT, keeps conflicts
+  for review and separates venue-local unresolved research from economic identity.
+  Unresolved coins remain viewable inputs with the economic call blocked. Portfolio
+  admission and existing finance scopes retain their checks.
+- D6 was applied to the local `runs`/repository-root data workspace. The preview
+  found two mislabeled datasets (`binance-spot:WUSDT:1:1:1h` and `:4h`) and no saved
+  dependencies. Their catalog entries and four parquet/provenance files were removed;
+  four valid generations remain. Exact old provenance is retained in the ignored
+  audit `runs/product/identity-retirements/3e81c85282e19672ebf0dc08474defe74c0a163c2c9076dd91a8a53fd94deb94.json`.
+  The bad mapping is retired in v2 state; BTC admission awaits reconfirmation.
+  No old series was relabeled and no saved result was deleted.
+- Legacy v1 reads remain bounded migration support for other existing workspaces.
+  The MVP drops blanket stored-data/compatibility retirement beyond this corruption;
+  existing review/admission expert routes remain available until the UI work.
+
+The backend API part of criterion 2 is covered by all required W aliases and
+eligibility cases. The empty-workspace contract test verifies year-long acquisition,
+eight immutable outputs, progress, reload, and current-data reuse without approval
+or identity screens. This establishes data readiness, not a rendered analysis answer,
+strategy edge, the UI experience, or live network performance.
+
+The live registry refresh returned `unavailable / budget_exhausted` after its
+bounded traversal. Cached directory search and venue-local research remain
+available; W, BTC and PIXEL are currently unresolved and cannot make an economic
+call. Registry evidence must recover before those calls become available. This
+is an external-data limitation, not an inferred identity or automatic admission.
+
+The integrated Phase 00 suite passed: 810 Python tests, one opt-in network test
+skipped; Ruff, formatting, Pyright, all eight import contracts and source-size
+checks passed (40 review warnings, no file above 700 lines). Operations remains
+one lifecycle owner at 519 lines; universe contracts/policy/search and retirement
+inventory are separate pure modules, while mutable writes stay with their existing
+owners. Final targeted rechecks and web verification are recorded below before
+commit. The independent read-only Muse review found no verified blockers; the
+concurrent/busy API tests caught and verified a correction for immutable boundary
+exceptions passing through Python's generator context managers.
+
+Final rechecks passed after making cached search read-only (61 affected tests) and
+blocking contradicted identities in untouched legacy finance scopes (31 tests).
+All 116 web tests and the TypeScript/production build passed with regenerated
+OpenAPI and API types. The stop point is M3 dashboard/analysis; rendered-answer,
+performance and representative-user acceptance remain future gates.

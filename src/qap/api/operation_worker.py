@@ -8,11 +8,13 @@ from pathlib import Path
 from pydantic import JsonValue
 
 from qap.api.basket_schemas import BasketRunRequestDto
+from qap.api.errors import ApiBoundaryError
 from qap.api.operations import (
     OperationKind,
     OperationStatus,
     OperationStore,
 )
+from qap.api.pair_rotation_worker import execute_pair_rotation
 from qap.api.product_current_evidence_schemas import (
     ProductQualificationWorkerRequestDto,
 )
@@ -355,7 +357,15 @@ def run(run_root: Path, operation_id: str) -> int:
     try:
         store = OperationStore(run_root)
         request = store.read_request(operation_id)
-        result = _execute(request.kind, request.request_summary, request.settings)
+        result = (
+            execute_pair_rotation(request, store)
+            if request.kind
+            in {
+                OperationKind.REFRESH_COIN_DIRECTORY,
+                OperationKind.PREPARE_PAIR_ROTATION_DATA,
+            }
+            else _execute(request.kind, request.request_summary, request.settings)
+        )
         store.finish(
             operation_id,
             status=OperationStatus.COMPLETED,
@@ -368,8 +378,12 @@ def run(run_root: Path, operation_id: str) -> int:
             OperationStore(run_root).finish(
                 operation_id,
                 status=OperationStatus.FAILED,
-                failure_code=type(exc).__name__,
-                failure_message="Operation failed. See local worker log for details.",
+                failure_code=exc.code
+                if isinstance(exc, ApiBoundaryError)
+                else type(exc).__name__,
+                failure_message=exc.message
+                if isinstance(exc, ApiBoundaryError)
+                else "Operation failed. See local worker log for details.",
             )
         except BaseException:
             traceback.print_exc()

@@ -1502,6 +1502,85 @@
         "title": "CaptureReadinessDto",
         "type": "object"
       },
+      "CoinSearchDto": {
+        "additionalProperties": false,
+        "properties": {
+          "coins": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchCoin"
+            },
+            "title": "Coins",
+            "type": "array"
+          },
+          "directory_observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Directory Observed At"
+          },
+          "directory_status": {
+            "enum": [
+              "not_refreshed",
+              "observed"
+            ],
+            "title": "Directory Status",
+            "type": "string"
+          },
+          "registry_attribution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registry Attribution"
+          },
+          "registry_observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registry Observed At"
+          },
+          "registry_status": {
+            "enum": [
+              "unavailable",
+              "cached"
+            ],
+            "title": "Registry Status",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "qap.api.coin-search.v1",
+            "default": "qap.api.coin-search.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "directory_status",
+          "registry_status",
+          "directory_observed_at",
+          "registry_observed_at",
+          "registry_attribution",
+          "coins"
+        ],
+        "title": "CoinSearchDto",
+        "type": "object"
+      },
       "CompletedResearchScopeStagesDto": {
         "additionalProperties": false,
         "properties": {
@@ -4248,6 +4327,20 @@
             "title": "Operation Id",
             "type": "string"
           },
+          "progress": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
           "request_summary": {
             "additionalProperties": {
               "$ref": "#/components/schemas/JsonValue"
@@ -4425,6 +4518,36 @@
           "series"
         ],
         "title": "PairEvidenceDto",
+        "type": "object"
+      },
+      "PairRotationRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "coin_a": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Coin A",
+            "type": "string"
+          },
+          "coin_b": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Coin B",
+            "type": "string"
+          },
+          "lookback_days": {
+            "default": 365,
+            "maximum": 3650.0,
+            "minimum": 365.0,
+            "title": "Lookback Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "coin_a",
+          "coin_b"
+        ],
+        "title": "PairRotationRequestDto",
         "type": "object"
       },
       "PairSeriesDto": {
@@ -7147,6 +7270,109 @@
           "scope_identity"
         ],
         "title": "ResearchClaimDto",
+        "type": "object"
+      },
+      "ResearchCoin": {
+        "additionalProperties": false,
+        "properties": {
+          "call_available": {
+            "title": "Call Available",
+            "type": "boolean"
+          },
+          "canonical_asset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Asset Id"
+          },
+          "identity_reason": {
+            "title": "Identity Reason",
+            "type": "string"
+          },
+          "identity_state": {
+            "enum": [
+              "resolved",
+              "review",
+              "unresolved"
+            ],
+            "title": "Identity State",
+            "type": "string"
+          },
+          "identity_version": {
+            "title": "Identity Version",
+            "type": "string"
+          },
+          "listing_id": {
+            "title": "Listing Id",
+            "type": "string"
+          },
+          "listing_time": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Listing Time"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "relationship_available": {
+            "title": "Relationship Available",
+            "type": "boolean"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "trading": {
+            "title": "Trading",
+            "type": "boolean"
+          },
+          "venue": {
+            "enum": [
+              "binance",
+              "gate"
+            ],
+            "title": "Venue",
+            "type": "string"
+          },
+          "venue_asset_code": {
+            "title": "Venue Asset Code",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "title": "Venue Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "listing_id",
+          "venue",
+          "venue_symbol",
+          "venue_asset_code",
+          "name",
+          "canonical_asset_id",
+          "identity_version",
+          "identity_state",
+          "identity_reason",
+          "trading",
+          "listing_time",
+          "relationship_available",
+          "call_available",
+          "source"
+        ],
+        "title": "ResearchCoin",
         "type": "object"
       },
       "ResearchComponentV1": {
@@ -10413,6 +10639,124 @@
         "summary": "Operation Detail",
         "tags": [
           "operations"
+        ]
+      }
+    },
+    "/api/pair-rotation/bootstrap": {
+      "post": {
+        "operationId": "refreshResearchCoins",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationRefDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Refresh Research Coins",
+        "tags": [
+          "pair-rotation"
+        ]
+      }
+    },
+    "/api/pair-rotation/coins": {
+      "get": {
+        "operationId": "searchResearchCoins",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoinSearchDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Research Coins",
+        "tags": [
+          "pair-rotation"
+        ]
+      }
+    },
+    "/api/pair-rotation/open": {
+      "post": {
+        "operationId": "openPairRotationData",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairRotationRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationRefDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Open Pair Rotation",
+        "tags": [
+          "pair-rotation"
         ]
       }
     },
