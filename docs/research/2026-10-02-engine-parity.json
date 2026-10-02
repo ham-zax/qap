@@ -1,0 +1,411 @@
+{
+  "schema_version": "qap.engine-parity.report.v1",
+  "bt_version": "1.2.3",
+  "settings": {
+    "starting_value": 10000.0,
+    "fee_rate": 0.001,
+    "slippage_rate": 0.0005,
+    "minimum_notional": 1.0,
+    "period_bars": 96,
+    "drift": 0.05,
+    "signal_deviation": 0.01
+  },
+  "window": {
+    "start": "2026-04-01T00:00:00+00:00",
+    "end_exclusive": "2026-10-01T00:00:00+00:00"
+  },
+  "full_recorded_window": true,
+  "input_manifest_sha256": "29d3135e1f3b2477a180fb182edde7204d52af51c8f9a8f71bf8493d43c58813",
+  "results": [
+    {
+      "pair": "BTC/ETH",
+      "strategy": "hodl",
+      "bars": 17568,
+      "qap": {
+        "terminal_value": 12533.054623213533,
+        "legs": 0,
+        "holdings": [
+          0.0734797049055051,
+          2.378404090855036
+        ],
+        "settlement": 0.0
+      },
+      "bt": {
+        "terminal_value": 12533.054623213531,
+        "legs": 0,
+        "holdings": [
+          0.0734797049055051,
+          2.378404090855036
+        ],
+        "settlement": 0.0
+      },
+      "relative_terminal_error": 2.220446049250313e-16,
+      "maximum_inventory_value_error": 0.0,
+      "passed": true
+    },
+    {
+      "pair": "BTC/ETH",
+      "strategy": "periodic",
+      "bars": 17568,
+      "qap": {
+        "terminal_value": 12566.686931220253,
+        "legs": 352,
+        "holdings": [
+          0.0750082568145437,
+          2.3433369446366825
+        ],
+        "settlement": 2.211239668559e-28
+      },
+      "bt": {
+        "terminal_value": 12566.686931220258,
+        "legs": 352,
+        "holdings": [
+          0.07500825681454372,
+          2.343336944636684
+        ],
+        "settlement": -7.105427357601002e-15
+      },
+      "relative_terminal_error": 4.440892098500626e-16,
+      "maximum_inventory_value_error": 3.5784841756481004e-12,
+      "passed": true
+    },
+    {
+      "pair": "BTC/ETH",
+      "strategy": "threshold",
+      "bars": 17568,
+      "qap": {
+        "terminal_value": 12533.054623213533,
+        "legs": 0,
+        "holdings": [
+          0.0734797049055051,
+          2.378404090855036
+        ],
+        "settlement": 0.0
+      },
+      "bt": {
+        "terminal_value": 12533.054623213531,
+        "legs": 0,
+        "holdings": [
+          0.0734797049055051,
+          2.378404090855036
+        ],
+        "settlement": 0.0
+      },
+      "relative_terminal_error": 2.220446049250313e-16,
+      "maximum_inventory_value_error": 0.0,
+      "passed": true
+    },
+    {
+      "pair": "BTC/ETH",
+      "strategy": "signal",
+      "bars": 17568,
+      "qap": {
+        "terminal_value": 12558.472477228708,
+        "legs": 352,
+        "holdings": [
+          0.07495922624045832,
+          2.341805177861258
+        ],
+        "settlement": 4.086907770448e-27
+      },
+      "bt": {
+        "terminal_value": 12558.47247722873,
+        "legs": 352,
+        "holdings": [
+          0.07495922624045843,
+          2.341805177861262
+        ],
+        "settlement": -3.552713678800501e-15
+      },
+      "relative_terminal_error": 1.7763568394002505e-15,
+      "maximum_inventory_value_error": 1.0735452526944302e-11,
+      "passed": true
+    },
+    {
+      "pair": "BTC/SOL",
+      "strategy": "hodl",
+      "bars": 17568,
+      "qap": {
+        "terminal_value": 13252.592680405463,
+        "legs": 0,
+        "holdings": [
+          0.0734797049055051,
+          60.175713082200026
+        ],
+        "settlement": 0.0
+      },
+      "bt": {
+        "terminal_value": 13252.592680405462,
+        "legs": 0,
+        "holdings": [
+          0.0734797049055051,
+          60.17571308220002
+        ],
+        "settlement": 0.0
+      },
+      "relative_terminal_error": 2.220446049250313e-16,
+      "maximum_inventory_value_error": 8.392930794798304e-13,
+      "passed": true
+    },
+    {
+      "pair": "BTC/SOL",
+      "strategy": "periodic",
+      "bars": 17568,
+      "qap": {
+        "terminal_value": 13280.60834992084,
+        "legs": 352,
+        "holdings": [
+          0.07972460154433744,
+          55.99178936858942
+        ],
+        "settlement": 3.8962391934e-29
+      },
+      "bt": {
+        "terminal_value": 13280.608349920838,
+        "legs": 352,
+        "holdings": [
+          0.07972460154433743,
+          55.991789368589416
+        ],
+        "settlement": -7.105427357601002e-15
+      },
+      "relative_terminal_error": 2.220446049250313e-16,
+      "maximum_inventory_value_error": 1.160510576525553e-12,
+      "passed": true
+    },
+    {
+      "pair": "BTC/SOL",
+      "strategy": "threshold",
+      "bars": 17568,
+      "qap": {
+        "terminal_value": 13252.592680405463,
+        "legs": 0,
+        "holdings": [
+          0.0734797049055051,
+          60.175713082200026
+        ],
+        "settlement": 0.0
+      },
+      "bt": {
+        "terminal_value": 13252.592680405462,
+        "legs": 0,
+        "holdings": [
+          0.0734797049055051,
+          60.17571308220002
+        ],
+        "settlement": 0.0
+      },
+      "relative_terminal_error": 2.220446049250313e-16,
+      "maximum_inventory_value_error": 8.392930794798304e-13,
+      "passed": true
+    },
+    {
+      "pair": "BTC/SOL",
+      "strategy": "signal",
+      "bars": 17568,
+      "qap": {
+        "terminal_value": 12321.5749944392,
+        "legs": 350,
+        "holdings": [
+          0.07396744430251943,
+          51.94845088946017
+        ],
+        "settlement": 2.3021162499815e-27
+      },
+      "bt": {
+        "terminal_value": 12321.574994439214,
+        "legs": 350,
+        "holdings": [
+          0.0739674443025195,
+          51.94845088946023
+        ],
+        "settlement": -7.105427357601002e-15
+      },
+      "relative_terminal_error": 1.2212453270876722e-15,
+      "maximum_inventory_value_error": 7.553637715318473e-12,
+      "passed": true
+    },
+    {
+      "pair": "ETH/SOL",
+      "strategy": "hodl",
+      "bars": 17568,
+      "qap": {
+        "terminal_value": 13496.372401347004,
+        "legs": 0,
+        "holdings": [
+          2.378404090855036,
+          60.175713082200026
+        ],
+        "settlement": 0.0
+      },
+      "bt": {
+        "terminal_value": 13496.372401347002,
+        "legs": 0,
+        "holdings": [
+          2.378404090855036,
+          60.17571308220002
+        ],
+        "settlement": 0.0
+      },
+      "relative_terminal_error": 2.220446049250313e-16,
+      "maximum_inventory_value_error": 8.392930794798304e-13,
+      "passed": true
+    },
+    {
+      "pair": "ETH/SOL",
+      "strategy": "periodic",
+      "bars": 17568,
+      "qap": {
+        "terminal_value": 13541.499316454516,
+        "legs": 356,
+        "holdings": [
+          2.5354508469625823,
+          56.98656440064808
+        ],
+        "settlement": 4.634938858505e-27
+      },
+      "bt": {
+        "terminal_value": 13541.499316454516,
+        "legs": 356,
+        "holdings": [
+          2.5354508469625823,
+          56.98656440064808
+        ],
+        "settlement": -3.552713678800501e-15
+      },
+      "relative_terminal_error": 0.0,
+      "maximum_inventory_value_error": 3.5527136788051355e-15,
+      "passed": true
+    },
+    {
+      "pair": "ETH/SOL",
+      "strategy": "threshold",
+      "bars": 17568,
+      "qap": {
+        "terminal_value": 13629.514452741856,
+        "legs": 4,
+        "holdings": [
+          2.4028804388069065,
+          60.7463051583315
+        ],
+        "settlement": 5.72769263055e-48
+      },
+      "bt": {
+        "terminal_value": 13629.514452741856,
+        "legs": 4,
+        "holdings": [
+          2.4028804388069065,
+          60.746305158331495
+        ],
+        "settlement": 0.0
+      },
+      "relative_terminal_error": 0.0,
+      "maximum_inventory_value_error": 8.392930794798304e-13,
+      "passed": true
+    },
+    {
+      "pair": "ETH/SOL",
+      "strategy": "signal",
+      "bars": 17568,
+      "qap": {
+        "terminal_value": 12548.100641866318,
+        "legs": 356,
+        "holdings": [
+          2.3494512429365817,
+          52.80605408759085
+        ],
+        "settlement": 1.12534982e-27
+      },
+      "bt": {
+        "terminal_value": 12548.100641866355,
+        "legs": 356,
+        "holdings": [
+          2.3494512429365884,
+          52.806054087591
+        ],
+        "settlement": -3.552713678800501e-15
+      },
+      "relative_terminal_error": 2.886579864025407e-15,
+      "maximum_inventory_value_error": 1.78924208782405e-11,
+      "passed": true
+    }
+  ],
+  "hand_cases": [
+    {
+      "case": "single_swap",
+      "expected": {
+        "AAA": "0",
+        "BBB": "6"
+      },
+      "actual": {
+        "AAA": "0",
+        "BBB": "6"
+      },
+      "legs": 1,
+      "passed": true
+    },
+    {
+      "case": "fee_rounding",
+      "expected": {
+        "AAA": "33.3",
+        "BBB": "0.0001"
+      },
+      "actual": {
+        "AAA": "33.3",
+        "BBB": "0.0001"
+      },
+      "legs": 1,
+      "passed": true
+    },
+    {
+      "case": "partial_rotation",
+      "expected": {
+        "AAA": "1.5",
+        "BBB": "1.5"
+      },
+      "actual": {
+        "AAA": "1.5",
+        "BBB": "1.5"
+      },
+      "legs": 1,
+      "passed": true
+    },
+    {
+      "case": "insufficient_inventory",
+      "expected": {
+        "AAA": "0",
+        "BBB": "7"
+      },
+      "actual": {
+        "AAA": "0",
+        "BBB": "7"
+      },
+      "legs": 0,
+      "passed": true
+    },
+    {
+      "case": "two_leg_route",
+      "expected": {
+        "AAA": "0",
+        "BBB": "6",
+        "USDT": "0"
+      },
+      "actual": {
+        "AAA": "0",
+        "BBB": "6",
+        "USDT": "0"
+      },
+      "legs": 2,
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "scope": [
+    "Fixed-basket accounting verification; no edge/discovery evidence",
+    "Real-data runs: USDT settlement; direct conversion checked by hand",
+    "Historical unconstrained metadata; 10bp fees, 5bp slippage per leg",
+    "QAP replay: bounded two-bar windows, continuous authoritative ledger",
+    "bt owns holdings, cash, commissions and trades from raw input prices",
+    "Hand inventory: exact Decimal; bt arithmetic tolerance: 1e-10"
+  ]
+}

@@ -1,5 +1,11 @@
 # QAP Plan Map
 
+Update context — 2026-10-02
+Trigger: continued approved Phase 19 after M0 and M1 verification.
+Purpose: remove stale current-phase labels while preserving historical plans.
+Impact: none; the September 30 decision remains authoritative.
+Evidence: [Phase 19](19-pair-rotation-lab-mvp.md), [parity report](../research/2026-10-02-engine-parity.md).
+
 Update context — 2026-09-30 (product direction)
 Trigger: design interview with Hamza after the research console was rejected.
 Purpose: introduce the product vision and the proposed next phase.
@@ -18,7 +24,7 @@ Impact: no economic or research contract change here.
 Evidence: [Phase 18 handoff](18-research-experience-and-asset-resolution.md).
 
 
-**Status:** Implementation is complete through Phase 16. Phase 17 Product Layer M0-M9, M10-A, M10-B, and M10-C are complete and integrated. M10-0 Research Cockpit + Experiment Contract is APPROVED. M10-C Capability/Fidelity Proof is approved at `3e07878`. Pair Study M11-A/B/C/D is integrated through `3528973`, including study-first W/PIXEL evidence, honest two-leg economics, and same-screen development completion. M10-D representative-user acceptance rerun is now the final human gate. **Phase 18** (research experience and automatic asset resolution) is the current phase; its M7 acceptance closes M10-D.
+**Status:** Phase 19 — Pair Rotation Lab MVP is current. M0 foundation and M1 engine parity are complete; M2 coin/data setup is next. Phase 18 M1/M2 remain the asset-evidence foundation. Phase 17 representative-user acceptance remains open and is not satisfied by automated checks.
 
 Update context — 2026-09-27 (Phase 18 approved)
 Trigger: Hamza delegated investigation decisions D1–D7 and asked for implementation
@@ -141,7 +147,7 @@ Evidence: `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigatio
 
 ## Current wave
 
-The current phase is [Phase 18 — Research Experience and Automatic Asset Resolution](18-research-experience-and-asset-resolution.md);
+The current phase is [Phase 19 — Pair Rotation Lab MVP](19-pair-rotation-lab-mvp.md);
 its tracker records decisions and implementation progress. The integrated milestone
 record below describes historical implementation, not acceptance of the present experience.
 
@@ -190,7 +196,8 @@ CLI fixture checks into completion of that gate.
 17. Slice 4: `docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md`
 18. `16-human-centered-workbench-ux-rearchitecture.md` (post-Slice-4 presentation/IA phase; current-state evidence is in `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`; fresh-agent execution handoff is `docs/research/2026-08-19-qap-phase16-implementation-handoff.md`)
 19. `17-product-layer-market-data-and-research-lifecycle.md` (Product Layer phase; M0-M9 and M10-A/B/C complete, M10-0 approved, M11 Pair Study redesign current before M10-D human closure; Pair Study design is `docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md`; implementation plan is `docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`; original Product investigation is `docs/research/2026-08-19-qap-product-layer-investigation.md`; cockpit investigation is `docs/research/2026-08-20-qap-research-cockpit-investigation.md`; M10-C proof is `docs/research/2026-08-20-qap-m10c-capability-fidelity-proof.md`)
-20. `18-research-experience-and-asset-resolution.md` (current phase: automatic asset resolution, backend research requests, UI regeneration; decision log D1–D7 and milestone tracker; evidence is `docs/research/2026-09-27-research-product-investigation-findings.md`)
+20. `18-research-experience-and-asset-resolution.md` (foundation and historical D1–D7 decisions; remaining experience superseded by Phase 19)
+21. `19-pair-rotation-lab-mvp.md` (current phase: verified engine, coin/data setup, two-coin dashboard; single implementation tracker)
 
 The original cross-phase master implementation plan at `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md` closes the 00–15 research-engine mission. Phases 16, 17 and 18 are explicitly authorized post-master product phases and do not alter the original economic/research completion definition.
 

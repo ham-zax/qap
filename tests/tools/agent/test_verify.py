@@ -38,9 +38,10 @@ def test_verification_records_failure_without_raising(tmp_path: Path) -> None:
 
 def test_verification_timeout_is_explicit(tmp_path: Path) -> None:
     result = run_verification(
-        _python("import time; print('start', flush=True); time.sleep(2)"),
+        _python("import time; print('start', flush=True); time.sleep(10)"),
         cwd=tmp_path,
-        timeout_seconds=0.05,
+        # Allow the login shell and interpreter to start under full-suite load.
+        timeout_seconds=0.5,
     )
 
     assert result.exit_code == 124

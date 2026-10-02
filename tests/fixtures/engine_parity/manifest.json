@@ -1,0 +1,313 @@
+{
+  "schema_version": "qap.engine-parity.inputs.v1",
+  "captured_at": "2026-10-02T14:38:23.229902+00:00",
+  "interval": "15m",
+  "start": "2026-04-01T00:00:00+00:00",
+  "end_exclusive": "2026-10-01T00:00:00+00:00",
+  "purpose": "Fixed-basket accounting parity; not strategy selection or holdout evidence",
+  "sources": [
+    {
+      "venue_symbol": "BTCUSDT",
+      "base_asset": "BTC",
+      "quote_asset": "USDT",
+      "bars": 17568,
+      "semantic_fingerprint": "34d79a250808fc401b3ed678963be84fb64a4db54066a52972efdca351b0fc82",
+      "parquet_sha256": "72125d31c0d62c7b126db8356551b004eb1197aba074a177c6844d62f1b657d6",
+      "raw_sha256": "f793938d56120ff3d4290b1074a84c0d77f08ecf0bc2d6854a551151cd3dff9f",
+      "requests": [
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1775001600000&endTime=1775901599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:24.246631+00:00",
+          "payload_sha256": "f3f7790eacd321fc4d3b07733bdb22123e16c3b27cd67d8f2425b0e14bc524d6"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1775901600000&endTime=1776801599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:24.675479+00:00",
+          "payload_sha256": "7431553e9b842489728c1ed71441275a846b883936126e3622c9cbd899987500"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1776801600000&endTime=1777701599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:25.061840+00:00",
+          "payload_sha256": "30a646165cf7c26a7aecfda68c5c171ef56235ad4faefccb716f5d26ada6e7dc"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1777701600000&endTime=1778601599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:25.471105+00:00",
+          "payload_sha256": "340f060e30d764243db56bb82fab83c56a51c16ee6f3733706e574b821de6afa"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1778601600000&endTime=1779501599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:25.809600+00:00",
+          "payload_sha256": "d7b12298ab1a531212f21094bef67822f4f4be28e3e1dd27799c6e1b508e22c1"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1779501600000&endTime=1780401599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:26.247056+00:00",
+          "payload_sha256": "3efc6f27eda6a48651013b8ca734492b83d7f65fdb122ba4e16e59404142685f"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1780401600000&endTime=1781301599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:26.582242+00:00",
+          "payload_sha256": "12a310d2b1c4f2d34ca9e4960f0a8f2e7c1643699af30d1005bca4cf41a89807"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1781301600000&endTime=1782201599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:26.986925+00:00",
+          "payload_sha256": "4304ee10538591e9ea02ec817b495b7955284a47a71b3b835cdd0d0cf74bfb8c"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1782201600000&endTime=1783101599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:27.315444+00:00",
+          "payload_sha256": "4c3ecbdca8d85248f59a0c7520379cf25900faabb0e436757ec8dafde4f0b93a"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1783101600000&endTime=1784001599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:27.723851+00:00",
+          "payload_sha256": "43914ff83752dd55286c149830e2cd0c9fe721ac2bf2836e6bd96930fcbaa7c2"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1784001600000&endTime=1784901599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:28.050535+00:00",
+          "payload_sha256": "85902f67aaca3940455f3a6dd62074f80864340a77da1263e5bf0318a9d5fac0"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1784901600000&endTime=1785801599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:28.450018+00:00",
+          "payload_sha256": "7857408b89f983437b2a44b36967aa9e006fb95f99dd0494d9992e95c6a342a7"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1785801600000&endTime=1786701599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:28.777209+00:00",
+          "payload_sha256": "78fc2c970f0c889e3b2c2bf77d38f3f50bd36dbc57e26f67ebe6d7b81543a55b"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1786701600000&endTime=1787601599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:29.178321+00:00",
+          "payload_sha256": "27fe6a1c97bbea38e5cced502b03463c6a26724652a0660617232783f385d7e8"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1787601600000&endTime=1788501599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:29.505600+00:00",
+          "payload_sha256": "eeb51cc79ec9e08bc7688e727e4c414906feb459acb61b3844a7cecb8caec511"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1788501600000&endTime=1789401599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:29.911225+00:00",
+          "payload_sha256": "300643dbeaf3d7a8a6cd16e1a10e716fe2a5e9ed34d275d3eba4cbf9c138169e"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1789401600000&endTime=1790301599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:30.238760+00:00",
+          "payload_sha256": "890b325ffc4ce104b9bfe5664f5fa6076c753d45e362c4f85955c386b4fb25dc"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=1790301600000&endTime=1790812799999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:30.641806+00:00",
+          "payload_sha256": "6196dc089e9e9256a4842e42cb405b717430129da12db7a24f3f36ba35e30124"
+        }
+      ]
+    },
+    {
+      "venue_symbol": "ETHUSDT",
+      "base_asset": "ETH",
+      "quote_asset": "USDT",
+      "bars": 17568,
+      "semantic_fingerprint": "7f39b1a27c300000edaed209049376c2f887fbea8cbfb363cf4052013b530042",
+      "parquet_sha256": "96ae62a9bf6805cf537fd26e84bdf68316fc72db2284f4057abeddc7b59ca2d6",
+      "raw_sha256": "3a74c56663932c661af7b81c585fce423f7dda7962d4510db3ab008bd33defba",
+      "requests": [
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1775001600000&endTime=1775901599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:31.966667+00:00",
+          "payload_sha256": "ffd455b3489ecdeb9ba719e959156524eda9906b9315824da9b91599f3325b7a"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1775901600000&endTime=1776801599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:32.285998+00:00",
+          "payload_sha256": "4ec5018386f0d04aa29154c8b09879aa7696259c7f6f0f6916205a824fea6de3"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1776801600000&endTime=1777701599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:32.608641+00:00",
+          "payload_sha256": "51a6f84382308d10c2501066c6af11d9a1921b2a978ca5ab74a4f68a472ad5da"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1777701600000&endTime=1778601599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:33.011105+00:00",
+          "payload_sha256": "19fc0d62c966f5c888fe7d6efb7bcfdfe3a073d01e836487d2d690094e5676a5"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1778601600000&endTime=1779501599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:33.331114+00:00",
+          "payload_sha256": "289ddf3bc9df943956f83c86428e160527f6f798957c8e49d45484e865b27e4a"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1779501600000&endTime=1780401599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:33.735009+00:00",
+          "payload_sha256": "550c2b93f496ddf222bc23e96e73727fd40eed25a52ad707e90e8052df0d9f75"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1780401600000&endTime=1781301599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:34.051938+00:00",
+          "payload_sha256": "ba64bd7d53344f294f0a2c8a67e49be7b58c284c1ec0757220fa757e2961f3a8"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1781301600000&endTime=1782201599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:34.464239+00:00",
+          "payload_sha256": "f0e98317ed0a4fd693a2c49a70a15b83ad893fe68441dae69f71c0cf8b29d4c3"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1782201600000&endTime=1783101599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:34.796169+00:00",
+          "payload_sha256": "f2e5590e20b2397fcbe3a011f5f702df5970834423be401624847b7bfdc542ec"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1783101600000&endTime=1784001599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:35.228257+00:00",
+          "payload_sha256": "612bb9b1ade34fabe7c4ece004178689ceae4ab820c84bb1a29a57db4cb10223"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1784001600000&endTime=1784901599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:35.544693+00:00",
+          "payload_sha256": "e38cdf1bd3aa4bbf8d32436b771bf472c3283c37bb62dd76c7f0e1477b155ff8"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1784901600000&endTime=1785801599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:35.955780+00:00",
+          "payload_sha256": "61c362c40adf1078bffa3c18feb417a2665ec38ec5d9dec20de3cbaac226164e"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1785801600000&endTime=1786701599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:36.273820+00:00",
+          "payload_sha256": "c184d7f216ffe6f63f310493c483e2c4e1f2ada5e2d450b3757df5e288477bed"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1786701600000&endTime=1787601599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:36.723260+00:00",
+          "payload_sha256": "2abeeaf7c5b74cafbfa693e28166a061bf5c2715e8ae88dcdfec101c396890da"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1787601600000&endTime=1788501599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:37.047931+00:00",
+          "payload_sha256": "b0fdf9856b584caa61098e361c14c68520fa577d82c3939e921eff877bc7ce8e"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1788501600000&endTime=1789401599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:37.475921+00:00",
+          "payload_sha256": "e54f50a9e44abbde6d3a093f57ab7691a89826a8928a8fb13dd61bbbd6b8a157"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1789401600000&endTime=1790301599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:37.796940+00:00",
+          "payload_sha256": "718560f7b0f73f44e5422407928ec03ba80f658333d5b6877661c42a81dab5c9"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=15m&startTime=1790301600000&endTime=1790812799999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:38.196173+00:00",
+          "payload_sha256": "703b14fd7b222c6ec13301e3bb0655819ffdbad0a7e847107464d1a48f75d9fb"
+        }
+      ]
+    },
+    {
+      "venue_symbol": "SOLUSDT",
+      "base_asset": "SOL",
+      "quote_asset": "USDT",
+      "bars": 17568,
+      "semantic_fingerprint": "a0b68b81d18c8a58cb1a8b49fa802e50803e3e6cbdd89fa62e8a892e2711c1c6",
+      "parquet_sha256": "d3d0004fe127262619f523d40e3b3afda13122ec7b6500f5fcd92504ca72dc9c",
+      "raw_sha256": "e3e5bba576a5c2072fa944da099eb028084c20df7fea81ad7349b18b10a84415",
+      "requests": [
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1775001600000&endTime=1775901599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:39.403769+00:00",
+          "payload_sha256": "69090d4de31d948ef413ee28c8d5347bfeddebf7f8d47a411dea18078402f10f"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1775901600000&endTime=1776801599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:39.723435+00:00",
+          "payload_sha256": "1dd521d38a6bd4d324e2882b978b2dc0428adec597d9fead2ca22c5bc8248d75"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1776801600000&endTime=1777701599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:40.043629+00:00",
+          "payload_sha256": "2f241b1c15d6241579c8bb3c5c97ca0d93441c5a7f65e47c8759db5aff81dc31"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1777701600000&endTime=1778601599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:40.452546+00:00",
+          "payload_sha256": "1ae0dc686683a7d7a453cbae39e8d3ad575361702fbfe99da3c20eadf570a811"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1778601600000&endTime=1779501599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:40.769022+00:00",
+          "payload_sha256": "bd4010f1438e32ef6850f013d5ec564a6f8f0f196342639256514f5bdb3fc784"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1779501600000&endTime=1780401599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:41.181400+00:00",
+          "payload_sha256": "b3c11e3b01f65e09a224b0605c48428d5274b34f49d2b54f1fd061f4c1bcd023"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1780401600000&endTime=1781301599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:41.500267+00:00",
+          "payload_sha256": "5cb865e1e3ed0cc0cf5faeebaef617df505d245b02d5d9c331b9fc3b74bdcb3d"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1781301600000&endTime=1782201599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:41.915710+00:00",
+          "payload_sha256": "89c717857fb30561118767c376f5fa3888efde6373fc9bdd91f3d9a99ceddd5b"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1782201600000&endTime=1783101599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:42.235745+00:00",
+          "payload_sha256": "244dc2f55241f3c8f891a27b677ada0fa100268da54871d9771a120ec3ccd554"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1783101600000&endTime=1784001599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:42.655015+00:00",
+          "payload_sha256": "2a5b9e84c56e0375d680cd015dddb5aedfec9dd712637ce1db7701cbdecbacdb"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1784001600000&endTime=1784901599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:42.985167+00:00",
+          "payload_sha256": "50825130abb29f468b4d5cea0eb40e96613f16bdbe51dde74351c08d91922a72"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1784901600000&endTime=1785801599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:43.407462+00:00",
+          "payload_sha256": "4faf96ba29b5c461173be2e4ab8b25f27c319d7e23d6aa93f20ddf88a711c5de"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1785801600000&endTime=1786701599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:43.736128+00:00",
+          "payload_sha256": "e0bea188f9e4a9a5f9d3a8b721b95250180ae17937cc62dbe2e52df6562258c9"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1786701600000&endTime=1787601599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:44.155881+00:00",
+          "payload_sha256": "0fa6d60637bd8459a772c04f1b660265e60dd3640e03f48bc247fee58c7de2ea"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1787601600000&endTime=1788501599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:44.475102+00:00",
+          "payload_sha256": "1d3d5c41ee176408b43f6bf69bae20b8d94fb1ad3f4a0c27348a092de23a5da2"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1788501600000&endTime=1789401599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:44.894817+00:00",
+          "payload_sha256": "06cc2a8742087f41cb6d08aa5b59db2321679bf3a68d8f2c6e7298d10b6ee3c5"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1789401600000&endTime=1790301599999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:45.214314+00:00",
+          "payload_sha256": "dc46f72eddfed41fce109c8d12eacc179ac32b196a14b64391ee0c64b0cf09ff"
+        },
+        {
+          "url": "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDT&interval=15m&startTime=1790301600000&endTime=1790812799999&limit=1000",
+          "retrieved_at": "2026-10-02T14:38:45.623599+00:00",
+          "payload_sha256": "b6f3e94575aba228756b51396caef005c9774cb01af1983b6b69f9d65a948ccf"
+        }
+      ]
+    }
+  ]
+}

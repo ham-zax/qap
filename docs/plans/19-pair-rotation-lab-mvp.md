@@ -112,8 +112,8 @@ stop and escalate with the diffs before continuing.
 
 | Milestone | Status | Evidence |
 | --- | --- | --- |
-| M0 | Done 2026-09-30 | Docs `8a42983`; spike and tokens in §5 |
-| M1 | Not started | |
+| M0 | Done | Docs `8a42983`; dependencies/tokens `9434143`; spike in §5 |
+| M1 | Done 2026-10-02 | [Independent parity report](../research/2026-10-02-engine-parity.md); 12/12 comparisons, 5/5 exact hand cases; verification below |
 | M2 | Not started | |
 | M3 | Not started | |
 | M4 | Not started | |
@@ -157,3 +157,29 @@ fallback independent minimal engine is not needed; `bt` is the M1 reference engi
   they are interpolated from the neighbouring specified tones.
 - Geist Sans and Geist Mono are self-hosted through `@fontsource-variable/geist` and
   `@fontsource-variable/geist-mono` 5.3.0 (bundled by Vite, `font-display: swap`).
+
+## 6. M1 record (2026-10-02)
+
+Update context — 2026-10-02
+Trigger: Hamza asked to continue the backend work, stopping before UI generation.
+Purpose: record the engine gate and move to M2 under the accepted Phase 19 scope.
+Impact: no economic, cost/fill, benchmark or holdout semantics changed. Dashboard
+work (M3 here) remains outside this continuation.
+Evidence: [parity report](../research/2026-10-02-engine-parity.md),
+[machine-readable results](../research/2026-10-02-engine-parity.json).
+
+Three recorded pairs over six calendar months of 15m bars pass all four strategies:
+terminal error below 2.9e-15 relative, identical executed leg counts, inventory
+coordinates within 0.0001 USDT of value. Five QAP hand-computed inventory cases
+match exactly; bt's hand arithmetic agrees within 1e-10 floating precision. The
+report names its limits: USDT settlement on real runs, direct and rounding hand
+cases, historically unconstrained metadata, fixed per-leg costs, shared declared
+policy rules. This is accounting verification, not strategy-edge evidence.
+
+Phase 00 checks passed for the M1 checkpoint: 769 Python tests passed, one opt-in
+network test skipped; Ruff, Pyright, source-size (39 existing review warnings) and
+all eight import-linter contracts passed. All 116 web tests and production build
+passed. An independent read-only Muse review found no verified blockers; its
+inventory-coordinate suggestion was incorporated. The verification-runner timeout
+test now allows interpreter startup under suite load while preserving its timeout
+assertions. M2 receives its own integrated verification after owner changes.
