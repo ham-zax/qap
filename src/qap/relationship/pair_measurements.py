@@ -149,7 +149,25 @@ def cointegration(
     residual = (log_a - float(np.mean(log_a))) - slope * (log_b - float(np.mean(log_b)))
     if np.ptp(residual) <= 1e-12 * max(1.0, float(np.ptp(log_a))):
         return None
+    diff_res = np.diff(residual)
+    if np.ptp(diff_res) <= 1e-12 * max(1.0, float(np.ptp(residual))):
+        return None
     max_lag = max(1, int(12 * (log_a.size / 100) ** 0.25))
+    if diff_res.size <= max_lag + 2:
+        return None
+    rows = diff_res.size - max_lag
+    adf_design = np.column_stack(
+        [
+            np.ones(rows),
+            residual[max_lag:-1],
+            *(
+                diff_res[max_lag - k : max_lag - k + rows]
+                for k in range(1, max_lag + 1)
+            ),
+        ]
+    )
+    if int(np.linalg.matrix_rank(adf_design)) < adf_design.shape[1]:
+        return None
     result = cast(
         "tuple[float, float, object]",
         coint(log_a, log_b, trend="c", maxlag=max_lag, autolag="aic"),

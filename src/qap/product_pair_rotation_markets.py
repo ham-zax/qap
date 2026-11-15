@@ -21,17 +21,25 @@ def direct_instrument(
     for base, quote in ((first, second), (second, first)):
         # Source codes come from the observed USDT listings, not canonical guesses.
         base_market = next(
-            row
-            for row in directory.markets
-            if row.venue == "binance"
-            and row.venue_symbol == base.instrument.venue_symbol
+            (
+                row
+                for row in directory.markets
+                if row.venue == "binance"
+                and row.venue_symbol == base.instrument.venue_symbol
+            ),
+            None,
         )
         quote_market = next(
-            row
-            for row in directory.markets
-            if row.venue == "binance"
-            and row.venue_symbol == quote.instrument.venue_symbol
+            (
+                row
+                for row in directory.markets
+                if row.venue == "binance"
+                and row.venue_symbol == quote.instrument.venue_symbol
+            ),
+            None,
         )
+        if base_market is None or quote_market is None:
+            raise PairAnalysisError("Market directory is missing a selected listing.")
         market = next(
             (
                 row

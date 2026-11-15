@@ -8,6 +8,8 @@ import pytest
 
 from qap.asset_registry import RegistryCoin, RegistrySnapshot, RegistryTicker
 from qap.portfolio import AssetId
+from qap.product_pair_rotation_analysis import PairAnalysisError
+from qap.product_pair_rotation_markets import direct_instrument
 from qap.product_universe import (
     AssetIdentityMapping,
     DirectoryMarket,
@@ -224,3 +226,22 @@ def test_missing_duplicate_or_ineligible_selection_is_refused(
 ) -> None:
     with pytest.raises(ProductUniverseError):
         setup_universe(tmp_path).research_scope(ids)
+
+
+def test_direct_instrument_raises_pair_analysis_error_when_listing_missing(
+    tmp_path: Path,
+) -> None:
+    universe = setup_universe(tmp_path)
+    scope = universe.research_scope(("binance:BTC", "binance:ETH"))
+    directory = universe.read_directory()
+    assert directory is not None
+    trimmed = directory.model_copy(
+        update={
+            "markets": tuple(
+                row for row in directory.markets if row.venue_symbol != "ETHUSDT"
+            )
+        }
+    )
+    universe.directory_path.write_text(trimmed.model_dump_json())
+    with pytest.raises(PairAnalysisError, match="missing a selected listing"):
+        direct_instrument(universe, scope)

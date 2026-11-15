@@ -183,3 +183,15 @@ def test_log_returns_reject_nonpositive_inputs_upstream() -> None:
     assert log_returns(np.array([1.0, 2.0, 4.0])) == pytest.approx(
         [np.log(2.0), np.log(2.0)]
     )
+
+
+def test_cointegration_returns_none_on_rank_deficient_residual() -> None:
+    import warnings
+
+    idx = np.arange(300, dtype=float)
+    log_a = np.linspace(1.0, 2.0, 300) + 0.01 * (idx % 4)
+    log_b = np.linspace(0.5, 1.0, 300)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        assert cointegration(log_a, log_b) is None
+    assert caught == []
