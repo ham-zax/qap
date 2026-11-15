@@ -160,6 +160,25 @@ def prove_lab_strategy(
             "Market notional filters use execution opens, not venue average prices.",
         ],
     }
+    if settings.crash_defense_mode == "park_anchor" and inputs.anchor is None:
+        context = {
+            name: run_lab_replay(inputs, settings, base_signal, kind=name)
+            for name in ("hodl", "hold_a", "hold_b")
+        }
+        return LabProof(
+            split,
+            base_signal,
+            settings,
+            None,
+            context,
+            proof,
+            _call(
+                "execution_data_missing",
+                "Anchor coin required",
+                "Choose an anchor coin before testing park_anchor crash defense.",
+            ),
+            (),
+        )
     if not execution_ready:
         # Missing execution evidence outranks identity and history here: a
         # candidate, control or rebalancing replay would trade without observed

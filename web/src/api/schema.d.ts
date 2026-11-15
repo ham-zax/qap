@@ -1490,6 +1490,12 @@ export interface components {
              */
             cost_budget_multiple: number | string;
             /**
+             * Crash Defense Mode
+             * @default coins_only
+             * @enum {string}
+             */
+            crash_defense_mode: "coins_only" | "park_anchor" | "park_usdt";
+            /**
              * Entry
              * @default 2
              */
@@ -1562,6 +1568,11 @@ export interface components {
              */
             proof_fraction: number;
             /**
+             * Regime Break Drawdown
+             * @default 0.15
+             */
+            regime_break_drawdown: number;
+            /**
              * Rotation Size
              * @default 0.5
              */
@@ -1629,6 +1640,12 @@ export interface components {
              * @default 2
              */
             cost_budget_multiple: string;
+            /**
+             * Crash Defense Mode
+             * @default coins_only
+             * @enum {string}
+             */
+            crash_defense_mode: "coins_only" | "park_anchor" | "park_usdt";
             /**
              * Entry
              * @default 2
@@ -1701,6 +1718,11 @@ export interface components {
              * @default 0.3
              */
             proof_fraction: number;
+            /**
+             * Regime Break Drawdown
+             * @default 0.15
+             */
+            regime_break_drawdown: number;
             /**
              * Rotation Size
              * @default 0.5
@@ -1829,7 +1851,7 @@ export interface components {
              * Direction
              * @enum {string}
              */
-            direction: "into_a" | "into_b";
+            direction: "into_a" | "into_b" | "into_usdt" | "into_anchor";
             /** Fees Usdt */
             fees_usdt: string;
             /** Fill Index */

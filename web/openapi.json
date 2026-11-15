@@ -2889,6 +2889,16 @@
             "default": "2",
             "title": "Cost Budget Multiple"
           },
+          "crash_defense_mode": {
+            "default": "coins_only",
+            "enum": [
+              "coins_only",
+              "park_anchor",
+              "park_usdt"
+            ],
+            "title": "Crash Defense Mode",
+            "type": "string"
+          },
           "entry": {
             "default": 2.0,
             "exclusiveMinimum": 0.0,
@@ -3019,6 +3029,13 @@
             "title": "Proof Fraction",
             "type": "number"
           },
+          "regime_break_drawdown": {
+            "default": 0.15,
+            "maximum": 0.8,
+            "minimum": 0.02,
+            "title": "Regime Break Drawdown",
+            "type": "number"
+          },
           "rotation_size": {
             "anyOf": [
               {
@@ -3146,6 +3163,16 @@
             "title": "Cost Budget Multiple",
             "type": "string"
           },
+          "crash_defense_mode": {
+            "default": "coins_only",
+            "enum": [
+              "coins_only",
+              "park_anchor",
+              "park_usdt"
+            ],
+            "title": "Crash Defense Mode",
+            "type": "string"
+          },
           "entry": {
             "default": 2.0,
             "exclusiveMinimum": 0.0,
@@ -3247,6 +3274,13 @@
             "maximum": 0.5,
             "minimum": 0.2,
             "title": "Proof Fraction",
+            "type": "number"
+          },
+          "regime_break_drawdown": {
+            "default": 0.15,
+            "maximum": 0.8,
+            "minimum": 0.02,
+            "title": "Regime Break Drawdown",
             "type": "number"
           },
           "rotation_size": {
@@ -3541,7 +3575,9 @@
           "direction": {
             "enum": [
               "into_a",
-              "into_b"
+              "into_b",
+              "into_usdt",
+              "into_anchor"
             ],
             "title": "Direction",
             "type": "string"

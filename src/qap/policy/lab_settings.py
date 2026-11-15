@@ -31,6 +31,8 @@ class LabSettings(BaseModel):
     copula_probability: float = Field(default=0.05, gt=0, lt=0.5)
     copula_exit_band: float = Field(default=0.15, gt=0.0, lt=0.45)
     trend_deadband: float = Field(default=0.002, ge=0.0, le=0.5)
+    crash_defense_mode: Literal["coins_only", "park_anchor", "park_usdt"] = "coins_only"
+    regime_break_drawdown: float = Field(default=0.15, ge=0.02, le=0.80)
     fast_window: int = Field(default=12, ge=2, le=1000)
     slow_window: int = Field(default=48, ge=3, le=10000)
     proof_fraction: float = Field(default=0.3, ge=0.2, le=0.5)

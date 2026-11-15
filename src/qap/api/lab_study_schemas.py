@@ -107,7 +107,7 @@ class LabTradeDto(AnalysisModel):
     decision_index: int
     fill_index: int
     time: datetime
-    direction: Literal["into_a", "into_b"]
+    direction: Literal["into_a", "into_b", "into_usdt", "into_anchor"]
     route: str
     fees_usdt: str
     slippage_usdt: str

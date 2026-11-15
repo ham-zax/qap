@@ -162,3 +162,66 @@ def test_signals_do_not_change_when_only_future_prices_change(method: str) -> No
     np.testing.assert_allclose(
         original.preference[:400], later.preference[:400], equal_nan=True
     )
+
+
+def test_trailing_median_volume_fallback_and_missing_cost_threshold() -> None:
+    interval = BarInterval("1h")
+    times = [
+        datetime(2026, 1, 1, tzinfo=UTC) + timedelta(hours=index) for index in range(35)
+    ]
+    inst_a = VenueInstrument("binance", "AUSDT", AssetId("A"), AssetId("USDT"))
+    inst_b = VenueInstrument("binance", "BUSDT", AssetId("B"), AssetId("USDT"))
+    normal_a = validate_bar_series(
+        tuple(
+            MarketBar(inst_a, interval, t, 1.0, 1.0, 1.0, 1.0, 100_000.0) for t in times
+        )
+    )
+    normal_b = validate_bar_series(
+        tuple(
+            MarketBar(inst_b, interval, t, 1.0, 1.0, 1.0, 1.0, 100_000.0) for t in times
+        )
+    )
+    single_zero_a = validate_bar_series(
+        tuple(
+            MarketBar(
+                inst_a,
+                interval,
+                t,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                0.0 if index == 25 else 100_000.0,
+            )
+            for index, t in enumerate(times)
+        )
+    )
+    settings = LabSettings(minimum_hold=0, cooldown=0, volume_impact_bps=Decimal("20"))
+    sig = one_signal(size=35, at=25)
+    normal_res = run_lab_replay(LabInputs(normal_a, normal_b), settings, sig)
+    zero_res = run_lab_replay(LabInputs(single_zero_a, normal_b), settings, sig)
+    assert zero_res.costs_supported is True
+    assert len(zero_res.trades) == 1
+    assert Decimal(zero_res.trades[0].slippage_usdt) > Decimal(
+        normal_res.trades[0].slippage_usdt
+    )
+
+    many_zeros_a = validate_bar_series(
+        tuple(
+            MarketBar(
+                inst_a,
+                interval,
+                t,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                0.0 if 10 <= index <= 30 else 100_000.0,
+            )
+            for index, t in enumerate(times)
+        )
+    )
+    missing_res = run_lab_replay(
+        LabInputs(many_zeros_a, normal_b), settings, one_signal(size=35, at=30)
+    )
+    assert missing_res.costs_supported is False
