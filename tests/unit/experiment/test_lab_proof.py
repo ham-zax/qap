@@ -8,7 +8,11 @@ import numpy as np
 import pytest
 
 from qap.execution import MultiAssetPreflightError
-from qap.experiment.lab_proof import corrected_spa, prove_lab_strategy
+from qap.experiment.lab_proof import (
+    corrected_spa,
+    prove_lab_strategy,
+    settings_candidates,
+)
 from qap.experiment.lab_replay import LabInputs, LabReplay, ReplayKind, run_lab_replay
 from qap.market import (
     BarInterval,
@@ -355,3 +359,44 @@ def test_cost_budget_gate_rejects_high_fee_tuning() -> None:
     assert result.proof["cost_gate_passed"] is False
     assert result.proof["passes"] is False
     assert result.call["status"] == "cost_budget_failed"
+
+
+def test_auto_tune_copula_clamps_candidates_within_exit_band() -> None:
+    settings = LabSettings(
+        method="copula",
+        lookback=80,
+        copula_probability=0.32,
+        copula_exit_band=0.15,
+        auto_tune=True,
+    )
+    candidates = settings_candidates(settings)
+    assert len(candidates) >= 2
+    assert all(
+        candidate.copula_probability < 0.5 - candidate.copula_exit_band
+        for candidate in candidates
+    )
+
+    base = market_inputs()
+    rng = np.random.default_rng(123)
+    b_prices = 100.0 * np.exp(np.cumsum(rng.normal(0.0, 0.01, len(base.second.bars))))
+    b_series = validate_bar_series(
+        tuple(
+            replace(
+                bar,
+                open=float(price),
+                high=float(price),
+                low=float(price),
+                close=float(price),
+            )
+            for bar, price in zip(base.second.bars, b_prices, strict=True)
+        )
+    )
+    result = prove_lab_strategy(
+        replace(base, second=b_series),
+        settings,
+        trial_count=1,
+        identity_confirmed=True,
+        execution_ready=True,
+    )
+    assert result.applied_settings.copula_probability < 0.35
+    assert result.signal.available is True

@@ -2684,6 +2684,11 @@ export interface components {
              */
             cooldown: number;
             /**
+             * Copula Exit Band
+             * @default 0.15
+             */
+            copula_exit_band: number;
+            /**
              * Copula Probability
              * @default 0.05
              */
@@ -2767,7 +2772,7 @@ export interface components {
             proof_fraction: number;
             /**
              * Rotation Size
-             * @default 0.25
+             * @default 0.5
              */
             rotation_size: number | string;
             /**
@@ -2791,6 +2796,11 @@ export interface components {
              */
             starting_value: number | string;
             /**
+             * Trend Deadband
+             * @default 0.002
+             */
+            trend_deadband: number;
+            /**
              * Volume Impact Bps
              * @default 10
              */
@@ -2813,6 +2823,11 @@ export interface components {
              * @default 4
              */
             cooldown: number;
+            /**
+             * Copula Exit Band
+             * @default 0.15
+             */
+            copula_exit_band: number;
             /**
              * Copula Probability
              * @default 0.05
@@ -2897,7 +2912,7 @@ export interface components {
             proof_fraction: number;
             /**
              * Rotation Size
-             * @default 0.25
+             * @default 0.5
              */
             rotation_size: string;
             /**
@@ -2920,6 +2935,11 @@ export interface components {
              * @default 10000
              */
             starting_value: string;
+            /**
+             * Trend Deadband
+             * @default 0.002
+             */
+            trend_deadband: number;
             /**
              * Volume Impact Bps
              * @default 10

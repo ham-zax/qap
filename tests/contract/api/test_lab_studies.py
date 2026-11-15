@@ -290,6 +290,7 @@ def test_study_requests_reject_bad_settings_and_missing_data(tmp_path: Path) -> 
         {"settings": {"entry": 0.1, "exit": 0.5}},
         {"settings": {"fee_bps": 0}},
         {"settings": {"rotation_size": "0.6"}},
+        {"settings": {"copula_probability": 0.36, "copula_exit_band": 0.15}},
     ):
         assert (
             client.post("/api/pair-rotation/studies", json=COMMAND | change).status_code
@@ -315,3 +316,25 @@ def test_sample_workspace_refuses_study_and_pin_writes(tmp_path: Path) -> None:
         assert response.status_code == 409
         assert response.json()["error"]["code"] == "pair_rotation_read_only"
     assert not (tmp_path / "product/pair-rotation-lab").exists()
+
+
+def test_study_defaults_rotation_size_and_persists_s1_bands(tmp_path: Path) -> None:
+    client = varying_study_client(tmp_path)
+    response = client.post(
+        "/api/pair-rotation/studies",
+        json=COMMAND
+        | {
+            "settings": {
+                "lookback": 80,
+                "auto_tune": False,
+                "method": "trend",
+                "trend_deadband": 0.003,
+                "copula_exit_band": 0.12,
+            }
+        },
+    )
+    assert response.status_code == 200, response.text
+    requested = response.json()["result"]["requested_settings"]
+    assert Decimal(requested["rotation_size"]) == Decimal("0.5")
+    assert requested["trend_deadband"] == pytest.approx(0.003)
+    assert requested["copula_exit_band"] == pytest.approx(0.12)

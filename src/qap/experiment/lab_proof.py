@@ -41,8 +41,9 @@ def settings_candidates(settings: LabSettings) -> tuple[LabSettings, ...]:
         elif settings.method == "lead_lag":
             values["anchor_threshold"] = min(0.5, settings.anchor_threshold * factor)
         elif settings.method == "copula":
+            max_prob = 0.5 - settings.copula_exit_band - 1e-6
             values["copula_probability"] = min(
-                0.49, settings.copula_probability * factor
+                max_prob, settings.copula_probability * factor
             )
         else:
             values["fast_window"] = max(

@@ -28,3 +28,18 @@ Proposals from the 2026-10-27 session. These entries authorize no implementation
 - **Screenshot tooling.** Windows Chrome cannot write screenshots to WSL paths.
   One four-view screenshot round took 13 min, because each fresh page prepares
   data again. Consider a warm fixture route for visual checks.
+
+Proposals from the 2026-11-15 Phase 21 planning session. Deferred until Stages S0–S5 exit green; see `docs/plans/21-pair-mvp-fundamentals-and-l2-paper-plan.md` §4.
+
+- **Rust `PyO3` implementation & verifier core (`qap-rs`).** Python misses
+  compile-time implementation bugs such as raw `Decimal` unit mix-ups (`Price`
+  vs `Quantity` vs `Weight`), undeclared runtime exceptions (for example bare
+  `next(...)` raising `StopIteration`), and shared mutable buffer aliasing.
+  After Stage S4 confirms strategy edge, move execution/ledger state machines,
+  L2 order-book matching, and/or the `qap_gate` verifier loop into a compiled
+  Rust crate (`PyO3`/`maturin`) while keeping Python's C++ econometrics
+  (`pyvinecopulib`, `statsmodels`, `arch`) and strict TypeScript on `web/`.
+- **Branded types and exhaustiveness guards.** Before any Rust migration, tighten
+  `qap_gate` with `typing.NewType` / `assert_never` in Python, branded scalar
+  types in TypeScript, and `ruff` bugbear (`B`, `RUF`) checks to catch
+  implementation defects at gate time.

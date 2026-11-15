@@ -19,7 +19,7 @@ class LabSettings(BaseModel):
     hedge_method: Literal["ratio", "ols", "tls", "kalman"] = "ratio"
     starting_value: Decimal = Field(default=Decimal("10000"), gt=0, le=100000000)
     initial_weight: Decimal = Field(default=Decimal("0.5"), gt=0, lt=1)
-    rotation_size: Decimal = Field(default=Decimal("0.25"), gt=0, le=Decimal("0.5"))
+    rotation_size: Decimal = Field(default=Decimal("0.5"), gt=0, le=Decimal("0.5"))
     minimum_hold: int = Field(default=4, ge=0, le=10000)
     cooldown: int = Field(default=4, ge=0, le=10000)
     fee_bps: Decimal = Field(default=Decimal("10"), gt=0, le=100)
@@ -29,6 +29,8 @@ class LabSettings(BaseModel):
     cost_budget_multiple: Decimal = Field(default=Decimal("2"), ge=0, le=100)
     anchor_threshold: float = Field(default=0.002, gt=0, le=0.5)
     copula_probability: float = Field(default=0.05, gt=0, lt=0.5)
+    copula_exit_band: float = Field(default=0.15, gt=0.0, lt=0.45)
+    trend_deadband: float = Field(default=0.002, ge=0.0, le=0.5)
     fast_window: int = Field(default=12, ge=2, le=1000)
     slow_window: int = Field(default=48, ge=3, le=10000)
     proof_fraction: float = Field(default=0.3, ge=0.2, le=0.5)
@@ -45,6 +47,10 @@ class LabSettings(BaseModel):
             raise ValueError("Fast window must be shorter than slow window.")
         if self.minimum_passing_folds > self.folds:
             raise ValueError("Passing folds cannot exceed total folds.")
+        if self.copula_probability >= 0.5 - self.copula_exit_band:
+            raise ValueError(
+                "Copula entry probability must sit outside the exit neutral band."
+            )
         if (
             self.initial_weight - self.rotation_size < 0
             or self.initial_weight + self.rotation_size > 1

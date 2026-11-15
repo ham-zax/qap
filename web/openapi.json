@@ -5010,6 +5010,13 @@
             "title": "Cooldown",
             "type": "integer"
           },
+          "copula_exit_band": {
+            "default": 0.15,
+            "exclusiveMaximum": 0.45,
+            "exclusiveMinimum": 0.0,
+            "title": "Copula Exit Band",
+            "type": "number"
+          },
           "copula_probability": {
             "default": 0.05,
             "exclusiveMaximum": 0.5,
@@ -5174,7 +5181,7 @@
                 "type": "string"
               }
             ],
-            "default": "0.25",
+            "default": "0.5",
             "title": "Rotation Size"
           },
           "significance": {
@@ -5221,6 +5228,13 @@
             "default": "10000",
             "title": "Starting Value"
           },
+          "trend_deadband": {
+            "default": 0.002,
+            "maximum": 0.5,
+            "minimum": 0.0,
+            "title": "Trend Deadband",
+            "type": "number"
+          },
           "volume_impact_bps": {
             "anyOf": [
               {
@@ -5261,6 +5275,13 @@
             "minimum": 0.0,
             "title": "Cooldown",
             "type": "integer"
+          },
+          "copula_exit_band": {
+            "default": 0.15,
+            "exclusiveMaximum": 0.45,
+            "exclusiveMinimum": 0.0,
+            "title": "Copula Exit Band",
+            "type": "number"
           },
           "copula_probability": {
             "default": 0.05,
@@ -5379,7 +5400,7 @@
             "type": "number"
           },
           "rotation_size": {
-            "default": "0.25",
+            "default": "0.5",
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Rotation Size",
             "type": "string"
@@ -5409,6 +5430,13 @@
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Starting Value",
             "type": "string"
+          },
+          "trend_deadband": {
+            "default": 0.002,
+            "maximum": 0.5,
+            "minimum": 0.0,
+            "title": "Trend Deadband",
+            "type": "number"
           },
           "volume_impact_bps": {
             "default": "10",
