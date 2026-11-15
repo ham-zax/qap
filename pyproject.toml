@@ -19,6 +19,7 @@ dependencies = [
     "scipy>=1.18.1",
     "statsmodels>=0.15.0",
     "uvicorn>=0.52.3",
+    "websockets>=17.1",
 ]
 
 [tool.hatch.build.targets.wheel]
