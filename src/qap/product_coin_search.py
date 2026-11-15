@@ -3,6 +3,7 @@
 import re
 from dataclasses import asdict
 from datetime import datetime
+from threading import Lock
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
@@ -45,13 +46,73 @@ def local_identity_version(market: DirectoryMarket) -> str:
     )
 
 
+_COINS_LOCK = Lock()
+_coins_memo: (
+    tuple[
+        ProductMarketDirectory,
+        RegistrySnapshot | None,
+        ProductUniverseState,
+        tuple[ResearchCoin, ...],
+    ]
+    | None
+) = None
+_POPULAR_RANK: dict[str, int] = {
+    code: idx
+    for idx, code in enumerate(
+        (
+            "BTC",
+            "ETH",
+            "SOL",
+            "BNB",
+            "XRP",
+            "DOGE",
+            "ADA",
+            "AVAX",
+            "LINK",
+            "DOT",
+            "LTC",
+            "TRX",
+            "TON",
+            "SUI",
+            "PEPE",
+            "UNI",
+            "NEAR",
+            "APT",
+            "ARB",
+            "OP",
+            "ATOM",
+            "FIL",
+            "INJ",
+            "RENDER",
+            "FET",
+            "TIA",
+            "SEI",
+            "WIF",
+            "BONK",
+            "W",
+            "AAVE",
+            "SHIB",
+        )
+    )
+}
+
+
 def coins(
     directory: ProductMarketDirectory | None,
     snapshot: RegistrySnapshot | None,
     state: ProductUniverseState,
 ) -> tuple[ResearchCoin, ...]:
+    global _coins_memo
     if directory is None:
         return ()
+    with _COINS_LOCK:
+        if (
+            _coins_memo is not None
+            and _coins_memo[0] is directory
+            and _coins_memo[1] is snapshot
+            and _coins_memo[2] is state
+        ):
+            return _coins_memo[3]
     proposals = {
         (item.venue, item.venue_asset_code): item
         for item in AssetResolver(snapshot).resolve(directory)
@@ -103,15 +164,24 @@ def coins(
                 source=proposal.source if resolved else "venue",
             )
         )
-    return tuple(sorted(rows, key=lambda row: (row.venue_asset_code, row.venue)))
+    built = tuple(sorted(rows, key=lambda row: (row.venue_asset_code, row.venue)))
+    with _COINS_LOCK:
+        _coins_memo = (directory, snapshot, state, built)
+    return built
 
 
 def search_coins(
-    rows: tuple[ResearchCoin, ...], query: str, limit: int
+    rows: tuple[ResearchCoin, ...],
+    query: str,
+    limit: int,
+    *,
+    venue: Venue | None = None,
 ) -> tuple[ResearchCoin, ...]:
     needle = re.sub(r"[\s/_-]", "", query).casefold()
     matches: list[tuple[int, ResearchCoin]] = []
     for row in rows:
+        if venue is not None and row.venue != venue:
+            continue
         aliases = (
             row.venue_asset_code,
             row.venue_symbol,
@@ -131,6 +201,7 @@ def search_coins(
             key=lambda value: (
                 value[0],
                 not value[1].trading,
+                _POPULAR_RANK.get(value[1].venue_asset_code, 9999) if not needle else 0,
                 value[1].venue_asset_code,
                 value[1].venue,
             ),

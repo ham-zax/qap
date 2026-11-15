@@ -7869,10 +7869,30 @@
             "required": false,
             "schema": {
               "default": 50,
-              "maximum": 100,
+              "maximum": 1000,
               "minimum": 1,
               "title": "Limit",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "venue",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "binance",
+                    "gate"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Venue"
             }
           }
         ],

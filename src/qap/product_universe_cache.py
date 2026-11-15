@@ -12,24 +12,42 @@ _VersionKey = tuple[int, int, int]
 
 
 class VersionedFileCache:
-    """Cache parsed frozen models keyed by (st_ino, st_mtime_ns, st_size)."""
+    """Cache parsed frozen objects keyed by (st_ino, st_mtime_ns, st_size)."""
 
     def __init__(self) -> None:
         self._lock = Lock()
         self._entries: dict[Path, tuple[_VersionKey, object]] = {}
 
     def get(self, path: Path, parse: Callable[[str], T]) -> T:
-        stat = path.stat()
+        resolved = path.resolve()
+        stat = resolved.stat()
         key: _VersionKey = (stat.st_ino, stat.st_mtime_ns, stat.st_size)
         with self._lock:
-            cached = self._entries.get(path)
+            cached = self._entries.get(resolved)
             if cached is not None and cached[0] == key:
                 return cached[1]  # type: ignore[return-value]
-        value = parse(path.read_text(encoding="utf-8"))
+        value = parse(resolved.read_text(encoding="utf-8"))
         with self._lock:
-            self._entries[path] = (key, value)
+            self._entries[resolved] = (key, value)
+        return value
+
+    def get_via(self, path: Path, load: Callable[[Path], T]) -> T:
+        resolved = path.resolve()
+        stat = resolved.stat()
+        key: _VersionKey = (stat.st_ino, stat.st_mtime_ns, stat.st_size)
+        with self._lock:
+            cached = self._entries.get(resolved)
+            if cached is not None and cached[0] == key:
+                return cached[1]  # type: ignore[return-value]
+        value = load(resolved)
+        with self._lock:
+            self._entries[resolved] = (key, value)
         return value
 
     def drop(self, path: Path) -> None:
+        resolved = path.resolve()
         with self._lock:
-            self._entries.pop(path, None)
+            self._entries.pop(resolved, None)
+
+
+SHARED_UNIVERSE_CACHE = VersionedFileCache()

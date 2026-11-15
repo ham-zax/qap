@@ -100,7 +100,8 @@ def analyze_pair_rotation(
 def search_research_coins(
     request: Request,
     q: str = Query(default="", max_length=100),
-    limit: int = Query(default=50, ge=1, le=100),
+    limit: int = Query(default=50, ge=1, le=1000),
+    venue: Literal["binance", "gate"] | None = Query(default=None),
 ) -> CoinSearchDto:
     try:
         owner = universe(request)
@@ -113,7 +114,7 @@ def search_research_coins(
             directory_observed_at=None if directory is None else directory.observed_at,
             registry_observed_at=None if snapshot is None else snapshot.observed_at,
             registry_attribution=None if snapshot is None else snapshot.attribution,
-            coins=owner.search(q, limit=limit),
+            coins=owner.search(q, limit=limit, venue=venue),
         )
     except ProductUniverseError as exc:
         raise ApiBoundaryError(

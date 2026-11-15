@@ -35,7 +35,7 @@ from qap.product_directory_models import (
     ProductMarketDirectory,
 )
 from qap.product_identity_policy import accept_evidence
-from qap.product_universe_cache import VersionedFileCache
+from qap.product_universe_cache import SHARED_UNIVERSE_CACHE, VersionedFileCache
 from qap.product_universe_models import (
     AssetIdentityMapping as AssetIdentityMapping,
 )
@@ -95,7 +95,7 @@ class ProductUniverse:
         self.state_path = self.root / "research-universe.json"
         self.directory_path = self.root / "market-directory.json"
         self._thread_lock = Lock()
-        self._cache = VersionedFileCache()
+        self._cache: VersionedFileCache = SHARED_UNIVERSE_CACHE
 
     @contextmanager
     def _state_guard(self) -> Generator[None]:
@@ -143,13 +143,20 @@ class ProductUniverse:
             ) from exc
 
     def registry_snapshot(self) -> RegistrySnapshot | None:
+        reg_path = self.root / "asset-registry.json"
+        if not reg_path.is_file():
+            return None
         try:
-            return CoinGeckoRegistry(self.root / "asset-registry.json").snapshot()
-        except RegistryCacheError:
+            return self._cache.get_via(
+                reg_path, lambda p: CoinGeckoRegistry(p).snapshot()
+            )
+        except OSError, RegistryCacheError:
             return None
 
     def refresh_identity_evidence(self) -> RegistryRefreshResult:
-        result = CoinGeckoRegistry(self.root / "asset-registry.json").refresh()
+        reg_path = self.root / "asset-registry.json"
+        result = CoinGeckoRegistry(reg_path).refresh()
+        self._cache.drop(reg_path)
         self.apply_policy_bindings(result.snapshot)
         return result
 
@@ -171,12 +178,18 @@ class ProductUniverse:
                 self._cache.drop(self.state_path)
             return next_state
 
-    def search(self, query: str = "", *, limit: int = 50) -> tuple[ResearchCoin, ...]:
+    def search(
+        self,
+        query: str = "",
+        *,
+        limit: int = 50,
+        venue: Venue | None = None,
+    ) -> tuple[ResearchCoin, ...]:
         """Search atomic cached snapshots without waiting on refresh writers."""
-        if not 1 <= limit <= 100:
-            raise ProductUniverseError("Search limit must be between 1 and 100.")
+        if not 1 <= limit <= 1000:
+            raise ProductUniverseError("Search limit must be between 1 and 1000.")
         rows = coins(self.read_directory(), self.registry_snapshot(), self.read_state())
-        return search_coins(rows, query, limit)
+        return search_coins(rows, query, limit, venue=venue)
 
     def research_scope(
         self, listing_ids: tuple[str, str], *, refresh_bindings: bool = True

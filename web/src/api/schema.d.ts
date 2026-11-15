@@ -3560,6 +3560,7 @@ export interface operations {
             query?: {
                 q?: string;
                 limit?: number;
+                venue?: ("binance" | "gate") | null;
             };
             header?: never;
             path?: never;
