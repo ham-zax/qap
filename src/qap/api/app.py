@@ -22,6 +22,7 @@ from qap.api.routes import (
     workspace_router,
 )
 from qap.api.routes.lab_studies import router as lab_studies_router
+from qap.api.routes.live_paper import router as live_paper_router
 from qap.api.routes.pair_rotation import router as pair_rotation_router
 from qap.api.schemas import ErrorDetailDto, ErrorEnvelopeDto
 from qap.api.settings import ApiSettings
@@ -58,6 +59,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
         ),
     )
     app.state.settings = settings
+    app.state.paper_book_provider = None
     run_reader = RunArtifactReader(
         settings.run_root,
         market_data_root=settings.market_data_root,
@@ -159,6 +161,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.include_router(product_market_data_router)
     app.include_router(pair_rotation_router)
     app.include_router(lab_studies_router)
+    app.include_router(live_paper_router)
     app.include_router(experiments_router)
     app.include_router(portfolios_router)
     app.include_router(pairs_router)

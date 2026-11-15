@@ -11,6 +11,14 @@ from typing import Any, cast
 
 from pydantic import ValidationError
 
+from qap.experiment.live_paper_execution import BookProvider
+from qap.experiment.live_paper_runner import LivePaperError
+from qap.lab_cli_paper import (
+    PAPER_COMMANDS,
+    add_paper_parsers,
+    format_paper_md,
+    run_paper_command,
+)
 from qap.policy.lab_settings import LabSettings
 from qap.product_lab_advisor import advise_pair_strategies
 from qap.product_lab_store import LabStoreError, LabStudyStore
@@ -132,10 +140,15 @@ def _build_parser() -> argparse.ArgumentParser:
     p_saved = sub.add_parser("saved", parents=[common])
     p_saved.add_argument("--limit", type=int, default=20)
     p_saved.add_argument("--study-id", default=None)
+    add_paper_parsers(sub.add_parser, common)
     return parser
 
 
-def _run_command(args: argparse.Namespace) -> Any:
+def _run_command(
+    args: argparse.Namespace, book_provider: BookProvider | None = None
+) -> Any:
+    if args.command in PAPER_COMMANDS:
+        return run_paper_command(args, book_provider)
     uni = ProductUniverse(args.run_root)
     data = ProductMarketData(args.run_root, args.data_root)
     repo_root = Path(__file__).resolve().parents[2]
@@ -236,19 +249,22 @@ def _run_command(args: argparse.Namespace) -> Any:
     return {"studies": store.list(limit=args.limit)}
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(
+    argv: Sequence[str] | None = None, *, book_provider: BookProvider | None = None
+) -> int:
     parser = _build_parser()
     try:
         args = parser.parse_args(list(argv) if argv is not None else None)
     except SystemExit as exc:
         return int(exc.code) if isinstance(exc.code, int) else 2
     try:
-        payload = _run_command(args)
+        payload = _run_command(args, book_provider)
     except (ValidationError, ValueError, json.JSONDecodeError) as exc:
         print(json.dumps({"error": str(exc)}), file=sys.stderr)
         return 2
     except (
         LabStoreError,
+        LivePaperError,
         PairAnalysisError,
         ProductUniverseError,
         ProductMarketDataError,
@@ -257,11 +273,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     ) as exc:
         print(json.dumps({"error": str(exc)}), file=sys.stderr)
         return 3
-    text = (
-        _format_md(payload)
-        if args.format == "md"
-        else json.dumps(payload, separators=(",", ":"), default=str)
-    )
+    if args.format != "md":
+        text = json.dumps(payload, separators=(",", ":"), default=str)
+    elif args.command in PAPER_COMMANDS:
+        text = format_paper_md(payload)
+    else:
+        text = _format_md(payload)
     print(text)
     return 0
 

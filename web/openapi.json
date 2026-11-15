@@ -3911,6 +3911,676 @@
         "title": "LeadLagDto",
         "type": "object"
       },
+      "LivePaperCreateDto": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor"
+          },
+          "bar": {
+            "default": "1h",
+            "enum": [
+              "1m",
+              "15m",
+              "1h",
+              "4h",
+              "1d"
+            ],
+            "title": "Bar",
+            "type": "string"
+          },
+          "coin_a": {
+            "title": "Coin A",
+            "type": "string"
+          },
+          "coin_b": {
+            "title": "Coin B",
+            "type": "string"
+          },
+          "max_staleness_ms": {
+            "default": 500.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 10000.0,
+            "title": "Max Staleness Ms",
+            "type": "number"
+          },
+          "order_rtt_ms": {
+            "default": 75.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 5000.0,
+            "title": "Order Rtt Ms",
+            "type": "number"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/LabSettings-Input"
+          }
+        },
+        "required": [
+          "coin_a",
+          "coin_b"
+        ],
+        "title": "LivePaperCreateDto",
+        "type": "object"
+      },
+      "LivePaperFillDto": {
+        "additionalProperties": false,
+        "properties": {
+          "base_asset": {
+            "title": "Base Asset",
+            "type": "string"
+          },
+          "base_quantity": {
+            "title": "Base Quantity",
+            "type": "string"
+          },
+          "execution_price": {
+            "title": "Execution Price",
+            "type": "string"
+          },
+          "fee": {
+            "title": "Fee",
+            "type": "string"
+          },
+          "fee_asset": {
+            "title": "Fee Asset",
+            "type": "string"
+          },
+          "fill_id": {
+            "title": "Fill Id",
+            "type": "string"
+          },
+          "gross_quote_notional": {
+            "title": "Gross Quote Notional",
+            "type": "string"
+          },
+          "levels_consumed": {
+            "title": "Levels Consumed",
+            "type": "integer"
+          },
+          "market": {
+            "title": "Market",
+            "type": "string"
+          },
+          "quote_asset": {
+            "title": "Quote Asset",
+            "type": "string"
+          },
+          "reference_price": {
+            "title": "Reference Price",
+            "type": "string"
+          },
+          "side": {
+            "enum": [
+              "buy",
+              "sell"
+            ],
+            "title": "Side",
+            "type": "string"
+          },
+          "slippage_usdt": {
+            "title": "Slippage Usdt",
+            "type": "string"
+          },
+          "vwap_price": {
+            "title": "Vwap Price",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fill_id",
+          "market",
+          "side",
+          "base_asset",
+          "quote_asset",
+          "base_quantity",
+          "execution_price",
+          "reference_price",
+          "vwap_price",
+          "gross_quote_notional",
+          "fee",
+          "fee_asset",
+          "slippage_usdt",
+          "levels_consumed"
+        ],
+        "title": "LivePaperFillDto",
+        "type": "object"
+      },
+      "LivePaperLatencyDto": {
+        "additionalProperties": false,
+        "description": "Four clocks per decision: exchange (us), receive/decide/fill (ns).",
+        "properties": {
+          "action": {
+            "enum": [
+              "swap",
+              "rejected",
+              "hold"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "book_age_leg1_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Age Leg1 Ms"
+          },
+          "book_age_leg2_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Age Leg2 Ms"
+          },
+          "decide_to_fill_leg1_ms": {
+            "title": "Decide To Fill Leg1 Ms",
+            "type": "number"
+          },
+          "decide_to_fill_leg2_ms": {
+            "title": "Decide To Fill Leg2 Ms",
+            "type": "number"
+          },
+          "order_rtt_ms": {
+            "title": "Order Rtt Ms",
+            "type": "number"
+          },
+          "recv_to_decide_ms": {
+            "title": "Recv To Decide Ms",
+            "type": "number"
+          },
+          "rejected_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rejected Reasons",
+            "type": "array"
+          },
+          "signal_preference": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signal Preference"
+          },
+          "step_index": {
+            "title": "Step Index",
+            "type": "integer"
+          },
+          "t_decide_ns": {
+            "title": "T Decide Ns",
+            "type": "integer"
+          },
+          "t_exch_us": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T Exch Us"
+          },
+          "t_fill_leg1_ns": {
+            "title": "T Fill Leg1 Ns",
+            "type": "integer"
+          },
+          "t_fill_leg2_ns": {
+            "title": "T Fill Leg2 Ns",
+            "type": "integer"
+          },
+          "t_recv_ns": {
+            "title": "T Recv Ns",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "step_index",
+          "t_exch_us",
+          "t_recv_ns",
+          "t_decide_ns",
+          "t_fill_leg1_ns",
+          "t_fill_leg2_ns",
+          "order_rtt_ms",
+          "recv_to_decide_ms",
+          "decide_to_fill_leg1_ms",
+          "decide_to_fill_leg2_ms",
+          "book_age_leg1_ms",
+          "book_age_leg2_ms",
+          "signal_preference",
+          "action",
+          "rejected_reasons"
+        ],
+        "title": "LivePaperLatencyDto",
+        "type": "object"
+      },
+      "LivePaperPortfolioDto": {
+        "additionalProperties": false,
+        "properties": {
+          "fees_usdt": {
+            "title": "Fees Usdt",
+            "type": "string"
+          },
+          "holdings": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Holdings",
+            "type": "object"
+          },
+          "return_pct": {
+            "title": "Return Pct",
+            "type": "number"
+          },
+          "rotations": {
+            "title": "Rotations",
+            "type": "integer"
+          },
+          "slippage_usdt": {
+            "title": "Slippage Usdt",
+            "type": "string"
+          },
+          "value_usdt": {
+            "title": "Value Usdt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value_usdt",
+          "return_pct",
+          "holdings",
+          "fees_usdt",
+          "slippage_usdt",
+          "rotations"
+        ],
+        "title": "LivePaperPortfolioDto",
+        "type": "object"
+      },
+      "LivePaperPortfoliosDto": {
+        "additionalProperties": false,
+        "properties": {
+          "drift_control": {
+            "$ref": "#/components/schemas/LivePaperPortfolioDto"
+          },
+          "hodl": {
+            "$ref": "#/components/schemas/LivePaperPortfolioDto"
+          },
+          "strategy": {
+            "$ref": "#/components/schemas/LivePaperPortfolioDto"
+          }
+        },
+        "required": [
+          "strategy",
+          "hodl",
+          "drift_control"
+        ],
+        "title": "LivePaperPortfoliosDto",
+        "type": "object"
+      },
+      "LivePaperSessionDto": {
+        "additionalProperties": false,
+        "properties": {
+          "actor_id": {
+            "title": "Actor Id",
+            "type": "string"
+          },
+          "anchor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor"
+          },
+          "bar": {
+            "enum": [
+              "1m",
+              "15m",
+              "1h",
+              "4h",
+              "1d"
+            ],
+            "title": "Bar",
+            "type": "string"
+          },
+          "coin_a": {
+            "title": "Coin A",
+            "type": "string"
+          },
+          "coin_b": {
+            "title": "Coin B",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decisions_count": {
+            "title": "Decisions Count",
+            "type": "integer"
+          },
+          "latency_audit": {
+            "items": {
+              "$ref": "#/components/schemas/LivePaperLatencyDto"
+            },
+            "title": "Latency Audit",
+            "type": "array"
+          },
+          "max_staleness_ms": {
+            "title": "Max Staleness Ms",
+            "type": "number"
+          },
+          "order_rtt_ms": {
+            "title": "Order Rtt Ms",
+            "type": "number"
+          },
+          "portfolios": {
+            "$ref": "#/components/schemas/LivePaperPortfoliosDto"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/LabSettings-Output"
+          },
+          "simple_status": {
+            "title": "Simple Status",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "stopped"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "stopped_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stopped At"
+          },
+          "trades": {
+            "items": {
+              "$ref": "#/components/schemas/LivePaperTradeDto"
+            },
+            "title": "Trades",
+            "type": "array"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "vs_control_pct": {
+            "title": "Vs Control Pct",
+            "type": "number"
+          },
+          "vs_hodl_pct": {
+            "title": "Vs Hodl Pct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "session_id",
+          "actor_id",
+          "status",
+          "created_at",
+          "updated_at",
+          "stopped_at",
+          "coin_a",
+          "coin_b",
+          "anchor",
+          "bar",
+          "order_rtt_ms",
+          "max_staleness_ms",
+          "settings",
+          "simple_status",
+          "vs_hodl_pct",
+          "vs_control_pct",
+          "decisions_count",
+          "portfolios",
+          "trades",
+          "latency_audit"
+        ],
+        "title": "LivePaperSessionDto",
+        "type": "object"
+      },
+      "LivePaperSessionListDto": {
+        "additionalProperties": false,
+        "properties": {
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Offset"
+          },
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/LivePaperSessionRowDto"
+            },
+            "title": "Sessions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sessions",
+          "next_offset"
+        ],
+        "title": "LivePaperSessionListDto",
+        "type": "object"
+      },
+      "LivePaperSessionRowDto": {
+        "additionalProperties": false,
+        "properties": {
+          "actor_id": {
+            "title": "Actor Id",
+            "type": "string"
+          },
+          "anchor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor"
+          },
+          "bar": {
+            "enum": [
+              "1m",
+              "15m",
+              "1h",
+              "4h",
+              "1d"
+            ],
+            "title": "Bar",
+            "type": "string"
+          },
+          "coin_a": {
+            "title": "Coin A",
+            "type": "string"
+          },
+          "coin_b": {
+            "title": "Coin B",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decisions_count": {
+            "title": "Decisions Count",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "simple_status": {
+            "title": "Simple Status",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "stopped"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "trades_count": {
+            "title": "Trades Count",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "vs_control_pct": {
+            "title": "Vs Control Pct",
+            "type": "number"
+          },
+          "vs_hodl_pct": {
+            "title": "Vs Hodl Pct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "session_id",
+          "actor_id",
+          "status",
+          "created_at",
+          "updated_at",
+          "coin_a",
+          "coin_b",
+          "anchor",
+          "bar",
+          "decisions_count",
+          "trades_count",
+          "vs_hodl_pct",
+          "vs_control_pct",
+          "simple_status"
+        ],
+        "title": "LivePaperSessionRowDto",
+        "type": "object"
+      },
+      "LivePaperStepDto": {
+        "additionalProperties": false,
+        "properties": {
+          "duration_seconds": {
+            "default": 3.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 30.0,
+            "title": "Duration Seconds",
+            "type": "number"
+          }
+        },
+        "title": "LivePaperStepDto",
+        "type": "object"
+      },
+      "LivePaperTradeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "decision_time": {
+            "format": "date-time",
+            "title": "Decision Time",
+            "type": "string"
+          },
+          "direction": {
+            "enum": [
+              "into_a",
+              "into_b",
+              "into_usdt"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "fees_usdt": {
+            "title": "Fees Usdt",
+            "type": "string"
+          },
+          "fills": {
+            "items": {
+              "$ref": "#/components/schemas/LivePaperFillDto"
+            },
+            "title": "Fills",
+            "type": "array"
+          },
+          "rejected_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rejected Reasons",
+            "type": "array"
+          },
+          "route": {
+            "title": "Route",
+            "type": "string"
+          },
+          "slippage_usdt": {
+            "title": "Slippage Usdt",
+            "type": "string"
+          },
+          "step_index": {
+            "title": "Step Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "step_index",
+          "decision_time",
+          "direction",
+          "route",
+          "fees_usdt",
+          "slippage_usdt",
+          "rejected_reasons",
+          "fills"
+        ],
+        "title": "LivePaperTradeDto",
+        "type": "object"
+      },
       "MarketDataGenerationDto": {
         "additionalProperties": false,
         "properties": {
@@ -7270,6 +7940,244 @@
           }
         },
         "summary": "Open Pair Rotation",
+        "tags": [
+          "pair-rotation"
+        ]
+      }
+    },
+    "/api/pair-rotation/paper-sessions": {
+      "get": {
+        "operationId": "listLivePaperSessions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivePaperSessionListDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Paper Sessions",
+        "tags": [
+          "pair-rotation"
+        ]
+      },
+      "post": {
+        "operationId": "createLivePaperSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LivePaperCreateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivePaperSessionDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Paper Session",
+        "tags": [
+          "pair-rotation"
+        ]
+      }
+    },
+    "/api/pair-rotation/paper-sessions/{session_id}": {
+      "get": {
+        "operationId": "getLivePaperSession",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivePaperSessionDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Paper Session",
+        "tags": [
+          "pair-rotation"
+        ]
+      }
+    },
+    "/api/pair-rotation/paper-sessions/{session_id}/step": {
+      "post": {
+        "operationId": "stepLivePaperSession",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/LivePaperStepDto"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Command"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivePaperSessionDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Step Paper Session",
+        "tags": [
+          "pair-rotation"
+        ]
+      }
+    },
+    "/api/pair-rotation/paper-sessions/{session_id}/stop": {
+      "post": {
+        "operationId": "stopLivePaperSession",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivePaperSessionDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stop Paper Session",
         "tags": [
           "pair-rotation"
         ]

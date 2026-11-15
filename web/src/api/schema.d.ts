@@ -174,6 +174,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/pair-rotation/paper-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Paper Sessions */
+        get: operations["listLivePaperSessions"];
+        put?: never;
+        /** Create Paper Session */
+        post: operations["createLivePaperSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pair-rotation/paper-sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Paper Session */
+        get: operations["getLivePaperSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pair-rotation/paper-sessions/{session_id}/step": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Step Paper Session */
+        post: operations["stepLivePaperSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pair-rotation/paper-sessions/{session_id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop Paper Session */
+        post: operations["stopLivePaperSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pair-rotation/studies": {
         parameters: {
             query?: never;
@@ -2002,6 +2071,264 @@ export interface components {
             /** Stable */
             stable: boolean;
         };
+        /** LivePaperCreateDto */
+        LivePaperCreateDto: {
+            /** Anchor */
+            anchor?: string | null;
+            /**
+             * Bar
+             * @default 1h
+             * @enum {string}
+             */
+            bar: "1m" | "15m" | "1h" | "4h" | "1d";
+            /** Coin A */
+            coin_a: string;
+            /** Coin B */
+            coin_b: string;
+            /**
+             * Max Staleness Ms
+             * @default 500
+             */
+            max_staleness_ms: number;
+            /**
+             * Order Rtt Ms
+             * @default 75
+             */
+            order_rtt_ms: number;
+            settings?: components["schemas"]["LabSettings-Input"];
+        };
+        /** LivePaperFillDto */
+        LivePaperFillDto: {
+            /** Base Asset */
+            base_asset: string;
+            /** Base Quantity */
+            base_quantity: string;
+            /** Execution Price */
+            execution_price: string;
+            /** Fee */
+            fee: string;
+            /** Fee Asset */
+            fee_asset: string;
+            /** Fill Id */
+            fill_id: string;
+            /** Gross Quote Notional */
+            gross_quote_notional: string;
+            /** Levels Consumed */
+            levels_consumed: number;
+            /** Market */
+            market: string;
+            /** Quote Asset */
+            quote_asset: string;
+            /** Reference Price */
+            reference_price: string;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "buy" | "sell";
+            /** Slippage Usdt */
+            slippage_usdt: string;
+            /** Vwap Price */
+            vwap_price: string;
+        };
+        /**
+         * LivePaperLatencyDto
+         * @description Four clocks per decision: exchange (us), receive/decide/fill (ns).
+         */
+        LivePaperLatencyDto: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "swap" | "rejected" | "hold";
+            /** Book Age Leg1 Ms */
+            book_age_leg1_ms: number | null;
+            /** Book Age Leg2 Ms */
+            book_age_leg2_ms: number | null;
+            /** Decide To Fill Leg1 Ms */
+            decide_to_fill_leg1_ms: number;
+            /** Decide To Fill Leg2 Ms */
+            decide_to_fill_leg2_ms: number;
+            /** Order Rtt Ms */
+            order_rtt_ms: number;
+            /** Recv To Decide Ms */
+            recv_to_decide_ms: number;
+            /** Rejected Reasons */
+            rejected_reasons: string[];
+            /** Signal Preference */
+            signal_preference: number | null;
+            /** Step Index */
+            step_index: number;
+            /** T Decide Ns */
+            t_decide_ns: number;
+            /** T Exch Us */
+            t_exch_us: number | null;
+            /** T Fill Leg1 Ns */
+            t_fill_leg1_ns: number;
+            /** T Fill Leg2 Ns */
+            t_fill_leg2_ns: number;
+            /** T Recv Ns */
+            t_recv_ns: number;
+        };
+        /** LivePaperPortfolioDto */
+        LivePaperPortfolioDto: {
+            /** Fees Usdt */
+            fees_usdt: string;
+            /** Holdings */
+            holdings: {
+                [key: string]: string;
+            };
+            /** Return Pct */
+            return_pct: number;
+            /** Rotations */
+            rotations: number;
+            /** Slippage Usdt */
+            slippage_usdt: string;
+            /** Value Usdt */
+            value_usdt: string;
+        };
+        /** LivePaperPortfoliosDto */
+        LivePaperPortfoliosDto: {
+            drift_control: components["schemas"]["LivePaperPortfolioDto"];
+            hodl: components["schemas"]["LivePaperPortfolioDto"];
+            strategy: components["schemas"]["LivePaperPortfolioDto"];
+        };
+        /** LivePaperSessionDto */
+        LivePaperSessionDto: {
+            /** Actor Id */
+            actor_id: string;
+            /** Anchor */
+            anchor: string | null;
+            /**
+             * Bar
+             * @enum {string}
+             */
+            bar: "1m" | "15m" | "1h" | "4h" | "1d";
+            /** Coin A */
+            coin_a: string;
+            /** Coin B */
+            coin_b: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decisions Count */
+            decisions_count: number;
+            /** Latency Audit */
+            latency_audit: components["schemas"]["LivePaperLatencyDto"][];
+            /** Max Staleness Ms */
+            max_staleness_ms: number;
+            /** Order Rtt Ms */
+            order_rtt_ms: number;
+            portfolios: components["schemas"]["LivePaperPortfoliosDto"];
+            /** Session Id */
+            session_id: string;
+            settings: components["schemas"]["LabSettings-Output"];
+            /** Simple Status */
+            simple_status: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "stopped";
+            /** Stopped At */
+            stopped_at: string | null;
+            /** Trades */
+            trades: components["schemas"]["LivePaperTradeDto"][];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Vs Control Pct */
+            vs_control_pct: number;
+            /** Vs Hodl Pct */
+            vs_hodl_pct: number;
+        };
+        /** LivePaperSessionListDto */
+        LivePaperSessionListDto: {
+            /** Next Offset */
+            next_offset: number | null;
+            /** Sessions */
+            sessions: components["schemas"]["LivePaperSessionRowDto"][];
+        };
+        /** LivePaperSessionRowDto */
+        LivePaperSessionRowDto: {
+            /** Actor Id */
+            actor_id: string;
+            /** Anchor */
+            anchor: string | null;
+            /**
+             * Bar
+             * @enum {string}
+             */
+            bar: "1m" | "15m" | "1h" | "4h" | "1d";
+            /** Coin A */
+            coin_a: string;
+            /** Coin B */
+            coin_b: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decisions Count */
+            decisions_count: number;
+            /** Session Id */
+            session_id: string;
+            /** Simple Status */
+            simple_status: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "stopped";
+            /** Trades Count */
+            trades_count: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Vs Control Pct */
+            vs_control_pct: number;
+            /** Vs Hodl Pct */
+            vs_hodl_pct: number;
+        };
+        /** LivePaperStepDto */
+        LivePaperStepDto: {
+            /**
+             * Duration Seconds
+             * @default 3
+             */
+            duration_seconds: number;
+        };
+        /** LivePaperTradeDto */
+        LivePaperTradeDto: {
+            /**
+             * Decision Time
+             * Format: date-time
+             */
+            decision_time: string;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "into_a" | "into_b" | "into_usdt";
+            /** Fees Usdt */
+            fees_usdt: string;
+            /** Fills */
+            fills: components["schemas"]["LivePaperFillDto"][];
+            /** Rejected Reasons */
+            rejected_reasons: string[];
+            /** Route */
+            route: string;
+            /** Slippage Usdt */
+            slippage_usdt: string;
+            /** Step Index */
+            step_index: number;
+        };
         /** MarketDataGenerationDto */
         MarketDataGenerationDto: {
             /** Base Asset */
@@ -3280,6 +3607,168 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listLivePaperSessions: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LivePaperSessionListDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createLivePaperSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LivePaperCreateDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LivePaperSessionDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getLivePaperSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LivePaperSessionDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stepLivePaperSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["LivePaperStepDto"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LivePaperSessionDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stopLivePaperSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LivePaperSessionDto"];
                 };
             };
             /** @description Validation Error */
