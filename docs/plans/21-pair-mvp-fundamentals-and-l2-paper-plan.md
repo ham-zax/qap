@@ -60,6 +60,12 @@ When delegating via T3 Code `delegate_task` (`isolation: "worktree"`):
 5. **I5 — Synthetic Recovery:** Clean synthetic mean-reverting pairs must pass proof and beat `HODL` at low friction.
 6. **I6 — Benchmark Ladder & Multiplicity:** Every study counts in `LabStudyStore` and must beat `50/50 HODL` and the best simple rebalancing control (`daily`, `weekly`, `drift`) after realistic costs plus `2x` tuning cost budget.
 
+### 2.3 Backend-First, Web-API-Native & Subscriber-Ready Rules
+1. **Backend before UI:** Complete and prove Backend Stages `S2`–`S5` before building the full Three-Column Finance Cockpit UI (`Stage S6`).
+2. **No CLI-only features:** Every capability (crash defense, strategy advisor presets, multi-strategy comparison, and live L2 paper sessions) must live behind typed FastAPI routes + OpenAPI DTOs because the Web UI is the primary product interface for Hamza and future subscribers.
+3. **Shared Market Data vs Per-User (`actor_id`) State:** Market candles, CoinGecko identity, pair analysis, and live Binance WebSocket streams are shared read-only across all users. User-owned records (`LabStudyStore` trial-family counts, saved studies, pins, and paper sessions) take an explicit `actor_id` (defaulting to `"local"` in single-operator mode, mapping to `"actors/<actor_id>"` for subscribers so one user's trials never pollute another user's Bonferroni multiplicity count).
+4. **Simple + Advanced Dual DTOs:** Every API response carries plain-English summaries and recommended presets for everyday subscribers alongside exact `Decimal` costs, walk-forward folds, and statistical diagnostics for advanced users.
+
 ---
 
 ## 3. Exact Stage Cards (Executable Without a Frontier Model)
@@ -127,22 +133,23 @@ When delegating via T3 Code `delegate_task` (`isolation: "worktree"`):
 
 ---
 
-### Stage S2 — Configurable Crash-Defense Policy & `/lab` UI Control
-- **S2-A (Backend — `aistudio2api/gemini-4-hydrogen` at `thinking="high"`):**
-  - Add `crash_defense_mode: Literal["coins_only", "park_anchor", "park_usdt"] = "coins_only"` and `regime_break_drawdown: float = Field(default=0.15, ge=0.02, le=0.80)` to `LabSettings`.
-  - In `lab_replay.py`:
-    - When `crash_defense_mode == "coins_only"` (default): unchanged 2-coin spot rotation (`Coin A` + `Coin B` = 100%), rotating into the deeper-dropped coin when relationship holds.
-    - When `crash_defense_mode == "park_usdt"` or `"park_anchor"`: if trailing pair drawdown or rolling cointegration break triggers defensive state, target `100% USDT` (or `100% Anchor` when `inputs.anchor` is supplied and tradable via `USDT`) through `execute_multi_asset_rebalance`, paying full leg fees and slippage.
-  - Regenerate `web/openapi.json` and `web/src/api/schema.d.ts`.
-- **S2-B (UI — `mistral/deepseek-v4-1-flash-1017` at `thinking="max"`):**
-  - Add a plain-language **Crash behavior** selector in `web/src/features/lab/` (`Stay in both coins (accumulate cheaper coin)`, `Step aside to Anchor`, `Step aside to USDT`), wired to `settings.crash_defense_mode`, with Vitest coverage.
-- **Verify:** `uv run python scripts/qap_gate.py --pytest tests/unit/experiment tests/contract/api/test_lab_studies.py --vitest src/features/lab`
+### Stage S2 — Backend Policy Completeness, Actor Scoping & Smart Advisor API
+- **Model:** `aistudio2api/gemini-4-hydrogen` at `thinking="high"`.
+- **Goal:** Make the backend policy, store, and API subscriber-ready and strategy-complete before UI work.
+- **Steps:**
+  1. **Configurable Crash Defense (`lab_settings.py`, `lab_replay.py`, `lab_proof.py`):** Add `crash_defense_mode: Literal["coins_only", "park_anchor", "park_usdt"] = "coins_only"` and `regime_break_drawdown: float = Field(default=0.15, ge=0.02, le=0.80)`. Default `"coins_only"` keeps `100%` in `Coin A` + `Coin B` (accumulating the deeper-dropped coin when relationship holds). Optional `"park_anchor"` / `"park_usdt"` steps out via `execute_multi_asset_rebalance` with full two-leg fees on regime breakdown.
+  2. **Per-Actor Store Isolation (`product_lab_store.py`, `api/routes/lab_studies.py`):** Add `actor_id: str = "local"` support (`LabStudyStore.for_actor(run_root, actor_id)` -> backward-compatible root for `"local"`, isolated `actors/<actor_id>/` directory for future authenticated subscribers).
+  3. **Smart Strategy Advisor & Multi-Strategy Compare API (`product_lab_advisor.py`, `api/routes/lab_studies.py`):**
+     - Deterministic Quant Advisor inspecting `cointegration`, `half_life`, `hurst`, `copula`, and `anchor` measurements to return ranked `LabStrategySuggestionDto` presets (plain-English rationale for beginners + exact statistical trigger for pros + ready-to-run `LabSettings`).
+     - `POST /api/pair-rotation/studies/compare`: runs a declared list of strategies on one pair under one shared family registration and returns ranked net-of-cost proofs.
+  4. Regenerate `web/openapi.json` and `web/src/api/schema.d.ts`.
+- **Verify:** `uv run python scripts/qap_gate.py --pytest tests/unit/experiment tests/unit/test_lab_store.py tests/contract/api/test_lab_studies.py`
 
 ---
 
-### Stage S3 — Historical Data Completeness & Cost-Coverage Hardening
+### Stage S3 — Historical Data Completeness & Cost-Coverage Hardening (Backend)
 - **Model:** `mistral/deepseek-v4-1-flash-1017` at `thinking="max"`.
-- **Goal:** Eliminate false `cost_data_missing` blocks on liquid Binance pairs (such as `LINK/ETH`) when an isolated candle has `volume == 0` on a quiet minute/quarter-hour, or when archive backfill left a gap.
+- **Goal:** Eliminate false `cost_data_missing` blocks on liquid Binance pairs (such as `LINK/ETH`) when an isolated candle has `volume == 0` on a quiet bar, and ensure `1m`/`15m`/`1h`/`4h`/`1d` archive + REST top-ups are gap-free.
 - **Steps:**
   1. Inspect `product_market_data_binance.py` and `lab_replay.py:_costs`.
   2. Ensure `product_market_data_binance.py` fetches complete archive + REST top-up windows for `1m`, `15m`, `1h`, `4h`, and `1d`.
@@ -152,31 +159,33 @@ When delegating via T3 Code `delegate_task` (`isolation: "worktree"`):
 
 ---
 
-### Stage S4 — Preregistered Historical Strategy Discovery (`1h`, `4h`, `1d`)
-- **Model:** `mistral/deepseek-v4-1-flash-1017` at `thinking="max"` for batch execution; human/architect review of verdict table.
-- **Goal:** Test repaired math with `0%`–`100%` rotation on `1h`, `4h`, and `1d` bars before building live streams.
+### Stage S4 — Preregistered Historical Strategy Discovery via Backend API (`1h`, `4h`, `1d`)
+- **Model:** `mistral/deepseek-v4-1-flash-1017` at `thinking="max"` + architect review.
+- **Goal:** Prove which repaired strategies (`H1` volatility harvesting, `H2a` direct & anchor-mediated `copula`, `H2b` centered `OLS`/`Kalman` `zscore`, `H3` deadband `trend`) beat `HODL` and rebalancing on `1h`, `4h`, and `1d` bars through the real backend comparison API.
 - **Steps:**
-  1. Extend `scripts/run_lab_trials.py` to support `anchor` and full `settings` overrides per trial row in the JSON plan file.
-  2. Write `docs/research/2026-11-15-stage-s4-trial-plan.json` covering liquid Binance pairs across `1h`, `4h`, and `1d` for:
-     - `H1`: Drift / periodic volatility harvesting (`5%` and `8%` drift controls),
-     - `H2a`: Stationary-spread `copula` (both direct and `binance:BTC` / `binance:ETH` anchor-mediated),
-     - `H2b`: Centered `zscore` (`ols` and `kalman` hedges),
-     - `H3`: Deadband `trend` rotation.
-  3. Run sequentially against the local workbench API, output immutable JSONL, apply Holm `alpha = 0.05` across each hypothesis family, and record the honest outcome table (`vs HODL`, `vs Control`, `cost_paid_pct`, `gross_vs_hodl_pct`, `folds_passing`).
-- **Exit Gate:** At least one candidate passes walk-forward proof, `2x` cost gate, and `2x` fee robustness; otherwise revise hypotheses once before live L2 paper streaming.
+  1. Drive `POST /api/pair-rotation/studies/compare` (and `scripts/run_lab_trials.py` as a thin API client) across liquid Binance pairs on `1h`, `4h`, and `1d`.
+  2. Apply Holm `alpha = 0.05` across each hypothesis family and record honest results (`vs HODL`, `vs Control`, `cost_paid_pct`, `gross_vs_hodl_pct`, `folds_passing`).
+- **Exit Gate:** At least one candidate passes walk-forward proof, `2x` cost gate, and `2x` fee robustness before live streaming.
 
 ---
 
-### Stage S5 — Millisecond-Aware Binance WebSocket L2 Taker Paper Trader
+### Stage S5 — Millisecond-Aware Binance WebSocket L2 Paper Engine & API (Backend)
 - **Model:** `aistudio2api/gemini-4-hydrogen` at `thinking="high"`.
-- **Goal:** Forward-test Stage S4 winners (or any selected pair) on live Binance Spot order books with exact millisecond latency accounting and zero private API keys.
+- **Goal:** Forward-test strategies on live Binance Spot order books (`wss://data-stream.binance.vision/stream?timeUnit=MICROSECOND`) as a shared market-stream + per-`actor_id` paper-session backend service with typed FastAPI endpoints.
 - **Modules (< 500 lines each):**
-  1. `src/qap/market/binance_ws_stream.py`: Connects to **`wss://data-stream.binance.vision/stream?timeUnit=MICROSECOND`** (public market-data-only endpoint) subscribing to `<symbol>@bookTicker`, `<symbol>@depth20@100ms`, and `<symbol>@aggTrade` for `Coin A/USDT`, `Coin B/USDT`, direct `Coin A/B` (if listed), and `Anchor/USDT`. Records `(t_exch_us, t_recv_ns)` to local append-only segments; handles 24h rollover, 20s ping/pong, and `serverShutdown` reconnects.
-  2. `src/qap/execution/l2_book_fill.py`: Pure deterministic L2 book sweep. Given side (`BUY`/`SELL`), source quantity, and the first valid `depth20@100ms` snapshot at `t_recv_ns >= t_fill_ns` (rejecting books older than `max_staleness_ms = 500`), walks levels 1..20, enforces Binance `LOT_SIZE` / `PRICE_FILTER` / `NOTIONAL`, deducts spot taker fee, and emits an authoritative `qap.execution.Fill` with exact realized VWAP slippage against mid-price.
-  3. `src/qap/experiment/live_paper_runner.py`: Runs a frozen `LabSettings` policy live:
-     - Logs 4 timestamps per leg: `t_exch_us`, `t_recv_ns`, `t_decide_ns`, `t_fill_leg1_ns = t_decide_ns + order_rtt_ns`, and (for two-leg USDT swaps) `t_fill_leg2_ns = t_fill_leg1_ns + order_rtt_ns`.
-     - Applies fills through `PortfolioLedger` alongside live-tracked `50/50 HODL` and rebalancing control ledgers, writing self-auditing checkpoints under `runs/live-paper/<session_id>/`.
-- **Verify:** Hand-calculated 20-level partial-sweep unit tests, stale-book refusal tests, 10-minute live `BTCUSDT`/`ETHUSDT` stream smoke test, and `uv run python scripts/qap_gate.py --full`.
+  1. `src/qap/market/binance_ws_stream.py`: Shared public WebSocket hub subscribing once per symbol to `<symbol>@bookTicker`, `<symbol>@depth20@100ms`, and `<symbol>@aggTrade`, recording `(t_exch_us, t_recv_ns)` and handling 24h rollovers, 20s ping/pong, and `serverShutdown`.
+  2. `src/qap/execution/l2_book_fill.py`: Pure deterministic L2 book sweep for taker orders at `t_recv_ns >= t_fill_ns` (`max_staleness_ms = 500`), enforcing Binance `LOT_SIZE`/`PRICE_FILTER`/`NOTIONAL` and computing exact VWAP fill price, fee, and book-walk slippage.
+  3. `src/qap/experiment/live_paper_runner.py` + `src/qap/api/routes/live_paper.py`: Per-`actor_id` paper sessions logging all 4 timestamps (`t_exch_us`, `t_recv_ns`, `t_decide_ns`, `t_fill_leg1_ns`, `t_fill_leg2_ns`), reconciling through `PortfolioLedger` against live `HODL` and rebalancing controls, and exposing `POST/GET /api/pair-rotation/paper-sessions` for the Web UI.
+- **Verify:** Hand-calculated 20-level partial-sweep tests, stale-book refusal tests, live `BTCUSDT`/`ETHUSDT` stream smoke test, and `uv run python scripts/qap_gate.py --full`.
+
+---
+
+### Stage S6 — Three-Column Finance Cockpit UI (Simple + Advanced Users)
+- **Follows after Backend Stages S2–S5 are 100% verified.**
+- Build the complete web experience on `/lab` (`docs/product/design-direction.md`):
+  - **Left Column:** Smart/AI Advisor one-click presets, Strategy switcher (`Z-Score`, `Copula`, `Trend`, `Lead-Lag`), progressive simple vs advanced tuning knobs, `Compare All Strategies` button, and Saved/Pinned runs list.
+  - **Center Column:** Plain-language Call + Proof, Ratio chart with Buy A / Buy B markers + synced active-signal sub-chart, Wealth chart with `USDT | Coin A | Coin B` switch, and expandable Trade & Fold drawer.
+  - **Right Column:** Plain-English + Pro relationship readings, Backtest Scorecard, and Live L2 Paper session monitor.
 
 ---
 
