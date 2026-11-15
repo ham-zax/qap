@@ -1,0 +1,374 @@
+{
+  "stage": "S4-A",
+  "actor_id": "stage-s4-20261115",
+  "alpha": 0.05,
+  "correction": "Holm-Bonferroni across 24 preregistered trials",
+  "trials": [
+    {
+      "trial_id": "S4-01",
+      "pair": "SOL/ETH",
+      "coin_a": "binance:SOL",
+      "coin_b": "binance:ETH",
+      "anchor": null,
+      "bar": "1h",
+      "days": 180,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "kalman",
+        "lookback": 96,
+        "entry": 2.0,
+        "exit": 0.4
+      }
+    },
+    {
+      "trial_id": "S4-02",
+      "pair": "SOL/ETH",
+      "coin_a": "binance:SOL",
+      "coin_b": "binance:ETH",
+      "anchor": null,
+      "bar": "1h",
+      "days": 365,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "ols",
+        "lookback": 120,
+        "entry": 2.2,
+        "exit": 0.4
+      }
+    },
+    {
+      "trial_id": "S4-03",
+      "pair": "SOL/ETH",
+      "coin_a": "binance:SOL",
+      "coin_b": "binance:ETH",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "settings": {
+        "method": "copula",
+        "lookback": 96,
+        "copula_probability": 0.05
+      }
+    },
+    {
+      "trial_id": "S4-04",
+      "pair": "SOL/ETH",
+      "coin_a": "binance:SOL",
+      "coin_b": "binance:ETH",
+      "anchor": null,
+      "bar": "4h",
+      "days": 180,
+      "settings": {
+        "method": "trend",
+        "fast_window": 12,
+        "slow_window": 48,
+        "trend_deadband": 0.002
+      }
+    },
+    {
+      "trial_id": "S4-05",
+      "pair": "BNB/ETH",
+      "coin_a": "binance:BNB",
+      "coin_b": "binance:ETH",
+      "anchor": null,
+      "bar": "1h",
+      "days": 180,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "kalman",
+        "lookback": 96,
+        "entry": 2.0,
+        "exit": 0.4
+      }
+    },
+    {
+      "trial_id": "S4-06",
+      "pair": "BNB/ETH",
+      "coin_a": "binance:BNB",
+      "coin_b": "binance:ETH",
+      "anchor": null,
+      "bar": "1h",
+      "days": 365,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "ols",
+        "lookback": 120,
+        "entry": 2.2,
+        "exit": 0.4
+      }
+    },
+    {
+      "trial_id": "S4-07",
+      "pair": "BNB/ETH",
+      "coin_a": "binance:BNB",
+      "coin_b": "binance:ETH",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "settings": {
+        "method": "copula",
+        "lookback": 96,
+        "copula_probability": 0.05
+      }
+    },
+    {
+      "trial_id": "S4-08",
+      "pair": "BNB/ETH",
+      "coin_a": "binance:BNB",
+      "coin_b": "binance:ETH",
+      "anchor": null,
+      "bar": "4h",
+      "days": 180,
+      "settings": {
+        "method": "trend",
+        "fast_window": 12,
+        "slow_window": 48,
+        "trend_deadband": 0.002
+      }
+    },
+    {
+      "trial_id": "S4-09",
+      "pair": "LINK/ETH",
+      "coin_a": "binance:LINK",
+      "coin_b": "binance:ETH",
+      "anchor": null,
+      "bar": "1h",
+      "days": 180,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "kalman",
+        "lookback": 96,
+        "entry": 2.0,
+        "exit": 0.4
+      }
+    },
+    {
+      "trial_id": "S4-10",
+      "pair": "LINK/ETH",
+      "coin_a": "binance:LINK",
+      "coin_b": "binance:ETH",
+      "anchor": null,
+      "bar": "1h",
+      "days": 365,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "ols",
+        "lookback": 120,
+        "entry": 2.2,
+        "exit": 0.4
+      }
+    },
+    {
+      "trial_id": "S4-11",
+      "pair": "LINK/ETH",
+      "coin_a": "binance:LINK",
+      "coin_b": "binance:ETH",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "settings": {
+        "method": "copula",
+        "lookback": 96,
+        "copula_probability": 0.05
+      }
+    },
+    {
+      "trial_id": "S4-12",
+      "pair": "LINK/ETH",
+      "coin_a": "binance:LINK",
+      "coin_b": "binance:ETH",
+      "anchor": null,
+      "bar": "4h",
+      "days": 180,
+      "settings": {
+        "method": "trend",
+        "fast_window": 12,
+        "slow_window": 48,
+        "trend_deadband": 0.002
+      }
+    },
+    {
+      "trial_id": "S4-13",
+      "pair": "AVAX/SOL",
+      "coin_a": "binance:AVAX",
+      "coin_b": "binance:SOL",
+      "anchor": null,
+      "bar": "1h",
+      "days": 180,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "kalman",
+        "lookback": 96,
+        "entry": 2.0,
+        "exit": 0.4
+      }
+    },
+    {
+      "trial_id": "S4-14",
+      "pair": "AVAX/SOL",
+      "coin_a": "binance:AVAX",
+      "coin_b": "binance:SOL",
+      "anchor": null,
+      "bar": "1h",
+      "days": 365,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "ols",
+        "lookback": 120,
+        "entry": 2.2,
+        "exit": 0.4
+      }
+    },
+    {
+      "trial_id": "S4-15",
+      "pair": "AVAX/SOL",
+      "coin_a": "binance:AVAX",
+      "coin_b": "binance:SOL",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "settings": {
+        "method": "copula",
+        "lookback": 96,
+        "copula_probability": 0.05
+      }
+    },
+    {
+      "trial_id": "S4-16",
+      "pair": "AVAX/SOL",
+      "coin_a": "binance:AVAX",
+      "coin_b": "binance:SOL",
+      "anchor": null,
+      "bar": "4h",
+      "days": 180,
+      "settings": {
+        "method": "trend",
+        "fast_window": 12,
+        "slow_window": 48,
+        "trend_deadband": 0.002
+      }
+    },
+    {
+      "trial_id": "S4-17",
+      "pair": "DOGE/XRP",
+      "coin_a": "binance:DOGE",
+      "coin_b": "binance:XRP",
+      "anchor": null,
+      "bar": "1h",
+      "days": 180,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "kalman",
+        "lookback": 96,
+        "entry": 2.0,
+        "exit": 0.4
+      }
+    },
+    {
+      "trial_id": "S4-18",
+      "pair": "DOGE/XRP",
+      "coin_a": "binance:DOGE",
+      "coin_b": "binance:XRP",
+      "anchor": null,
+      "bar": "1h",
+      "days": 365,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "ols",
+        "lookback": 120,
+        "entry": 2.2,
+        "exit": 0.4
+      }
+    },
+    {
+      "trial_id": "S4-19",
+      "pair": "DOGE/XRP",
+      "coin_a": "binance:DOGE",
+      "coin_b": "binance:XRP",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "settings": {
+        "method": "copula",
+        "lookback": 96,
+        "copula_probability": 0.05
+      }
+    },
+    {
+      "trial_id": "S4-20",
+      "pair": "DOGE/XRP",
+      "coin_a": "binance:DOGE",
+      "coin_b": "binance:XRP",
+      "anchor": null,
+      "bar": "4h",
+      "days": 180,
+      "settings": {
+        "method": "trend",
+        "fast_window": 12,
+        "slow_window": 48,
+        "trend_deadband": 0.002
+      }
+    },
+    {
+      "trial_id": "S4-21",
+      "pair": "LTC/BTC",
+      "coin_a": "binance:LTC",
+      "coin_b": "binance:BTC",
+      "anchor": null,
+      "bar": "1h",
+      "days": 180,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "kalman",
+        "lookback": 96,
+        "entry": 2.0,
+        "exit": 0.4
+      }
+    },
+    {
+      "trial_id": "S4-22",
+      "pair": "LTC/BTC",
+      "coin_a": "binance:LTC",
+      "coin_b": "binance:BTC",
+      "anchor": null,
+      "bar": "1h",
+      "days": 365,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "ols",
+        "lookback": 120,
+        "entry": 2.2,
+        "exit": 0.4
+      }
+    },
+    {
+      "trial_id": "S4-23",
+      "pair": "LTC/BTC",
+      "coin_a": "binance:LTC",
+      "coin_b": "binance:BTC",
+      "anchor": null,
+      "bar": "4h",
+      "days": 365,
+      "settings": {
+        "method": "copula",
+        "lookback": 96,
+        "copula_probability": 0.05
+      }
+    },
+    {
+      "trial_id": "S4-24",
+      "pair": "LTC/BTC",
+      "coin_a": "binance:LTC",
+      "coin_b": "binance:BTC",
+      "anchor": null,
+      "bar": "4h",
+      "days": 180,
+      "settings": {
+        "method": "trend",
+        "fast_window": 12,
+        "slow_window": 48,
+        "trend_deadband": 0.002
+      }
+    }
+  ]
+}
