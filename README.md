@@ -1,5 +1,17 @@
 # QAP
 
+Current product direction — 2026-10-24
+Trigger: backend study checkpoint for the accepted Pair Rotation Lab MVP.
+Purpose: distinguish implemented API behavior from the current dashboard.
+Impact: the local workspace opens `/lab`; financial authority remains unchanged.
+Evidence: [accepted vision](docs/product/vision.md) and [Phase 19](docs/plans/19-pair-rotation-lab-mvp.md).
+
+The Lab now connects automatic pair-data preparation to immutable-data analysis,
+ratio/anchor charts, measurements and the dataset audit. The backend study API
+adds replay, validation proof and immutable saved results. Dashboard integration
+remains pending, so the UI still says **Strategy not tested**. The older research
+and artifact routes remain available. M3 human acceptance remains pending.
+
 Update context — 2026-09-30 (authorized cleanup)
 Trigger: Hamza requested removal of legacy and stale code, data and documents,
 then requested wrap-up before UI generation.

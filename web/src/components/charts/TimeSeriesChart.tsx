@@ -11,10 +11,11 @@ import {
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 
 import { useTheme } from '../../lib/theme'
 import {
+  chartPriceFormat,
   findPresentationPointAtTimestamp,
   fromChartVisibleRange,
   timestampFromChartTime,
@@ -64,6 +65,10 @@ interface TimeSeriesChartProps {
   sharedCursorTime?: string | null
   onVisibleRangeChange?: (range: ChartVisibleRange | null) => void
   sharedVisibleRange?: ChartVisibleRange | null
+  /** Reports the hovered bar, or null when the pointer leaves. Presentation only. */
+  onHoverTimeChange?: (timestamp: string | null) => void
+  /** Replaces the default legend and cursor tooltip with a caller-owned readout. */
+  readout?: ReactNode
 }
 
 const SERIES_COLOR_VARS = [
@@ -108,6 +113,8 @@ export function TimeSeriesChart({
   sharedCursorTime,
   onVisibleRangeChange,
   sharedVisibleRange,
+  onHoverTimeChange,
+  readout,
 }: TimeSeriesChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
@@ -127,7 +134,7 @@ export function TimeSeriesChart({
     const seriesColors = SERIES_COLOR_VARS.map((name, index) =>
       cssColor(styles, name, ['#78a9ff', '#c4a7e7', '#7dd3c7', '#f6d365', '#9fb7ff'][index] ?? '#78a9ff'),
     )
-    const borderColor = cssColor(styles, '--border-default', '#303a4a')
+    const borderColor = cssColor(styles, '--qap-border', '#303a4a')
     const chart = createChart(container, {
       autoSize: true,
       height,
@@ -135,15 +142,19 @@ export function TimeSeriesChart({
         attributionLogo: true,
         background: {
           type: ColorType.Solid,
-          color: cssColor(styles, '--surface-panel', '#121720'),
+          color: cssColor(styles, '--qap-panel', '#121720'),
         },
-        textColor: cssColor(styles, '--text-muted', '#9ca8b8'),
+        textColor: cssColor(styles, '--qap-muted', '#9ca8b8'),
       },
       grid: {
         horzLines: { color: cssColor(styles, '--chart-grid', '#242d3b') },
         vertLines: { color: cssColor(styles, '--chart-grid', '#242d3b') },
       },
       rightPriceScale: {
+        borderColor,
+      },
+      leftPriceScale: {
+        visible: series.some((definition) => definition.priceScaleId === 'left'),
         borderColor,
       },
       timeScale: {
@@ -159,8 +170,11 @@ export function TimeSeriesChart({
       api: ISeriesApi<'Line'>
     }> = series.map((definition, index) => {
       const api = chart.addSeries(LineSeries, {
-        color: seriesColors[index % seriesColors.length],
+        priceFormat: chartPriceFormat(definition.points),
+        color: definition.colorToken ? cssColor(styles, definition.colorToken, '#8390a2') : seriesColors[index % seriesColors.length],
         lineWidth: 2,
+        lineStyle: definition.dashed ? 2 : 0,
+        priceScaleId: definition.priceScaleId ?? 'right',
         title: `${definition.name} (${definition.unit})`,
       })
       api.setData(toLightweightChartData(definition.points))
@@ -180,8 +194,8 @@ export function TimeSeriesChart({
           )
         : null
 
-    chart.timeScale().fitContent()
     const crosshairHandler = (parameter: MouseEventParams<Time>) => {
+      onHoverTimeChange?.(parameter.time === undefined ? null : timestampFromChartTime(parameter.time))
       if (parameter.time === undefined) {
         if (onCursorTimeChange && lastCursorTime.current) {
           const snapshot = cursorSnapshotAtTimestamp(series, lastCursorTime.current)
@@ -225,6 +239,7 @@ export function TimeSeriesChart({
       }
     }
     chart.timeScale().subscribeVisibleTimeRangeChange(visibleRangeHandler)
+    chart.timeScale().fitContent()
 
     return () => {
       chart.unsubscribeCrosshairMove(crosshairHandler)
@@ -239,6 +254,7 @@ export function TimeSeriesChart({
     markers,
     theme,
     onCursorTimeChange,
+    onHoverTimeChange,
     onVisibleRangeChange,
     series,
   ])
@@ -289,32 +305,33 @@ export function TimeSeriesChart({
       <figcaption>
         <h3 id={titleId}>{title}</h3>
         <p>{description}</p>
-        <ul className="chart-legend" aria-label={`${title} series`}>
+        {readout === undefined && <ul className="chart-legend" aria-label={`${title} series`}>
           {series.map((item) => {
             const last = item.points.at(-1)
             return (
               <li key={`${item.name}:${item.unit}`}>
-                {item.name} ({item.unit}) - latest {last?.value ?? 'unavailable'}
+                {item.name} ({item.unit}) - latest {last?.value.toLocaleString(undefined, { maximumSignificantDigits: 8 }) ?? 'unavailable'}
               </li>
             )
           })}
-        </ul>
+        </ul>}
       </figcaption>
+      {readout}
       <div className="chart-canvas" ref={containerRef} style={{ height }} />
-      <div className="chart-tooltip" role="status">
+      {readout === undefined && <div className="chart-tooltip" role="status">
         {cursor ? (
           <>
             <strong>{cursor.timestamp}</strong>
             {cursor.values.map((item) => (
               <span key={`${item.name}:${item.unit}`}>
-                {item.name}: {item.value} {item.unit}
+                {item.name}: {item.value.toLocaleString(undefined, { maximumSignificantDigits: 8 })} {item.unit}
               </span>
             ))}
           </>
         ) : (
           <span>Move across the chart to inspect timestamped values.</span>
         )}
-      </div>
+      </div>}
     </figure>
   )
 }

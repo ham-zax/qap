@@ -74,6 +74,13 @@ def test_empty_workspace_opens_year_of_data_with_durable_progress(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     settings = api_settings(client)
+
+    def refuse_registry_refresh(self: ProductUniverse) -> None:
+        raise AssertionError("Pair opening must not wait for registry refresh")
+
+    monkeypatch.setattr(
+        ProductUniverse, "refresh_identity_evidence", refuse_registry_refresh
+    )
     fake = OfflineBinance()
     # Keep the recorded cutoff independent of the test execution date.
     prepare = PairRotationData.prepare

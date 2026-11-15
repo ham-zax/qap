@@ -1,6 +1,43 @@
 # QAP analytical workbench
 
-This package is the read-only React evidence workbench for QAP experiment artifacts. It does not run strategies, mutate portfolios, recompute financial results, or authorize live capital. Exact economics and research-state classifications come from the Python artifact/API layer.
+This package contains the Pair Rotation Lab and the existing evidence workbench.
+The local workspace opens `/lab`. Coin selection starts data preparation through
+the existing background operation. The backend computes descriptive measurements
+from exact immutable datasets. Portfolio economics remain authoritative in Python.
+The Lab currently says **Strategy not tested**. The study API exists, but the
+dashboard does not yet display its wealth, proof or saved results.
+
+Update context — 2026-10-24
+Trigger: connect the backend study API before the dashboard continuation.
+Purpose: document the local entry point and the API/UI boundary.
+Impact: automatic research-data preparation, with no trading authority.
+Evidence: [Phase 19 checkpoint](../docs/plans/19-pair-rotation-lab-mvp.md).
+
+## Pair Rotation Lab
+
+Start the API from the repository root, with an existing or new local workspace:
+
+```bash
+QAP_API_RUN_ROOT="$PWD/runs" \
+QAP_API_WORKSPACE_MODE=local_market \
+QAP_API_MARKET_DATA_ROOT="$PWD" \
+QAP_API_REPOSITORY_ROOT="$PWD" \
+uv run uvicorn qap.api.app:create_default_app \
+  --factory --host 127.0.0.1 --port 8000 --workers 1
+```
+
+Start Vite with the command below. Open `/lab` on port 5173. Search accepts trading
+Binance spot listings. Preparation retains at least a year; display windows range
+from 30 to 365 days. Data preparation uses cached identity evidence. The explicit
+directory refresh operation owns registry acquisition. Unresolved identities remain
+viewable, with economic calls blocked. Saved browser settings are drafts, not frozen
+research results. Sample data is never an automatic fallback.
+
+The backend exposes `POST /api/pair-rotation/studies` for explicit computation.
+`GET /api/pair-rotation/studies` lists saved results. `GET /studies/{study_id}`
+and `POST /studies/{study_id}/pin` use the same `/api/pair-rotation` prefix.
+Reopening a result preserves its original data and settings. Pinning changes only
+separate metadata. Restart the API after backend edits. The launcher does not reload.
 
 ## Local development
 

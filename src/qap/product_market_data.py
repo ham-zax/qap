@@ -26,6 +26,11 @@ from qap.product_maintenance import (
     MarketDataMaintenanceStore,
     ProductMaintenanceError,
 )
+from qap.product_market_data_cache import (
+    PROJECTION_ROW_CACHE,
+    ProjectionKey,
+    stat_key,
+)
 from qap.product_market_data_generation import (
     generation_relative_path as _generation_relative_path,
 )
@@ -419,7 +424,12 @@ class ProductMarketData:
                 ) from exc
         return provenance
 
-    def projection(self) -> ProductMarketDataProjection:
+    def projection(
+        self,
+        *,
+        intervals: frozenset[str] | None = None,
+        dataset_ids: frozenset[str] | None = None,
+    ) -> ProductMarketDataProjection:
         """Return current generation integrity and coverage without M4 policy."""
 
         maintenance = self.maintenance_state()
@@ -433,8 +443,26 @@ class ProductMarketData:
         assert catalog is not None
         rows: list[CurrentMarketDataGeneration] = []
         for source in sorted(catalog.sources, key=lambda item: item.dataset_id):
+            if intervals is not None and source.interval not in intervals:
+                continue
+            if dataset_ids is not None and source.dataset_id not in dataset_ids:
+                continue
             provenance_relative_path = _provenance_relative_path(source.relative_path)
             provenance_path = data_root / provenance_relative_path
+            cache_key: ProjectionKey = (
+                data_root,
+                source.dataset_id,
+                source.relative_path,
+                source.expected_semantic_fingerprint,
+                stat_key(data_root / source.relative_path),
+                stat_key(provenance_path),
+            )
+            cached: CurrentMarketDataGeneration | None = PROJECTION_ROW_CACHE.get(
+                data_root, source.dataset_id, cache_key
+            )
+            if cached is not None:
+                rows.append(cached)
+                continue
             try:
                 resolved = resolve_catalog_source(
                     catalog,
@@ -495,25 +523,25 @@ class ProductMarketData:
                 except ProductMarketDataError:
                     provenance_status = "invalid"
                     issue = "provenance_invalid"
-            rows.append(
-                CurrentMarketDataGeneration(
-                    dataset_id=source.dataset_id,
-                    relative_path=source.relative_path,
-                    venue=source.venue,
-                    venue_symbol=source.venue_symbol,
-                    base_asset=source.base_asset,
-                    quote_asset=source.quote_asset,
-                    interval=source.interval,
-                    semantic_fingerprint=source.expected_semantic_fingerprint,
-                    coverage_start=resolved.series.bars[0].candle_open_time,
-                    coverage_end_exclusive=resolved.series.bars[-1].bar_end_exclusive,
-                    provenance_status=provenance_status,
-                    provenance_relative_path=(
-                        provenance_relative_path if provenance_path.is_file() else None
-                    ),
-                    issue=issue,
-                )
+            row = CurrentMarketDataGeneration(
+                dataset_id=source.dataset_id,
+                relative_path=source.relative_path,
+                venue=source.venue,
+                venue_symbol=source.venue_symbol,
+                base_asset=source.base_asset,
+                quote_asset=source.quote_asset,
+                interval=source.interval,
+                semantic_fingerprint=source.expected_semantic_fingerprint,
+                coverage_start=resolved.series.bars[0].candle_open_time,
+                coverage_end_exclusive=resolved.series.bars[-1].bar_end_exclusive,
+                provenance_status=provenance_status,
+                provenance_relative_path=(
+                    provenance_relative_path if provenance_path.is_file() else None
+                ),
+                issue=issue,
             )
+            PROJECTION_ROW_CACHE.put(data_root, source.dataset_id, cache_key, row)
+            rows.append(row)
         return ProductMarketDataProjection(
             generations=tuple(rows), maintenance=maintenance
         )

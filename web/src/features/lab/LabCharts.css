@@ -1,0 +1,76 @@
+/* Lab chart presentation. Shared chart chrome stays in global.css. */
+.lab-chart-area .time-series-chart {
+  padding: 20px 24px 16px;
+  border-radius: 8px;
+}
+
+.lab-chart-area .time-series-chart figcaption h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.lab-chart-area .time-series-chart figcaption > p {
+  margin: 0;
+  max-width: 72ch;
+  color: var(--qap-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lab-chart-notes {
+  margin-top: 10px;
+}
+
+.lab .lab-chart-notes .lab-note {
+  margin: 0 0 4px;
+}
+
+.lab-wealth .time-series-chart {
+  margin-top: 12px;
+}
+
+.lab-wealth-empty {
+  margin-top: 32px;
+}
+
+.lab-wealth-empty h2 {
+  margin-bottom: 12px;
+}
+
+.lab-wealth-empty-frame {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 140px;
+  padding: 24px;
+  border: 1px dashed var(--qap-border-strong);
+  border-radius: 8px;
+}
+
+.lab .lab-wealth-empty-frame p {
+  margin: 0;
+  color: var(--qap-foreground);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.lab-wealth-empty-frame span {
+  max-width: 60ch;
+  color: var(--qap-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 767px) {
+  .lab-chart-area .time-series-chart {
+    padding: 16px;
+  }
+
+  .lab-wealth-empty-frame {
+    min-height: 120px;
+    padding: 20px 16px;
+  }
+}

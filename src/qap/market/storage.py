@@ -293,7 +293,10 @@ def _datetime_or_none(
 def read_parquet_bar_series(path: str | Path) -> ValidatedBarSeries:
     """Read, validate, and fingerprint-check one admitted local Parquet artifact."""
 
-    table = pq.read_table(Path(path))
+    try:
+        table = pq.read_table(Path(path))
+    except pa.ArrowException as exc:
+        raise MarketDataStorageError("Parquet artifact cannot be decoded") from exc
     expected_columns = list(_CSV_COLUMNS)
     if table.column_names != expected_columns:
         raise MarketDataStorageError(

@@ -16,6 +16,44 @@
         "title": "AdvanceForwardCohortRequestDto",
         "type": "object"
       },
+      "AnalysisDays": {
+        "enum": [
+          30,
+          90,
+          180,
+          365
+        ],
+        "title": "AnalysisDays",
+        "type": "integer"
+      },
+      "AnchorFitDto": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "$ref": "#/components/schemas/LabCoinDto"
+          },
+          "beta_a": {
+            "title": "Beta A",
+            "type": "number"
+          },
+          "beta_b": {
+            "title": "Beta B",
+            "type": "number"
+          },
+          "joint_explained": {
+            "title": "Joint Explained",
+            "type": "number"
+          }
+        },
+        "required": [
+          "anchor",
+          "beta_a",
+          "beta_b",
+          "joint_explained"
+        ],
+        "title": "AnchorFitDto",
+        "type": "object"
+      },
       "AnchorLensDto": {
         "additionalProperties": false,
         "properties": {
@@ -172,6 +210,36 @@
           "descriptive_only"
         ],
         "title": "AnchorLensDto",
+        "type": "object"
+      },
+      "AnchorLinkDto": {
+        "additionalProperties": false,
+        "properties": {
+          "beta": {
+            "title": "Beta",
+            "type": "number"
+          },
+          "lead_lag": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LeadLagDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "r_squared": {
+            "title": "R Squared",
+            "type": "number"
+          }
+        },
+        "required": [
+          "beta",
+          "r_squared",
+          "lead_lag"
+        ],
+        "title": "AnchorLinkDto",
         "type": "object"
       },
       "ArtifactSeriesMetadataDto": {
@@ -1581,6 +1649,35 @@
         "title": "CoinSearchDto",
         "type": "object"
       },
+      "CointegrationDto": {
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "title": "Level",
+            "type": "number"
+          },
+          "p_value": {
+            "title": "P Value",
+            "type": "number"
+          },
+          "passes": {
+            "title": "Passes",
+            "type": "boolean"
+          },
+          "statistic": {
+            "title": "Statistic",
+            "type": "number"
+          }
+        },
+        "required": [
+          "statistic",
+          "p_value",
+          "level",
+          "passes"
+        ],
+        "title": "CointegrationDto",
+        "type": "object"
+      },
       "CompletedResearchScopeStagesDto": {
         "additionalProperties": false,
         "properties": {
@@ -1753,6 +1850,64 @@
           "partial_correction_fraction"
         ],
         "title": "ContributionAwareBandControlSpec",
+        "type": "object"
+      },
+      "CopulaTailsDto": {
+        "additionalProperties": false,
+        "properties": {
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "lower_tail": {
+            "title": "Lower Tail",
+            "type": "number"
+          },
+          "observations": {
+            "title": "Observations",
+            "type": "integer"
+          },
+          "upper_tail": {
+            "title": "Upper Tail",
+            "type": "number"
+          }
+        },
+        "required": [
+          "family",
+          "lower_tail",
+          "upper_tail",
+          "observations"
+        ],
+        "title": "CopulaTailsDto",
+        "type": "object"
+      },
+      "CorrelationDto": {
+        "additionalProperties": false,
+        "properties": {
+          "kendall": {
+            "title": "Kendall",
+            "type": "number"
+          },
+          "observations": {
+            "title": "Observations",
+            "type": "integer"
+          },
+          "pearson": {
+            "title": "Pearson",
+            "type": "number"
+          },
+          "spearman": {
+            "title": "Spearman",
+            "type": "number"
+          }
+        },
+        "required": [
+          "pearson",
+          "spearman",
+          "kendall",
+          "observations"
+        ],
+        "title": "CorrelationDto",
         "type": "object"
       },
       "CostScenarioSpec": {
@@ -3496,6 +3651,57 @@
         "title": "GenerationBindingDto",
         "type": "object"
       },
+      "GrangerDirectionDto": {
+        "additionalProperties": false,
+        "properties": {
+          "lag_bars": {
+            "title": "Lag Bars",
+            "type": "integer"
+          },
+          "p_value": {
+            "title": "P Value",
+            "type": "number"
+          },
+          "passes": {
+            "title": "Passes",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "lag_bars",
+          "p_value",
+          "passes"
+        ],
+        "title": "GrangerDirectionDto",
+        "type": "object"
+      },
+      "GrangerDto": {
+        "additionalProperties": false,
+        "properties": {
+          "a_to_b": {
+            "$ref": "#/components/schemas/GrangerDirectionDto"
+          },
+          "b_to_a": {
+            "$ref": "#/components/schemas/GrangerDirectionDto"
+          },
+          "max_lag": {
+            "title": "Max Lag",
+            "type": "integer"
+          },
+          "observations": {
+            "title": "Observations",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "a_to_b",
+          "b_to_a",
+          "max_lag",
+          "observations"
+        ],
+        "title": "GrangerDto",
+        "type": "object"
+      },
       "GraphScopeDto": {
         "additionalProperties": false,
         "properties": {
@@ -3553,6 +3759,32 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HalfLifeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "bars": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bars"
+          },
+          "reverting": {
+            "title": "Reverting",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "bars",
+          "reverting"
+        ],
+        "title": "HalfLifeDto",
+        "type": "object"
+      },
       "HealthDto": {
         "additionalProperties": false,
         "properties": {
@@ -3570,6 +3802,40 @@
           }
         },
         "title": "HealthDto",
+        "type": "object"
+      },
+      "HedgeRatioDto": {
+        "additionalProperties": false,
+        "properties": {
+          "first_half_ols": {
+            "title": "First Half Ols",
+            "type": "number"
+          },
+          "ols": {
+            "title": "Ols",
+            "type": "number"
+          },
+          "second_half_ols": {
+            "title": "Second Half Ols",
+            "type": "number"
+          },
+          "stable": {
+            "title": "Stable",
+            "type": "boolean"
+          },
+          "tls": {
+            "title": "Tls",
+            "type": "number"
+          }
+        },
+        "required": [
+          "ols",
+          "tls",
+          "first_half_ols",
+          "second_half_ols",
+          "stable"
+        ],
+        "title": "HedgeRatioDto",
         "type": "object"
       },
       "HistoryDto": {
@@ -3749,6 +4015,30 @@
         "title": "HoldingsSnapshotDto",
         "type": "object"
       },
+      "HurstDto": {
+        "additionalProperties": false,
+        "properties": {
+          "exponent": {
+            "title": "Exponent",
+            "type": "number"
+          },
+          "reading": {
+            "enum": [
+              "reverting",
+              "random",
+              "trending"
+            ],
+            "title": "Reading",
+            "type": "string"
+          }
+        },
+        "required": [
+          "exponent",
+          "reading"
+        ],
+        "title": "HurstDto",
+        "type": "object"
+      },
       "IdentityMappingRequestDto": {
         "additionalProperties": false,
         "properties": {
@@ -3877,6 +4167,1643 @@
         "type": "object"
       },
       "JsonValue": {},
+      "KalmanDto": {
+        "additionalProperties": false,
+        "properties": {
+          "beta": {
+            "title": "Beta",
+            "type": "number"
+          },
+          "beta_change": {
+            "title": "Beta Change",
+            "type": "number"
+          },
+          "standard_error": {
+            "title": "Standard Error",
+            "type": "number"
+          }
+        },
+        "required": [
+          "beta",
+          "standard_error",
+          "beta_change"
+        ],
+        "title": "KalmanDto",
+        "type": "object"
+      },
+      "LabAnalysisDto": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LabCoinDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "anchor_ranking": {
+            "items": {
+              "$ref": "#/components/schemas/AnchorFitDto"
+            },
+            "title": "Anchor Ranking",
+            "type": "array"
+          },
+          "band_lookback": {
+            "title": "Band Lookback",
+            "type": "integer"
+          },
+          "bar": {
+            "enum": [
+              "1m",
+              "15m",
+              "1h",
+              "4h",
+              "1d"
+            ],
+            "title": "Bar",
+            "type": "string"
+          },
+          "bars_used": {
+            "title": "Bars Used",
+            "type": "integer"
+          },
+          "coin_a": {
+            "$ref": "#/components/schemas/LabCoinDto"
+          },
+          "coin_b": {
+            "$ref": "#/components/schemas/LabCoinDto"
+          },
+          "data_through": {
+            "format": "date-time",
+            "title": "Data Through",
+            "type": "string"
+          },
+          "datasets": {
+            "items": {
+              "$ref": "#/components/schemas/LabDatasetDto"
+            },
+            "title": "Datasets",
+            "type": "array"
+          },
+          "identity_confirmed": {
+            "title": "Identity Confirmed",
+            "type": "boolean"
+          },
+          "measurements": {
+            "$ref": "#/components/schemas/LabMeasurementsDto"
+          },
+          "schema_version": {
+            "const": "qap.api.pair-rotation-analysis.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "series": {
+            "$ref": "#/components/schemas/LabSeriesDto"
+          },
+          "window_days": {
+            "title": "Window Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "schema_version",
+          "coin_a",
+          "coin_b",
+          "bar",
+          "window_days",
+          "band_lookback",
+          "data_through",
+          "bars_used",
+          "identity_confirmed",
+          "series",
+          "anchor",
+          "anchor_ranking",
+          "measurements",
+          "datasets"
+        ],
+        "title": "LabAnalysisDto",
+        "type": "object"
+      },
+      "LabCallDto": {
+        "additionalProperties": false,
+        "properties": {
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "rotation_fraction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rotation Fraction"
+          },
+          "status": {
+            "enum": [
+              "insufficient_history",
+              "identity_unresolved",
+              "execution_data_missing",
+              "cost_data_missing",
+              "cost_budget_failed",
+              "no_edge",
+              "hold",
+              "into_a",
+              "into_b"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_weight_a": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Weight A"
+          }
+        },
+        "required": [
+          "status",
+          "headline",
+          "reason",
+          "target_weight_a",
+          "rotation_fraction"
+        ],
+        "title": "LabCallDto",
+        "type": "object"
+      },
+      "LabCoinDto": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "identity_state": {
+            "enum": [
+              "resolved",
+              "review",
+              "unresolved"
+            ],
+            "title": "Identity State",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "identity_state"
+        ],
+        "title": "LabCoinDto",
+        "type": "object"
+      },
+      "LabDatasetDto": {
+        "additionalProperties": false,
+        "properties": {
+          "coverage_start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Start"
+          },
+          "cutoff": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cutoff"
+          },
+          "dataset_id": {
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "interval": {
+            "title": "Interval",
+            "type": "string"
+          },
+          "semantic_fingerprint": {
+            "title": "Semantic Fingerprint",
+            "type": "string"
+          },
+          "venue_symbol": {
+            "title": "Venue Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "interval",
+          "venue_symbol",
+          "semantic_fingerprint",
+          "coverage_start",
+          "cutoff"
+        ],
+        "title": "LabDatasetDto",
+        "type": "object"
+      },
+      "LabMeasurementsDto": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor_a": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnchorLinkDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "anchor_b": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnchorLinkDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cointegration": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CointegrationDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "copula": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CopulaTailsDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "correlation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CorrelationDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "granger": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GrangerDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "half_life": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HalfLifeDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hedge_ratio": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HedgeRatioDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hurst": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HurstDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kalman": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KalmanDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ratio_percentile": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ratio Percentile"
+          },
+          "regime": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegimeDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rolling_dependence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RollingDependenceDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "correlation",
+          "cointegration",
+          "hedge_ratio",
+          "half_life",
+          "hurst",
+          "ratio_percentile",
+          "regime",
+          "anchor_a",
+          "anchor_b",
+          "kalman",
+          "granger",
+          "copula",
+          "rolling_dependence"
+        ],
+        "title": "LabMeasurementsDto",
+        "type": "object"
+      },
+      "LabPinDto": {
+        "additionalProperties": false,
+        "properties": {
+          "pinned": {
+            "title": "Pinned",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pinned"
+        ],
+        "title": "LabPinDto",
+        "type": "object"
+      },
+      "LabProofDto": {
+        "additionalProperties": false,
+        "properties": {
+          "control": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Control"
+          },
+          "corrected_p_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrected P Value"
+          },
+          "correction": {
+            "title": "Correction",
+            "type": "string"
+          },
+          "cost_gate_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Gate Passed"
+          },
+          "cost_paid_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Paid Pct"
+          },
+          "data_role": {
+            "const": "validation",
+            "title": "Data Role",
+            "type": "string"
+          },
+          "final_oos_used": {
+            "title": "Final Oos Used",
+            "type": "boolean"
+          },
+          "folds_passing": {
+            "title": "Folds Passing",
+            "type": "integer"
+          },
+          "folds_total": {
+            "title": "Folds Total",
+            "type": "integer"
+          },
+          "gross_vs_hodl_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Vs Hodl Pct"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "minimum_passing_folds": {
+            "title": "Minimum Passing Folds",
+            "type": "integer"
+          },
+          "minimum_trades": {
+            "title": "Minimum Trades",
+            "type": "integer"
+          },
+          "passes": {
+            "title": "Passes",
+            "type": "boolean"
+          },
+          "proof_end": {
+            "format": "date-time",
+            "title": "Proof End",
+            "type": "string"
+          },
+          "proof_start": {
+            "format": "date-time",
+            "title": "Proof Start",
+            "type": "string"
+          },
+          "raw_p_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw P Value"
+          },
+          "settings_tried": {
+            "title": "Settings Tried",
+            "type": "integer"
+          },
+          "significance": {
+            "title": "Significance",
+            "type": "number"
+          },
+          "tuning_cost_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuning Cost Pct"
+          },
+          "tuning_end": {
+            "format": "date-time",
+            "title": "Tuning End",
+            "type": "string"
+          },
+          "tuning_gross_vs_hodl_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuning Gross Vs Hodl Pct"
+          },
+          "tuning_start": {
+            "format": "date-time",
+            "title": "Tuning Start",
+            "type": "string"
+          },
+          "validation_reused": {
+            "title": "Validation Reused",
+            "type": "boolean"
+          },
+          "validation_trades": {
+            "title": "Validation Trades",
+            "type": "integer"
+          },
+          "vs_control_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vs Control Pct"
+          },
+          "vs_hodl_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vs Hodl Pct"
+          }
+        },
+        "required": [
+          "passes",
+          "data_role",
+          "final_oos_used",
+          "validation_reused",
+          "settings_tried",
+          "control",
+          "raw_p_value",
+          "corrected_p_value",
+          "significance",
+          "folds_passing",
+          "folds_total",
+          "minimum_passing_folds",
+          "validation_trades",
+          "minimum_trades",
+          "vs_hodl_pct",
+          "vs_control_pct",
+          "cost_paid_pct",
+          "gross_vs_hodl_pct",
+          "cost_gate_passed",
+          "tuning_cost_pct",
+          "tuning_gross_vs_hodl_pct",
+          "tuning_start",
+          "tuning_end",
+          "proof_start",
+          "proof_end",
+          "correction",
+          "limitations"
+        ],
+        "title": "LabProofDto",
+        "type": "object"
+      },
+      "LabSavedListDto": {
+        "additionalProperties": false,
+        "properties": {
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Offset"
+          },
+          "studies": {
+            "items": {
+              "$ref": "#/components/schemas/LabSavedSummaryDto"
+            },
+            "title": "Studies",
+            "type": "array"
+          }
+        },
+        "required": [
+          "studies",
+          "next_offset"
+        ],
+        "title": "LabSavedListDto",
+        "type": "object"
+      },
+      "LabSavedSummaryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "coin_a": {
+            "$ref": "#/components/schemas/LabCoinDto"
+          },
+          "coin_b": {
+            "$ref": "#/components/schemas/LabCoinDto"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "data_through": {
+            "format": "date-time",
+            "title": "Data Through",
+            "type": "string"
+          },
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "pinned": {
+            "title": "Pinned",
+            "type": "boolean"
+          },
+          "study_id": {
+            "title": "Study Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "study_id",
+          "created_at",
+          "pinned",
+          "coin_a",
+          "coin_b",
+          "method",
+          "data_through",
+          "headline"
+        ],
+        "title": "LabSavedSummaryDto",
+        "type": "object"
+      },
+      "LabSeriesDto": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor_close": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor Close"
+          },
+          "close_a": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Close A",
+            "type": "array"
+          },
+          "close_b": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Close B",
+            "type": "array"
+          },
+          "mean": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Mean",
+            "type": "array"
+          },
+          "ratio": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Ratio",
+            "type": "array"
+          },
+          "std": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Std",
+            "type": "array"
+          },
+          "time": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Time",
+            "type": "array"
+          }
+        },
+        "required": [
+          "time",
+          "close_a",
+          "close_b",
+          "ratio",
+          "mean",
+          "std",
+          "anchor_close"
+        ],
+        "title": "LabSeriesDto",
+        "type": "object"
+      },
+      "LabSettings-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor_threshold": {
+            "default": 0.002,
+            "exclusiveMinimum": 0.0,
+            "maximum": 0.5,
+            "title": "Anchor Threshold",
+            "type": "number"
+          },
+          "auto_tune": {
+            "default": true,
+            "title": "Auto Tune",
+            "type": "boolean"
+          },
+          "cooldown": {
+            "default": 4,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Cooldown",
+            "type": "integer"
+          },
+          "copula_probability": {
+            "default": 0.05,
+            "exclusiveMaximum": 0.5,
+            "exclusiveMinimum": 0.0,
+            "title": "Copula Probability",
+            "type": "number"
+          },
+          "cost_budget_multiple": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "default": "2",
+            "title": "Cost Budget Multiple"
+          },
+          "entry": {
+            "default": 2.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 10.0,
+            "title": "Entry",
+            "type": "number"
+          },
+          "exit": {
+            "default": 0.5,
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Exit",
+            "type": "number"
+          },
+          "fast_window": {
+            "default": 12,
+            "maximum": 1000.0,
+            "minimum": 2.0,
+            "title": "Fast Window",
+            "type": "integer"
+          },
+          "fee_bps": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "default": "10",
+            "title": "Fee Bps"
+          },
+          "folds": {
+            "default": 8,
+            "maximum": 12.0,
+            "minimum": 3.0,
+            "title": "Folds",
+            "type": "integer"
+          },
+          "hedge_method": {
+            "default": "ratio",
+            "enum": [
+              "ratio",
+              "ols",
+              "tls",
+              "kalman"
+            ],
+            "title": "Hedge Method",
+            "type": "string"
+          },
+          "initial_weight": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 1.0,
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "default": "0.5",
+            "title": "Initial Weight"
+          },
+          "lookback": {
+            "default": 96,
+            "maximum": 10000.0,
+            "minimum": 20.0,
+            "title": "Lookback",
+            "type": "integer"
+          },
+          "method": {
+            "default": "zscore",
+            "enum": [
+              "zscore",
+              "lead_lag",
+              "copula",
+              "trend"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "minimum_hold": {
+            "default": 4,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Minimum Hold",
+            "type": "integer"
+          },
+          "minimum_notional": {
+            "anyOf": [
+              {
+                "maximum": 100000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "default": "1",
+            "title": "Minimum Notional"
+          },
+          "minimum_passing_folds": {
+            "default": 5,
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Minimum Passing Folds",
+            "type": "integer"
+          },
+          "minimum_trades": {
+            "default": 10,
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Minimum Trades",
+            "type": "integer"
+          },
+          "proof_fraction": {
+            "default": 0.3,
+            "maximum": 0.5,
+            "minimum": 0.2,
+            "title": "Proof Fraction",
+            "type": "number"
+          },
+          "rotation_size": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 0.5,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "default": "0.25",
+            "title": "Rotation Size"
+          },
+          "significance": {
+            "default": 0.05,
+            "exclusiveMinimum": 0.0,
+            "maximum": 0.1,
+            "title": "Significance",
+            "type": "number"
+          },
+          "slippage_bps": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1000.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "default": "5",
+            "title": "Slippage Bps"
+          },
+          "slow_window": {
+            "default": 48,
+            "maximum": 10000.0,
+            "minimum": 3.0,
+            "title": "Slow Window",
+            "type": "integer"
+          },
+          "starting_value": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100000000.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "default": "10000",
+            "title": "Starting Value"
+          },
+          "volume_impact_bps": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "default": "10",
+            "title": "Volume Impact Bps"
+          }
+        },
+        "title": "LabSettings",
+        "type": "object"
+      },
+      "LabSettings-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor_threshold": {
+            "default": 0.002,
+            "exclusiveMinimum": 0.0,
+            "maximum": 0.5,
+            "title": "Anchor Threshold",
+            "type": "number"
+          },
+          "auto_tune": {
+            "default": true,
+            "title": "Auto Tune",
+            "type": "boolean"
+          },
+          "cooldown": {
+            "default": 4,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Cooldown",
+            "type": "integer"
+          },
+          "copula_probability": {
+            "default": 0.05,
+            "exclusiveMaximum": 0.5,
+            "exclusiveMinimum": 0.0,
+            "title": "Copula Probability",
+            "type": "number"
+          },
+          "cost_budget_multiple": {
+            "default": "2",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cost Budget Multiple",
+            "type": "string"
+          },
+          "entry": {
+            "default": 2.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 10.0,
+            "title": "Entry",
+            "type": "number"
+          },
+          "exit": {
+            "default": 0.5,
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Exit",
+            "type": "number"
+          },
+          "fast_window": {
+            "default": 12,
+            "maximum": 1000.0,
+            "minimum": 2.0,
+            "title": "Fast Window",
+            "type": "integer"
+          },
+          "fee_bps": {
+            "default": "10",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Fee Bps",
+            "type": "string"
+          },
+          "folds": {
+            "default": 8,
+            "maximum": 12.0,
+            "minimum": 3.0,
+            "title": "Folds",
+            "type": "integer"
+          },
+          "hedge_method": {
+            "default": "ratio",
+            "enum": [
+              "ratio",
+              "ols",
+              "tls",
+              "kalman"
+            ],
+            "title": "Hedge Method",
+            "type": "string"
+          },
+          "initial_weight": {
+            "default": "0.5",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Initial Weight",
+            "type": "string"
+          },
+          "lookback": {
+            "default": 96,
+            "maximum": 10000.0,
+            "minimum": 20.0,
+            "title": "Lookback",
+            "type": "integer"
+          },
+          "method": {
+            "default": "zscore",
+            "enum": [
+              "zscore",
+              "lead_lag",
+              "copula",
+              "trend"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "minimum_hold": {
+            "default": 4,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Minimum Hold",
+            "type": "integer"
+          },
+          "minimum_notional": {
+            "default": "1",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Minimum Notional",
+            "type": "string"
+          },
+          "minimum_passing_folds": {
+            "default": 5,
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Minimum Passing Folds",
+            "type": "integer"
+          },
+          "minimum_trades": {
+            "default": 10,
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Minimum Trades",
+            "type": "integer"
+          },
+          "proof_fraction": {
+            "default": 0.3,
+            "maximum": 0.5,
+            "minimum": 0.2,
+            "title": "Proof Fraction",
+            "type": "number"
+          },
+          "rotation_size": {
+            "default": "0.25",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Rotation Size",
+            "type": "string"
+          },
+          "significance": {
+            "default": 0.05,
+            "exclusiveMinimum": 0.0,
+            "maximum": 0.1,
+            "title": "Significance",
+            "type": "number"
+          },
+          "slippage_bps": {
+            "default": "5",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Slippage Bps",
+            "type": "string"
+          },
+          "slow_window": {
+            "default": 48,
+            "maximum": 10000.0,
+            "minimum": 3.0,
+            "title": "Slow Window",
+            "type": "integer"
+          },
+          "starting_value": {
+            "default": "10000",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Starting Value",
+            "type": "string"
+          },
+          "volume_impact_bps": {
+            "default": "10",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Volume Impact Bps",
+            "type": "string"
+          }
+        },
+        "title": "LabSettings",
+        "type": "object"
+      },
+      "LabSignalDto": {
+        "additionalProperties": false,
+        "properties": {
+          "lower": {
+            "title": "Lower",
+            "type": "number"
+          },
+          "time": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Time",
+            "type": "array"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "upper": {
+            "title": "Upper",
+            "type": "number"
+          },
+          "values": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "time",
+          "values",
+          "upper",
+          "lower",
+          "unit"
+        ],
+        "title": "LabSignalDto",
+        "type": "object"
+      },
+      "LabStudyDto": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "pinned": {
+            "title": "Pinned",
+            "type": "boolean"
+          },
+          "result": {
+            "$ref": "#/components/schemas/LabStudyResultDto"
+          },
+          "study_id": {
+            "title": "Study Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "study_id",
+          "created_at",
+          "pinned",
+          "result"
+        ],
+        "title": "LabStudyDto",
+        "type": "object"
+      },
+      "LabStudyRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor"
+          },
+          "band_lookback": {
+            "default": 672,
+            "maximum": 10000.0,
+            "minimum": 2.0,
+            "title": "Band Lookback",
+            "type": "integer"
+          },
+          "bar": {
+            "default": "15m",
+            "enum": [
+              "1m",
+              "15m",
+              "1h",
+              "4h",
+              "1d"
+            ],
+            "title": "Bar",
+            "type": "string"
+          },
+          "coin_a": {
+            "title": "Coin A",
+            "type": "string"
+          },
+          "coin_b": {
+            "title": "Coin B",
+            "type": "string"
+          },
+          "days": {
+            "$ref": "#/components/schemas/AnalysisDays",
+            "default": 180
+          },
+          "settings": {
+            "$ref": "#/components/schemas/LabSettings-Input"
+          }
+        },
+        "required": [
+          "coin_a",
+          "coin_b"
+        ],
+        "title": "LabStudyRequestDto",
+        "type": "object"
+      },
+      "LabStudyResultDto": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis": {
+            "$ref": "#/components/schemas/LabAnalysisDto"
+          },
+          "applied_settings": {
+            "$ref": "#/components/schemas/LabSettings-Output"
+          },
+          "call": {
+            "$ref": "#/components/schemas/LabCallDto"
+          },
+          "code_fingerprint": {
+            "title": "Code Fingerprint",
+            "type": "string"
+          },
+          "execution_metadata": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Execution Metadata",
+            "type": "array"
+          },
+          "execution_route": {
+            "title": "Execution Route",
+            "type": "string"
+          },
+          "folds": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JsonValue"
+              },
+              "type": "object"
+            },
+            "title": "Folds",
+            "type": "array"
+          },
+          "proof": {
+            "$ref": "#/components/schemas/LabProofDto"
+          },
+          "requested_settings": {
+            "$ref": "#/components/schemas/LabSettings-Output"
+          },
+          "schema_version": {
+            "const": "qap.lab.study.v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "signal": {
+            "$ref": "#/components/schemas/LabSignalDto"
+          },
+          "statistics": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JsonValue"
+              },
+              "type": "object"
+            },
+            "title": "Statistics",
+            "type": "object"
+          },
+          "trades": {
+            "items": {
+              "$ref": "#/components/schemas/LabTradeDto"
+            },
+            "title": "Trades",
+            "type": "array"
+          },
+          "wealth": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LabWealthDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "analysis",
+          "requested_settings",
+          "applied_settings",
+          "call",
+          "proof",
+          "signal",
+          "wealth",
+          "trades",
+          "folds",
+          "statistics",
+          "code_fingerprint",
+          "execution_route",
+          "execution_metadata"
+        ],
+        "title": "LabStudyResultDto",
+        "type": "object"
+      },
+      "LabTradeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "decision_index": {
+            "title": "Decision Index",
+            "type": "integer"
+          },
+          "direction": {
+            "enum": [
+              "into_a",
+              "into_b"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "fees_usdt": {
+            "title": "Fees Usdt",
+            "type": "string"
+          },
+          "fill_index": {
+            "title": "Fill Index",
+            "type": "integer"
+          },
+          "fills": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Fills",
+            "type": "array"
+          },
+          "route": {
+            "title": "Route",
+            "type": "string"
+          },
+          "slippage_usdt": {
+            "title": "Slippage Usdt",
+            "type": "string"
+          },
+          "time": {
+            "format": "date-time",
+            "title": "Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision_index",
+          "fill_index",
+          "time",
+          "direction",
+          "route",
+          "fees_usdt",
+          "slippage_usdt",
+          "fills"
+        ],
+        "title": "LabTradeDto",
+        "type": "object"
+      },
+      "LabWealthDto": {
+        "additionalProperties": false,
+        "properties": {
+          "coins_a": {
+            "additionalProperties": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Coins A",
+            "type": "object"
+          },
+          "coins_b": {
+            "additionalProperties": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Coins B",
+            "type": "object"
+          },
+          "terminal_values": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Terminal Values",
+            "type": "object"
+          },
+          "time": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Time",
+            "type": "array"
+          },
+          "value": {
+            "additionalProperties": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Value",
+            "type": "object"
+          },
+          "window_kind": {
+            "enum": [
+              "validation",
+              "context_only"
+            ],
+            "title": "Window Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "time",
+          "value",
+          "coins_a",
+          "coins_b",
+          "terminal_values",
+          "window_kind"
+        ],
+        "title": "LabWealthDto",
+        "type": "object"
+      },
+      "LeadLagDto": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation": {
+            "title": "Correlation",
+            "type": "number"
+          },
+          "lag_bars": {
+            "title": "Lag Bars",
+            "type": "integer"
+          },
+          "stable": {
+            "title": "Stable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "lag_bars",
+          "correlation",
+          "stable"
+        ],
+        "title": "LeadLagDto",
+        "type": "object"
+      },
       "MarketDataGenerationDto": {
         "additionalProperties": false,
         "properties": {
@@ -4523,6 +6450,15 @@
       "PairRotationRequestDto": {
         "additionalProperties": false,
         "properties": {
+          "base_interval": {
+            "default": "15m",
+            "enum": [
+              "15m",
+              "1m"
+            ],
+            "title": "Base Interval",
+            "type": "string"
+          },
           "coin_a": {
             "maxLength": 100,
             "minLength": 1,
@@ -4535,10 +6471,15 @@
             "title": "Coin B",
             "type": "string"
           },
+          "include_execution": {
+            "default": false,
+            "title": "Include Execution",
+            "type": "boolean"
+          },
           "lookback_days": {
             "default": 365,
             "maximum": 3650.0,
-            "minimum": 365.0,
+            "minimum": 1.0,
             "title": "Lookback Days",
             "type": "integer"
           }
@@ -7020,6 +8961,44 @@
         "title": "RebalanceMarkerDto",
         "type": "object"
       },
+      "RegimeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "efficiency": {
+            "title": "Efficiency",
+            "type": "number"
+          },
+          "trend": {
+            "enum": [
+              "trending",
+              "ranging"
+            ],
+            "title": "Trend",
+            "type": "string"
+          },
+          "volatility": {
+            "enum": [
+              "calm",
+              "normal",
+              "stressed"
+            ],
+            "title": "Volatility",
+            "type": "string"
+          },
+          "volatility_percentile": {
+            "title": "Volatility Percentile",
+            "type": "number"
+          }
+        },
+        "required": [
+          "volatility",
+          "volatility_percentile",
+          "trend",
+          "efficiency"
+        ],
+        "title": "RegimeDto",
+        "type": "object"
+      },
       "RelationshipEvidencePointDto": {
         "additionalProperties": false,
         "properties": {
@@ -8987,6 +10966,35 @@
         "title": "RoleSummary",
         "type": "object"
       },
+      "RollingDependenceDto": {
+        "additionalProperties": false,
+        "properties": {
+          "high": {
+            "title": "High",
+            "type": "number"
+          },
+          "latest": {
+            "title": "Latest",
+            "type": "number"
+          },
+          "low": {
+            "title": "Low",
+            "type": "number"
+          },
+          "window_bars": {
+            "title": "Window Bars",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "window_bars",
+          "latest",
+          "low",
+          "high"
+        ],
+        "title": "RollingDependenceDto",
+        "type": "object"
+      },
       "RunProvenance": {
         "additionalProperties": false,
         "properties": {
@@ -10642,6 +12650,117 @@
         ]
       }
     },
+    "/api/pair-rotation/analysis": {
+      "get": {
+        "operationId": "analyzePairRotation",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "coin_a",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Coin A",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "coin_b",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Coin B",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bar",
+            "required": false,
+            "schema": {
+              "default": "15m",
+              "enum": [
+                "1m",
+                "15m",
+                "1h",
+                "4h",
+                "1d"
+              ],
+              "title": "Bar",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AnalysisDays",
+              "default": 180
+            }
+          },
+          {
+            "in": "query",
+            "name": "band_lookback",
+            "required": false,
+            "schema": {
+              "default": 672,
+              "maximum": 10000,
+              "minimum": 2,
+              "title": "Band Lookback",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "anchor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Anchor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabAnalysisDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Analyze Pair Rotation",
+        "tags": [
+          "pair-rotation"
+        ]
+      }
+    },
     "/api/pair-rotation/bootstrap": {
       "post": {
         "operationId": "refreshResearchCoins",
@@ -10755,6 +12874,195 @@
           }
         },
         "summary": "Open Pair Rotation",
+        "tags": [
+          "pair-rotation"
+        ]
+      }
+    },
+    "/api/pair-rotation/studies": {
+      "get": {
+        "operationId": "listSavedLabStudies",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabSavedListDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Studies",
+        "tags": [
+          "pair-rotation"
+        ]
+      },
+      "post": {
+        "operationId": "computeLabStudy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabStudyRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabStudyDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compute Study",
+        "tags": [
+          "pair-rotation"
+        ]
+      }
+    },
+    "/api/pair-rotation/studies/{study_id}": {
+      "get": {
+        "operationId": "getSavedLabStudy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabStudyDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Study",
+        "tags": [
+          "pair-rotation"
+        ]
+      }
+    },
+    "/api/pair-rotation/studies/{study_id}/pin": {
+      "post": {
+        "operationId": "pinLabStudy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabPinDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabStudyDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pin Study",
         "tags": [
           "pair-rotation"
         ]

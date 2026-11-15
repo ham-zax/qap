@@ -14,6 +14,25 @@ export interface TimeSeriesDefinition {
   name: string
   unit: string
   points: PresentationChartPoint[]
+  priceScaleId?: 'left' | 'right'
+  colorToken?: string
+  dashed?: boolean
+}
+
+/** Keep small coin ratios and small visible changes readable on their own axis. */
+export function chartPriceFormat(points: readonly PresentationChartPoint[]) {
+  let resolution = Infinity
+  let low = Infinity
+  let high = -Infinity
+  points.forEach((point) => {
+    const magnitude = Math.abs(point.value)
+    if (magnitude > 0) resolution = Math.min(resolution, magnitude)
+    low = Math.min(low, point.value)
+    high = Math.max(high, point.value)
+  })
+  if (high > low) resolution = Math.min(resolution, (high - low) / 1000)
+  const precision = Number.isFinite(resolution) ? Math.max(2, Math.min(16, -Math.floor(Math.log10(resolution)))) : 2
+  return { type: 'price' as const, precision, minMove: 10 ** -precision }
 }
 
 export interface ChartMarker {

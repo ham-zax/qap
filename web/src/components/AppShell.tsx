@@ -62,6 +62,9 @@ export function AppShell({ children, workspaceMode, collectorStatus }: AppShellP
         </div>
         <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center md:gap-4">
           <nav className="flex w-full flex-row gap-1 md:w-auto" aria-label="Primary navigation">
+            <Link className={navClass(pathname === '/lab')} aria-current={pathname === '/lab' ? 'page' : undefined} to="/lab">
+              Lab
+            </Link>
             <Link className={navClass(section === 'research')} aria-current={section === 'research' ? 'page' : undefined} to="/research">
               Research
             </Link>
@@ -85,7 +88,7 @@ export function AppShell({ children, workspaceMode, collectorStatus }: AppShellP
         {guide ? <ScreenGuide guide={guide} /> : null}
       </main>
       <footer>
-        <p>Research only · Simulated trades · No live orders</p>
+        <p>Research only. Trades are simulated. No real orders are placed.</p>
         <ChartAttribution />
       </footer>
     </div>

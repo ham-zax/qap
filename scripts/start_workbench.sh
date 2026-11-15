@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Optional operator secrets, such as COINGECKO_DEMO_API_KEY, shared by the API
+# and collector. Keep the file outside the repository and readable only by you.
+QAP_ENV_FILE="${QAP_ENV_FILE:-$HOME/.config/qap/env}"
+if [[ -f "$QAP_ENV_FILE" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$QAP_ENV_FILE"
+  set +a
+fi
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUN_ROOT="${QAP_RUN_ROOT:-$ROOT/runs}"
 WORKSPACE_MODE="${QAP_API_WORKSPACE_MODE:-local_market}"

@@ -74,8 +74,9 @@ describe('RelationshipEvidencePanel', () => {
       screen.getByText('2 observations unavailable by model validity rules.'),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('rolling_log_ratio_zscore (score) - latest 1.224744871'),
+      screen.getByText('rolling_log_ratio_zscore (score) - latest 1.2247449'),
     ).toBeInTheDocument()
+    expect(evidence.series[0]?.points.at(-1)?.value).toBe(1.224744871)
   })
 
   it('renders an explicit model-free state instead of an empty chart', () => {

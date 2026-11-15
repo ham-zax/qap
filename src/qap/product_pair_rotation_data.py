@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 from qap.market import (
@@ -37,6 +38,7 @@ from qap.product_market_data_prepare import (
     ProductMarketDataPreparationError,
     product_dataset_id,
 )
+from qap.product_pair_rotation_markets import direct_instrument
 from qap.product_universe import (
     ProductResearchScope,
     ProductUniverse,
@@ -190,9 +192,17 @@ class PairRotationData:
         lookback_days: int = 365,
         progress: ProgressCallback | None = None,
         binance: BinanceHistoricalAcquirer | None = None,
+        base_interval: str = "15m",
+        include_execution: bool = False,
     ) -> ProductMarketDataProjection:
         first, second = _eligible_pair(scope)
-        instruments = (first, second)
+        base = BarInterval(base_interval)
+        if base.label not in {"15m", "1m"}:
+            raise ProductMarketDataPreparationError("Prepare 15m or 1m source bars.")
+        derived_intervals = _DERIVED_INTERVALS if base.label == "15m" else ()
+        extra = direct_instrument(self._universe, scope) if include_execution else None
+        instruments = (first, second) if extra is None else (first, second, extra)
+        scope = replace(scope, instruments=instruments)
         if type(lookback_days) is bool or type(lookback_days) is not int:
             raise ProductMarketDataPreparationError("lookback_days must be an int")
         if lookback_days < 1:
@@ -201,13 +211,13 @@ class PairRotationData:
         effective_now = _require_utc(
             datetime.now(UTC) if now is None else now, field="now"
         )
-        cutoff = _floor_to_interval(effective_now, _BASE_INTERVAL)
+        cutoff = _floor_to_interval(effective_now, base)
         day_anchor = cutoff - timedelta(days=lookback_count)
         start = datetime(day_anchor.year, day_anchor.month, day_anchor.day, tzinfo=UTC)
         if start >= cutoff:
             raise ProductMarketDataPreparationError("Pair rotation window is empty.")
 
-        total = len(instruments) * (1 + len(_DERIVED_INTERVALS))
+        total = len(instruments) * (1 + len(derived_intervals))
         if progress is not None:
             progress("prepare", 0, total)
 
@@ -226,14 +236,19 @@ class PairRotationData:
                 active_binance = owned_binance
             gate = GateHistoricalAdapter()
             for instrument in instruments:
-                dataset_15m = product_dataset_id(instrument, _BASE_INTERVAL)
+                dataset_15m = product_dataset_id(instrument, base)
                 try:
-                    current = _find_current(self._market_data.projection(), dataset_15m)
+                    current = _find_current(
+                        self._market_data.projection(
+                            dataset_ids=frozenset({dataset_15m})
+                        ),
+                        dataset_15m,
+                    )
                     generation = self._preparation.extended_generation(
                         scope=scope,
                         instrument=instrument,
                         dataset_id=dataset_15m,
-                        interval=_BASE_INTERVAL,
+                        interval=base,
                         start=start,
                         end_exclusive=cutoff,
                         current=current,
@@ -256,16 +271,19 @@ class PairRotationData:
                 done += 1
                 if progress is not None:
                     progress(
-                        f"{instrument.instrument.venue_symbol} {_BASE_INTERVAL.label}",
+                        f"{instrument.instrument.venue_symbol} {base.label}",
                         done,
                         total,
                     )
 
             for instrument in instruments:
                 try:
+                    parent_dataset = product_dataset_id(instrument, base)
                     parent_current = _find_current(
-                        self._market_data.projection(),
-                        product_dataset_id(instrument, _BASE_INTERVAL),
+                        self._market_data.projection(
+                            dataset_ids=frozenset({parent_dataset})
+                        ),
+                        parent_dataset,
                     )
                     if (
                         parent_current is None
@@ -295,14 +313,17 @@ class PairRotationData:
                         dataset_id=parent_current.dataset_id,
                         semantic_fingerprint=parent_current.semantic_fingerprint,
                     )
-                    for target in _DERIVED_INTERVALS:
+                    for target in derived_intervals:
                         derived = _resample_15m(
                             parent_series, target, start=start, cutoff=cutoff
                         )
                         if derived is not None:
                             derived_dataset = product_dataset_id(instrument, target)
                             existing = _find_current(
-                                self._market_data.projection(), derived_dataset
+                                self._market_data.projection(
+                                    dataset_ids=frozenset({derived_dataset})
+                                ),
+                                derived_dataset,
                             )
                             fingerprint = fingerprint_bar_series(derived)
                             if (
@@ -387,8 +408,13 @@ class PairRotationData:
                 gate.close()
             if owned_binance is not None:
                 owned_binance.close()
+        pair_dataset_ids = frozenset(
+            product_dataset_id(instrument, interval)
+            for instrument in instruments
+            for interval in (base, *derived_intervals)
+        )
         try:
-            return self._market_data.projection()
+            return self._market_data.projection(dataset_ids=pair_dataset_ids)
         except ProductMarketDataError as exc:
             raise ProductMarketDataPreparationError(str(exc)) from exc
 

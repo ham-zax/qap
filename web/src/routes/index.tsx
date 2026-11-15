@@ -1,5 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
+import type { CurrentApprovedReadinessDto } from '../api/types'
 import { HomeWorkspace } from '../features/home/HomeWorkspace'
 
 export const Route = createFileRoute('/')({
@@ -7,27 +8,16 @@ export const Route = createFileRoute('/')({
     const workspace = await context.queryClient.ensureQueryData(
       context.queries.workspaceStatus(),
     )
+    if (workspace.workspace_mode === 'local_market') {
+      throw redirect({ to: '/lab' })
+    }
     const [experiments, operations, forwardCohorts] = await Promise.all([
       context.queryClient.ensureQueryData(context.queries.experiments()),
       context.queryClient.ensureQueryData(context.queries.operations()),
       context.queryClient.ensureQueryData(context.queries.forwardCohorts()),
     ])
-    const readinessChecks =
-      workspace.workspace_mode === 'local_market'
-        ? await Promise.all(
-            (['short', 'medium', 'swing'] as const).map(async (horizon) => {
-              try {
-                return await context.queryClient.ensureQueryData(
-                  context.queries.currentApprovedReadiness(horizon),
-                )
-              } catch {
-                return null
-              }
-            }),
-          )
-        : []
-    const readiness = readinessChecks.filter((item) => item !== null)
-    const readinessUnavailable = readinessChecks.some((item) => item === null)
+    const readiness: CurrentApprovedReadinessDto[] = []
+    const readinessUnavailable = false
     return {
       workspace,
       readiness,

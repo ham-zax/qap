@@ -10,6 +10,7 @@ export default defineConfig({
   reporter: 'line',
   use: {
     baseURL: webBaseUrl,
+    channel: 'chrome',
     trace: 'retain-on-failure',
   },
 })

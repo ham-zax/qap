@@ -35,6 +35,7 @@ from qap.product_directory_models import (
     ProductMarketDirectory,
 )
 from qap.product_identity_policy import accept_evidence
+from qap.product_universe_cache import VersionedFileCache
 from qap.product_universe_models import (
     AssetIdentityMapping as AssetIdentityMapping,
 )
@@ -94,6 +95,7 @@ class ProductUniverse:
         self.state_path = self.root / "research-universe.json"
         self.directory_path = self.root / "market-directory.json"
         self._thread_lock = Lock()
+        self._cache = VersionedFileCache()
 
     @contextmanager
     def _state_guard(self) -> Generator[None]:
@@ -122,8 +124,8 @@ class ProductUniverse:
         if not self.state_path.is_file():
             return ProductUniverseState()
         try:
-            return ProductUniverseState.model_validate_json(
-                self.state_path.read_text(encoding="utf-8")
+            return self._cache.get(
+                self.state_path, ProductUniverseState.model_validate_json
             )
         except (OSError, ValidationError) as exc:
             raise ProductUniverseError("Research Universe state is invalid.") from exc
@@ -132,8 +134,8 @@ class ProductUniverse:
         if not self.directory_path.is_file():
             return None
         try:
-            return ProductMarketDirectory.model_validate_json(
-                self.directory_path.read_text(encoding="utf-8")
+            return self._cache.get(
+                self.directory_path, ProductMarketDirectory.model_validate_json
             )
         except (OSError, ValidationError) as exc:
             raise ProductUniverseError(
@@ -166,6 +168,7 @@ class ProductUniverse:
             )
             if next_state != state:
                 self._write_model(self.state_path, next_state)
+                self._cache.drop(self.state_path)
             return next_state
 
     def search(self, query: str = "", *, limit: int = 50) -> tuple[ResearchCoin, ...]:
@@ -175,9 +178,12 @@ class ProductUniverse:
         rows = coins(self.read_directory(), self.registry_snapshot(), self.read_state())
         return search_coins(rows, query, limit)
 
-    def research_scope(self, listing_ids: tuple[str, str]) -> ProductResearchScope:
+    def research_scope(
+        self, listing_ids: tuple[str, str], *, refresh_bindings: bool = True
+    ) -> ProductResearchScope:
         """Eligible venue-local research needs no portfolio admission (approved Q9)."""
-        self.apply_policy_bindings()
+        if refresh_bindings:
+            self.apply_policy_bindings()
         directory = self.read_directory()
         if directory is None:
             raise ProductUniverseError(
@@ -286,6 +292,7 @@ class ProductUniverse:
                         ),
                     )
                     self._write_model(self.directory_path, directory)
+                    self._cache.drop(self.directory_path)
             if directory is None:
                 raise ProductDirectoryRefreshError(
                     "Current public Spot markets could not be refreshed: "
@@ -357,6 +364,7 @@ class ProductUniverse:
                 }
             )
             self._write_model(self.state_path, next_state)
+            self._cache.drop(self.state_path)
             return next_state
 
     def set_asset_admission(
@@ -406,6 +414,7 @@ class ProductUniverse:
                 }
             )
             self._write_model(self.state_path, next_state)
+            self._cache.drop(self.state_path)
             return next_state
 
     def projection(self) -> ResearchUniverseProjection:

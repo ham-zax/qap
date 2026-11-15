@@ -38,7 +38,7 @@ _ARCHIVE_BASE_URL = os.environ.get(
 _EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 _DAY = timedelta(days=1)
 _MAX_REST_PAGE_BARS = 1000
-_NATIVE_PRODUCT_INTERVALS = frozenset({"15m", "1h", "4h", "1d"})
+_NATIVE_PRODUCT_INTERVALS = frozenset({"1m", "15m", "1h", "4h", "1d"})
 _ARCHIVE_IMPLEMENTATION = "qap.product.binance-daily-archive-klines.v1"
 _REST_IMPLEMENTATION = "qap.product.binance-rest-klines-pages.v1"
 

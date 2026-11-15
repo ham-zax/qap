@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LabRouteImport } from './routes/lab'
 import { Route as UniverseRouteImport } from './routes/universe'
 import { Route as BasketsIndexRouteImport } from './routes/baskets.index'
 import { Route as BasketsBasketIdRouteImport } from './routes/baskets.$basketId'
@@ -31,6 +32,11 @@ import { Route as PairRunIdAssetXAssetYRouteImport } from './routes/pair.$runId.
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabRoute = LabRouteImport.update({
+  id: '/lab',
+  path: '/lab',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UniverseRoute = UniverseRouteImport.update({
@@ -123,6 +129,7 @@ const PairRunIdAssetXAssetYRoute = PairRunIdAssetXAssetYRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/lab': typeof LabRoute
   '/universe': typeof UniverseRoute
   '/baskets/$basketId': typeof BasketsBasketIdRoute
   '/experiments/$runId': typeof ExperimentsRunIdRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/lab': typeof LabRoute
   '/universe': typeof UniverseRoute
   '/baskets/$basketId': typeof BasketsBasketIdRoute
   '/experiments/$runId': typeof ExperimentsRunIdRoute
@@ -164,6 +172,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/lab': typeof LabRoute
   '/universe': typeof UniverseRoute
   '/baskets/$basketId': typeof BasketsBasketIdRoute
   '/experiments/$runId': typeof ExperimentsRunIdRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/lab'
     | '/universe'
     | '/baskets/$basketId'
     | '/experiments/$runId'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/lab'
     | '/universe'
     | '/baskets/$basketId'
     | '/experiments/$runId'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/lab'
     | '/universe'
     | '/baskets/$basketId'
     | '/experiments/$runId'
@@ -247,6 +259,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LabRoute: typeof LabRoute
   UniverseRoute: typeof UniverseRoute
   BasketsBasketIdRoute: typeof BasketsBasketIdRoute
   ExperimentsRunIdRoute: typeof ExperimentsRunIdRoute
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lab': {
+      id: '/lab'
+      path: '/lab'
+      fullPath: '/lab'
+      preLoaderRoute: typeof LabRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/universe': {
@@ -399,6 +419,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LabRoute: LabRoute,
   UniverseRoute: UniverseRoute,
   BasketsBasketIdRoute: BasketsBasketIdRoute,
   ExperimentsRunIdRoute: ExperimentsRunIdRoute,

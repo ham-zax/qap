@@ -5,6 +5,20 @@ import { describe, expect, it, vi } from 'vitest'
 import { App, createQapApp } from './app'
 
 describe('QAP route errors', () => {
+  it('opens the Lab as the local workspace entry point', async () => {
+    const app = createQapApp({
+      fetchImpl: vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({
+        schema_version: 'qap.api.workspace_status.v1', workspace_mode: 'local_market',
+        workspace_root: '/test', market_data_status: 'catalog_detected',
+        market_data_catalog_updated_at: null, product_maintenance_status: 'idle',
+        current_evidence_collector_status: 'not_running',
+      }), { headers: { 'Content-Type': 'application/json' } })),
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    await app.router.load()
+    expect(app.router.state.location.pathname).toBe('/lab')
+  })
+
   it('renders an unknown route inside exactly one application shell', async () => {
     const workspace = {
       schema_version: 'qap.api.workspace_status.v1', workspace_mode: 'local_market',

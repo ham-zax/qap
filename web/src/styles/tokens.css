@@ -55,6 +55,8 @@
   --qap-muted: #8390a2;
   --qap-border: #232c38;
   --qap-border-strong: #3a4658;
+  /* Form-control edges: at least 3:1 on canvas, panel and raised (WCAG 1.4.11). */
+  --qap-control-border: #627086;
   --qap-accent: #5aa0ff;
   --qap-accent-contrast: #0b0f14;
   --qap-positive: #3ecf8e;
@@ -86,6 +88,7 @@
     --qap-muted: #5f6b7d;
     --qap-border: #dde2e9;
     --qap-border-strong: #aab4c2;
+    --qap-control-border: #7f8a9c;
     --qap-accent: #1f5fd6;
     --qap-accent-contrast: #ffffff;
     --qap-positive: #12804a;
@@ -117,6 +120,7 @@
   --qap-muted: #5f6b7d;
   --qap-border: #dde2e9;
   --qap-border-strong: #aab4c2;
+  --qap-control-border: #7f8a9c;
   --qap-accent: #1f5fd6;
   --qap-accent-contrast: #ffffff;
   --qap-positive: #12804a;

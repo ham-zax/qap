@@ -12,10 +12,14 @@ class PairRotationRequestDto(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
     coin_a: str = Field(min_length=1, max_length=100)
     coin_b: str = Field(min_length=1, max_length=100)
-    lookback_days: int = Field(default=365, ge=365, le=3650)
+    lookback_days: int = Field(default=365, ge=1, le=3650)
+    base_interval: Literal["15m", "1m"] = "15m"
+    include_execution: bool = False
 
     @model_validator(mode="after")
     def distinct_same_venue(self) -> Self:
+        if self.base_interval == "15m" and self.lookback_days < 365:
+            raise ValueError("15m preparation retains at least one year.")
         ids: list[str] = []
         for value in (self.coin_a, self.coin_b):
             venue, separator, code = value.partition(":")

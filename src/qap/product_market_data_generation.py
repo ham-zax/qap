@@ -11,6 +11,11 @@ from qap.market import (
     fingerprint_bar_series,
     read_parquet_bar_series,
 )
+from qap.product_market_data_cache import (
+    GENERATION_CACHE,
+    GenerationKey,
+    stat_key,
+)
 from qap.product_market_data_models import (
     MarketDataGenerationProvenance,
     safe_relative_path,
@@ -53,6 +58,16 @@ def resolve_immutable_generation(
         resolved_generation.relative_to(root)
         if not resolved_generation.is_file():
             raise OSError("generation path is not a file")
+        cache_key: GenerationKey = (
+            root,
+            dataset_id,
+            semantic_fingerprint,
+            stat_key(resolved_generation),
+            stat_key(provenance_path),
+        )
+        cached = GENERATION_CACHE.get(cache_key)
+        if cached is not None:
+            return cached
         provenance = MarketDataGenerationProvenance.model_validate_json(
             provenance_path.read_text(encoding="utf-8")
         )
@@ -78,7 +93,9 @@ def resolve_immutable_generation(
         raise ProductGenerationReadError(
             "Immutable market-data generation does not match its provenance."
         )
-    return provenance, series
+    result = (provenance, series)
+    GENERATION_CACHE.put(cache_key, result)
+    return result
 
 
 __all__ = [

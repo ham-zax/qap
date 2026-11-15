@@ -322,9 +322,8 @@ td {
 thead th {
   background: var(--surface-2);
   color: var(--text-muted);
-  font-size: 0.78rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 tbody th,
@@ -366,6 +365,17 @@ tbody tr:hover > * {
   max-width: 100%;
   overflow: hidden;
   width: 100%;
+}
+
+/* Lightweight Charts owns its layout table, not the evidence-table rules. */
+.chart-canvas table {
+  min-width: 0;
+  width: auto;
+  border-collapse: separate;
+}
+
+.chart-canvas td {
+  border: 0;
 }
 
 .chart-legend {

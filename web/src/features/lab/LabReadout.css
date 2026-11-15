@@ -1,0 +1,116 @@
+.lab-readout {
+  margin: 4px 0 12px;
+}
+
+.lab-readout-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 28px;
+  padding: 12px 0;
+  border-top: 1px solid var(--qap-border);
+  border-bottom: 1px solid var(--qap-border);
+}
+
+.lab .lab-readout-time {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 10.5rem;
+  margin: 0;
+}
+
+.lab-readout-time span {
+  color: var(--qap-muted);
+  font-size: 12px;
+}
+
+.lab-readout-strip[data-latest='false'] .lab-readout-time span {
+  color: var(--qap-accent);
+}
+
+.lab-readout-time time {
+  color: var(--qap-foreground);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-readout-strip dl {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin: 0;
+}
+
+.lab-readout-strip dl > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 6.5rem;
+}
+
+.lab-readout-strip dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--qap-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.lab-readout-strip dt small {
+  color: var(--qap-muted);
+  font-size: 10px;
+}
+
+.lab-readout-strip dd {
+  margin: 0;
+  color: var(--qap-foreground);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.lab-readout-strip .lab-readout-unavailable dd {
+  color: var(--qap-muted);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+/* The swatch repeats the drawn line: solid for primary series, dashed for context. */
+.lab-swatch {
+  flex: none;
+  width: 14px;
+  height: 0;
+  border-top: 2px solid currentColor;
+}
+
+.lab-swatch-dashed {
+  border-top-style: dashed;
+}
+
+@media (max-width: 767px) {
+  .lab-readout-strip {
+    gap: 10px 16px;
+  }
+
+  .lab .lab-readout-time {
+    flex-direction: row;
+    flex-basis: 100%;
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  .lab-readout-strip dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+  }
+
+  .lab-readout-strip dl > div {
+    min-width: 0;
+  }
+}

@@ -8,12 +8,16 @@ version = "0.1.0.dev0"
 description = "Deterministic, spot-only crypto inventory rebalancing research."
 requires-python = ">=3.14,<3.15"
 dependencies = [
+    "arch>=8.0.0",
     "fastapi>=0.141.1",
     "httpx>=0.28.1",
     "numpy>=2.5.2",
     "pandas>=3.0.5",
     "pyarrow>=25.0.1",
     "pydantic>=2.12,<3",
+    "pyvinecopulib>=1.0.0",
+    "scipy>=1.18.1",
+    "statsmodels>=0.15.0",
     "uvicorn>=0.52.3",
 ]
 

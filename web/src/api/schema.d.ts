@@ -243,6 +243,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/pair-rotation/analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Analyze Pair Rotation */
+        get: operations["analyzePairRotation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pair-rotation/bootstrap": {
         parameters: {
             query?: never;
@@ -288,6 +305,58 @@ export interface paths {
         put?: never;
         /** Open Pair Rotation */
         post: operations["openPairRotationData"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pair-rotation/studies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Studies */
+        get: operations["listSavedLabStudies"];
+        put?: never;
+        /** Compute Study */
+        post: operations["computeLabStudy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pair-rotation/studies/{study_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Study */
+        get: operations["getSavedLabStudy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pair-rotation/studies/{study_id}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pin Study */
+        post: operations["pinLabStudy"];
         delete?: never;
         options?: never;
         head?: never;
@@ -890,6 +959,21 @@ export interface components {
              */
             through: string;
         };
+        /**
+         * AnalysisDays
+         * @enum {integer}
+         */
+        AnalysisDays: 30 | 90 | 180 | 365;
+        /** AnchorFitDto */
+        AnchorFitDto: {
+            anchor: components["schemas"]["LabCoinDto"];
+            /** Beta A */
+            beta_a: number;
+            /** Beta B */
+            beta_b: number;
+            /** Joint Explained */
+            joint_explained: number;
+        };
         /** AnchorLensDto */
         AnchorLensDto: {
             /** Anchor */
@@ -943,6 +1027,14 @@ export interface components {
              * @constant
              */
             schema_version: "qap.api.anchor_lens.v1";
+        };
+        /** AnchorLinkDto */
+        AnchorLinkDto: {
+            /** Beta */
+            beta: number;
+            lead_lag: components["schemas"]["LeadLagDto"] | null;
+            /** R Squared */
+            r_squared: number;
         };
         /** ArtifactSeriesMetadataDto */
         ArtifactSeriesMetadataDto: {
@@ -1412,6 +1504,17 @@ export interface components {
              */
             schema_version: "qap.api.coin-search.v1";
         };
+        /** CointegrationDto */
+        CointegrationDto: {
+            /** Level */
+            level: number;
+            /** P Value */
+            p_value: number;
+            /** Passes */
+            passes: boolean;
+            /** Statistic */
+            statistic: number;
+        };
         /** CompletedResearchScopeStagesDto */
         CompletedResearchScopeStagesDto: {
             /** Completed Replay Count */
@@ -1479,6 +1582,28 @@ export interface components {
             kind: "contribution_aware_band";
             /** Partial Correction Fraction */
             partial_correction_fraction: string;
+        };
+        /** CopulaTailsDto */
+        CopulaTailsDto: {
+            /** Family */
+            family: string;
+            /** Lower Tail */
+            lower_tail: number;
+            /** Observations */
+            observations: number;
+            /** Upper Tail */
+            upper_tail: number;
+        };
+        /** CorrelationDto */
+        CorrelationDto: {
+            /** Kendall */
+            kendall: number;
+            /** Observations */
+            observations: number;
+            /** Pearson */
+            pearson: number;
+            /** Spearman */
+            spearman: number;
         };
         /** CostScenarioSpec */
         CostScenarioSpec: {
@@ -2124,6 +2249,24 @@ export interface components {
             /** Semantic Fingerprint */
             semantic_fingerprint: string;
         };
+        /** GrangerDirectionDto */
+        GrangerDirectionDto: {
+            /** Lag Bars */
+            lag_bars: number;
+            /** P Value */
+            p_value: number;
+            /** Passes */
+            passes: boolean;
+        };
+        /** GrangerDto */
+        GrangerDto: {
+            a_to_b: components["schemas"]["GrangerDirectionDto"];
+            b_to_a: components["schemas"]["GrangerDirectionDto"];
+            /** Max Lag */
+            max_lag: number;
+            /** Observations */
+            observations: number;
+        };
         /** GraphScopeDto */
         GraphScopeDto: {
             /** Eligible Asset Count */
@@ -2146,6 +2289,13 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HalfLifeDto */
+        HalfLifeDto: {
+            /** Bars */
+            bars: number | null;
+            /** Reverting */
+            reverting: boolean;
+        };
         /** HealthDto */
         HealthDto: {
             /**
@@ -2160,6 +2310,19 @@ export interface components {
              * @constant
              */
             status: "ok";
+        };
+        /** HedgeRatioDto */
+        HedgeRatioDto: {
+            /** First Half Ols */
+            first_half_ols: number;
+            /** Ols */
+            ols: number;
+            /** Second Half Ols */
+            second_half_ols: number;
+            /** Stable */
+            stable: boolean;
+            /** Tls */
+            tls: number;
         };
         /** HistoryDto */
         HistoryDto: {
@@ -2219,6 +2382,16 @@ export interface components {
              */
             timestamp: string;
         };
+        /** HurstDto */
+        HurstDto: {
+            /** Exponent */
+            exponent: number;
+            /**
+             * Reading
+             * @enum {string}
+             */
+            reading: "reverting" | "random" | "trending";
+        };
         /** IdentityMappingRequestDto */
         IdentityMappingRequestDto: {
             /** Asset Identity Version */
@@ -2263,6 +2436,642 @@ export interface components {
             venue_symbol: string;
         };
         JsonValue: unknown;
+        /** KalmanDto */
+        KalmanDto: {
+            /** Beta */
+            beta: number;
+            /** Beta Change */
+            beta_change: number;
+            /** Standard Error */
+            standard_error: number;
+        };
+        /** LabAnalysisDto */
+        LabAnalysisDto: {
+            anchor: components["schemas"]["LabCoinDto"] | null;
+            /** Anchor Ranking */
+            anchor_ranking: components["schemas"]["AnchorFitDto"][];
+            /** Band Lookback */
+            band_lookback: number;
+            /**
+             * Bar
+             * @enum {string}
+             */
+            bar: "1m" | "15m" | "1h" | "4h" | "1d";
+            /** Bars Used */
+            bars_used: number;
+            coin_a: components["schemas"]["LabCoinDto"];
+            coin_b: components["schemas"]["LabCoinDto"];
+            /**
+             * Data Through
+             * Format: date-time
+             */
+            data_through: string;
+            /** Datasets */
+            datasets: components["schemas"]["LabDatasetDto"][];
+            /** Identity Confirmed */
+            identity_confirmed: boolean;
+            measurements: components["schemas"]["LabMeasurementsDto"];
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "qap.api.pair-rotation-analysis.v1";
+            series: components["schemas"]["LabSeriesDto"];
+            /** Window Days */
+            window_days: number;
+        };
+        /** LabCallDto */
+        LabCallDto: {
+            /** Headline */
+            headline: string;
+            /** Reason */
+            reason: string;
+            /** Rotation Fraction */
+            rotation_fraction: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "insufficient_history" | "identity_unresolved" | "execution_data_missing" | "cost_data_missing" | "cost_budget_failed" | "no_edge" | "hold" | "into_a" | "into_b";
+            /** Target Weight A */
+            target_weight_a: string | null;
+        };
+        /** LabCoinDto */
+        LabCoinDto: {
+            /** Code */
+            code: string;
+            /** Id */
+            id: string;
+            /**
+             * Identity State
+             * @enum {string}
+             */
+            identity_state: "resolved" | "review" | "unresolved";
+            /** Name */
+            name: string;
+        };
+        /** LabDatasetDto */
+        LabDatasetDto: {
+            /** Coverage Start */
+            coverage_start: string | null;
+            /** Cutoff */
+            cutoff: string | null;
+            /** Dataset Id */
+            dataset_id: string;
+            /** Interval */
+            interval: string;
+            /** Semantic Fingerprint */
+            semantic_fingerprint: string;
+            /** Venue Symbol */
+            venue_symbol: string;
+        };
+        /** LabMeasurementsDto */
+        LabMeasurementsDto: {
+            anchor_a: components["schemas"]["AnchorLinkDto"] | null;
+            anchor_b: components["schemas"]["AnchorLinkDto"] | null;
+            cointegration: components["schemas"]["CointegrationDto"] | null;
+            copula: components["schemas"]["CopulaTailsDto"] | null;
+            correlation: components["schemas"]["CorrelationDto"] | null;
+            granger: components["schemas"]["GrangerDto"] | null;
+            half_life: components["schemas"]["HalfLifeDto"] | null;
+            hedge_ratio: components["schemas"]["HedgeRatioDto"] | null;
+            hurst: components["schemas"]["HurstDto"] | null;
+            kalman: components["schemas"]["KalmanDto"] | null;
+            /** Ratio Percentile */
+            ratio_percentile: number | null;
+            regime: components["schemas"]["RegimeDto"] | null;
+            rolling_dependence: components["schemas"]["RollingDependenceDto"] | null;
+        };
+        /** LabPinDto */
+        LabPinDto: {
+            /** Pinned */
+            pinned: boolean;
+        };
+        /** LabProofDto */
+        LabProofDto: {
+            /** Control */
+            control: string | null;
+            /** Corrected P Value */
+            corrected_p_value: number | null;
+            /** Correction */
+            correction: string;
+            /** Cost Gate Passed */
+            cost_gate_passed: boolean | null;
+            /** Cost Paid Pct */
+            cost_paid_pct: number | null;
+            /**
+             * Data Role
+             * @constant
+             */
+            data_role: "validation";
+            /** Final Oos Used */
+            final_oos_used: boolean;
+            /** Folds Passing */
+            folds_passing: number;
+            /** Folds Total */
+            folds_total: number;
+            /** Gross Vs Hodl Pct */
+            gross_vs_hodl_pct: number | null;
+            /** Limitations */
+            limitations: string[];
+            /** Minimum Passing Folds */
+            minimum_passing_folds: number;
+            /** Minimum Trades */
+            minimum_trades: number;
+            /** Passes */
+            passes: boolean;
+            /**
+             * Proof End
+             * Format: date-time
+             */
+            proof_end: string;
+            /**
+             * Proof Start
+             * Format: date-time
+             */
+            proof_start: string;
+            /** Raw P Value */
+            raw_p_value: number | null;
+            /** Settings Tried */
+            settings_tried: number;
+            /** Significance */
+            significance: number;
+            /** Tuning Cost Pct */
+            tuning_cost_pct: number | null;
+            /**
+             * Tuning End
+             * Format: date-time
+             */
+            tuning_end: string;
+            /** Tuning Gross Vs Hodl Pct */
+            tuning_gross_vs_hodl_pct: number | null;
+            /**
+             * Tuning Start
+             * Format: date-time
+             */
+            tuning_start: string;
+            /** Validation Reused */
+            validation_reused: boolean;
+            /** Validation Trades */
+            validation_trades: number;
+            /** Vs Control Pct */
+            vs_control_pct: number | null;
+            /** Vs Hodl Pct */
+            vs_hodl_pct: number | null;
+        };
+        /** LabSavedListDto */
+        LabSavedListDto: {
+            /** Next Offset */
+            next_offset: number | null;
+            /** Studies */
+            studies: components["schemas"]["LabSavedSummaryDto"][];
+        };
+        /** LabSavedSummaryDto */
+        LabSavedSummaryDto: {
+            coin_a: components["schemas"]["LabCoinDto"];
+            coin_b: components["schemas"]["LabCoinDto"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Data Through
+             * Format: date-time
+             */
+            data_through: string;
+            /** Headline */
+            headline: string;
+            /** Method */
+            method: string;
+            /** Pinned */
+            pinned: boolean;
+            /** Study Id */
+            study_id: string;
+        };
+        /** LabSeriesDto */
+        LabSeriesDto: {
+            /** Anchor Close */
+            anchor_close: number[] | null;
+            /** Close A */
+            close_a: number[];
+            /** Close B */
+            close_b: number[];
+            /** Mean */
+            mean: (number | null)[];
+            /** Ratio */
+            ratio: number[];
+            /** Std */
+            std: (number | null)[];
+            /** Time */
+            time: number[];
+        };
+        /** LabSettings */
+        "LabSettings-Input": {
+            /**
+             * Anchor Threshold
+             * @default 0.002
+             */
+            anchor_threshold: number;
+            /**
+             * Auto Tune
+             * @default true
+             */
+            auto_tune: boolean;
+            /**
+             * Cooldown
+             * @default 4
+             */
+            cooldown: number;
+            /**
+             * Copula Probability
+             * @default 0.05
+             */
+            copula_probability: number;
+            /**
+             * Cost Budget Multiple
+             * @default 2
+             */
+            cost_budget_multiple: number | string;
+            /**
+             * Entry
+             * @default 2
+             */
+            entry: number;
+            /**
+             * Exit
+             * @default 0.5
+             */
+            exit: number;
+            /**
+             * Fast Window
+             * @default 12
+             */
+            fast_window: number;
+            /**
+             * Fee Bps
+             * @default 10
+             */
+            fee_bps: number | string;
+            /**
+             * Folds
+             * @default 8
+             */
+            folds: number;
+            /**
+             * Hedge Method
+             * @default ratio
+             * @enum {string}
+             */
+            hedge_method: "ratio" | "ols" | "tls" | "kalman";
+            /**
+             * Initial Weight
+             * @default 0.5
+             */
+            initial_weight: number | string;
+            /**
+             * Lookback
+             * @default 96
+             */
+            lookback: number;
+            /**
+             * Method
+             * @default zscore
+             * @enum {string}
+             */
+            method: "zscore" | "lead_lag" | "copula" | "trend";
+            /**
+             * Minimum Hold
+             * @default 4
+             */
+            minimum_hold: number;
+            /**
+             * Minimum Notional
+             * @default 1
+             */
+            minimum_notional: number | string;
+            /**
+             * Minimum Passing Folds
+             * @default 5
+             */
+            minimum_passing_folds: number;
+            /**
+             * Minimum Trades
+             * @default 10
+             */
+            minimum_trades: number;
+            /**
+             * Proof Fraction
+             * @default 0.3
+             */
+            proof_fraction: number;
+            /**
+             * Rotation Size
+             * @default 0.25
+             */
+            rotation_size: number | string;
+            /**
+             * Significance
+             * @default 0.05
+             */
+            significance: number;
+            /**
+             * Slippage Bps
+             * @default 5
+             */
+            slippage_bps: number | string;
+            /**
+             * Slow Window
+             * @default 48
+             */
+            slow_window: number;
+            /**
+             * Starting Value
+             * @default 10000
+             */
+            starting_value: number | string;
+            /**
+             * Volume Impact Bps
+             * @default 10
+             */
+            volume_impact_bps: number | string;
+        };
+        /** LabSettings */
+        "LabSettings-Output": {
+            /**
+             * Anchor Threshold
+             * @default 0.002
+             */
+            anchor_threshold: number;
+            /**
+             * Auto Tune
+             * @default true
+             */
+            auto_tune: boolean;
+            /**
+             * Cooldown
+             * @default 4
+             */
+            cooldown: number;
+            /**
+             * Copula Probability
+             * @default 0.05
+             */
+            copula_probability: number;
+            /**
+             * Cost Budget Multiple
+             * @default 2
+             */
+            cost_budget_multiple: string;
+            /**
+             * Entry
+             * @default 2
+             */
+            entry: number;
+            /**
+             * Exit
+             * @default 0.5
+             */
+            exit: number;
+            /**
+             * Fast Window
+             * @default 12
+             */
+            fast_window: number;
+            /**
+             * Fee Bps
+             * @default 10
+             */
+            fee_bps: string;
+            /**
+             * Folds
+             * @default 8
+             */
+            folds: number;
+            /**
+             * Hedge Method
+             * @default ratio
+             * @enum {string}
+             */
+            hedge_method: "ratio" | "ols" | "tls" | "kalman";
+            /**
+             * Initial Weight
+             * @default 0.5
+             */
+            initial_weight: string;
+            /**
+             * Lookback
+             * @default 96
+             */
+            lookback: number;
+            /**
+             * Method
+             * @default zscore
+             * @enum {string}
+             */
+            method: "zscore" | "lead_lag" | "copula" | "trend";
+            /**
+             * Minimum Hold
+             * @default 4
+             */
+            minimum_hold: number;
+            /**
+             * Minimum Notional
+             * @default 1
+             */
+            minimum_notional: string;
+            /**
+             * Minimum Passing Folds
+             * @default 5
+             */
+            minimum_passing_folds: number;
+            /**
+             * Minimum Trades
+             * @default 10
+             */
+            minimum_trades: number;
+            /**
+             * Proof Fraction
+             * @default 0.3
+             */
+            proof_fraction: number;
+            /**
+             * Rotation Size
+             * @default 0.25
+             */
+            rotation_size: string;
+            /**
+             * Significance
+             * @default 0.05
+             */
+            significance: number;
+            /**
+             * Slippage Bps
+             * @default 5
+             */
+            slippage_bps: string;
+            /**
+             * Slow Window
+             * @default 48
+             */
+            slow_window: number;
+            /**
+             * Starting Value
+             * @default 10000
+             */
+            starting_value: string;
+            /**
+             * Volume Impact Bps
+             * @default 10
+             */
+            volume_impact_bps: string;
+        };
+        /** LabSignalDto */
+        LabSignalDto: {
+            /** Lower */
+            lower: number;
+            /** Time */
+            time: number[];
+            /** Unit */
+            unit: string;
+            /** Upper */
+            upper: number;
+            /** Values */
+            values: (number | null)[];
+        };
+        /** LabStudyDto */
+        LabStudyDto: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Pinned */
+            pinned: boolean;
+            result: components["schemas"]["LabStudyResultDto"];
+            /** Study Id */
+            study_id: string;
+        };
+        /** LabStudyRequestDto */
+        LabStudyRequestDto: {
+            /** Anchor */
+            anchor?: string | null;
+            /**
+             * Band Lookback
+             * @default 672
+             */
+            band_lookback: number;
+            /**
+             * Bar
+             * @default 15m
+             * @enum {string}
+             */
+            bar: "1m" | "15m" | "1h" | "4h" | "1d";
+            /** Coin A */
+            coin_a: string;
+            /** Coin B */
+            coin_b: string;
+            /** @default 180 */
+            days: components["schemas"]["AnalysisDays"];
+            settings?: components["schemas"]["LabSettings-Input"];
+        };
+        /** LabStudyResultDto */
+        LabStudyResultDto: {
+            analysis: components["schemas"]["LabAnalysisDto"];
+            applied_settings: components["schemas"]["LabSettings-Output"];
+            call: components["schemas"]["LabCallDto"];
+            /** Code Fingerprint */
+            code_fingerprint: string;
+            /** Execution Metadata */
+            execution_metadata: {
+                [key: string]: string;
+            }[];
+            /** Execution Route */
+            execution_route: string;
+            /** Folds */
+            folds: {
+                [key: string]: components["schemas"]["JsonValue"];
+            }[];
+            proof: components["schemas"]["LabProofDto"];
+            requested_settings: components["schemas"]["LabSettings-Output"];
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "qap.lab.study.v1";
+            signal: components["schemas"]["LabSignalDto"];
+            /** Statistics */
+            statistics: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["JsonValue"];
+                };
+            };
+            /** Trades */
+            trades: components["schemas"]["LabTradeDto"][];
+            wealth: components["schemas"]["LabWealthDto"] | null;
+        };
+        /** LabTradeDto */
+        LabTradeDto: {
+            /** Decision Index */
+            decision_index: number;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "into_a" | "into_b";
+            /** Fees Usdt */
+            fees_usdt: string;
+            /** Fill Index */
+            fill_index: number;
+            /** Fills */
+            fills: {
+                [key: string]: string;
+            }[];
+            /** Route */
+            route: string;
+            /** Slippage Usdt */
+            slippage_usdt: string;
+            /**
+             * Time
+             * Format: date-time
+             */
+            time: string;
+        };
+        /** LabWealthDto */
+        LabWealthDto: {
+            /** Coins A */
+            coins_a: {
+                [key: string]: number[];
+            };
+            /** Coins B */
+            coins_b: {
+                [key: string]: number[];
+            };
+            /** Terminal Values */
+            terminal_values: {
+                [key: string]: string;
+            };
+            /** Time */
+            time: number[];
+            /** Value */
+            value: {
+                [key: string]: number[];
+            };
+            /**
+             * Window Kind
+             * @enum {string}
+             */
+            window_kind: "validation" | "context_only";
+        };
+        /** LeadLagDto */
+        LeadLagDto: {
+            /** Correlation */
+            correlation: number;
+            /** Lag Bars */
+            lag_bars: number;
+            /** Stable */
+            stable: boolean;
+        };
         /** MarketDataGenerationDto */
         MarketDataGenerationDto: {
             /** Base Asset */
@@ -2488,10 +3297,21 @@ export interface components {
         };
         /** PairRotationRequestDto */
         PairRotationRequestDto: {
+            /**
+             * Base Interval
+             * @default 15m
+             * @enum {string}
+             */
+            base_interval: "15m" | "1m";
             /** Coin A */
             coin_a: string;
             /** Coin B */
             coin_b: string;
+            /**
+             * Include Execution
+             * @default false
+             */
+            include_execution: boolean;
             /**
              * Lookback Days
              * @default 365
@@ -3352,6 +4172,23 @@ export interface components {
              */
             timestamp: string;
         };
+        /** RegimeDto */
+        RegimeDto: {
+            /** Efficiency */
+            efficiency: number;
+            /**
+             * Trend
+             * @enum {string}
+             */
+            trend: "trending" | "ranging";
+            /**
+             * Volatility
+             * @enum {string}
+             */
+            volatility: "calm" | "normal" | "stressed";
+            /** Volatility Percentile */
+            volatility_percentile: number;
+        };
         /** RelationshipEvidencePointDto */
         RelationshipEvidencePointDto: {
             /** Coverage Observations */
@@ -4066,6 +4903,17 @@ export interface components {
             turnover_value: string;
             /** Unitized Terminal Value */
             unitized_terminal_value: string;
+        };
+        /** RollingDependenceDto */
+        RollingDependenceDto: {
+            /** High */
+            high: number;
+            /** Latest */
+            latest: number;
+            /** Low */
+            low: number;
+            /** Window Bars */
+            window_bars: number;
         };
         /** RunProvenance */
         RunProvenance: {
@@ -4867,6 +5715,42 @@ export interface operations {
             };
         };
     };
+    analyzePairRotation: {
+        parameters: {
+            query: {
+                coin_a: string;
+                coin_b: string;
+                bar?: "1m" | "15m" | "1h" | "4h" | "1d";
+                days?: components["schemas"]["AnalysisDays"];
+                band_lookback?: number;
+                anchor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabAnalysisDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     refreshResearchCoins: {
         parameters: {
             query?: never;
@@ -4939,6 +5823,137 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OperationRefDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listSavedLabStudies: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabSavedListDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    computeLabStudy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LabStudyRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabStudyDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getSavedLabStudy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabStudyDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pinLabStudy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LabPinDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabStudyDto"];
                 };
             };
             /** @description Validation Error */
