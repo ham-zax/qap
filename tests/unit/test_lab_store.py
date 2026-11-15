@@ -206,3 +206,41 @@ def test_invalid_window_history_is_preserved_and_rejected(
             validation_end="2026-03-02",
         )
     assert path.read_bytes() == original
+
+
+def test_actor_id_isolates_trials_studies_and_pins(tmp_path: Path) -> None:
+    local = LabStudyStore(tmp_path)
+    assert local.root == tmp_path / "product" / "pair-rotation-lab"
+
+    alice = LabStudyStore(tmp_path, actor_id="sub_alice")
+    bob = LabStudyStore(tmp_path, actor_id="sub_bob")
+    assert alice.root != bob.root
+    assert (
+        alice.root
+        == tmp_path / "product" / "pair-rotation-lab" / "actors" / "sub_alice"
+    )
+
+    family = alice.family_id("binance:A", "binance:B")
+    with alice.family_lock(family):
+        assert alice.register_trials(
+            family,
+            [{"entry": 2}],
+            validation_start="2026-01-01",
+            validation_end="2026-03-01",
+        ) == (1, False)
+    with bob.family_lock(family):
+        assert bob.register_trials(
+            family,
+            [{"entry": 2}, {"entry": 3}],
+            validation_start="2026-01-01",
+            validation_end="2026-03-01",
+        ) == (2, False)
+
+    s_alice = alice.save(result(1))
+    alice.set_pin(s_alice["study_id"], True)
+    assert len(alice.list()) == 1
+    assert bob.list() == []
+    assert len(local.list()) == 0
+
+    with pytest.raises(LabStoreError):
+        LabStudyStore(tmp_path, actor_id="../bad")

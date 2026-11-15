@@ -3,6 +3,7 @@
 import hashlib
 import json
 import os
+import re
 import tempfile
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -11,6 +12,8 @@ from typing import Any, cast
 
 from qap.artifact_integrity import build_integrity_record, read_and_validate_integrity
 from qap.file_lock import FileLock
+
+_ACTOR_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 
 class LabStoreError(RuntimeError):
@@ -96,8 +99,14 @@ def _trial_history(
 
 
 class LabStudyStore:
-    def __init__(self, run_root: Path) -> None:
-        self.root = run_root / "product" / "pair-rotation-lab"
+    def __init__(self, run_root: Path, *, actor_id: str = "local") -> None:
+        if not _ACTOR_RE.match(actor_id):
+            raise LabStoreError(
+                "Actor ID must be 1-64 alphanumeric, underscore, or hyphen characters."
+            )
+        self.actor_id = actor_id
+        base = run_root / "product" / "pair-rotation-lab"
+        self.root = base if actor_id == "local" else base / "actors" / actor_id
 
     @staticmethod
     def require_id(identifier: str) -> None:
