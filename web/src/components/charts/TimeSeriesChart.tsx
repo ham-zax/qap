@@ -87,19 +87,28 @@ function cssColor(styles: CSSStyleDeclaration, name: string, fallback: string): 
 function toSeriesMarkers(
   markers: readonly ChartMarker[],
   colors: { executed: string; selected: string; inactive: string },
+  styles?: CSSStyleDeclaration,
 ): SeriesMarker<UTCTimestamp>[] {
   return markers
-    .map((marker) => ({
-      time: utcTimestamp(marker.timestamp),
-      position: 'aboveBar' as const,
-      shape: marker.executed ? ('arrowUp' as const) : ('square' as const),
-      color: marker.executed
-        ? colors.executed
-        : marker.selected
-          ? colors.selected
-          : colors.inactive,
-      text: `${marker.label} - ${marker.executed ? 'executed' : marker.selected ? 'selected' : 'not selected'}`,
-    }))
+    .map((marker) => {
+      const customColor = marker.colorToken && styles
+        ? cssColor(styles, marker.colorToken, colors.executed)
+        : undefined
+      return {
+        time: utcTimestamp(marker.timestamp),
+        position: marker.position ?? ('aboveBar' as const),
+        shape: marker.shape ?? (marker.executed ? ('arrowUp' as const) : ('square' as const)),
+        color: customColor
+          ?? (marker.executed
+            ? colors.executed
+            : marker.selected
+              ? colors.selected
+              : colors.inactive),
+        text: marker.colorToken
+          ? marker.label
+          : `${marker.label} - ${marker.executed ? 'executed' : marker.selected ? 'selected' : 'not selected'}`,
+      }
+    })
     .sort((left, right) => Number(left.time) - Number(right.time))
 }
 
@@ -186,11 +195,15 @@ export function TimeSeriesChart({
       markers.length > 0 && chartSeries[0]
         ? createSeriesMarkers(
             chartSeries[0].api,
-            toSeriesMarkers(markers, {
-              executed: cssColor(styles, '--status-positive', '#68d391'),
-              selected: cssColor(styles, '--status-warning', '#f6d365'),
-              inactive: cssColor(styles, '--text-muted', '#9ca8b8'),
-            }),
+            toSeriesMarkers(
+              markers,
+              {
+                executed: cssColor(styles, '--status-positive', '#68d391'),
+                selected: cssColor(styles, '--status-warning', '#f6d365'),
+                inactive: cssColor(styles, '--text-muted', '#9ca8b8'),
+              },
+              styles,
+            ),
           )
         : null
 

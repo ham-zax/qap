@@ -26,6 +26,7 @@ from qap.api.routes.live_paper import router as live_paper_router
 from qap.api.routes.pair_rotation import router as pair_rotation_router
 from qap.api.schemas import ErrorDetailDto, ErrorEnvelopeDto
 from qap.api.settings import ApiSettings
+from qap.product_current_evidence import ProductCurrentEvidenceStore
 from qap.product_market_data import ProductMarketData
 from qap.product_market_data_prepare import ProductMarketDataPreparation
 from qap.product_universe import ProductUniverse
@@ -80,13 +81,14 @@ def create_app(settings: ApiSettings) -> FastAPI:
         product_universe,
         product_market_data,
     )
+    app.state.product_current_evidence = ProductCurrentEvidenceStore(settings.run_root)
     app.state.operation_manager = OperationManager(settings)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.allowed_origins),
         allow_credentials=False,
         allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Accept", "Content-Type"],
+        allow_headers=["Accept", "Content-Type", "X-QAP-Actor-Id"],
     )
 
     @app.exception_handler(ApiBoundaryError)

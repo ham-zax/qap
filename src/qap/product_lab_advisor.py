@@ -65,9 +65,19 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
         else None
     )
     copula_info = m.get("copula")
+    ranking = analysis.get("anchor_ranking")
+    ranking_list = cast(list[object], ranking) if isinstance(ranking, list) else []
+    top_ranked: Mapping[str, Any] | None = (
+        cast(Mapping[str, Any], ranking_list[0])
+        if ranking_list and isinstance(ranking_list[0], Mapping)
+        else None
+    )
+    anchor_source: object = (
+        suggested_anchor if suggested_anchor is not None else top_ranked
+    )
     anchor_map = (
-        cast(Mapping[str, Any], suggested_anchor)
-        if isinstance(suggested_anchor, Mapping)
+        cast(Mapping[str, Any], anchor_source)
+        if isinstance(anchor_source, Mapping)
         else None
     )
     anchor_coin_raw = (
@@ -80,10 +90,16 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
         if isinstance(anchor_coin_raw, Mapping)
         else None
     )
-    anchor_id = (
-        anchor_coin["id"]
+    fallback_anchor = analysis.get("anchor")
+    fallback_anchor_id = (
+        str(cast(Mapping[str, Any], fallback_anchor)["id"])
+        if isinstance(fallback_anchor, Mapping) and "id" in fallback_anchor
+        else (str(fallback_anchor) if isinstance(fallback_anchor, str) else None)
+    )
+    anchor_id: str | None = (
+        str(anchor_coin["id"])
         if anchor_coin is not None and "id" in anchor_coin
-        else analysis.get("anchor")
+        else fallback_anchor_id
     )
     anchor_r2 = (
         (

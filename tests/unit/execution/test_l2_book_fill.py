@@ -182,6 +182,22 @@ def test_stale_book_rejection_reports_age_and_creates_no_fill() -> None:
     assert result.levels_consumed == 0
 
 
+def test_fresh_book_arriving_after_target_fill_ns_is_not_rejected_as_stale() -> None:
+    result = sweep_l2_taker_order(
+        fill_id="f-fresh",
+        decision_id="d-fresh",
+        execution_timestamp=AT,
+        side=FillSide.SELL,
+        book=make_book(),
+        book_received_ns=850 * MS,
+        target_fill_ns=75 * MS,
+        fee_bps=D("10"),
+        base_quantity=D("1"),
+    )
+    assert result.rejected_reason is None
+    assert result.fill is not None
+
+
 @pytest.mark.parametrize("qty", ["8.000001", "9"])
 def test_sell_beyond_twenty_level_bid_depth_is_rejected(qty: str) -> None:
     result = sell(qty)  # visible bid depth is exactly 8.0 BTC

@@ -10,7 +10,7 @@ vi.mock('../../components/charts/TimeSeriesChart', () => ({
 }))
 
 function analysis(bar: LabBar = '15m'): LabAnalysis {
-  const minutes = { '15m': 15, '1h': 60, '4h': 240, '1d': 1440 }[bar]
+  const minutes = { '1m': 1, '15m': 15, '1h': 60, '4h': 240, '1d': 1440 }[bar]
   const count = 180 * 1440 / minutes
   const end = Date.parse('2026-10-24T00:00:00Z') / 1000
   const time = Array.from({ length: count }, (_, i) => end - (count - i - 1) * minutes * 60)

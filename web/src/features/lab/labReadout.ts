@@ -127,29 +127,56 @@ export const WEALTH_LABELS: Record<string, string> = {
   drift: 'Rebalance at 5% drift',
 }
 
-/** Strategy first, then HODL and the selected control. Extra holds stay out of the chart. */
-export function wealthNames(wealth: LabWealth): string[] {
+export type WealthUnitMode = 'value' | 'coins_a' | 'coins_b'
+
+export function formatCoinUnits(value: number | null | undefined, code: string): string {
+  if (!finite(value)) return UNAVAILABLE
+  const text = Math.abs(value) >= 1
+    ? value.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
+    : value.toLocaleString('en-US', { maximumSignificantDigits: 6 })
+  return `${text} ${code}`
+}
+
+/** Strategy first, then HODL, selected control, and optional single-coin hold lines. */
+export function wealthNames(wealth: LabWealth, includeHolds = false): string[] {
   const control = Object.keys(wealth.value).find((name) => !['strategy', 'hodl', 'hold_a', 'hold_b'].includes(name))
-  return ['strategy', 'hodl', control].filter((name): name is string => Boolean(name && wealth.value[name]))
+  const base = ['strategy', 'hodl', control]
+  if (includeHolds) base.push('hold_a', 'hold_b')
+  return base.filter((name): name is string => Boolean(name && wealth.value[name]))
 }
 
 export function wealthColorToken(name: string): string {
-  return name === 'strategy' ? '--qap-accent' : name === 'hodl' ? '--qap-muted' : '--qap-border-strong'
+  if (name === 'strategy') return '--qap-accent'
+  if (name === 'hodl') return '--qap-muted'
+  if (name === 'hold_a') return '--chart-coin-a'
+  if (name === 'hold_b') return '--chart-coin-b'
+  return '--qap-border-strong'
 }
 
-export function wealthReadout(wealth: LabWealth, timestamp: string | null): Readout | null {
+export function wealthReadout(
+  wealth: LabWealth,
+  timestamp: string | null,
+  options: { unitMode?: WealthUnitMode; coinACode?: string; coinBCode?: string; includeHolds?: boolean } = {},
+): Readout | null {
   const index = barIndexAt(wealth.time, timestamp)
   if (index < 0) return null
+  const unitMode = options.unitMode ?? 'value'
   const last = index === wealth.time.length - 1
-  // The final bar uses the study's recorded terminal value, not the plotted float.
   const valueAt = (name: string) => {
+    if (unitMode === 'coins_a') return wealth.coins_a[name]?.[index]
+    if (unitMode === 'coins_b') return wealth.coins_b[name]?.[index]
     const terminal = Number(wealth.terminal_values[name])
     return last && Number.isFinite(terminal) ? terminal : wealth.value[name]?.[index]
   }
-  const rows = wealthNames(wealth).map((name) => ({
+  const formatVal = (val: number | null | undefined) => {
+    if (unitMode === 'coins_a') return formatCoinUnits(val, options.coinACode ?? 'Coin A')
+    if (unitMode === 'coins_b') return formatCoinUnits(val, options.coinBCode ?? 'Coin B')
+    return formatUsdt(val)
+  }
+  const rows = wealthNames(wealth, options.includeHolds).map((name) => ({
     key: name,
     label: WEALTH_LABELS[name] ?? 'Rebalance',
-    value: formatUsdt(valueAt(name)),
+    value: formatVal(valueAt(name)),
     swatch: { token: wealthColorToken(name), dashed: name !== 'strategy' },
   }))
   return { time: formatUtcSeconds(wealth.time[index]!), latest: timestamp === null, rows }

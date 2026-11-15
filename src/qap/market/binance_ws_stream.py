@@ -6,7 +6,7 @@ import asyncio
 import json
 import time
 from collections.abc import Mapping, MutableMapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
@@ -273,6 +273,7 @@ async def capture_binance_l2_window(
     instruments_by_symbol = {inst.venue_symbol.upper(): inst for inst in instruments}
     url = build_binance_ws_url(instruments, base_ws_url=base_ws_url, channels=channels)
     latest_books: dict[str, TimedL2Book] = {}
+    latest_exch_us: dict[str, int] = {}
     last_update_ids: dict[str, int] = {}
     deadline = time.monotonic() + duration_seconds
 
@@ -306,8 +307,18 @@ async def capture_binance_l2_window(
                     )
                     if isinstance(parsed, dict) and parsed.get("e") == "serverShutdown":
                         break
+                    if (
+                        isinstance(parsed, TimedAggTrade)
+                        and parsed.exchange_time_us is not None
+                    ):
+                        latest_exch_us[parsed.venue_symbol] = parsed.exchange_time_us
                     if isinstance(parsed, TimedL2Book):
-                        latest_books[parsed.instrument.venue_symbol] = parsed
+                        sym = parsed.instrument.venue_symbol
+                        if parsed.exchange_time_us is None and sym in latest_exch_us:
+                            parsed = replace(
+                                parsed, exchange_time_us=latest_exch_us[sym]
+                            )
+                        latest_books[sym] = parsed
                         if stop_when_complete and len(latest_books) == len(
                             instruments_by_symbol
                         ):

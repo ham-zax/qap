@@ -277,7 +277,7 @@ def sweep_l2_taker_order(
         if base_quantity is None or quote_budget is not None:
             raise ValueError("SELL sweep requires base_quantity and quote_budget=None")
         requested_base = _validated_decimal(base_quantity, field="base_quantity")
-        if abs(age_ms) > max_staleness_ms:
+        if age_ms > max_staleness_ms:
             return _rejected(
                 "stale_order_book", mid_price=mid_price, book_age_ms=age_ms
             )
@@ -296,7 +296,7 @@ def sweep_l2_taker_order(
     if quote_budget is None or base_quantity is not None:
         raise ValueError("BUY sweep requires quote_budget and base_quantity=None")
     budget = _validated_decimal(quote_budget, field="quote_budget")
-    if abs(age_ms) > max_staleness_ms:
+    if age_ms > max_staleness_ms:
         return _rejected("stale_order_book", mid_price=mid_price, book_age_ms=age_ms)
     return _sweep_buy(
         fill_id=fill_id,

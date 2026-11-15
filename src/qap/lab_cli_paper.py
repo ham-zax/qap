@@ -4,12 +4,23 @@ from __future__ import annotations
 
 import argparse
 import json
-from collections.abc import Callable, Mapping
-from typing import Any
+from collections.abc import Callable, Mapping, Sequence
+from pathlib import Path
+from typing import Any, cast
 
-from qap.experiment.live_paper_execution import BookProvider, window_book_provider
+import numpy as np
+
+from qap.experiment.live_paper_execution import (
+    BookProvider,
+    default_instrument,
+    window_book_provider,
+)
 from qap.experiment.live_paper_runner import LivePaperSessionManager
 from qap.policy.lab_settings import LabSettings
+from qap.product_market_data import ProductMarketData
+from qap.product_pair_rotation_analysis import PairRotationAnalysis
+from qap.product_universe import ProductUniverse
+from qap.relationship.pair_measurements import Floats
 
 PAPER_COMMANDS = frozenset(
     {"paper-start", "paper-step", "paper-status", "paper-list", "paper-stop"}
@@ -99,6 +110,49 @@ def format_paper_md(payload: Mapping[str, Any]) -> str:
     )
 
 
+def warm_historical_closes(
+    run_root: Path,
+    data_root: Path | None,
+    *,
+    coin_a: str,
+    coin_b: str,
+    anchor: str | None,
+    bar: str,
+) -> dict[str, Floats] | None:
+    """Seed initial close history from prepared bars when available on disk."""
+    if data_root is None or bar not in ("15m", "1h", "4h", "1d"):
+        return None
+    try:
+        analysis = PairRotationAnalysis(
+            ProductUniverse(run_root), ProductMarketData(run_root, data_root), data_root
+        ).analyze(coin_a, coin_b, bar=bar, days=180, band_lookback=96, anchor=anchor)
+    except Exception:
+        return None
+    raw_series = analysis.get("series")
+    if not isinstance(raw_series, Mapping):
+        return None
+    series = cast(Mapping[str, Any], raw_series)
+    close_a = cast(Sequence[float | None], series["close_a"])
+    close_b = cast(Sequence[float | None], series["close_b"])
+    out: dict[str, Floats] = {
+        default_instrument(coin_a).venue_symbol: np.asarray(
+            [float(x) for x in close_a if x is not None], dtype=np.float64
+        ),
+        default_instrument(coin_b).venue_symbol: np.asarray(
+            [float(x) for x in close_b if x is not None], dtype=np.float64
+        ),
+    }
+    anc_closes = series.get("anchor_close")
+    if anchor is not None and isinstance(anc_closes, list):
+        typed_anc = cast(Sequence[float | None], anc_closes)
+        vals = [float(x) for x in typed_anc if x is not None]
+        if vals:
+            out[default_instrument(anchor).venue_symbol] = np.asarray(
+                vals, dtype=np.float64
+            )
+    return out
+
+
 def run_paper_command(
     args: argparse.Namespace, book_provider: BookProvider | None = None
 ) -> dict[str, Any]:
@@ -113,6 +167,14 @@ def run_paper_command(
     if args.command == "paper-list":
         return {"sessions": manager.list_sessions(limit=args.limit)}
     if args.command == "paper-start":
+        warm = warm_historical_closes(
+            args.run_root,
+            getattr(args, "data_root", None),
+            coin_a=args.coin_a,
+            coin_b=args.coin_b,
+            anchor=args.anchor,
+            bar=args.bar,
+        )
         view = manager.create_session(
             args.coin_a,
             args.coin_b,
@@ -120,6 +182,7 @@ def run_paper_command(
             bar=args.bar,
             settings=LabSettings.model_validate(json.loads(args.settings)),
             order_rtt_ms=args.order_rtt_ms,
+            historical_closes=warm,
         )
     elif args.command == "paper-step":
         view = manager.step_session(args.session_id)

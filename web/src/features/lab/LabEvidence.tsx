@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { LabAnalysis, LabGrangerDirection } from './labContract'
+import type { LabAnalysis, LabGrangerDirection, LabViewMode } from './labContract'
 
 const number = (value: number | null | undefined, digits = 3) => value == null ? 'Unavailable' : value.toLocaleString(undefined, { maximumFractionDigits: digits })
 const granger = (direction: LabGrangerDirection | undefined) => direction ? `p = ${number(direction.p_value, 4)} at lag ${direction.lag_bars}` : 'Unavailable'
@@ -7,7 +7,7 @@ const granger = (direction: LabGrangerDirection | undefined) => direction ? `p =
 /** One reading: plain label, value, plain meaning, then the technical name and caveat. */
 type Reading = { label: string; value: string; meaning: string; term: string }
 
-export function LabEvidence({ analysis }: { analysis: LabAnalysis }) {
+export function LabEvidence({ analysis, viewMode = 'simple' }: { analysis: LabAnalysis; viewMode?: LabViewMode }) {
   const m = analysis.measurements
   const a = analysis.coin_a.code
   const b = analysis.coin_b.code
@@ -50,7 +50,7 @@ export function LabEvidence({ analysis }: { analysis: LabAnalysis }) {
       const rows = all.filter(({ label }) => !hidden.includes(label))
       return rows.length > 0 && <section key={title} className="lab-evidence-group" aria-label={title}>
         <h3>{title}</h3>
-        {rows.map(({ label, value, meaning, term }) => <details key={label} className="lab-reading">
+        {rows.map(({ label, value, meaning, term }) => <details key={label} className="lab-reading" open={viewMode === 'advanced'}>
           <summary><span className="lab-reading-label">{label}</span><span className={value === 'Unavailable' ? 'lab-reading-value lab-unavailable' : 'lab-reading-value'}>{value}</span></summary>
           <p>{meaning}</p><p className="lab-note">{term}</p>
         </details>)}

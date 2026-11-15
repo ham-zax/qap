@@ -164,7 +164,7 @@ th {
 
 .app-shell {
   margin: 0 auto;
-  max-width: var(--max-content);
+  max-width: min(94rem, var(--max-content, 94rem));
   min-height: 100vh;
   padding: 0 var(--space-6);
 }

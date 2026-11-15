@@ -77,3 +77,39 @@ def test_advisor_15m_noisy_emits_bar_warning() -> None:
     assert out["suggestions"][0]["recommended_bar"] == "1h"
     for s in out["suggestions"]:
         LabSettings.model_validate(s["settings"])
+
+
+def test_advisor_handles_real_analysis_dict_anchor_and_anchor_ranking() -> None:
+    from qap.api.lab_study_schemas import LabAdvisorDto
+
+    real_shape: dict[str, Any] = {
+        "bar": "4h",
+        "coin_a": {"id": "binance:ETH", "code": "ETH"},
+        "coin_b": {"id": "binance:BTC", "code": "BTC"},
+        "anchor": {
+            "id": "binance:SOL",
+            "code": "SOL",
+            "name": "Solana",
+            "identity_state": "resolved",
+        },
+        "anchor_ranking": [
+            {
+                "anchor": {
+                    "id": "binance:SOL",
+                    "code": "SOL",
+                    "name": "Solana",
+                    "identity_state": "resolved",
+                },
+                "joint_explained": 0.62,
+            }
+        ],
+        "measurements": {
+            "cointegration": {"passes": False, "p_value": 0.35},
+            "half_life": {"reverting": False, "bars": None},
+            "hurst": {"reading": "trending", "exponent": 0.61},
+            "copula": {"family": "student", "lower_tail": 0.52, "upper_tail": 0.52},
+        },
+    }
+    dto = LabAdvisorDto.model_validate(advise_pair_strategies(real_shape))
+    assert dto.regime_label == "trending"
+    assert dto.suggestions[1].recommended_anchor == "binance:SOL"

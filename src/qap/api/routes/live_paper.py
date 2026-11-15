@@ -19,6 +19,7 @@ from qap.experiment.live_paper_runner import (
     LivePaperSessionManager,
     LivePaperSessionNotFoundError,
 )
+from qap.lab_cli_paper import warm_historical_closes
 from qap.market.binance_ws_stream import BinanceWsStreamError
 
 router = APIRouter(prefix="/api/pair-rotation", tags=["pair-rotation"])
@@ -59,6 +60,15 @@ def create_paper_session(
     command: LivePaperCreateDto, request: Request
 ) -> LivePaperSessionDto:
     require_local(request)
+    api_settings = cast(ApiSettings, request.app.state.settings)
+    warm = warm_historical_closes(
+        api_settings.run_root,
+        api_settings.market_data_root,
+        coin_a=command.coin_a,
+        coin_b=command.coin_b,
+        anchor=command.anchor,
+        bar=command.bar,
+    )
     try:
         view = _manager(request).create_session(
             command.coin_a,
@@ -68,6 +78,7 @@ def create_paper_session(
             settings=command.settings,
             order_rtt_ms=command.order_rtt_ms,
             max_staleness_ms=command.max_staleness_ms,
+            historical_closes=warm,
         )
         return LivePaperSessionDto.model_validate(view)
     except (LivePaperError, BinanceWsStreamError) as exc:

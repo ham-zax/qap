@@ -45,3 +45,18 @@ def test_health_is_read_only_and_cors_is_limited_to_configured_origin(
         },
     )
     assert "access-control-allow-origin" not in rejected.headers
+
+
+def test_workspace_status_returns_valid_schema_on_default_app(
+    tmp_path: Path,
+) -> None:
+    from qap.api import ApiSettings, create_app
+
+    app = create_app(ApiSettings(run_root=tmp_path / "runs"))
+    client = TestClient(app)
+
+    response = client.get("/api/workspace")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["schema_version"] == "qap.api.workspace_status.v1"
+    assert body["workspace_mode"] in ("sample", "local_market")

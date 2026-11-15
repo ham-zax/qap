@@ -40,6 +40,9 @@ export interface ChartMarker {
   label: string
   selected: boolean
   executed: boolean
+  colorToken?: string
+  shape?: 'arrowUp' | 'arrowDown' | 'circle' | 'square'
+  position?: 'aboveBar' | 'belowBar' | 'inBar'
 }
 
 export interface ChartVisibleRange {
