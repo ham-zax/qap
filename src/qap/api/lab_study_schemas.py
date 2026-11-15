@@ -156,3 +156,54 @@ class LabSavedListDto(AnalysisModel):
 
 class LabPinDto(AnalysisModel):
     pinned: bool
+
+
+class LabAdvisorSuggestionDto(AnalysisModel):
+    rank: int
+    preset_id: str
+    title: str
+    simple_reason: str
+    pro_reason: str
+    recommended_bar: str
+    recommended_anchor: str | None
+    settings: LabSettings
+
+
+class LabAdvisorDto(AnalysisModel):
+    regime_label: str
+    simple_summary: str
+    pro_summary: str
+    bar_warning: str | None
+    suggestions: list[LabAdvisorSuggestionDto]
+
+
+class LabCompareRequestDto(AnalysisModel):
+    coin_a: str
+    coin_b: str
+    anchor: str | None = None
+    bar: Literal["1m", "15m", "1h", "4h", "1d"] = "15m"
+    days: AnalysisDays = AnalysisDays.half_year
+    band_lookback: int = Field(default=672, ge=2, le=10000)
+    candidates: list[LabSettings] = Field(
+        default_factory=list[LabSettings], max_length=8
+    )
+
+    @model_validator(mode="after")
+    def pair_valid(self) -> Self:
+        pair = PairRotationRequestDto(coin_a=self.coin_a, coin_b=self.coin_b)
+        object.__setattr__(self, "coin_a", pair.coin_a)
+        object.__setattr__(self, "coin_b", pair.coin_b)
+        if self.anchor is not None:
+            venue, separator, code = self.anchor.partition(":")
+            if venue != "binance" or not separator or not code:
+                raise ValueError("Choose a Binance anchor listing.")
+        for candidate in self.candidates:
+            if candidate.method == "lead_lag" and self.bar != "1m":
+                raise ValueError("Lead-lag proof requires one-minute bars.")
+        return self
+
+
+class LabCompareResultDto(AnalysisModel):
+    advisor: LabAdvisorDto
+    studies: list[LabStudyDto]
+    best_study_id: str | None

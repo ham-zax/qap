@@ -338,3 +338,45 @@ def test_study_defaults_rotation_size_and_persists_s1_bands(tmp_path: Path) -> N
     assert Decimal(requested["rotation_size"]) == Decimal("0.5")
     assert requested["trend_deadband"] == pytest.approx(0.003)
     assert requested["copula_exit_band"] == pytest.approx(0.12)
+
+
+def test_actor_header_advisor_and_compare_endpoints(tmp_path: Path) -> None:
+    client = varying_study_client(tmp_path)
+    adv = client.get(
+        "/api/pair-rotation/advisor",
+        params={
+            "coin_a": "binance:W",
+            "coin_b": "binance:BTC",
+            "bar": "1h",
+            "days": 30,
+            "band_lookback": 20,
+        },
+    )
+    assert adv.status_code == 200, adv.text
+    adv_body = adv.json()
+    assert adv_body["regime_label"] in ("mean_reverting", "trending", "mixed_or_noisy")
+    assert len(adv_body["suggestions"]) == 3
+
+    cmp_res = client.post(
+        "/api/pair-rotation/studies/compare",
+        headers={"X-QAP-Actor-Id": "sub_alice"},
+        json={
+            "coin_a": "binance:W",
+            "coin_b": "binance:BTC",
+            "bar": "1h",
+            "days": 30,
+            "band_lookback": 20,
+        },
+    )
+    assert cmp_res.status_code == 200, cmp_res.text
+    cmp_body = cmp_res.json()
+    assert len(cmp_body["studies"]) == 3
+    alice_studies = client.get(
+        "/api/pair-rotation/studies", headers={"X-QAP-Actor-Id": "sub_alice"}
+    ).json()["studies"]
+    bob_studies = client.get(
+        "/api/pair-rotation/studies", headers={"X-QAP-Actor-Id": "sub_bob"}
+    ).json()["studies"]
+    assert len(alice_studies) == 3
+    assert bob_studies == []
+    assert client.get("/api/pair-rotation/studies").json()["studies"] == []

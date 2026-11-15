@@ -1,6 +1,7 @@
 """Compose sealed data, authoritative research, trial counting and snapshots."""
 
 import json
+from collections.abc import Sequence
 from decimal import Decimal
 from math import isfinite
 from pathlib import Path
@@ -12,6 +13,7 @@ from qap.experiment.lab_proof import LabProof, prove_lab_strategy, settings_cand
 from qap.experiment.lab_replay import LabInputs
 from qap.experiment.provenance import code_fingerprint
 from qap.policy.lab_settings import LabSettings
+from qap.product_lab_advisor import advise_pair_strategies
 from qap.product_lab_inputs import load_lab_inputs
 from qap.product_lab_store import LabStudyStore, canonical_json
 from qap.product_market_data import ProductMarketData
@@ -147,9 +149,80 @@ class LabStudyService:
         data_root: Path,
         run_root: Path,
         repository_root: Path,
+        *,
+        actor_id: str = "local",
     ) -> None:
         self.universe, self.data, self.data_root = universe, data, data_root
-        self.store, self.repository_root = LabStudyStore(run_root), repository_root
+        self.store = LabStudyStore(run_root, actor_id=actor_id)
+        self.repository_root = repository_root
+
+    def _build_and_save(
+        self,
+        analysis: dict[str, Any],
+        inputs: LabInputs,
+        settings: LabSettings,
+        *,
+        count: int,
+        reused: bool,
+        fingerprint: str,
+        execution_ready: bool,
+    ) -> dict[str, Any]:
+        result = prove_lab_strategy(
+            inputs,
+            settings,
+            trial_count=count,
+            identity_confirmed=analysis["identity_confirmed"],
+            execution_ready=execution_ready,
+            validation_reused=reused,
+        )
+        if result.call["status"] in ("into_a", "into_b"):
+            a, b = analysis["coin_a"]["code"], analysis["coin_b"]["code"]
+            result.call["headline"] = (
+                f"Rotate {b} → {a}"
+                if result.call["status"] == "into_a"
+                else f"Rotate {a} → {b}"
+            )
+        samples = _sample_indices(len(inputs.first.bars))
+        payload = {
+            "schema_version": "qap.lab.study.v1",
+            "analysis": analysis,
+            "requested_settings": settings.model_dump(mode="json"),
+            "applied_settings": result.applied_settings.model_dump(mode="json"),
+            "call": result.call,
+            "proof": result.proof,
+            "signal": {
+                "time": [
+                    int(inputs.first.bars[index].bar_end_exclusive.timestamp())
+                    for index in samples
+                ],
+                "values": [
+                    float(result.signal.values[index])
+                    if isfinite(result.signal.values[index])
+                    else None
+                    for index in samples
+                ],
+                "upper": result.signal.upper,
+                "lower": result.signal.lower,
+                "unit": result.signal.unit,
+            },
+            "wealth": _wealth(inputs, result),
+            "trades": _trades(result),
+            "folds": list(result.folds),
+            "statistics": _statistics(result),
+            "code_fingerprint": fingerprint,
+            "execution_route": "direct"
+            if inputs.direct is not None
+            else "two legs via USDT",
+            "execution_metadata": [
+                {
+                    "market": item.metadata.instrument.venue_symbol,
+                    "fingerprint": item.source_fingerprint,
+                    "observed_at": item.observed_at.isoformat(),
+                }
+                for item in inputs.metadata
+            ],
+        }
+        return self.store.save(json.loads(canonical_json(payload)))
 
     def run(
         self,
@@ -203,59 +276,99 @@ class LabStudyService:
             )
             metadata = {item.metadata.instrument for item in inputs.metadata}
             execution_ready = all(instrument in metadata for instrument in required)
-            result = prove_lab_strategy(
+            return self._build_and_save(
+                analysis,
                 inputs,
                 settings,
-                trial_count=count,
-                identity_confirmed=analysis["identity_confirmed"],
+                count=count,
+                reused=reused,
+                fingerprint=fingerprint,
                 execution_ready=execution_ready,
-                validation_reused=reused,
             )
-            if result.call["status"] in ("into_a", "into_b"):
-                a, b = analysis["coin_a"]["code"], analysis["coin_b"]["code"]
-                result.call["headline"] = (
-                    f"Rotate {b} → {a}"
-                    if result.call["status"] == "into_a"
-                    else f"Rotate {a} → {b}"
-                )
-            samples = _sample_indices(len(inputs.first.bars))
-            payload = {
-                "schema_version": "qap.lab.study.v1",
-                "analysis": analysis,
-                "requested_settings": settings.model_dump(mode="json"),
-                "applied_settings": result.applied_settings.model_dump(mode="json"),
-                "call": result.call,
-                "proof": result.proof,
-                "signal": {
-                    "time": [
-                        int(inputs.first.bars[index].bar_end_exclusive.timestamp())
-                        for index in samples
-                    ],
-                    "values": [
-                        float(result.signal.values[index])
-                        if isfinite(result.signal.values[index])
-                        else None
-                        for index in samples
-                    ],
-                    "upper": result.signal.upper,
-                    "lower": result.signal.lower,
-                    "unit": result.signal.unit,
-                },
-                "wealth": _wealth(inputs, result),
-                "trades": _trades(result),
-                "folds": list(result.folds),
-                "statistics": _statistics(result),
+
+    def compare(
+        self,
+        coin_a: str,
+        coin_b: str,
+        *,
+        bar: str,
+        days: int,
+        band_lookback: int,
+        anchor: str | None,
+        candidates: Sequence[LabSettings],
+    ) -> dict[str, Any]:
+        if not 1 <= len(candidates) <= 8:
+            raise ValueError("Compare requires between 1 and 8 candidate settings.")
+        family = self.store.family_id(coin_a, coin_b)
+        with self.store.family_lock(family):
+            analysis = PairRotationAnalysis(
+                self.universe, self.data, self.data_root
+            ).analyze(
+                coin_a,
+                coin_b,
+                bar=bar,
+                days=days,
+                band_lookback=band_lookback,
+                anchor=anchor,
+            )
+            advisor = advise_pair_strategies(analysis)
+            inputs = load_lab_inputs(self.universe, self.data, self.data_root, analysis)
+            split = int(len(inputs.first.bars) * (1 - candidates[0].proof_fraction))
+            fingerprint = code_fingerprint(self.repository_root)
+            common = {
+                "coin_a": coin_a,
+                "coin_b": coin_b,
+                "anchor": anchor,
+                "bar": bar,
+                "days": days,
+                "protocol": "qap.lab.proof.v1",
                 "code_fingerprint": fingerprint,
-                "execution_route": "direct"
-                if inputs.direct is not None
-                else "two legs via USDT",
-                "execution_metadata": [
-                    {
-                        "market": item.metadata.instrument.venue_symbol,
-                        "fingerprint": item.source_fingerprint,
-                        "observed_at": item.observed_at.isoformat(),
-                    }
-                    for item in inputs.metadata
-                ],
             }
-            return self.store.save(json.loads(canonical_json(payload)))
+            configurations = [
+                {**common, "settings": expanded.model_dump(mode="json")}
+                for cand in candidates
+                for expanded in settings_candidates(cand)
+            ]
+            count, reused = self.store.register_trials(
+                family,
+                configurations,
+                validation_start=inputs.first.bars[split].candle_open_time.isoformat(),
+                validation_end=inputs.first.bars[-1].bar_end_exclusive.isoformat(),
+            )
+            required = (
+                (inputs.direct.instrument,)
+                if inputs.direct is not None
+                else (inputs.first.instrument, inputs.second.instrument)
+            )
+            metadata = {item.metadata.instrument for item in inputs.metadata}
+            execution_ready = all(instrument in metadata for instrument in required)
+            studies = [
+                self._build_and_save(
+                    analysis,
+                    inputs,
+                    cand,
+                    count=count,
+                    reused=reused,
+                    fingerprint=fingerprint,
+                    execution_ready=execution_ready,
+                )
+                for cand in candidates
+            ]
+        studies.sort(
+            key=lambda s: (
+                bool(s["result"]["proof"]["passes"]),
+                s["result"]["proof"]["vs_hodl_pct"]
+                if s["result"]["proof"]["vs_hodl_pct"] is not None
+                else -1e9,
+            ),
+            reverse=True,
+        )
+        top = studies[0]
+        best_study_id = (
+            top["study_id"] if top["result"]["proof"]["passes"] is True else None
+        )
+        return {
+            "advisor": advisor,
+            "studies": studies,
+            "best_study_id": best_study_id,
+        }

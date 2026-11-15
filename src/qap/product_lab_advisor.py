@@ -47,13 +47,53 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
         else None
     )
     hurst_info = m.get("hurst")
-    hurst_state = hurst_info["state"] if hurst_info else None
-    hurst_val = hurst_info["value"] if hurst_info else None
-    copula_info = m.get("copula")
-    anchor_id = (
-        suggested_anchor["coin"]["id"] if suggested_anchor else analysis.get("anchor")
+    hurst_map = (
+        cast(Mapping[str, Any], hurst_info) if isinstance(hurst_info, Mapping) else None
     )
-    anchor_r2 = suggested_anchor["joint_r_squared"] if suggested_anchor else None
+    hurst_state = (
+        (hurst_map.get("reading") or hurst_map.get("state"))
+        if hurst_map is not None
+        else None
+    )
+    hurst_val = (
+        (
+            hurst_map.get("exponent")
+            if "exponent" in hurst_map
+            else hurst_map.get("value")
+        )
+        if hurst_map is not None
+        else None
+    )
+    copula_info = m.get("copula")
+    anchor_map = (
+        cast(Mapping[str, Any], suggested_anchor)
+        if isinstance(suggested_anchor, Mapping)
+        else None
+    )
+    anchor_coin_raw = (
+        (anchor_map.get("anchor") or anchor_map.get("coin"))
+        if anchor_map is not None
+        else None
+    )
+    anchor_coin = (
+        cast(Mapping[str, Any], anchor_coin_raw)
+        if isinstance(anchor_coin_raw, Mapping)
+        else None
+    )
+    anchor_id = (
+        anchor_coin["id"]
+        if anchor_coin is not None and "id" in anchor_coin
+        else analysis.get("anchor")
+    )
+    anchor_r2 = (
+        (
+            anchor_map.get("joint_explained")
+            if "joint_explained" in anchor_map
+            else anchor_map.get("joint_r_squared")
+        )
+        if anchor_map is not None
+        else None
+    )
 
     if coint_passes or hurst_state == "reverting":
         regime_label = "mean_reverting"

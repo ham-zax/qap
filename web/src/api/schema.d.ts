@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/pair-rotation/advisor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Lab Advisor */
+        get: operations["getLabAdvisor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pair-rotation/analysis": {
         parameters: {
             query?: never;
@@ -169,6 +186,23 @@ export interface paths {
         put?: never;
         /** Compute Study */
         post: operations["computeLabStudy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pair-rotation/studies/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Compare Studies */
+        post: operations["compareLabStudies"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1236,6 +1270,37 @@ export interface components {
             /** Standard Error */
             standard_error: number;
         };
+        /** LabAdvisorDto */
+        LabAdvisorDto: {
+            /** Bar Warning */
+            bar_warning: string | null;
+            /** Pro Summary */
+            pro_summary: string;
+            /** Regime Label */
+            regime_label: string;
+            /** Simple Summary */
+            simple_summary: string;
+            /** Suggestions */
+            suggestions: components["schemas"]["LabAdvisorSuggestionDto"][];
+        };
+        /** LabAdvisorSuggestionDto */
+        LabAdvisorSuggestionDto: {
+            /** Preset Id */
+            preset_id: string;
+            /** Pro Reason */
+            pro_reason: string;
+            /** Rank */
+            rank: number;
+            /** Recommended Anchor */
+            recommended_anchor: string | null;
+            /** Recommended Bar */
+            recommended_bar: string;
+            settings: components["schemas"]["LabSettings-Output"];
+            /** Simple Reason */
+            simple_reason: string;
+            /** Title */
+            title: string;
+        };
         /** LabAnalysisDto */
         LabAnalysisDto: {
             anchor: components["schemas"]["LabCoinDto"] | null;
@@ -1300,6 +1365,38 @@ export interface components {
             identity_state: "resolved" | "review" | "unresolved";
             /** Name */
             name: string;
+        };
+        /** LabCompareRequestDto */
+        LabCompareRequestDto: {
+            /** Anchor */
+            anchor?: string | null;
+            /**
+             * Band Lookback
+             * @default 672
+             */
+            band_lookback: number;
+            /**
+             * Bar
+             * @default 15m
+             * @enum {string}
+             */
+            bar: "1m" | "15m" | "1h" | "4h" | "1d";
+            /** Candidates */
+            candidates?: components["schemas"]["LabSettings-Input"][];
+            /** Coin A */
+            coin_a: string;
+            /** Coin B */
+            coin_b: string;
+            /** @default 180 */
+            days: components["schemas"]["AnalysisDays"];
+        };
+        /** LabCompareResultDto */
+        LabCompareResultDto: {
+            advisor: components["schemas"]["LabAdvisorDto"];
+            /** Best Study Id */
+            best_study_id: string | null;
+            /** Studies */
+            studies: components["schemas"]["LabStudyDto"][];
         };
         /** LabDatasetDto */
         LabDatasetDto: {
@@ -3039,6 +3136,42 @@ export interface operations {
             };
         };
     };
+    getLabAdvisor: {
+        parameters: {
+            query: {
+                coin_a: string;
+                coin_b: string;
+                bar?: "1m" | "15m" | "1h" | "4h" | "1d";
+                days?: components["schemas"]["AnalysisDays"];
+                band_lookback?: number;
+                anchor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabAdvisorDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     analyzePairRotation: {
         parameters: {
             query: {
@@ -3212,6 +3345,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LabStudyDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compareLabStudies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LabCompareRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabCompareResultDto"];
                 };
             };
             /** @description Validation Error */

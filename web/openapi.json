@@ -2041,6 +2041,105 @@
         "title": "KalmanDto",
         "type": "object"
       },
+      "LabAdvisorDto": {
+        "additionalProperties": false,
+        "properties": {
+          "bar_warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bar Warning"
+          },
+          "pro_summary": {
+            "title": "Pro Summary",
+            "type": "string"
+          },
+          "regime_label": {
+            "title": "Regime Label",
+            "type": "string"
+          },
+          "simple_summary": {
+            "title": "Simple Summary",
+            "type": "string"
+          },
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/LabAdvisorSuggestionDto"
+            },
+            "title": "Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "regime_label",
+          "simple_summary",
+          "pro_summary",
+          "bar_warning",
+          "suggestions"
+        ],
+        "title": "LabAdvisorDto",
+        "type": "object"
+      },
+      "LabAdvisorSuggestionDto": {
+        "additionalProperties": false,
+        "properties": {
+          "preset_id": {
+            "title": "Preset Id",
+            "type": "string"
+          },
+          "pro_reason": {
+            "title": "Pro Reason",
+            "type": "string"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "recommended_anchor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Anchor"
+          },
+          "recommended_bar": {
+            "title": "Recommended Bar",
+            "type": "string"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/LabSettings-Output"
+          },
+          "simple_reason": {
+            "title": "Simple Reason",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rank",
+          "preset_id",
+          "title",
+          "simple_reason",
+          "pro_reason",
+          "recommended_bar",
+          "recommended_anchor",
+          "settings"
+        ],
+        "title": "LabAdvisorSuggestionDto",
+        "type": "object"
+      },
       "LabAnalysisDto": {
         "additionalProperties": false,
         "properties": {
@@ -2228,6 +2327,100 @@
           "identity_state"
         ],
         "title": "LabCoinDto",
+        "type": "object"
+      },
+      "LabCompareRequestDto": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor"
+          },
+          "band_lookback": {
+            "default": 672,
+            "maximum": 10000.0,
+            "minimum": 2.0,
+            "title": "Band Lookback",
+            "type": "integer"
+          },
+          "bar": {
+            "default": "15m",
+            "enum": [
+              "1m",
+              "15m",
+              "1h",
+              "4h",
+              "1d"
+            ],
+            "title": "Bar",
+            "type": "string"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/LabSettings-Input"
+            },
+            "maxItems": 8,
+            "title": "Candidates",
+            "type": "array"
+          },
+          "coin_a": {
+            "title": "Coin A",
+            "type": "string"
+          },
+          "coin_b": {
+            "title": "Coin B",
+            "type": "string"
+          },
+          "days": {
+            "$ref": "#/components/schemas/AnalysisDays",
+            "default": 180
+          }
+        },
+        "required": [
+          "coin_a",
+          "coin_b"
+        ],
+        "title": "LabCompareRequestDto",
+        "type": "object"
+      },
+      "LabCompareResultDto": {
+        "additionalProperties": false,
+        "properties": {
+          "advisor": {
+            "$ref": "#/components/schemas/LabAdvisorDto"
+          },
+          "best_study_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Study Id"
+          },
+          "studies": {
+            "items": {
+              "$ref": "#/components/schemas/LabStudyDto"
+            },
+            "title": "Studies",
+            "type": "array"
+          }
+        },
+        "required": [
+          "advisor",
+          "studies",
+          "best_study_id"
+        ],
+        "title": "LabCompareResultDto",
         "type": "object"
       },
       "LabDatasetDto": {
@@ -6742,6 +6935,117 @@
         ]
       }
     },
+    "/api/pair-rotation/advisor": {
+      "get": {
+        "operationId": "getLabAdvisor",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "coin_a",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Coin A",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "coin_b",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Coin B",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bar",
+            "required": false,
+            "schema": {
+              "default": "15m",
+              "enum": [
+                "1m",
+                "15m",
+                "1h",
+                "4h",
+                "1d"
+              ],
+              "title": "Bar",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AnalysisDays",
+              "default": 180
+            }
+          },
+          {
+            "in": "query",
+            "name": "band_lookback",
+            "required": false,
+            "schema": {
+              "default": 672,
+              "maximum": 10000,
+              "minimum": 2,
+              "title": "Band Lookback",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "anchor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Anchor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabAdvisorDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Lab Advisor",
+        "tags": [
+          "pair-rotation"
+        ]
+      }
+    },
     "/api/pair-rotation/analysis": {
       "get": {
         "operationId": "analyzePairRotation",
@@ -7061,6 +7365,47 @@
           }
         },
         "summary": "Compute Study",
+        "tags": [
+          "pair-rotation"
+        ]
+      }
+    },
+    "/api/pair-rotation/studies/compare": {
+      "post": {
+        "operationId": "compareLabStudies",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabCompareRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabCompareResultDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compare Studies",
         "tags": [
           "pair-rotation"
         ]
