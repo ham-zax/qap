@@ -2,29 +2,12 @@ import type { components } from './schema'
 
 type WorkspaceStatusDto = components['schemas']['WorkspaceStatusDto']
 type ResearchUniverseDto = components['schemas']['ResearchUniverseDto']
-type CurrentApprovedReadinessDto = components['schemas']['CurrentApprovedReadinessDto']
-type CurrentApprovedResearchRequestDto =
-  components['schemas']['CurrentApprovedResearchRequestDto']
+type IdentityMappingRequestDto = components['schemas']['IdentityMappingRequestDto']
+type AssetAdmissionRequestDto = components['schemas']['AssetAdmissionRequestDto']
 type MarketDataPreparationRequestDto =
   components['schemas']['MarketDataPreparationRequestDto']
 type ProductMarketDataDto = components['schemas']['ProductMarketDataDto']
-type ProductPairStudyBridgeAuthorityDto =
-  components['schemas']['ProductPairStudyBridgeAuthorityDto']
-type ProductPairStudyContextDto = components['schemas']['ProductPairStudyContextDto']
-type ProductPairStudySeriesDto = components['schemas']['ProductPairStudySeriesDto']
-type ResearchRecipeCheckRequestDto =
-  components['schemas']['ResearchRecipeCheckRequestDto']
-type ResearchRecipeCheckV1 = components['schemas']['ResearchRecipeCheckV1']
-type ResearchRecipeProductContextDto =
-  components['schemas']['ResearchRecipeProductContextDto']
-type ResearchRecipeRunLineageDto =
-  components['schemas']['ResearchRecipeRunLineageDto']
-type ResearchRecipeRunRequestDto =
-  components['schemas']['ResearchRecipeRunRequestDto']
-type IdentityMappingRequestDto = components['schemas']['IdentityMappingRequestDto']
-type AssetAdmissionRequestDto = components['schemas']['AssetAdmissionRequestDto']
 type ExperimentListDto = components['schemas']['ExperimentListDto']
-type HistoryDto = components['schemas']['HistoryDto']
 type ExperimentDetailDto = components['schemas']['ExperimentDetailDto']
 type PortfolioSnapshotDto = components['schemas']['PortfolioSnapshotDto']
 type PortfolioPerformanceDto = components['schemas']['PortfolioPerformanceDto']
@@ -34,30 +17,8 @@ type PairEvidenceDto = components['schemas']['PairEvidenceDto']
 type PairSeriesDto = components['schemas']['PairSeriesDto']
 type AnchorLensDto = components['schemas']['AnchorLensDto']
 type ErrorDetailDto = components['schemas']['ErrorDetailDto']
-type ScannerProtocolDto = components['schemas']['ScannerProtocolDto']
-type ScanListDto = components['schemas']['ScanListDto']
-type ScanDetailDto = components['schemas']['ScanDetailDto']
-type CandidateListDto = components['schemas']['CandidateListDto']
-type CandidateDetailDto = components['schemas']['CandidateDetailDto']
-type ResearchIdeaCurrentEvidenceDto =
-  components['schemas']['ResearchIdeaCurrentEvidenceDto']
-type ProductAmountAssessmentRequestDto =
-  components['schemas']['ProductAmountAssessmentRequestDto']
-type ForwardCohortListDto = components['schemas']['ForwardCohortListDto']
-type ForwardCohortDetailDto = components['schemas']['ForwardCohortDetailDto']
-type CaptureReadinessDto = components['schemas']['CaptureReadinessDto']
-type BasketListDto = components['schemas']['BasketListDto']
-type BasketDetailDto = components['schemas']['BasketDetailDto']
-type OperationRefDto = components['schemas']['OperationRefDto']
 type OperationDto = components['schemas']['OperationDto']
 type OperationListDto = components['schemas']['OperationListDto']
-type RunScanRequestDto = components['schemas']['RunScanRequestDto']
-type MomentumGenerationRequestDto = components['schemas']['MomentumGenerationRequestDto']
-type FreezeForwardCohortRequestDto = components['schemas']['FreezeForwardCohortRequestDto']
-type AdvanceForwardCohortRequestDto = components['schemas']['AdvanceForwardCohortRequestDto']
-type CapturePublicEvidenceRequestDto = components['schemas']['CapturePublicEvidenceRequestDto']
-type QualificationRequestDto = components['schemas']['QualificationRequestDto']
-type BasketRunRequestDto = components['schemas']['BasketRunRequestDto']
 
 interface ErrorEnvelopeDto {
   error: ErrorDetailDto
@@ -118,17 +79,6 @@ export function createApiClient({
   return {
     getWorkspaceStatus: () => request<WorkspaceStatusDto>('/api/workspace'),
     getResearchUniverse: () => request<ResearchUniverseDto>('/api/research-universe'),
-    getCurrentApprovedResearchReadiness: (horizon: 'short' | 'medium' | 'swing') => {
-      const query = new URLSearchParams({ horizon })
-      return request<CurrentApprovedReadinessDto>(
-        `/api/product-research/readiness?${query}`,
-      )
-    },
-    runCurrentApprovedResearch: (command: CurrentApprovedResearchRequestDto) =>
-      request<OperationRefDto>('/api/product-research', {
-        method: 'POST',
-        body: JSON.stringify(command),
-      }),
     getProductMarketData: () =>
       request<ProductMarketDataDto>('/api/product-market-data'),
     prepareProductMarketData: (command: MarketDataPreparationRequestDto) =>
@@ -141,90 +91,6 @@ export function createApiClient({
         method: 'POST',
         body: JSON.stringify(command),
       }),
-    getProductPairStudyContext: (options: {
-      assetA: string
-      assetB: string
-      horizon: 'short' | 'medium' | 'swing'
-      orientation?: string
-      venue?: 'binance' | 'gate'
-      analysisReference?: string
-    }) => {
-      const query = new URLSearchParams({
-        asset_a: options.assetA,
-        asset_b: options.assetB,
-        horizon: options.horizon,
-      })
-      if (options.orientation) query.set('orientation', options.orientation)
-      if (options.venue) query.set('venue', options.venue)
-      if (options.analysisReference) {
-        query.set('analysis_reference', options.analysisReference)
-      }
-      return request<ProductPairStudyContextDto>(
-        `/api/product-pair-study/context?${query}`,
-      )
-    },
-    getProductPairStudySeries: (options: {
-      assetA: string
-      assetB: string
-      horizon: 'short' | 'medium' | 'swing'
-      orientation?: string
-      venue?: 'binance' | 'gate'
-      analysisReference?: string
-    }) => {
-      const query = new URLSearchParams({
-        asset_a: options.assetA,
-        asset_b: options.assetB,
-        horizon: options.horizon,
-      })
-      if (options.orientation) query.set('orientation', options.orientation)
-      if (options.venue) query.set('venue', options.venue)
-      if (options.analysisReference) {
-        query.set('analysis_reference', options.analysisReference)
-      }
-      return request<ProductPairStudySeriesDto>(
-        `/api/product-pair-study/series?${query}`,
-      )
-    },
-    getResearchRecipeProductContext: (options: {
-      researchObject: 'pair' | 'fixed_basket'
-      horizon?: 'short' | 'medium' | 'swing'
-      assets?: string[]
-      orientation?: string
-      venue?: 'binance' | 'gate'
-    }) => {
-      const query = new URLSearchParams({ research_object: options.researchObject })
-      if (options.horizon) query.set('horizon', options.horizon)
-      for (const asset of options.assets ?? []) query.append('asset', asset)
-      if (options.orientation) query.set('orientation', options.orientation)
-      if (options.venue) query.set('venue', options.venue)
-      return request<ResearchRecipeProductContextDto>(
-        `/api/research-recipes/product-context?${query}`,
-      )
-    },
-    grantProductPairStudyTransientUsdtAuthority: () =>
-      request<ProductPairStudyBridgeAuthorityDto>(
-        '/api/product-pair-study/transient-usdt-authority',
-        { method: 'POST' },
-      ),
-    checkResearchRecipeSupport: (command: ResearchRecipeCheckRequestDto) =>
-      request<ResearchRecipeCheckV1>('/api/research-recipes/check-support', {
-        method: 'POST',
-        body: JSON.stringify(command),
-      }),
-    runResearchRecipe: (command: ResearchRecipeRunRequestDto) =>
-      request<OperationRefDto>('/api/research-recipes/run', {
-        method: 'POST',
-        body: JSON.stringify(command),
-      }),
-    getResearchRecipeRunLineage: (runId: string) =>
-      request<ResearchRecipeRunLineageDto>(
-        `/api/research-recipes/runs/${encodeURIComponent(runId)}/lineage`,
-      ),
-    startCurrentApprovedResearchFollowUp: (scanId: string) =>
-      request<OperationRefDto>(
-        `/api/product-research/${encodeURIComponent(scanId)}/follow-up`,
-        { method: 'POST' },
-      ),
     refreshResearchUniverseDirectory: () =>
       request<ResearchUniverseDto>('/api/research-universe/directory-refresh', {
         method: 'POST',
@@ -240,7 +106,6 @@ export function createApiClient({
         body: JSON.stringify(command),
       }),
     listExperiments: () => request<ExperimentListDto>('/api/experiments'),
-    getHistory: () => request<HistoryDto>('/api/history'),
     getExperiment: (runId: string) =>
       request<ExperimentDetailDto>(`/api/experiments/${encodeURIComponent(runId)}`),
     getPortfolio: (runId: string) =>
@@ -283,103 +148,9 @@ export function createApiClient({
         `/api/pairs/${encodeURIComponent(options.assetX)}/${encodeURIComponent(options.assetY)}/evidence?${query}`,
       )
     },
-    getScannerProtocol: () => request<ScannerProtocolDto>('/api/scanner/protocol'),
-    listScans: () => request<ScanListDto>('/api/scans'),
-    getScan: (scanId: string) =>
-      request<ScanDetailDto>(`/api/scans/${encodeURIComponent(scanId)}`),
-    listScanCandidates: (scanId: string) =>
-      request<CandidateListDto>(
-        `/api/scans/${encodeURIComponent(scanId)}/candidates`,
-      ),
-    getScanCandidate: (scanId: string, candidateId: string) =>
-      request<CandidateDetailDto>(
-        `/api/scans/${encodeURIComponent(scanId)}/candidates/${encodeURIComponent(candidateId)}`,
-      ),
-    getProductResearchIdeaCurrentEvidence: (scanId: string, candidateId: string) =>
-      request<ResearchIdeaCurrentEvidenceDto>(
-        `/api/product-research/${encodeURIComponent(scanId)}/ideas/${encodeURIComponent(candidateId)}/current-evidence`,
-      ),
-    startProductResearchIdeaCurrentEvidence: (scanId: string, candidateId: string) =>
-      request<ResearchIdeaCurrentEvidenceDto>(
-        `/api/product-research/${encodeURIComponent(scanId)}/ideas/${encodeURIComponent(candidateId)}/current-evidence`,
-        { method: 'POST' },
-      ),
-    stopProductResearchIdeaCurrentEvidence: (scanId: string, candidateId: string) =>
-      request<ResearchIdeaCurrentEvidenceDto>(
-        `/api/product-research/${encodeURIComponent(scanId)}/ideas/${encodeURIComponent(candidateId)}/current-evidence`,
-        { method: 'DELETE' },
-      ),
-    assessProductResearchIdeaAmount: (
-      scanId: string,
-      candidateId: string,
-      command: ProductAmountAssessmentRequestDto,
-    ) =>
-      request<OperationRefDto>(
-        `/api/product-research/${encodeURIComponent(scanId)}/ideas/${encodeURIComponent(candidateId)}/amount-assessments`,
-        { method: 'POST', body: JSON.stringify(command) },
-      ),
-    listForwardCohorts: () =>
-      request<ForwardCohortListDto>('/api/forward/cohorts'),
-    getForwardCohort: (cohortId: string) =>
-      request<ForwardCohortDetailDto>(
-        `/api/forward/cohorts/${encodeURIComponent(cohortId)}`,
-      ),
-    getForwardCaptureReadiness: (
-      cohortId: string,
-      options: { checkpointId: string; asOf: string },
-    ) => {
-      const query = new URLSearchParams({
-        checkpoint_id: options.checkpointId,
-        as_of: options.asOf,
-      })
-      return request<CaptureReadinessDto>(
-        `/api/forward/cohorts/${encodeURIComponent(cohortId)}/capture-readiness?${query}`,
-      )
-    },
-    listBaskets: () => request<BasketListDto>('/api/baskets'),
-    getBasket: (basketId: string) =>
-      request<BasketDetailDto>(`/api/baskets/${encodeURIComponent(basketId)}`),
     listOperations: () => request<OperationListDto>('/api/operations'),
     getOperation: (operationId: string) =>
       request<OperationDto>(`/api/operations/${encodeURIComponent(operationId)}`),
-    runScan: (command: RunScanRequestDto) =>
-      request<OperationRefDto>('/api/scans', {
-        method: 'POST',
-        body: JSON.stringify(command),
-      }),
-    generateAssetMomentum: (scanId: string, command: MomentumGenerationRequestDto) =>
-      request<OperationRefDto>(
-        `/api/scans/${encodeURIComponent(scanId)}/momentum-generations`,
-        { method: 'POST', body: JSON.stringify(command) },
-      ),
-    freezeForwardCohort: (command: FreezeForwardCohortRequestDto) =>
-      request<OperationRefDto>('/api/forward/cohorts', {
-        method: 'POST',
-        body: JSON.stringify(command),
-      }),
-    advanceForwardCohort: (
-      cohortId: string,
-      command: AdvanceForwardCohortRequestDto,
-    ) =>
-      request<OperationRefDto>(
-        `/api/forward/cohorts/${encodeURIComponent(cohortId)}/advances`,
-        { method: 'POST', body: JSON.stringify(command) },
-      ),
-    capturePublicEvidence: (command: CapturePublicEvidenceRequestDto) =>
-      request<OperationRefDto>('/api/captures', {
-        method: 'POST',
-        body: JSON.stringify(command),
-      }),
-    qualifyCandidate: (command: QualificationRequestDto) =>
-      request<OperationRefDto>('/api/qualifications', {
-        method: 'POST',
-        body: JSON.stringify(command),
-      }),
-    runBasket: (command: BasketRunRequestDto) =>
-      request<OperationRefDto>('/api/basket-runs', {
-        method: 'POST',
-        body: JSON.stringify(command),
-      }),
     getAnchorLens: (options: {
       runId: string
       assetX: string

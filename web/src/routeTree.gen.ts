@@ -11,23 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LabRouteImport } from './routes/lab'
-import { Route as UniverseRouteImport } from './routes/universe'
-import { Route as BasketsIndexRouteImport } from './routes/baskets.index'
-import { Route as BasketsBasketIdRouteImport } from './routes/baskets.$basketId'
-import { Route as ExperimentsIndexRouteImport } from './routes/experiments.index'
-import { Route as ExperimentsRunIdRouteImport } from './routes/experiments.$runId'
 import { Route as OperationsIndexRouteImport } from './routes/operations.index'
 import { Route as OperationsOperationIdRouteImport } from './routes/operations.$operationId'
-import { Route as PaperOperationsIndexRouteImport } from './routes/paper-operations.index'
-import { Route as PaperOperationsOperationIdRouteImport } from './routes/paper-operations.$operationId'
-import { Route as PortfolioRunIdRouteImport } from './routes/portfolio.$runId'
-import { Route as ProspectiveIndexRouteImport } from './routes/prospective.index'
-import { Route as ProspectiveCohortIdRouteImport } from './routes/prospective.$cohortId'
-import { Route as ResearchIndexRouteImport } from './routes/research.index'
-import { Route as ScannerIndexRouteImport } from './routes/scanner.index'
-import { Route as ScannerScanIdRouteImport } from './routes/scanner.$scanId'
-import { Route as CandidateScanIdCandidateIdRouteImport } from './routes/candidate.$scanId.$candidateId'
-import { Route as PairRunIdAssetXAssetYRouteImport } from './routes/pair.$runId.$assetX.$assetY'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -37,31 +22,6 @@ const IndexRoute = IndexRouteImport.update({
 const LabRoute = LabRouteImport.update({
   id: '/lab',
   path: '/lab',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const UniverseRoute = UniverseRouteImport.update({
-  id: '/universe',
-  path: '/universe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BasketsIndexRoute = BasketsIndexRouteImport.update({
-  id: '/baskets/',
-  path: '/baskets/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BasketsBasketIdRoute = BasketsBasketIdRouteImport.update({
-  id: '/baskets/$basketId',
-  path: '/baskets/$basketId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExperimentsIndexRoute = ExperimentsIndexRouteImport.update({
-  id: '/experiments/',
-  path: '/experiments/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExperimentsRunIdRoute = ExperimentsRunIdRouteImport.update({
-  id: '/experiments/$runId',
-  path: '/experiments/$runId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OperationsIndexRoute = OperationsIndexRouteImport.update({
@@ -74,209 +34,39 @@ const OperationsOperationIdRoute = OperationsOperationIdRouteImport.update({
   path: '/operations/$operationId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PaperOperationsIndexRoute = PaperOperationsIndexRouteImport.update({
-  id: '/paper-operations/',
-  path: '/paper-operations/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PaperOperationsOperationIdRoute =
-  PaperOperationsOperationIdRouteImport.update({
-    id: '/paper-operations/$operationId',
-    path: '/paper-operations/$operationId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const PortfolioRunIdRoute = PortfolioRunIdRouteImport.update({
-  id: '/portfolio/$runId',
-  path: '/portfolio/$runId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProspectiveIndexRoute = ProspectiveIndexRouteImport.update({
-  id: '/prospective/',
-  path: '/prospective/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProspectiveCohortIdRoute = ProspectiveCohortIdRouteImport.update({
-  id: '/prospective/$cohortId',
-  path: '/prospective/$cohortId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResearchIndexRoute = ResearchIndexRouteImport.update({
-  id: '/research/',
-  path: '/research/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ScannerIndexRoute = ScannerIndexRouteImport.update({
-  id: '/scanner/',
-  path: '/scanner/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ScannerScanIdRoute = ScannerScanIdRouteImport.update({
-  id: '/scanner/$scanId',
-  path: '/scanner/$scanId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CandidateScanIdCandidateIdRoute =
-  CandidateScanIdCandidateIdRouteImport.update({
-    id: '/candidate/$scanId/$candidateId',
-    path: '/candidate/$scanId/$candidateId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const PairRunIdAssetXAssetYRoute = PairRunIdAssetXAssetYRouteImport.update({
-  id: '/pair/$runId/$assetX/$assetY',
-  path: '/pair/$runId/$assetX/$assetY',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/lab': typeof LabRoute
-  '/universe': typeof UniverseRoute
-  '/baskets/$basketId': typeof BasketsBasketIdRoute
-  '/experiments/$runId': typeof ExperimentsRunIdRoute
   '/operations/$operationId': typeof OperationsOperationIdRoute
-  '/paper-operations/$operationId': typeof PaperOperationsOperationIdRoute
-  '/portfolio/$runId': typeof PortfolioRunIdRoute
-  '/prospective/$cohortId': typeof ProspectiveCohortIdRoute
-  '/scanner/$scanId': typeof ScannerScanIdRoute
-  '/baskets/': typeof BasketsIndexRoute
-  '/experiments/': typeof ExperimentsIndexRoute
   '/operations/': typeof OperationsIndexRoute
-  '/paper-operations/': typeof PaperOperationsIndexRoute
-  '/prospective/': typeof ProspectiveIndexRoute
-  '/research/': typeof ResearchIndexRoute
-  '/scanner/': typeof ScannerIndexRoute
-  '/candidate/$scanId/$candidateId': typeof CandidateScanIdCandidateIdRoute
-  '/pair/$runId/$assetX/$assetY': typeof PairRunIdAssetXAssetYRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/lab': typeof LabRoute
-  '/universe': typeof UniverseRoute
-  '/baskets/$basketId': typeof BasketsBasketIdRoute
-  '/experiments/$runId': typeof ExperimentsRunIdRoute
   '/operations/$operationId': typeof OperationsOperationIdRoute
-  '/paper-operations/$operationId': typeof PaperOperationsOperationIdRoute
-  '/portfolio/$runId': typeof PortfolioRunIdRoute
-  '/prospective/$cohortId': typeof ProspectiveCohortIdRoute
-  '/scanner/$scanId': typeof ScannerScanIdRoute
-  '/baskets': typeof BasketsIndexRoute
-  '/experiments': typeof ExperimentsIndexRoute
   '/operations': typeof OperationsIndexRoute
-  '/paper-operations': typeof PaperOperationsIndexRoute
-  '/prospective': typeof ProspectiveIndexRoute
-  '/research': typeof ResearchIndexRoute
-  '/scanner': typeof ScannerIndexRoute
-  '/candidate/$scanId/$candidateId': typeof CandidateScanIdCandidateIdRoute
-  '/pair/$runId/$assetX/$assetY': typeof PairRunIdAssetXAssetYRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/lab': typeof LabRoute
-  '/universe': typeof UniverseRoute
-  '/baskets/$basketId': typeof BasketsBasketIdRoute
-  '/experiments/$runId': typeof ExperimentsRunIdRoute
   '/operations/$operationId': typeof OperationsOperationIdRoute
-  '/paper-operations/$operationId': typeof PaperOperationsOperationIdRoute
-  '/portfolio/$runId': typeof PortfolioRunIdRoute
-  '/prospective/$cohortId': typeof ProspectiveCohortIdRoute
-  '/scanner/$scanId': typeof ScannerScanIdRoute
-  '/baskets/': typeof BasketsIndexRoute
-  '/experiments/': typeof ExperimentsIndexRoute
   '/operations/': typeof OperationsIndexRoute
-  '/paper-operations/': typeof PaperOperationsIndexRoute
-  '/prospective/': typeof ProspectiveIndexRoute
-  '/research/': typeof ResearchIndexRoute
-  '/scanner/': typeof ScannerIndexRoute
-  '/candidate/$scanId/$candidateId': typeof CandidateScanIdCandidateIdRoute
-  '/pair/$runId/$assetX/$assetY': typeof PairRunIdAssetXAssetYRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/lab'
-    | '/universe'
-    | '/baskets/$basketId'
-    | '/experiments/$runId'
-    | '/operations/$operationId'
-    | '/paper-operations/$operationId'
-    | '/portfolio/$runId'
-    | '/prospective/$cohortId'
-    | '/scanner/$scanId'
-    | '/baskets/'
-    | '/experiments/'
-    | '/operations/'
-    | '/paper-operations/'
-    | '/prospective/'
-    | '/research/'
-    | '/scanner/'
-    | '/candidate/$scanId/$candidateId'
-    | '/pair/$runId/$assetX/$assetY'
+  fullPaths: '/' | '/lab' | '/operations/$operationId' | '/operations/'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/lab'
-    | '/universe'
-    | '/baskets/$basketId'
-    | '/experiments/$runId'
-    | '/operations/$operationId'
-    | '/paper-operations/$operationId'
-    | '/portfolio/$runId'
-    | '/prospective/$cohortId'
-    | '/scanner/$scanId'
-    | '/baskets'
-    | '/experiments'
-    | '/operations'
-    | '/paper-operations'
-    | '/prospective'
-    | '/research'
-    | '/scanner'
-    | '/candidate/$scanId/$candidateId'
-    | '/pair/$runId/$assetX/$assetY'
-  id:
-    | '__root__'
-    | '/'
-    | '/lab'
-    | '/universe'
-    | '/baskets/$basketId'
-    | '/experiments/$runId'
-    | '/operations/$operationId'
-    | '/paper-operations/$operationId'
-    | '/portfolio/$runId'
-    | '/prospective/$cohortId'
-    | '/scanner/$scanId'
-    | '/baskets/'
-    | '/experiments/'
-    | '/operations/'
-    | '/paper-operations/'
-    | '/prospective/'
-    | '/research/'
-    | '/scanner/'
-    | '/candidate/$scanId/$candidateId'
-    | '/pair/$runId/$assetX/$assetY'
+  to: '/' | '/lab' | '/operations/$operationId' | '/operations'
+  id: '__root__' | '/' | '/lab' | '/operations/$operationId' | '/operations/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LabRoute: typeof LabRoute
-  UniverseRoute: typeof UniverseRoute
-  BasketsBasketIdRoute: typeof BasketsBasketIdRoute
-  ExperimentsRunIdRoute: typeof ExperimentsRunIdRoute
   OperationsOperationIdRoute: typeof OperationsOperationIdRoute
-  PaperOperationsOperationIdRoute: typeof PaperOperationsOperationIdRoute
-  PortfolioRunIdRoute: typeof PortfolioRunIdRoute
-  ProspectiveCohortIdRoute: typeof ProspectiveCohortIdRoute
-  ScannerScanIdRoute: typeof ScannerScanIdRoute
-  BasketsIndexRoute: typeof BasketsIndexRoute
-  ExperimentsIndexRoute: typeof ExperimentsIndexRoute
   OperationsIndexRoute: typeof OperationsIndexRoute
-  PaperOperationsIndexRoute: typeof PaperOperationsIndexRoute
-  ProspectiveIndexRoute: typeof ProspectiveIndexRoute
-  ResearchIndexRoute: typeof ResearchIndexRoute
-  ScannerIndexRoute: typeof ScannerIndexRoute
-  CandidateScanIdCandidateIdRoute: typeof CandidateScanIdCandidateIdRoute
-  PairRunIdAssetXAssetYRoute: typeof PairRunIdAssetXAssetYRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -295,41 +85,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/universe': {
-      id: '/universe'
-      path: '/universe'
-      fullPath: '/universe'
-      preLoaderRoute: typeof UniverseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/baskets/': {
-      id: '/baskets/'
-      path: '/baskets'
-      fullPath: '/baskets/'
-      preLoaderRoute: typeof BasketsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/baskets/$basketId': {
-      id: '/baskets/$basketId'
-      path: '/baskets/$basketId'
-      fullPath: '/baskets/$basketId'
-      preLoaderRoute: typeof BasketsBasketIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/experiments/': {
-      id: '/experiments/'
-      path: '/experiments'
-      fullPath: '/experiments/'
-      preLoaderRoute: typeof ExperimentsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/experiments/$runId': {
-      id: '/experiments/$runId'
-      path: '/experiments/$runId'
-      fullPath: '/experiments/$runId'
-      preLoaderRoute: typeof ExperimentsRunIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/operations/': {
       id: '/operations/'
       path: '/operations'
@@ -344,99 +99,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OperationsOperationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/paper-operations/': {
-      id: '/paper-operations/'
-      path: '/paper-operations'
-      fullPath: '/paper-operations/'
-      preLoaderRoute: typeof PaperOperationsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/paper-operations/$operationId': {
-      id: '/paper-operations/$operationId'
-      path: '/paper-operations/$operationId'
-      fullPath: '/paper-operations/$operationId'
-      preLoaderRoute: typeof PaperOperationsOperationIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/portfolio/$runId': {
-      id: '/portfolio/$runId'
-      path: '/portfolio/$runId'
-      fullPath: '/portfolio/$runId'
-      preLoaderRoute: typeof PortfolioRunIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/prospective/': {
-      id: '/prospective/'
-      path: '/prospective'
-      fullPath: '/prospective/'
-      preLoaderRoute: typeof ProspectiveIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/prospective/$cohortId': {
-      id: '/prospective/$cohortId'
-      path: '/prospective/$cohortId'
-      fullPath: '/prospective/$cohortId'
-      preLoaderRoute: typeof ProspectiveCohortIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/research/': {
-      id: '/research/'
-      path: '/research'
-      fullPath: '/research/'
-      preLoaderRoute: typeof ResearchIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/scanner/': {
-      id: '/scanner/'
-      path: '/scanner'
-      fullPath: '/scanner/'
-      preLoaderRoute: typeof ScannerIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/scanner/$scanId': {
-      id: '/scanner/$scanId'
-      path: '/scanner/$scanId'
-      fullPath: '/scanner/$scanId'
-      preLoaderRoute: typeof ScannerScanIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/candidate/$scanId/$candidateId': {
-      id: '/candidate/$scanId/$candidateId'
-      path: '/candidate/$scanId/$candidateId'
-      fullPath: '/candidate/$scanId/$candidateId'
-      preLoaderRoute: typeof CandidateScanIdCandidateIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pair/$runId/$assetX/$assetY': {
-      id: '/pair/$runId/$assetX/$assetY'
-      path: '/pair/$runId/$assetX/$assetY'
-      fullPath: '/pair/$runId/$assetX/$assetY'
-      preLoaderRoute: typeof PairRunIdAssetXAssetYRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LabRoute: LabRoute,
-  UniverseRoute: UniverseRoute,
-  BasketsBasketIdRoute: BasketsBasketIdRoute,
-  ExperimentsRunIdRoute: ExperimentsRunIdRoute,
   OperationsOperationIdRoute: OperationsOperationIdRoute,
-  PaperOperationsOperationIdRoute: PaperOperationsOperationIdRoute,
-  PortfolioRunIdRoute: PortfolioRunIdRoute,
-  ProspectiveCohortIdRoute: ProspectiveCohortIdRoute,
-  ScannerScanIdRoute: ScannerScanIdRoute,
-  BasketsIndexRoute: BasketsIndexRoute,
-  ExperimentsIndexRoute: ExperimentsIndexRoute,
   OperationsIndexRoute: OperationsIndexRoute,
-  PaperOperationsIndexRoute: PaperOperationsIndexRoute,
-  ProspectiveIndexRoute: ProspectiveIndexRoute,
-  ResearchIndexRoute: ResearchIndexRoute,
-  ScannerIndexRoute: ScannerIndexRoute,
-  CandidateScanIdCandidateIdRoute: CandidateScanIdCandidateIdRoute,
-  PairRunIdAssetXAssetYRoute: PairRunIdAssetXAssetYRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

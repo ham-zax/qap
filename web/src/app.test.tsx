@@ -4,15 +4,21 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { App, createQapApp } from './app'
 
+const workspace = {
+  schema_version: 'qap.api.workspace_status.v1', workspace_mode: 'local_market',
+  workspace_root: '/test', market_data_status: 'catalog_detected',
+  market_data_catalog_updated_at: null, product_maintenance_status: 'idle',
+  current_evidence_collector_status: 'not_running',
+}
+
 describe('QAP route errors', () => {
   it('opens the Lab as the local workspace entry point', async () => {
     const app = createQapApp({
-      fetchImpl: vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({
-        schema_version: 'qap.api.workspace_status.v1', workspace_mode: 'local_market',
-        workspace_root: '/test', market_data_status: 'catalog_detected',
-        market_data_catalog_updated_at: null, product_maintenance_status: 'idle',
-        current_evidence_collector_status: 'not_running',
-      }), { headers: { 'Content-Type': 'application/json' } })),
+      fetchImpl: vi.fn<typeof fetch>().mockImplementation(async () =>
+        new Response(JSON.stringify(workspace), {
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
       history: createMemoryHistory({ initialEntries: ['/'] }),
     })
     await app.router.load()
@@ -20,12 +26,6 @@ describe('QAP route errors', () => {
   })
 
   it('renders an unknown route inside exactly one application shell', async () => {
-    const workspace = {
-      schema_version: 'qap.api.workspace_status.v1', workspace_mode: 'local_market',
-      workspace_root: '/test', market_data_status: 'catalog_detected',
-      market_data_catalog_updated_at: null, product_maintenance_status: 'idle',
-      current_evidence_collector_status: 'not_running',
-    }
     const app = createQapApp({
       fetchImpl: vi.fn<typeof fetch>().mockImplementation(async () =>
         new Response(JSON.stringify(workspace), {
@@ -51,8 +51,8 @@ describe('QAP route errors', () => {
       new Response(
         JSON.stringify({
           error: {
-            code: 'paper_operation_not_found',
-            message: 'Paper operation was not found.',
+            code: 'operation_not_found',
+            message: 'Operation was not found.',
             context: { operation_id: 'missing-operation' },
           },
         }),
@@ -65,7 +65,7 @@ describe('QAP route errors', () => {
     const app = createQapApp({
       fetchImpl,
       history: createMemoryHistory({
-        initialEntries: ['/paper-operations/missing-operation'],
+        initialEntries: ['/operations/missing-operation'],
       }),
     })
 
@@ -77,10 +77,12 @@ describe('QAP route errors', () => {
     ).toBeVisible()
     expect(screen.getByRole('link', { name: 'QAP' })).toHaveAttribute('href', '/')
     const nav = screen.getByRole('navigation', { name: 'Primary navigation' })
-    expect(within(nav).getByRole('link', { name: 'Research' })).toHaveAttribute('href', '/research')
-    expect(within(nav).getByRole('link', { name: 'Portfolios' })).toHaveAttribute('href', '/baskets')
-    expect(within(nav).getByRole('link', { name: 'History' })).toHaveAttribute('href', '/experiments')
+    expect(within(nav).getByRole('link', { name: 'Lab' })).toHaveAttribute('href', '/lab')
+    expect(within(nav).getByRole('link', { name: 'Activity' })).toHaveAttribute(
+      'href',
+      '/operations',
+    )
     expect(screen.getByRole('button', { name: 'Retry' })).toBeVisible()
-    expect(screen.getByText('paper_operation_not_found')).toBeVisible()
+    expect(screen.getByText('operation_not_found')).toBeVisible()
   })
 })

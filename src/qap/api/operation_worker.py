@@ -7,7 +7,6 @@ from pathlib import Path
 
 from pydantic import JsonValue
 
-from qap.api.basket_schemas import BasketRunRequestDto
 from qap.api.errors import ApiBoundaryError
 from qap.api.operations import (
     OperationKind,
@@ -15,11 +14,6 @@ from qap.api.operations import (
     OperationStore,
 )
 from qap.api.pair_rotation_worker import execute_pair_rotation
-from qap.api.product_current_evidence_schemas import (
-    ProductQualificationWorkerRequestDto,
-)
-from qap.api.product_research_schemas import ProductRunScanRequestDto
-from qap.api.research_recipe_schemas import ResearchRecipeRunRequestDto
 from qap.api.scanner_schemas import (
     AdvanceForwardCohortRequestDto,
     CapturePublicEvidenceRequestDto,
@@ -34,17 +28,6 @@ from qap.market.microstructure_storage import (
 )
 from qap.market.public_capture import CaptureKind, capture_public_spot
 from qap.portfolio import AssetId
-from qap.product_current_approved import CurrentApprovedResearch
-from qap.product_current_evidence import (
-    ProductCurrentEvidenceStore,
-    resolve_frozen_instrument,
-)
-from qap.product_market_data import ProductMarketData
-from qap.product_pair_study import ProductPairStudy
-from qap.product_research_authority import ProductResearchAuthority
-from qap.product_universe import ProductUniverse
-from qap.research_recipe_entry import ResearchRecipeService
-from qap.scanner.basket_artifacts import read_basket_generation
 from qap.scanner.catalog import load_scanner_catalog
 from qap.scanner.models import ScannerPinSpec
 from qap.scanner.prospective_integrity import validate_completed_generation
@@ -55,7 +38,6 @@ from qap.scanner_entry import (
     freeze_scan_with_qap,
     generate_asset_momentum,
     qualify_forward_with_qap,
-    run_basket_with_qap,
     run_scan_with_qap,
 )
 
@@ -91,30 +73,6 @@ def _run_scan(request: RunScanRequestDto, settings: object) -> dict[str, JsonVal
         run_root=run_root,
         pins=pins,
         manual_replay_candidate_ids=request.manual_replay_candidate_ids,
-        repository_root=repository_root,
-    )
-    return {"scan_id": result.scan_id}
-
-
-def _run_current_approved_scan(
-    request: ProductRunScanRequestDto,
-    settings: object,
-) -> dict[str, JsonValue]:
-    data_root = _path(getattr(settings, "data_root"), field="data_root")
-    run_root = _path(getattr(settings, "run_root"), field="run_root")
-    repository_root = _path(
-        getattr(settings, "repository_root"),
-        field="repository_root",
-    )
-    owner = CurrentApprovedResearch(
-        ProductUniverse(run_root),
-        ProductMarketData(run_root, data_root),
-    )
-    result = owner.run(
-        horizon=ScannerHorizon(request.horizon),
-        readiness_id=request.readiness_id,
-        data_root=data_root,
-        run_root=run_root,
         repository_root=repository_root,
     )
     return {"scan_id": result.scan_id}
@@ -211,14 +169,6 @@ def _qualify(
 ) -> dict[str, JsonValue]:
     run_root = _path(getattr(settings, "run_root"), field="run_root")
     data_root = _path(getattr(settings, "data_root"), field="data_root")
-    capture_evidence = None
-    if isinstance(request, ProductQualificationWorkerRequestDto):
-        target = resolve_frozen_instrument(
-            run_root,
-            active_cohort_id=request.cohort_id,
-            active_freeze_id=request.active_freeze_id,
-        )
-        capture_evidence = ProductCurrentEvidenceStore(run_root).evidence(target)
     path = qualify_forward_with_qap(
         cohort_root=run_root / "scanner-forward" / request.cohort_id,
         checkpoint_id=request.checkpoint_id,
@@ -231,7 +181,6 @@ def _qualify(
         repository_root=_path(
             getattr(settings, "repository_root"), field="repository_root"
         ),
-        capture_evidence=capture_evidence,
     )
     document = read_qualification(path)
     return {
@@ -241,77 +190,12 @@ def _qualify(
     }
 
 
-def _basket(
-    request: BasketRunRequestDto,
-    settings: object,
-) -> dict[str, JsonValue]:
-    run_root = _path(getattr(settings, "run_root"), field="run_root")
-    path = run_basket_with_qap(
-        scan_id=request.scan_id,
-        venue=request.venue,
-        horizon=ScannerHorizon(request.horizon),
-        decision_resolution=request.decision_resolution,
-        economic_assets=request.economic_assets,
-        candidate_ids=request.candidate_ids,
-        data_root=_path(getattr(settings, "data_root"), field="data_root"),
-        run_root=run_root,
-        momentum_scan_id=request.momentum_scan_id,
-        repository_root=_path(
-            getattr(settings, "repository_root"), field="repository_root"
-        ),
-    )
-    definition, attempt, _manifest = read_basket_generation(path)
-    return {
-        "basket_id": definition.basket_id,
-        "qap_run_id": attempt.qap_run_id,
-        "economic_gate_status": (
-            None
-            if attempt.economic_gate_status is None
-            else attempt.economic_gate_status.value
-        ),
-    }
-
-
-def _research_recipe(
-    request: ResearchRecipeRunRequestDto,
-    settings: object,
-) -> dict[str, JsonValue]:
-    data_root = _path(getattr(settings, "data_root"), field="data_root")
-    run_root = _path(getattr(settings, "run_root"), field="run_root")
-    repository_root = _path(
-        getattr(settings, "repository_root"),
-        field="repository_root",
-    )
-    universe = ProductUniverse(run_root)
-    market_data = ProductMarketData(run_root, data_root)
-    authority = ProductResearchAuthority(universe)
-    pair_study = ProductPairStudy(universe, market_data, authority)
-    current_approved = CurrentApprovedResearch(universe, market_data)
-    result = ResearchRecipeService(
-        run_root=run_root,
-        data_root=data_root,
-        repository_root=repository_root,
-        current_approved=current_approved,
-        pair_study=pair_study,
-        product_research_authority=authority,
-    ).execute(request.recipe)
-    return {
-        "compilation_sha256": result.compilation_sha256,
-        "run_ids": list(result.run_ids),
-    }
-
-
 def _execute(
     kind: OperationKind,
     payload: dict[str, JsonValue],
     settings: object,
 ) -> dict[str, JsonValue]:
     if kind is OperationKind.RUN_SCAN:
-        if payload.get("research_mode") == "current_approved":
-            return _run_current_approved_scan(
-                ProductRunScanRequestDto.model_validate(payload),
-                settings,
-            )
         return _run_scan(RunScanRequestDto.model_validate(payload), settings)
     if kind is OperationKind.GENERATE_ASSET_MOMENTUM:
         scan_id = str(payload["scan_id"])
@@ -339,17 +223,7 @@ def _execute(
             settings,
         )
     if kind is OperationKind.QUALIFY_CANDIDATE:
-        if payload.get("evidence_source") == "product_collector":
-            request = ProductQualificationWorkerRequestDto.model_validate(payload)
-        else:
-            request = QualificationRequestDto.model_validate(payload)
-        return _qualify(request, settings)
-    if kind is OperationKind.RUN_BASKET:
-        return _basket(BasketRunRequestDto.model_validate(payload), settings)
-    if kind is OperationKind.RUN_RESEARCH_RECIPE:
-        return _research_recipe(
-            ResearchRecipeRunRequestDto.model_validate(payload), settings
-        )
+        return _qualify(QualificationRequestDto.model_validate(payload), settings)
     raise RuntimeError(f"unsupported operation kind: {kind.value}")
 
 

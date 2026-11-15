@@ -15,124 +15,10 @@ export function createQapQueries(client: QapApiClient) {
         queryKey: ['research-universe'] as const,
         queryFn: () => client.getResearchUniverse(),
       }),
-    currentApprovedReadiness: (horizon: 'short' | 'medium' | 'swing') =>
-      queryOptions({
-        queryKey: ['current-approved-readiness', horizon] as const,
-        queryFn: () => client.getCurrentApprovedResearchReadiness(horizon),
-      }),
     productMarketData: () =>
       queryOptions({
         queryKey: ['product-market-data'] as const,
         queryFn: () => client.getProductMarketData(),
-      }),
-    productPairStudyContext: (options: {
-      assetA: string
-      assetB: string
-      horizon: 'short' | 'medium' | 'swing'
-      orientation?: string
-      venue?: 'binance' | 'gate'
-      analysisReference?: string
-    }) =>
-      queryOptions({
-        queryKey: [
-          'product-pair-study-context',
-          options.assetA,
-          options.assetB,
-          options.horizon,
-          options.orientation ?? 'default',
-          options.venue ?? 'default',
-          options.analysisReference ?? 'none',
-        ] as const,
-        queryFn: () => client.getProductPairStudyContext(options),
-      }),
-    productPairStudySeries: (options: {
-      assetA: string
-      assetB: string
-      horizon: 'short' | 'medium' | 'swing'
-      orientation?: string
-      venue?: 'binance' | 'gate'
-      analysisReference?: string
-    }) =>
-      queryOptions({
-        queryKey: [
-          'product-pair-study-series',
-          options.assetA,
-          options.assetB,
-          options.horizon,
-          options.orientation ?? 'default',
-          options.venue ?? 'default',
-          options.analysisReference ?? 'none',
-        ] as const,
-        queryFn: () => client.getProductPairStudySeries(options),
-      }),
-    researchRecipeProductContext: (options: {
-      researchObject: 'pair' | 'fixed_basket'
-      horizon?: 'short' | 'medium' | 'swing'
-      assets?: string[]
-      orientation?: string
-      venue?: 'binance' | 'gate'
-    }) =>
-      queryOptions({
-        queryKey: [
-          'research-recipe-product-context',
-          options.researchObject,
-          options.horizon ?? 'none',
-          options.orientation ?? 'default',
-          options.venue ?? 'default',
-          ...(options.assets ?? []),
-        ] as const,
-        queryFn: () => client.getResearchRecipeProductContext(options),
-      }),
-    researchRecipeRunLineage: (runId: string) =>
-      queryOptions({
-        queryKey: ['research-recipe-run-lineage', runId] as const,
-        queryFn: () => client.getResearchRecipeRunLineage(runId),
-      }),
-    scannerProtocol: () =>
-      queryOptions({
-        queryKey: ['scanner-protocol'] as const,
-        queryFn: () => client.getScannerProtocol(),
-        staleTime: Number.POSITIVE_INFINITY,
-      }),
-    scans: () =>
-      queryOptions({
-        queryKey: ['scans'] as const,
-        queryFn: () => client.listScans(),
-      }),
-    scan: (scanId: string) =>
-      queryOptions({
-        queryKey: ['scan', scanId] as const,
-        queryFn: () => client.getScan(scanId),
-      }),
-    scanCandidates: (scanId: string) =>
-      queryOptions({
-        queryKey: ['scan-candidates', scanId] as const,
-        queryFn: () => client.listScanCandidates(scanId),
-      }),
-    scanCandidate: (scanId: string, candidateId: string) =>
-      queryOptions({
-        queryKey: ['scan-candidate', scanId, candidateId] as const,
-        queryFn: () => client.getScanCandidate(scanId, candidateId),
-      }),
-    forwardCohorts: () =>
-      queryOptions({
-        queryKey: ['forward-cohorts'] as const,
-        queryFn: () => client.listForwardCohorts(),
-      }),
-    forwardCohort: (cohortId: string) =>
-      queryOptions({
-        queryKey: ['forward-cohort', cohortId] as const,
-        queryFn: () => client.getForwardCohort(cohortId),
-      }),
-    baskets: () =>
-      queryOptions({
-        queryKey: ['baskets'] as const,
-        queryFn: () => client.listBaskets(),
-      }),
-    basket: (basketId: string) =>
-      queryOptions({
-        queryKey: ['basket', basketId] as const,
-        queryFn: () => client.getBasket(basketId),
       }),
     operations: () =>
       queryOptions({
@@ -151,11 +37,6 @@ export function createQapQueries(client: QapApiClient) {
       queryOptions({
         queryKey: ['experiments'] as const,
         queryFn: () => client.listExperiments(),
-      }),
-    history: () =>
-      queryOptions({
-        queryKey: ['history'] as const,
-        queryFn: () => client.getHistory(),
       }),
     experiment: (runId: string) =>
       queryOptions({

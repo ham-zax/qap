@@ -4,7 +4,6 @@ import { formatResearchTimestamp } from '../../lib/format'
 import {
   operationDuration,
   operationKindLabel,
-  operationResultLinks,
   operationStatusLabel,
   operationStatusTone,
 } from './presentation'
@@ -22,8 +21,6 @@ function renderValue(value: unknown): string {
 }
 
 export function OperationDetail({ data }: OperationDetailProps) {
-  const links = operationResultLinks(data)
-
   return (
     <section className="min-w-0">
       <header className="mb-8 max-w-4xl">
@@ -69,21 +66,10 @@ export function OperationDetail({ data }: OperationDetailProps) {
           <h2 id="result-heading" className="mt-0 text-lg font-semibold text-foreground">
             Research evidence created
           </h2>
-          <p className="text-sm leading-6 text-secondary">
-            These links point to persisted research or operational evidence. A completed
-            activity status does not imply a positive research verdict.
+          <p className="m-0 text-sm leading-6 text-secondary">
+            A completed activity status does not imply a positive research verdict. Read the
+            exact result metadata below for the persisted references this task produced.
           </p>
-          {links.length ? (
-            <div className="flex flex-wrap gap-3">
-              {links.map((link) => (
-                <a key={link.href} className="font-semibold text-accent" href={link.href}>
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-secondary">No terminal evidence link is available yet.</p>
-          )}
         </section>
 
         <section

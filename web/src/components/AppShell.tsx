@@ -12,21 +12,6 @@ interface AppShellProps {
   collectorStatus?: WorkspaceStatusDto['current_evidence_collector_status']
 }
 
-type PrimarySection = 'research' | 'portfolios' | 'history'
-
-const SECTION_PREFIXES: Record<PrimarySection, string[]> = {
-  research: ['/research', '/scanner', '/candidate', '/pair', '/universe', '/prospective'],
-  portfolios: ['/baskets', '/portfolio'],
-  history: ['/experiments', '/operations', '/paper-operations'],
-}
-
-function activeSection(pathname: string): PrimarySection | null {
-  for (const [section, prefixes] of Object.entries(SECTION_PREFIXES) as [PrimarySection, string[]][]) {
-    if (prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) return section
-  }
-  return null
-}
-
 const navLinkClass =
   'flex min-h-10 flex-1 items-center justify-center rounded-md px-3 py-1.5 text-sm font-semibold no-underline transition-[background-color,color] duration-150 md:flex-none'
 
@@ -37,7 +22,8 @@ function navClass(active: boolean) {
 export function AppShell({ children, workspaceMode, collectorStatus }: AppShellProps) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const guide = screenGuideForPath(pathname)
-  const section = activeSection(pathname)
+  const onLab = pathname === '/lab'
+  const onActivity = pathname === '/operations' || pathname.startsWith('/operations/')
 
   return (
     <div className="app-shell">
@@ -62,23 +48,18 @@ export function AppShell({ children, workspaceMode, collectorStatus }: AppShellP
         </div>
         <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center md:gap-4">
           <nav className="flex w-full flex-row gap-1 md:w-auto" aria-label="Primary navigation">
-            <Link className={navClass(pathname === '/lab')} aria-current={pathname === '/lab' ? 'page' : undefined} to="/lab">
+            <Link className={navClass(onLab)} aria-current={onLab ? 'page' : undefined} to="/lab">
               Lab
             </Link>
-            <Link className={navClass(section === 'research')} aria-current={section === 'research' ? 'page' : undefined} to="/research">
-              Research
-            </Link>
-            <Link className={navClass(section === 'portfolios')} aria-current={section === 'portfolios' ? 'page' : undefined} to="/baskets">
-              Portfolios
-            </Link>
-            <Link className={navClass(section === 'history')} aria-current={section === 'history' ? 'page' : undefined} to="/experiments">
-              History
-            </Link>
-          </nav>
-          <div className="flex items-center justify-between gap-3 md:justify-end">
-            <Link className="text-xs font-semibold text-muted no-underline hover:text-foreground" to="/operations">
+            <Link
+              className={navClass(onActivity)}
+              aria-current={onActivity ? 'page' : undefined}
+              to="/operations"
+            >
               Activity
             </Link>
+          </nav>
+          <div className="flex items-center justify-end gap-3">
             <ThemeToggle />
           </div>
         </div>

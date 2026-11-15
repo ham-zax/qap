@@ -4,7 +4,6 @@ import { formatResearchTimestamp } from '../../lib/format'
 import {
   operationDuration,
   operationKindLabel,
-  operationResultLinks,
   operationStatusLabel,
   operationStatusTone,
 } from './presentation'
@@ -28,9 +27,8 @@ export function OperationList({ data }: OperationListProps) {
           Background activity
         </h1>
         <p className="m-0 text-sm leading-6 text-secondary md:text-base">
-          Follow tasks started from Research, Portfolios, and specialist workflows. Activity tells you
-          whether the work ran; the resulting research evidence is separate and may still
-          be negative or rejected.
+          Follow tasks started from the Lab. Activity tells you whether the work ran; the
+          resulting research evidence is separate and may still be negative or rejected.
         </p>
       </header>
 
@@ -39,7 +37,6 @@ export function OperationList({ data }: OperationListProps) {
       ) : (
         <div className="space-y-4">
           {data.items.map((operation) => {
-            const links = operationResultLinks(operation)
             return (
               <article
                 key={operation.operation_id}
@@ -79,24 +76,6 @@ export function OperationList({ data }: OperationListProps) {
                     <p className="mt-2 mb-0 text-xs text-muted">
                       This operational failure does not determine the scientific result.
                     </p>
-                  </div>
-                ) : null}
-                {links.length ? (
-                  <div className="mt-4 border-t border-border pt-4">
-                    <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                      Evidence created
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-3">
-                      {links.map((link) => (
-                        <a
-                          key={link.href}
-                          className="text-sm font-semibold text-accent"
-                          href={link.href}
-                        >
-                          {link.label}
-                        </a>
-                      ))}
-                    </div>
                   </div>
                 ) : null}
               </article>

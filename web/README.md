@@ -1,6 +1,6 @@
 # QAP analytical workbench
 
-This package contains the Pair Rotation Lab and the existing evidence workbench.
+This package contains the Pair Rotation Lab and the Activity monitor.
 The local workspace opens `/lab`. Coin selection starts data preparation through
 the existing background operation. The backend computes descriptive measurements
 from exact immutable datasets. Portfolio economics remain authoritative in Python.
@@ -95,7 +95,9 @@ pnpm test
 pnpm build
 ```
 
-Rendered verification should also exercise desktop and mobile experiment, portfolio, pair, reciprocal-orientation, anchor, typed-error, keyboard, overflow, console, and WCAG paths with `agent-browser`.
+Rendered verification should also exercise the desktop and mobile Lab and Activity
+paths, including typed-error, keyboard, overflow, console, and WCAG behaviour, with
+`agent-browser`.
 
 ## Evidence boundaries
 

@@ -6,43 +6,28 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from qap.api.basket_views import BasketArtifactReader
 from qap.api.errors import ApiBoundaryError
-from qap.api.history_views import HistoryReader
 from qap.api.operations import OperationManager
 from qap.api.paper_operation_views import PaperOperationReader
 from qap.api.readers import RunArtifactReader
 from qap.api.routes import (
-    baskets_router,
     experiments_router,
     health_router,
-    history_router,
     operations_router,
     pairs_router,
     paper_operations,
     portfolios_router,
-    product_current_evidence_router,
     product_market_data_router,
-    product_pair_study_router,
-    product_research_router,
-    research_recipes_router,
     research_universe_router,
-    scanner_router,
     workspace_router,
 )
 from qap.api.routes.lab_studies import router as lab_studies_router
 from qap.api.routes.pair_rotation import router as pair_rotation_router
-from qap.api.scanner_views import ScannerArtifactReader
 from qap.api.schemas import ErrorDetailDto, ErrorEnvelopeDto
 from qap.api.settings import ApiSettings
-from qap.product_current_approved import CurrentApprovedResearch
-from qap.product_current_evidence import ProductCurrentEvidenceStore
 from qap.product_market_data import ProductMarketData
 from qap.product_market_data_prepare import ProductMarketDataPreparation
-from qap.product_pair_study import ProductPairStudy
-from qap.product_research_authority import ProductResearchAuthority
 from qap.product_universe import ProductUniverse
-from qap.research_recipe_entry import ResearchRecipeService
 
 
 def _error_response(
@@ -80,18 +65,8 @@ def create_app(settings: ApiSettings) -> FastAPI:
     paper_operation_reader = PaperOperationReader(
         settings.run_root / "paper-operations"
     )
-    scanner_reader = ScannerArtifactReader(settings.run_root)
-    basket_reader = BasketArtifactReader(settings.run_root)
     app.state.run_reader = run_reader
     app.state.paper_operation_reader = paper_operation_reader
-    app.state.scanner_reader = scanner_reader
-    app.state.basket_reader = basket_reader
-    app.state.history_reader = HistoryReader(
-        scanner=scanner_reader,
-        baskets=basket_reader,
-        runs=run_reader,
-        paper=paper_operation_reader,
-    )
     product_universe = ProductUniverse(settings.run_root)
     product_market_data = ProductMarketData(
         settings.run_root,
@@ -99,32 +74,10 @@ def create_app(settings: ApiSettings) -> FastAPI:
     )
     app.state.product_universe = product_universe
     app.state.product_market_data = product_market_data
-    product_research_authority = ProductResearchAuthority(product_universe)
-    app.state.product_research_authority = product_research_authority
     app.state.product_market_data_preparation = ProductMarketDataPreparation(
         product_universe,
         product_market_data,
     )
-    product_pair_study = ProductPairStudy(
-        product_universe,
-        product_market_data,
-        product_research_authority,
-    )
-    app.state.product_pair_study = product_pair_study
-    current_approved_research = CurrentApprovedResearch(
-        product_universe,
-        product_market_data,
-    )
-    app.state.current_approved_research = current_approved_research
-    app.state.research_recipe_service = ResearchRecipeService(
-        run_root=settings.run_root,
-        data_root=settings.market_data_root,
-        repository_root=settings.repository_root,
-        current_approved=current_approved_research,
-        pair_study=product_pair_study,
-        product_research_authority=product_research_authority,
-    )
-    app.state.product_current_evidence = ProductCurrentEvidenceStore(settings.run_root)
     app.state.operation_manager = OperationManager(settings)
     app.add_middleware(
         CORSMiddleware,
@@ -206,17 +159,10 @@ def create_app(settings: ApiSettings) -> FastAPI:
     app.include_router(product_market_data_router)
     app.include_router(pair_rotation_router)
     app.include_router(lab_studies_router)
-    app.include_router(product_pair_study_router)
-    app.include_router(product_research_router)
-    app.include_router(research_recipes_router)
-    app.include_router(product_current_evidence_router)
     app.include_router(experiments_router)
-    app.include_router(history_router)
     app.include_router(portfolios_router)
     app.include_router(pairs_router)
     app.include_router(paper_operations.router)
-    app.include_router(scanner_router)
-    app.include_router(baskets_router)
     app.include_router(operations_router)
     return app
 

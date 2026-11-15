@@ -43,3 +43,13 @@ Proposals from the 2026-11-15 Phase 21 planning session. Deferred until Stages S
   `qap_gate` with `typing.NewType` / `assert_never` in Python, branded scalar
   types in TypeScript, and `ruff` bugbear (`B`, `RUF`) checks to catch
   implementation defects at gate time.
+- **Align `web/package.json` `packageManager` and drop `@playwright/test`.**
+  Corepack runs `pnpm v12.18.0` while `web/package.json` declares `pnpm@11.21.0`,
+  requiring `--pm-on-fail=ignore` in non-interactive shells, and `@playwright/test`
+  has no remaining E2E consumer. Update `packageManager` and refresh
+  `pnpm-lock.yaml` in one dedicated dependency commit.
+- **Extract `scanner/catalog.py` into `market/` to retire `scanner/` tests.**
+  Full `pytest -q` still takes ~357 s largely due to `tests/scenarios/test_scanner_*`
+  and `tests/unit/scanner/`, retained only because `product_market_data.py`
+  imports `scanner/catalog.py`. Moving catalog lookup into `qap.market` allows
+  retiring `qap.scanner` and cutting full `pytest` below 60 s.

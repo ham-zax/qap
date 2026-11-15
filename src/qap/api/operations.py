@@ -25,13 +25,11 @@ _WORKER_LOG = "worker.log"
 
 class OperationKind(StrEnum):
     RUN_SCAN = "run_scan"
-    RUN_RESEARCH_RECIPE = "run_research_recipe"
     GENERATE_ASSET_MOMENTUM = "generate_asset_momentum"
     FREEZE_FORWARD_COHORT = "freeze_forward_cohort"
     ADVANCE_FORWARD_COHORT = "advance_forward_cohort"
     CAPTURE_PUBLIC_EVIDENCE = "capture_public_evidence"
     QUALIFY_CANDIDATE = "qualify_candidate"
-    RUN_BASKET = "run_basket"
     REFRESH_COIN_DIRECTORY = "refresh_coin_directory"
     PREPARE_PAIR_ROTATION_DATA = "prepare_pair_rotation_data"
 
@@ -341,10 +339,8 @@ class OperationManager:
             )
         repository_required = kind in {
             OperationKind.RUN_SCAN,
-            OperationKind.RUN_RESEARCH_RECIPE,
             OperationKind.ADVANCE_FORWARD_COHORT,
             OperationKind.QUALIFY_CANDIDATE,
-            OperationKind.RUN_BASKET,
         }
         if repository_required and self.settings.repository_root is None:
             raise ApiBoundaryError(

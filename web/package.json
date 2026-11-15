@@ -7,10 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
-    "e2e:install": "playwright install chromium",
-    "e2e": "pnpm e2e:install && cd .. && uv run python scripts/run_playwright_e2e.py",
     "typecheck": "tsc --noEmit",
-    "typecheck:e2e": "tsc --noEmit -p tsconfig.e2e.json",
     "generate:api": "node scripts/generate-api.mjs"
   },
   "dependencies": {
