@@ -31,13 +31,25 @@ Keep hand-written source/test files below 500 lines where possible; review
 decomposition from 500–700 lines and fail above 700 unless a narrow exception
 was approved. Reject mixed-responsibility God objects at any size.
 
-Follow the approved work in [docs/plans/](docs/plans/) and the [master
+Follow the approved work in [docs/plans/](docs/plans/), specifically the active
+self-contained playbook [21-pair-mvp-fundamentals-and-l2-paper-plan.md](docs/plans/21-pair-mvp-fundamentals-and-l2-paper-plan.md)
+and [TASKS.md](TASKS.md), alongside the historical [master
 plan](docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md).
+Pre-Phase-21 legacy workbench code is archived at Git tag
+`archive/pre-phase21-workbench`.
 Before materially revising a long-lived plan, design, research, or decision
 document, follow [document-update-method.md](docs/research/document-update-method.md).
 Escalate before changing economic objectives, benchmark definitions,
 cost/fill/reference-price semantics, dataset or holdout roles, universe
-eligibility, or the Shariah/action-space boundary.
+eligibility, or the Shariah/action-space boundary. Never weaken or delete
+mathematical laws in `tests/invariants/test_quant_compiler_laws.py`.
+
+Self-verifying compiler gate (use on every slice; serialized via `/tmp/qap-gate-heavy.lock`):
+
+```text
+uv run python scripts/qap_gate.py --pytest <target_test_paths>
+uv run python scripts/qap_gate.py --full
+```
 
 Phase 00 verification:
 

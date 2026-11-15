@@ -1,6 +1,14 @@
 # Phase 20 (proposal) — From Lab to earning, end to end
 
 ```text
+Update context — 2026-11-15
+Trigger: Owner brainstorming, code math audit, and literature/API review established the Phase 21 constitution and execution order before Stage B runs.
+Purpose: Link this October 27 draft to the authoritative Phase 21 plan without erasing historical rationale.
+Impact: Stage B trials now wait on Stage S1 signal-math repairs (rolling copula on stationary spreads, regression intercepts, hysteresis). Decision 1 (coins-only) remains the default (`coins_only`), while Phase 21 adds an opt-in `crash_defense_mode` setting (`park_anchor`/`park_usdt`) and upgrades Stage D paper trading to live Binance WebSocket L2 taker fills with millisecond delay.
+Evidence: [Phase 21 plan](21-pair-mvp-fundamentals-and-l2-paper-plan.md).
+```
+
+```text
 Update context — 2026-10-27
 Trigger: Hamza: "the main goal is to earn via altcoin. How can we make it earn?"
 Purpose: one end-to-end path from today's Lab to a possible small live allocation.

@@ -1,5 +1,11 @@
 # QAP Plan Map
 
+Update context — 2026-11-15
+Trigger: Hamza defined the MVP constitution, math-repair gate, configurable crash-defense setting, 0%–100% starter rotation, and millisecond-aware Binance WebSocket L2 paper trading plan before further coding.
+Purpose: Register Phase 20 and Phase 21 in the canonical plan map.
+Impact: [Phase 21 — Pair Rotation MVP Constitution, Math Repair, and L2 Paper Trading Plan](21-pair-mvp-fundamentals-and-l2-paper-plan.md) governs upcoming work before Stage B/S5 trials. Economic, Decimal inventory, benchmark, and Shariah spot-only boundaries are unchanged.
+Evidence: [Phase 21](21-pair-mvp-fundamentals-and-l2-paper-plan.md), [Phase 20 draft](20-earning-roadmap-proposal.md).
+
 Update context — 2026-10-02
 Trigger: continued approved Phase 19 through M0, M1 and the M2 backend.
 Purpose: remove stale current-phase labels while preserving historical plans.
@@ -202,7 +208,9 @@ CLI fixture checks into completion of that gate.
 18. `16-human-centered-workbench-ux-rearchitecture.md` (post-Slice-4 presentation/IA phase; current-state evidence is in `docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`; fresh-agent execution handoff is `docs/research/2026-08-19-qap-phase16-implementation-handoff.md`)
 19. `17-product-layer-market-data-and-research-lifecycle.md` (Product Layer phase; M0-M9 and M10-A/B/C complete, M10-0 approved, M11 Pair Study redesign current before M10-D human closure; Pair Study design is `docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md`; implementation plan is `docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`; original Product investigation is `docs/research/2026-08-19-qap-product-layer-investigation.md`; cockpit investigation is `docs/research/2026-08-20-qap-research-cockpit-investigation.md`; M10-C proof is `docs/research/2026-08-20-qap-m10c-capability-fidelity-proof.md`)
 20. `18-research-experience-and-asset-resolution.md` (foundation and historical D1–D7 decisions; remaining experience superseded by Phase 19)
-21. `19-pair-rotation-lab-mvp.md` (current phase: verified engine, coin/data setup, two-coin dashboard; single implementation tracker)
+21. `19-pair-rotation-lab-mvp.md` (Pair Rotation Lab MVP implementation record)
+22. `20-earning-roadmap-proposal.md` and `20-earning-roadmap-tasks.md` (October 27 earning roadmap draft and Stage A/B1–B3 cards; superseded on sequencing and crash-defense/L2-paper details by Phase 21)
+23. `21-pair-mvp-fundamentals-and-l2-paper-plan.md` (current plan: MVP constitution, signal-math repair, configurable crash defense, 0%–100% starter sizing, and live WebSocket L2 taker paper trading)
 
 The original cross-phase master implementation plan at `docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md` closes the 00–15 research-engine mission. Phases 16, 17 and 18 are explicitly authorized post-master product phases and do not alter the original economic/research completion definition.
 
