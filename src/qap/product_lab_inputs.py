@@ -99,10 +99,6 @@ def load_lab_inputs(
         None if anchor is None else load(anchor),
         read_lab_metadata(
             data_root,
-            tuple(
-                item.instrument
-                for item in instruments
-                if item != anchor or item in (first, second, direct)
-            ),
+            tuple(dict.fromkeys(item.instrument for item in instruments)),
         ),
     )

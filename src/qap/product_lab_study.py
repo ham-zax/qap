@@ -141,6 +141,30 @@ def _trades(result: LabProof) -> list[dict[str, Any]]:
     ]
 
 
+def _execution_ready(inputs: LabInputs, settings: LabSettings) -> bool:
+    metadata = {item.metadata.instrument for item in inputs.metadata}
+    if settings.crash_defense_mode == "park_anchor":
+        if inputs.anchor is None:
+            return False
+        needed: list[Any] = [inputs.first.instrument, inputs.second.instrument]
+        if inputs.anchor.instrument.base not in (
+            inputs.first.instrument.base,
+            inputs.second.instrument.base,
+        ):
+            needed.append(inputs.anchor.instrument)
+        return all(inst in metadata for inst in needed)
+    if settings.crash_defense_mode == "park_usdt":
+        return (
+            inputs.first.instrument in metadata and inputs.second.instrument in metadata
+        )
+    required = (
+        (inputs.direct.instrument,)
+        if inputs.direct is not None
+        else (inputs.first.instrument, inputs.second.instrument)
+    )
+    return all(instrument in metadata for instrument in required)
+
+
 class LabStudyService:
     def __init__(
         self,
@@ -269,13 +293,6 @@ class LabStudyService:
                 validation_start=inputs.first.bars[split].candle_open_time.isoformat(),
                 validation_end=inputs.first.bars[-1].bar_end_exclusive.isoformat(),
             )
-            required = (
-                (inputs.direct.instrument,)
-                if inputs.direct is not None
-                else (inputs.first.instrument, inputs.second.instrument)
-            )
-            metadata = {item.metadata.instrument for item in inputs.metadata}
-            execution_ready = all(instrument in metadata for instrument in required)
             return self._build_and_save(
                 analysis,
                 inputs,
@@ -283,7 +300,7 @@ class LabStudyService:
                 count=count,
                 reused=reused,
                 fingerprint=fingerprint,
-                execution_ready=execution_ready,
+                execution_ready=_execution_ready(inputs, settings),
             )
 
     def compare(
@@ -335,13 +352,6 @@ class LabStudyService:
                 validation_start=inputs.first.bars[split].candle_open_time.isoformat(),
                 validation_end=inputs.first.bars[-1].bar_end_exclusive.isoformat(),
             )
-            required = (
-                (inputs.direct.instrument,)
-                if inputs.direct is not None
-                else (inputs.first.instrument, inputs.second.instrument)
-            )
-            metadata = {item.metadata.instrument for item in inputs.metadata}
-            execution_ready = all(instrument in metadata for instrument in required)
             studies = [
                 self._build_and_save(
                     analysis,
@@ -350,7 +360,7 @@ class LabStudyService:
                     count=count,
                     reused=reused,
                     fingerprint=fingerprint,
-                    execution_ready=execution_ready,
+                    execution_ready=_execution_ready(inputs, cand),
                 )
                 for cand in candidates
             ]

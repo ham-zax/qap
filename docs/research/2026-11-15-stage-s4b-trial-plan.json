@@ -1,0 +1,255 @@
+{
+  "stage": "S4-B",
+  "actor_id": "stage-s4b-20261115",
+  "alpha": 0.05,
+  "correction": "Holm-Bonferroni across 12 single-shot preregistered trials",
+  "hypothesis": "Low-turnover tail copula entries with crash-defense parking, plus ultra-low-turnover 1d Kalman z-score, can clear the 2x tuning cost-budget gate that blocked every S4-A trial.",
+  "trials": [
+    {
+      "trial_id": "S4B-01",
+      "pair": "SOL/ETH",
+      "coin_a": "binance:SOL",
+      "coin_b": "binance:ETH",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "band_lookback": 180,
+      "settings": {
+        "method": "copula",
+        "auto_tune": false,
+        "lookback": 96,
+        "copula_probability": 0.02,
+        "copula_exit_band": 0.15,
+        "minimum_hold": 12,
+        "cooldown": 8,
+        "crash_defense_mode": "coins_only"
+      }
+    },
+    {
+      "trial_id": "S4B-02",
+      "pair": "BNB/ETH",
+      "coin_a": "binance:BNB",
+      "coin_b": "binance:ETH",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "band_lookback": 180,
+      "settings": {
+        "method": "copula",
+        "auto_tune": false,
+        "lookback": 96,
+        "copula_probability": 0.02,
+        "copula_exit_band": 0.15,
+        "minimum_hold": 12,
+        "cooldown": 8,
+        "crash_defense_mode": "coins_only"
+      }
+    },
+    {
+      "trial_id": "S4B-03",
+      "pair": "LINK/ETH",
+      "coin_a": "binance:LINK",
+      "coin_b": "binance:ETH",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "band_lookback": 180,
+      "settings": {
+        "method": "copula",
+        "auto_tune": false,
+        "lookback": 96,
+        "copula_probability": 0.02,
+        "copula_exit_band": 0.15,
+        "minimum_hold": 12,
+        "cooldown": 8,
+        "crash_defense_mode": "coins_only"
+      }
+    },
+    {
+      "trial_id": "S4B-04",
+      "pair": "AVAX/SOL",
+      "coin_a": "binance:AVAX",
+      "coin_b": "binance:SOL",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "band_lookback": 180,
+      "settings": {
+        "method": "copula",
+        "auto_tune": false,
+        "lookback": 96,
+        "copula_probability": 0.02,
+        "copula_exit_band": 0.15,
+        "minimum_hold": 12,
+        "cooldown": 8,
+        "crash_defense_mode": "coins_only"
+      }
+    },
+    {
+      "trial_id": "S4B-05",
+      "pair": "DOGE/XRP",
+      "coin_a": "binance:DOGE",
+      "coin_b": "binance:XRP",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "band_lookback": 180,
+      "settings": {
+        "method": "copula",
+        "auto_tune": false,
+        "lookback": 96,
+        "copula_probability": 0.02,
+        "copula_exit_band": 0.15,
+        "minimum_hold": 12,
+        "cooldown": 8,
+        "crash_defense_mode": "coins_only"
+      }
+    },
+    {
+      "trial_id": "S4B-06",
+      "pair": "LTC/BTC",
+      "coin_a": "binance:LTC",
+      "coin_b": "binance:BTC",
+      "anchor": "binance:ETH",
+      "bar": "4h",
+      "days": 365,
+      "band_lookback": 180,
+      "settings": {
+        "method": "copula",
+        "auto_tune": false,
+        "lookback": 96,
+        "copula_probability": 0.02,
+        "copula_exit_band": 0.15,
+        "minimum_hold": 12,
+        "cooldown": 8,
+        "crash_defense_mode": "coins_only"
+      }
+    },
+    {
+      "trial_id": "S4B-07",
+      "pair": "AVAX/SOL",
+      "coin_a": "binance:AVAX",
+      "coin_b": "binance:SOL",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "band_lookback": 180,
+      "settings": {
+        "method": "copula",
+        "auto_tune": false,
+        "lookback": 96,
+        "copula_probability": 0.02,
+        "copula_exit_band": 0.15,
+        "minimum_hold": 12,
+        "cooldown": 8,
+        "crash_defense_mode": "park_anchor",
+        "regime_break_drawdown": 0.12
+      }
+    },
+    {
+      "trial_id": "S4B-08",
+      "pair": "SOL/ETH",
+      "coin_a": "binance:SOL",
+      "coin_b": "binance:ETH",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "band_lookback": 180,
+      "settings": {
+        "method": "copula",
+        "auto_tune": false,
+        "lookback": 96,
+        "copula_probability": 0.02,
+        "copula_exit_band": 0.15,
+        "minimum_hold": 12,
+        "cooldown": 8,
+        "crash_defense_mode": "park_anchor",
+        "regime_break_drawdown": 0.12
+      }
+    },
+    {
+      "trial_id": "S4B-09",
+      "pair": "LINK/ETH",
+      "coin_a": "binance:LINK",
+      "coin_b": "binance:ETH",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "band_lookback": 180,
+      "settings": {
+        "method": "copula",
+        "auto_tune": false,
+        "lookback": 96,
+        "copula_probability": 0.02,
+        "copula_exit_band": 0.15,
+        "minimum_hold": 12,
+        "cooldown": 8,
+        "crash_defense_mode": "park_anchor",
+        "regime_break_drawdown": 0.12
+      }
+    },
+    {
+      "trial_id": "S4B-10",
+      "pair": "DOGE/XRP",
+      "coin_a": "binance:DOGE",
+      "coin_b": "binance:XRP",
+      "anchor": "binance:BTC",
+      "bar": "4h",
+      "days": 365,
+      "band_lookback": 180,
+      "settings": {
+        "method": "copula",
+        "auto_tune": false,
+        "lookback": 96,
+        "copula_probability": 0.02,
+        "copula_exit_band": 0.15,
+        "minimum_hold": 12,
+        "cooldown": 8,
+        "crash_defense_mode": "park_anchor",
+        "regime_break_drawdown": 0.12
+      }
+    },
+    {
+      "trial_id": "S4B-11",
+      "pair": "DOGE/XRP",
+      "coin_a": "binance:DOGE",
+      "coin_b": "binance:XRP",
+      "anchor": null,
+      "bar": "1d",
+      "days": 365,
+      "band_lookback": 60,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "kalman",
+        "auto_tune": false,
+        "lookback": 60,
+        "entry": 1.8,
+        "exit": 0.3,
+        "minimum_hold": 5,
+        "cooldown": 3,
+        "minimum_trades": 4
+      }
+    },
+    {
+      "trial_id": "S4B-12",
+      "pair": "LINK/ETH",
+      "coin_a": "binance:LINK",
+      "coin_b": "binance:ETH",
+      "anchor": null,
+      "bar": "1d",
+      "days": 365,
+      "band_lookback": 60,
+      "settings": {
+        "method": "zscore",
+        "hedge_method": "kalman",
+        "auto_tune": false,
+        "lookback": 60,
+        "entry": 1.8,
+        "exit": 0.3,
+        "minimum_hold": 5,
+        "cooldown": 3,
+        "minimum_trades": 4
+      }
+    }
+  ]
+}

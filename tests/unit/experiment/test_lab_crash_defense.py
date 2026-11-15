@@ -85,3 +85,60 @@ def test_park_anchor_without_anchor_returns_execution_data_missing() -> None:
     )
     assert proof.call["status"] == "execution_data_missing"
     assert "Anchor" in proof.call["headline"]
+
+
+def test_park_anchor_with_third_asset_metadata_executes_cleanly() -> None:
+    from qap.market.metadata import MarketMetadata
+    from qap.market.microstructure import public_market_metadata_snapshot_from_metadata
+
+    base = _crash_inputs(size=120)
+    inst_btc = VenueInstrument("binance", "BTCUSDT", AssetId("BTC"), AssetId("USDT"))
+    btc_bars = tuple(
+        MarketBar(
+            inst_btc,
+            bar.interval,
+            bar.candle_open_time,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            5_000_000.0,
+        )
+        for bar in base.first.bars
+    )
+    meta = tuple(
+        public_market_metadata_snapshot_from_metadata(
+            metadata=MarketMetadata(
+                instrument=inst,
+                status="TRADING",
+                price_tick=Decimal("0.0001"),
+                minimum_price=None,
+                maximum_price=None,
+                quantity_step=Decimal("0.0001"),
+                minimum_quantity=None,
+                maximum_quantity=None,
+                minimum_notional=None,
+                maximum_notional=None,
+                minimum_notional_applies_to_market=False,
+                maximum_notional_applies_to_market=False,
+                notional_average_price_minutes=5,
+            ),
+            observed_at=base.first.bars[0].candle_open_time,
+            source_id=f"test:{inst.venue_symbol}",
+        )
+        for inst in (base.first.instrument, base.second.instrument, inst_btc)
+    )
+    data = LabInputs(base.first, base.second, None, validate_bar_series(btc_bars), meta)
+    sig = LabSignal(np.zeros(120), np.zeros(120), "test", 1, -1, True)
+    res = run_lab_replay(
+        data,
+        LabSettings(
+            crash_defense_mode="park_anchor",
+            regime_break_drawdown=0.15,
+            minimum_hold=0,
+            cooldown=0,
+        ),
+        sig,
+    )
+    assert any(t.direction == "into_anchor" for t in res.trades)
+    assert res.ending_state.quantity(AssetId("BTC")) > 0
