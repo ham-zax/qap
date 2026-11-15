@@ -60,11 +60,14 @@ When delegating via T3 Code `delegate_task` (`isolation: "worktree"`):
 5. **I5 — Synthetic Recovery:** Clean synthetic mean-reverting pairs must pass proof and beat `HODL` at low friction.
 6. **I6 — Benchmark Ladder & Multiplicity:** Every study counts in `LabStudyStore` and must beat `50/50 HODL` and the best simple rebalancing control (`daily`, `weekly`, `drift`) after realistic costs plus `2x` tuning cost budget.
 
-### 2.3 Backend-First, Web-API-Native & Subscriber-Ready Rules
+### 2.3 Backend-First, Dual-Interface (AI CLI + Human Web) & Subscriber-Ready Rules
 1. **Backend before UI:** Complete and prove Backend Stages `S2`–`S5` before building the full Three-Column Finance Cockpit UI (`Stage S6`).
-2. **No CLI-only features:** Every capability (crash defense, strategy advisor presets, multi-strategy comparison, and live L2 paper sessions) must live behind typed FastAPI routes + OpenAPI DTOs because the Web UI is the primary product interface for Hamza and future subscribers.
-3. **Shared Market Data vs Per-User (`actor_id`) State:** Market candles, CoinGecko identity, pair analysis, and live Binance WebSocket streams are shared read-only across all users. User-owned records (`LabStudyStore` trial-family counts, saved studies, pins, and paper sessions) take an explicit `actor_id` (defaulting to `"local"` in single-operator mode, mapping to `"actors/<actor_id>"` for subscribers so one user's trials never pollute another user's Bonferroni multiplicity count).
-4. **Simple + Advanced Dual DTOs:** Every API response carries plain-English summaries and recommended presets for everyday subscribers alongside exact `Decimal` costs, walk-forward folds, and statistical diagnostics for advanced users.
+2. **Dual First-Class Interfaces over One Shared Core:** Every backend capability lives in pure Python domain services (`src/qap/product_lab_*.py` and `src/qap/experiment/`) exposed equally through **two thin interfaces**:
+   - **AI-Agent Interface (`uv run python -m qap.lab_cli`):** Runs directly in-process with compact JSON/Markdown output (omitting 17,000-point chart arrays unless requested) so AI agents inspect pairs, get advisor presets, compare strategies, and run paper sessions with minimal tokens and zero browser overhead.
+   - **Human Subscriber Interface (`FastAPI` + OpenAPI -> `/lab` Web Cockpit):** Exposes the exact same services over typed HTTP/SSE routes for interactive visual exploration.
+3. **Shared Market Data vs Per-User (`actor_id`) State:** Market candles, CoinGecko identity, pair analysis, and live Binance WebSocket streams are shared read-only across all users. User-owned records (`LabStudyStore` trial-family counts, saved studies, pins, and paper sessions) take an explicit `actor_id` (defaulting to `"local"`, mapping to `"actors/<actor_id>"` for subscribers or AI-agent runs so one actor's trials never pollute another actor's Bonferroni multiplicity count).
+4. **Simple + Advanced Dual DTOs:** Every response carries plain-English summaries and recommended presets for everyday subscribers alongside exact `Decimal` costs, walk-forward folds, and statistical diagnostics for advanced users.
+5. **Literal Worker Task Cards:** Step-by-step autonomous worker cards for Stages `S2`, `S3`, and `S4` live in **[22-backend-and-agent-cli-tasks.md](22-backend-and-agent-cli-tasks.md)**.
 
 ---
 

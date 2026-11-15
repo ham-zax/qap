@@ -32,9 +32,13 @@ decomposition from 500–700 lines and fail above 700 unless a narrow exception
 was approved. Reject mixed-responsibility God objects at any size.
 
 Follow the approved work in [docs/plans/](docs/plans/), specifically the active
-self-contained playbook [21-pair-mvp-fundamentals-and-l2-paper-plan.md](docs/plans/21-pair-mvp-fundamentals-and-l2-paper-plan.md)
+self-contained playbook [21-pair-mvp-fundamentals-and-l2-paper-plan.md](docs/plans/21-pair-mvp-fundamentals-and-l2-paper-plan.md),
+literal worker cards [22-backend-and-agent-cli-tasks.md](docs/plans/22-backend-and-agent-cli-tasks.md),
 and [TASKS.md](TASKS.md), alongside the historical [master
 plan](docs/superpowers/plans/2026-08-17-qap-master-implementation-plan.md).
+QAP exposes one shared backend core through two equal interfaces: a token-efficient
+CLI (`qap.lab_cli`) for AI agents and a typed FastAPI/OpenAPI surface for the
+`/lab` Web UI (serving simple and advanced human users).
 Pre-Phase-21 legacy workbench code is archived at Git tag
 `archive/pre-phase21-workbench`.
 Before materially revising a long-lived plan, design, research, or decision
