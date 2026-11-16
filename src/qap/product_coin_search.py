@@ -1,6 +1,7 @@
 """Read-only discovery from venue listings and supplemental identity evidence."""
 
 import re
+from collections.abc import Collection
 from dataclasses import asdict
 from datetime import datetime
 from threading import Lock
@@ -168,6 +169,82 @@ def coins(
     with _COINS_LOCK:
         _coins_memo = (directory, snapshot, state, built)
     return built
+
+
+def coins_for_listings(
+    directory: ProductMarketDirectory | None,
+    snapshot: RegistrySnapshot | None,
+    state: ProductUniverseState,
+    listing_ids: Collection[str],
+) -> tuple[ResearchCoin, ...]:
+    if directory is None or not listing_ids:
+        return ()
+    wanted = set(listing_ids)
+    with _COINS_LOCK:
+        if (
+            _coins_memo is not None
+            and _coins_memo[0] is directory
+            and _coins_memo[1] is snapshot
+            and _coins_memo[2] is state
+        ):
+            return tuple(row for row in _coins_memo[3] if row.listing_id in wanted)
+    matching = [
+        market
+        for market in directory.markets
+        if f"{market.venue}:{market.venue_base_asset}" in wanted
+    ]
+    proposals = {
+        (item.venue, item.venue_asset_code): item
+        for item in AssetResolver(snapshot).resolve_markets(matching)
+    }
+    reviews = {
+        (item.venue, item.venue_asset_code): item for item in state.resolution_reviews
+    }
+    bindings = {
+        (item.venue, item.venue_asset_code): item for item in state.identity_mappings
+    }
+    rows: list[ResearchCoin] = []
+    for market in matching:
+        if market.venue_quote_asset != "USDT" or market.venue_base_asset == "USDT":
+            continue
+        key = (market.venue, market.venue_base_asset)
+        proposal: AssetResolutionProposal = proposals[key]
+        if proposal.disposition == "excluded":
+            continue
+        proposal = reviews.get(key, proposal)
+        binding = bindings.get(key)
+        resolved = (
+            proposal.disposition == "resolved"
+            and binding is not None
+            and binding.canonical_asset_id == proposal.canonical_asset_id
+        )
+        rows.append(
+            ResearchCoin(
+                listing_id=f"{market.venue}:{market.venue_base_asset}",
+                venue=market.venue,
+                venue_symbol=market.venue_symbol,
+                venue_asset_code=market.venue_base_asset,
+                name=proposal.name or market.base_name or market.venue_base_asset,
+                canonical_asset_id=(
+                    binding.canonical_asset_id
+                    if resolved and binding is not None
+                    else None
+                ),
+                identity_version=binding.asset_identity_version
+                if resolved and binding is not None
+                else local_identity_version(market),
+                identity_state="resolved"
+                if resolved
+                else ("review" if proposal.disposition == "review" else "unresolved"),
+                identity_reason=proposal.reason,
+                trading=market.trading,
+                listing_time=market.buy_start,
+                relationship_available=market.trading,
+                call_available=market.trading and resolved,
+                source=proposal.source if resolved else "venue",
+            )
+        )
+    return tuple(sorted(rows, key=lambda row: (row.venue_asset_code, row.venue)))
 
 
 def search_coins(

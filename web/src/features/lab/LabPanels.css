@@ -173,7 +173,8 @@
 .lab-warning-banner {
   margin: 0 0 10px;
   padding: 8px 10px;
-  border-left: 3px solid var(--qap-warning);
+  border: 1px solid color-mix(in srgb, var(--qap-warning) 45%, var(--qap-border));
+  border-radius: 6px;
   background: var(--qap-subtle);
   color: var(--qap-warning);
   font-size: 12px;

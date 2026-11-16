@@ -96,8 +96,13 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
         if isinstance(fallback_anchor, Mapping) and "id" in fallback_anchor
         else (str(fallback_anchor) if isinstance(fallback_anchor, str) else None)
     )
+    explicit_no_anchor = (
+        "anchor" in analysis and analysis["anchor"] is None and bool(ranking_list)
+    )
     anchor_id: str | None = (
-        str(anchor_coin["id"])
+        None
+        if explicit_no_anchor
+        else str(anchor_coin["id"])
         if anchor_coin is not None and "id" in anchor_coin
         else fallback_anchor_id
     )
@@ -147,11 +152,11 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
 
     bar_warning = (
         "15m candles generate high swap counts where 20 bps round-trip fees "
-        "often exceed gross spread; compare 1h or 4h as well."
+        "often exceed gross spread; 4h presets are recommended to cut fee drag."
         if bar == "15m"
         else None
     )
-    rec_bar = "1h" if bar == "15m" else bar
+    rec_bar = "4h" if bar in ("1m", "15m", "1h") else bar
     rec_lookback = (
         int(min(500, max(60, round(2.0 * float(half_life_bars)))))
         if (half_life_bars is not None and isfinite(float(half_life_bars)))
@@ -160,128 +165,98 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
     copula_anchor = (
         anchor_id if (anchor_r2 is not None and float(anchor_r2) >= 0.25) else None
     )
+    copula_defense = "park_anchor" if copula_anchor is not None else "park_usdt"
+
+    kalman_shielded = (
+        "zscore_kalman",
+        "Drawdown-Shielded Kalman Reversion",
+        "Adapts to ratio drift and parks in USDT if drawdown exceeds 12%.",
+        f"Kalman hedge lookback={rec_lookback}, entry=2.2, exit=0.4, min_hold=8, park_usdt@12%.",
+        rec_bar,
+        None,
+        {
+            "method": "zscore",
+            "hedge_method": "kalman",
+            "lookback": rec_lookback,
+            "entry": 2.2,
+            "exit": 0.4,
+            "minimum_hold": 8,
+            "cooldown": 6,
+            "crash_defense_mode": "park_usdt",
+            "regime_break_drawdown": 0.12,
+        },
+    )
+    tail_copula = (
+        "spread_copula",
+        "4h Tail Copula + Benchmark Defense",
+        "Waits for rare 2% tail divergences and parks in the benchmark on breaks.",
+        f"4h tail copula lookback=96, p=0.02, exit_band=0.15, min_hold=12, {copula_defense}@15%.",
+        rec_bar,
+        copula_anchor,
+        {
+            "method": "copula",
+            "lookback": 96,
+            "copula_probability": 0.02,
+            "copula_exit_band": 0.15,
+            "minimum_hold": 12,
+            "cooldown": 8,
+            "crash_defense_mode": copula_defense,
+            "regime_break_drawdown": 0.15,
+        },
+    )
+    wide_ols = (
+        "zscore_ols_wide",
+        "Conservative Wide-Band OLS (2.5σ)",
+        "Only enters on 2.5σ extremes to keep gross spread well above spot fees.",
+        "OLS z-score lookback=120, entry=2.5, exit=0.3, min_hold=10, cooldown=8.",
+        rec_bar,
+        None,
+        {
+            "method": "zscore",
+            "hedge_method": "ols",
+            "lookback": 120,
+            "entry": 2.5,
+            "exit": 0.3,
+            "minimum_hold": 10,
+            "cooldown": 8,
+            "crash_defense_mode": "coins_only",
+        },
+    )
+    slow_trend = (
+        "ratio_trend",
+        "Slow Macro Ratio Trend (24/96)",
+        "Rides sustained multi-day relative strength with a 0.5% deadband.",
+        "Trend 24/96 crossover, deadband=0.005, min_hold=12, cooldown=8.",
+        rec_bar,
+        None,
+        {
+            "method": "trend",
+            "fast_window": 24,
+            "slow_window": 96,
+            "trend_deadband": 0.005,
+            "minimum_hold": 12,
+            "cooldown": 8,
+        },
+    )
 
     if regime_label == "mean_reverting":
-        suggestions = [
-            _suggestion(
-                1,
-                "zscore_kalman",
-                "Kalman Z-Score Mean Reversion",
-                "Adapts smoothly to gradual shifts in the pair ratio.",
-                f"Kalman hedge with lookback={rec_lookback}, entry=2.0, exit=0.4.",
-                rec_bar,
-                None,
-                {
-                    "method": "zscore",
-                    "hedge_method": "kalman",
-                    "lookback": rec_lookback,
-                    "entry": 2.0,
-                    "exit": 0.4,
-                },
-            ),
-            _suggestion(
-                2,
-                "spread_copula",
-                "Spread Copula Tail Rotation",
-                "Waits for rare tail divergences before rotating.",
-                f"Rolling spread copula lookback={max(80, rec_lookback)}, p=0.05.",
-                rec_bar,
-                copula_anchor,
-                {
-                    "method": "copula",
-                    "lookback": max(80, rec_lookback),
-                    "copula_probability": 0.05,
-                },
-            ),
-            _suggestion(
-                3,
-                "ratio_trend_guard",
-                "Ratio Trend Falsifier",
-                "Checks whether following momentum beats mean reversion.",
-                "Trend 12/48 crossover falsifier.",
-                rec_bar,
-                None,
-                {"method": "trend", "fast_window": 12, "slow_window": 48},
-            ),
-        ]
+        ordered = [kalman_shielded, tail_copula, wide_ols, slow_trend]
     elif regime_label == "trending":
-        suggestions = [
-            _suggestion(
-                1,
-                "ratio_trend",
-                "Ratio Trend Following",
-                "Rides sustained relative strength between the two coins.",
-                "Trend 12/48 crossover aligned with Hurst > 0.5.",
-                rec_bar,
-                None,
-                {"method": "trend", "fast_window": 12, "slow_window": 48},
-            ),
-            _suggestion(
-                2,
-                "spread_copula_anchor",
-                "Anchor-Mediated Spread Copula",
-                "Uses a shared market anchor to filter noisy swings.",
-                "Rolling spread copula lookback=96, p=0.05 with anchor.",
-                rec_bar,
-                anchor_id,
-                {"method": "copula", "lookback": 96, "copula_probability": 0.05},
-            ),
-            _suggestion(
-                3,
-                "zscore_ols_wide",
-                "Wide OLS Z-Score",
-                "Only fades extreme moves to avoid fighting the trend.",
-                "OLS z-score lookback=120, entry=2.5, exit=0.5.",
-                rec_bar,
-                None,
-                {
-                    "method": "zscore",
-                    "hedge_method": "ols",
-                    "lookback": 120,
-                    "entry": 2.5,
-                    "exit": 0.5,
-                },
-            ),
+        ordered = [
+            slow_trend,
+            ("spread_copula_anchor", *tail_copula[1:4], rec_bar, anchor_id, {
+                **tail_copula[6],
+                "crash_defense_mode": "park_anchor" if anchor_id else "park_usdt",
+            }),
+            wide_ols,
+            kalman_shielded,
         ]
     else:
-        suggestions = [
-            _suggestion(
-                1,
-                "spread_copula",
-                "Spread Copula Tail Filter",
-                "Targets only extreme tail dislocations in noisy markets.",
-                "Rolling spread copula lookback=96, p=0.05.",
-                rec_bar,
-                anchor_id,
-                {"method": "copula", "lookback": 96, "copula_probability": 0.05},
-            ),
-            _suggestion(
-                2,
-                "zscore_ols",
-                "OLS Z-Score",
-                "Uses a slightly higher entry bar to cut down churn.",
-                "OLS z-score lookback=96, entry=2.2, exit=0.4.",
-                rec_bar,
-                None,
-                {
-                    "method": "zscore",
-                    "hedge_method": "ols",
-                    "lookback": 96,
-                    "entry": 2.2,
-                    "exit": 0.4,
-                },
-            ),
-            _suggestion(
-                3,
-                "ratio_trend",
-                "Slow Ratio Trend",
-                "Tests whether slower trend shifts capture cleaner moves.",
-                "Trend 16/64 crossover.",
-                rec_bar,
-                None,
-                {"method": "trend", "fast_window": 16, "slow_window": 64},
-            ),
-        ]
+        ordered = [tail_copula, kalman_shielded, wide_ols, slow_trend]
+
+    suggestions = [
+        _suggestion(rank, *spec) for rank, spec in enumerate(ordered, start=1)
+    ]
 
     return {
         "regime_label": regime_label,

@@ -17,6 +17,7 @@ interface WealthChartProps {
   wealth: LabWealth
   coinACode?: string
   coinBCode?: string
+  showHolds?: boolean
 }
 
 function wealthPoints(wealth: LabWealth, name: string, unitMode: WealthUnitMode) {
@@ -27,10 +28,11 @@ function wealthPoints(wealth: LabWealth, name: string, unitMode: WealthUnitMode)
   })
 }
 
-export function WealthChart({ wealth, coinACode = 'Coin A', coinBCode = 'Coin B' }: WealthChartProps) {
+export function WealthChart({ wealth, coinACode = 'Coin A', coinBCode = 'Coin B', showHolds: controlledShowHolds }: WealthChartProps) {
   const [hover, setHover] = useState<string | null>(null)
   const [unitMode, setUnitMode] = useState<WealthUnitMode>('value')
-  const [showHolds, setShowHolds] = useState(false)
+  const [internalShowHolds, setInternalShowHolds] = useState(false)
+  const showHolds = controlledShowHolds ?? internalShowHolds
 
   const names = useMemo(() => wealthNames(wealth, showHolds), [wealth, showHolds])
   const unitLabel = unitMode === 'coins_a' ? coinACode : unitMode === 'coins_b' ? coinBCode : 'USDT'
@@ -74,15 +76,15 @@ export function WealthChart({ wealth, coinACode = 'Coin A', coinBCode = 'Coin B'
             {coinBCode} Units
           </button>
         </div>
-        {hasHoldLines && (
+        {hasHoldLines && controlledShowHolds === undefined && (
           <label className="lab-checkbox-row">
-            <input type="checkbox" checked={showHolds} onChange={(e) => setShowHolds(e.target.checked)} />
+            <input type="checkbox" checked={showHolds} onChange={(e) => setInternalShowHolds(e.target.checked)} />
             Show hold {coinACode} / {coinBCode}
           </label>
         )}
       </div>
     </div>
-    <TimeSeriesChart title="Money over time, after fees" description="Rotating, just holding, and a simple scheduled rebalance over the same period." series={series} height={300}
+    <TimeSeriesChart title="Money over time, after fees" description="Strategy, Hold 50/50, and scheduled rebalancing over the same period." series={series} height={300}
       onHoverTimeChange={setHover} readout={<LabReadout title="Money over time, after fees" current={current} latest={latest} />} />
     <dl className="lab-wealth-terminal" aria-label="Final values">
       {names.map((name) => {

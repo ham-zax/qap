@@ -163,7 +163,11 @@ def _run_command(
         scope = uni.research_scope((str(args.coin_a), str(args.coin_b)))
         proj = prep.prepare(scope, lookback_days=args.days, include_execution=True)
         datasets = [g.dataset_id for g in proj.generations]
-        if args.anchor and str(args.anchor) not in (str(args.coin_a), str(args.coin_b)):
+        if (
+            args.anchor
+            and str(args.anchor) != "none"
+            and str(args.anchor) not in (str(args.coin_a), str(args.coin_b))
+        ):
             a_scope = uni.research_scope((str(args.coin_a), str(args.anchor)))
             a_proj = prep.prepare(
                 a_scope, lookback_days=args.days, include_execution=True

@@ -1,6 +1,8 @@
 """Deterministic identity proposals from registry and venue evidence."""
 
 from collections import defaultdict
+from collections.abc import Iterable
+from dataclasses import asdict
 from typing import Literal
 
 from qap.asset_eligibility import classify_asset
@@ -111,6 +113,7 @@ class AssetResolver:
     def __init__(self, snapshot: RegistrySnapshot | None) -> None:
         self.snapshot = snapshot
         self.coins = {} if snapshot is None else {c.coin_id: c for c in snapshot.coins}
+        self._coin_payloads: dict[str, dict[str, object]] = {}
         self.tickers: dict[tuple[Venue, str], set[str]] = defaultdict(set)
         self.addresses: dict[tuple[str, str], set[str]] = defaultdict(set)
         if snapshot is not None:
@@ -125,10 +128,13 @@ class AssetResolver:
     def resolve(
         self, directory: ProductMarketDirectory
     ) -> tuple[AssetResolutionProposal, ...]:
+        return self.resolve_markets(directory.markets)
+
+    def resolve_markets(
+        self, markets: Iterable[DirectoryMarket]
+    ) -> tuple[AssetResolutionProposal, ...]:
         listings: dict[tuple[Venue, str], DirectoryMarket] = {}
-        for market in sorted(
-            directory.markets, key=lambda m: (m.venue, m.venue_symbol)
-        ):
+        for market in sorted(markets, key=lambda m: (m.venue, m.venue_symbol)):
             listings.setdefault((market.venue, market.venue_base_asset), market)
         return tuple(self._resolve(market) for _, market in sorted(listings.items()))
 
@@ -136,6 +142,13 @@ class AssetResolver:
         # Reserved aliases cannot be assigned to another registry coin, even if
         # that other coin has the same symbol.
         return _CANONICAL.get(coin.coin_id, "CG_" + coin.coin_id.upper())
+
+    def _coin_payload(self, coin_id: str) -> dict[str, object]:
+        cached = self._coin_payloads.get(coin_id)
+        if cached is None:
+            cached = self.coins[coin_id].model_dump(mode="json")
+            self._coin_payloads[coin_id] = cached
+        return cached
 
     def _resolve(self, market: DirectoryMarket) -> AssetResolutionProposal:
         code = market.venue_base_asset
@@ -170,14 +183,11 @@ class AssetResolver:
             {
                 "venue": market.venue,
                 "code": code,
-                "currency": None
-                if currency is None
-                else market.model_dump(mode="json")["base_currency"],
+                "currency": None if currency is None else asdict(currency),
                 "ticker_ids": sorted(ticker_ids),
                 "address_ids": sorted(address_ids),
                 "coins": [
-                    self.coins[cid].model_dump(mode="json")
-                    for cid in sorted(ticker_ids | address_ids)
+                    self._coin_payload(cid) for cid in sorted(ticker_ids | address_ids)
                 ],
             }
         )

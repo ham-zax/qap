@@ -1,3 +1,4 @@
+import { createContext, useSyncExternalStore } from 'react'
 import {
   DEFAULT_STRATEGY_SETTINGS,
   LAB_BARS,
@@ -79,10 +80,37 @@ export function readSavedStrategySettings(): LabStrategyFormSettings {
   }
 }
 
+export const AppShellHeaderModeContext = createContext(false)
+
+const viewModeListeners = new Set<() => void>()
+let fallbackViewMode: LabViewMode = 'simple'
+
 export function readSavedViewMode(): LabViewMode {
   try {
     return localStorage.getItem(VIEW_MODE_KEY) === 'advanced' ? 'advanced' : 'simple'
   } catch {
-    return 'simple'
+    return fallbackViewMode
   }
+}
+
+export function setSavedViewMode(mode: LabViewMode): void {
+  fallbackViewMode = mode
+  try {
+    localStorage.setItem(VIEW_MODE_KEY, mode)
+  } catch {
+    /* Storage optional. */
+  }
+  for (const listener of viewModeListeners) listener()
+}
+
+function subscribeViewMode(listener: () => void): () => void {
+  viewModeListeners.add(listener)
+  return () => {
+    viewModeListeners.delete(listener)
+  }
+}
+
+export function useLabViewMode(): [LabViewMode, (mode: LabViewMode) => void] {
+  const mode = useSyncExternalStore<LabViewMode>(subscribeViewMode, readSavedViewMode, () => 'simple')
+  return [mode, setSavedViewMode]
 }

@@ -180,13 +180,14 @@ th {
   align-items: center;
   border-bottom: 1px solid var(--border);
   justify-content: space-between;
-  padding: var(--space-4) 0;
+  min-height: 2.75rem;
+  padding: 0.25rem 0;
 }
 
 .app-header > div {
-  align-items: baseline;
+  align-items: center;
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .app-header nav {
@@ -213,10 +214,32 @@ th {
 
 .brand {
   color: var(--text);
-  font-size: 1.5rem;
+  font-size: 1.15rem;
   font-weight: 900;
   letter-spacing: -0.04em;
   text-decoration: none;
+}
+
+.bt-segmented {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--qap-border);
+  border-radius: 6px;
+}
+
+.bt-segmented button {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--qap-secondary);
+  font-size: 12px;
+}
+
+.bt-segmented button[aria-pressed='true'] {
+  background: var(--qap-raised);
+  color: var(--qap-foreground);
 }
 
 main {
@@ -425,21 +448,9 @@ tbody tr:hover > * {
     padding: 0 var(--space-4);
   }
 
-  .app-header,
-  .app-header > div,
   .app-shell footer {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .app-header nav {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .app-header nav a {
-    text-align: center;
-    width: 100%;
   }
 
   .time-series-chart,

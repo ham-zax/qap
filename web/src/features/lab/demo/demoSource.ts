@@ -190,7 +190,8 @@ export function demoAnalysis(request: LabRequest): LabAnalysis {
       return { anchor: coinById(id), beta_a: olsSlope(rr, ra), beta_b: olsSlope(rr, rb), joint_explained: (ba + bb) / 2 }
     })
     .sort((x, y) => y.joint_explained - x.joint_explained)
-  const selectedId = request.anchor && candidates.includes(request.anchor) ? request.anchor : ranking[0]?.anchor.id ?? null
+  const selectedId = request.anchor === 'none' ? null
+    : request.anchor && candidates.includes(request.anchor) ? request.anchor : ranking[0]?.anchor.id ?? null
   const anchorReturns = selectedId ? logReturns(slice(selectedId)) : null
   const halfLife = halfLifeBars(logRatio)
   const hurst = hurstExponent(logRatio)

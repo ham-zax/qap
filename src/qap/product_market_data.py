@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from threading import Lock
@@ -27,6 +28,7 @@ from qap.product_maintenance import (
     ProductMaintenanceError,
 )
 from qap.product_market_data_cache import (
+    GENERATION_CACHE,
     PROJECTION_ROW_CACHE,
     ProjectionKey,
     stat_key,
@@ -441,12 +443,8 @@ class ProductMarketData:
         data_root = self.market_data_root
         catalog = self._current_catalog(data_root)
         assert catalog is not None
-        rows: list[CurrentMarketDataGeneration] = []
-        for source in sorted(catalog.sources, key=lambda item: item.dataset_id):
-            if intervals is not None and source.interval not in intervals:
-                continue
-            if dataset_ids is not None and source.dataset_id not in dataset_ids:
-                continue
+
+        def build_row(source: ScannerSourceSpec) -> CurrentMarketDataGeneration:
             provenance_relative_path = _provenance_relative_path(source.relative_path)
             provenance_path = data_root / provenance_relative_path
             cache_key: ProjectionKey = (
@@ -461,8 +459,7 @@ class ProductMarketData:
                 data_root, source.dataset_id, cache_key
             )
             if cached is not None:
-                rows.append(cached)
-                continue
+                return cached
             try:
                 resolved = resolve_catalog_source(
                     catalog,
@@ -470,28 +467,23 @@ class ProductMarketData:
                     data_root=data_root,
                 )
             except ScannerCatalogError:
-                rows.append(
-                    CurrentMarketDataGeneration(
-                        dataset_id=source.dataset_id,
-                        relative_path=source.relative_path,
-                        venue=source.venue,
-                        venue_symbol=source.venue_symbol,
-                        base_asset=source.base_asset,
-                        quote_asset=source.quote_asset,
-                        interval=source.interval,
-                        semantic_fingerprint=source.expected_semantic_fingerprint,
-                        coverage_start=None,
-                        coverage_end_exclusive=None,
-                        provenance_status="invalid",
-                        provenance_relative_path=(
-                            provenance_relative_path
-                            if provenance_path.is_file()
-                            else None
-                        ),
-                        issue="generation_invalid",
-                    )
+                return CurrentMarketDataGeneration(
+                    dataset_id=source.dataset_id,
+                    relative_path=source.relative_path,
+                    venue=source.venue,
+                    venue_symbol=source.venue_symbol,
+                    base_asset=source.base_asset,
+                    quote_asset=source.quote_asset,
+                    interval=source.interval,
+                    semantic_fingerprint=source.expected_semantic_fingerprint,
+                    coverage_start=None,
+                    coverage_end_exclusive=None,
+                    provenance_status="invalid",
+                    provenance_relative_path=(
+                        provenance_relative_path if provenance_path.is_file() else None
+                    ),
+                    issue="generation_invalid",
                 )
-                continue
 
             if not provenance_path.is_file():
                 provenance_status: ProvenanceStatus = "missing"
@@ -518,6 +510,19 @@ class ProductMarketData:
                         raise ProductMarketDataError(
                             "Generation provenance does not match current source."
                         )
+                    if source.relative_path == _generation_relative_path(
+                        source.dataset_id, source.expected_semantic_fingerprint
+                    ):
+                        GENERATION_CACHE.put(
+                            (
+                                data_root,
+                                source.dataset_id,
+                                source.expected_semantic_fingerprint,
+                                cache_key[4],
+                                cache_key[5],
+                            ),
+                            (provenance, resolved.series),
+                        )
                     provenance_status = "complete"
                     issue = None
                 except ProductMarketDataError:
@@ -541,10 +546,20 @@ class ProductMarketData:
                 issue=issue,
             )
             PROJECTION_ROW_CACHE.put(data_root, source.dataset_id, cache_key, row)
-            rows.append(row)
-        return ProductMarketDataProjection(
-            generations=tuple(rows), maintenance=maintenance
-        )
+            return row
+
+        matching = [
+            source
+            for source in sorted(catalog.sources, key=lambda item: item.dataset_id)
+            if (intervals is None or source.interval in intervals)
+            and (dataset_ids is None or source.dataset_id in dataset_ids)
+        ]
+        if len(matching) > 1:
+            with ThreadPoolExecutor(max_workers=min(4, len(matching))) as pool:
+                rows = tuple(pool.map(build_row, matching))
+        else:
+            rows = tuple(build_row(source) for source in matching)
+        return ProductMarketDataProjection(generations=rows, maintenance=maintenance)
 
     def maintenance_state(self) -> MarketDataMaintenanceState:
         try:

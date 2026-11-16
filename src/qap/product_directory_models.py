@@ -4,7 +4,13 @@ from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from typing import Literal, Self, cast
 
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    PrivateAttr,
+    field_validator,
+    model_validator,
+)
 
 from qap.market.directory import CurrentSpotDirectoryObservation, SpotCurrencyEvidence
 from qap.market.microstructure import public_payload_fingerprint
@@ -132,6 +138,9 @@ class ProductMarketDirectory(_FrozenModel):
     sources: tuple[DirectorySource, ...]
     markets: tuple[DirectoryMarket, ...]
     refresh_results: tuple[DirectoryRefreshResult, ...] = ()
+    _directory_id_cache: tuple[tuple[object, ...], str] | None = PrivateAttr(
+        default=None
+    )
 
     @model_validator(mode="after")
     def validate_directory(self) -> Self:
@@ -195,6 +204,21 @@ class ProductMarketDirectory(_FrozenModel):
 
     @property
     def directory_id(self) -> str:
+        state = (
+            self.schema_version,
+            self.sources,
+            self.markets,
+            () if self.schema_version.endswith(".v1") else self.refresh_results,
+        )
+        cached = self._directory_id_cache
+        if (
+            cached is not None
+            and cached[0][0] == state[0]
+            and cached[0][1] is state[1]
+            and cached[0][2] is state[2]
+            and cached[0][3] is state[3]
+        ):
+            return cached[1]
         payload = self.model_dump(mode="json")
         if self.schema_version.endswith(".v1"):
             # Defaulted v2 fields must not change historical v1 lineage hashes.
@@ -216,4 +240,6 @@ class ProductMarketDirectory(_FrozenModel):
                     for market in self.markets
                 ],
             }
-        return public_payload_fingerprint(payload)
+        digest = public_payload_fingerprint(payload)
+        self._directory_id_cache = (state, digest)
+        return digest

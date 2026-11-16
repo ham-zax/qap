@@ -2,23 +2,30 @@
 
 from __future__ import annotations
 
+from collections import OrderedDict
+from copy import deepcopy
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from math import isfinite
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 import numpy as np
 
 from qap.market import BarInterval, ValidatedBarSeries
-from qap.product_coin_search import ResearchCoin, coins
+from qap.product_coin_search import ResearchCoin, coins_for_listings
 from qap.product_market_data import ProductMarketData
 from qap.product_market_data_generation import (
     resolve_immutable_generation,
 )
 from qap.product_market_data_models import CurrentMarketDataGeneration
 from qap.product_market_data_prepare import product_dataset_id
-from qap.product_universe import ProductUniverse
+from qap.product_universe import (
+    ProductUniverse,
+    ProductUniverseError,
+    ResolvedProductInstrument,
+)
 from qap.relationship.anchor_measurements import anchor_beta, lead_lag, rank_anchors
 from qap.relationship.dependence_measurements import (
     copula_tails,
@@ -40,6 +47,8 @@ from qap.relationship.pair_measurements import (
 )
 
 DEFAULT_ANCHORS = ("binance:BTC", "binance:ETH", "binance:BNB", "binance:SOL")
+_ANALYSIS_LOCK = Lock()
+_ANALYSIS_CACHE: OrderedDict[tuple[object, ...], dict[str, Any]] = OrderedDict()
 
 
 class PairAnalysisError(ValueError):
@@ -94,22 +103,59 @@ class PairRotationAnalysis:
         anchor: str | None = None,
         now: datetime | None = None,
     ) -> dict[str, Any]:
-        scope = self.universe.research_scope((coin_a, coin_b), refresh_bindings=False)
+        directory = self.universe.read_directory()
+        if directory is None:
+            raise ProductUniverseError(
+                "Current market directory has not been refreshed."
+            )
+        state = self.universe.read_state()
+        no_anchor = anchor == "none"
+        explicit_anchor = None if anchor in (None, "none") else anchor
+        needed_ids = {coin_a, coin_b, *DEFAULT_ANCHORS}
+        if explicit_anchor is not None:
+            needed_ids.add(explicit_anchor)
         rows = {
             row.listing_id: row
-            for row in coins(
-                self.universe.read_directory(),
+            for row in coins_for_listings(
+                directory,
                 self.universe.registry_snapshot(),
-                self.universe.read_state(),
+                state,
+                needed_ids,
             )
         }
-        if anchor is not None and (anchor not in rows or not rows[anchor].trading):
+        scope = self.universe.research_scope_from_snapshot(
+            directory, state, rows, (coin_a, coin_b)
+        )
+        if explicit_anchor is not None and (
+            explicit_anchor not in rows or not rows[explicit_anchor].trading
+        ):
             raise PairAnalysisError("Choose an eligible anchor listing.")
         interval = BarInterval(bar)
+        wanted = dict.fromkeys(
+            (
+                *DEFAULT_ANCHORS,
+                *((explicit_anchor,) if explicit_anchor else ()),
+            )
+        )
+        instruments: dict[str, ResolvedProductInstrument] = {
+            coin_a: scope.instruments[0],
+            coin_b: scope.instruments[1],
+        }
+        for key in wanted:
+            if key not in instruments and key in rows and rows[key].trading:
+                try:
+                    instruments[key] = self.universe.research_scope_from_snapshot(
+                        directory, state, rows, (key, coin_a)
+                    ).instruments[0]
+                except ProductUniverseError:
+                    continue
         generations = {
             item.dataset_id: item
             for item in self.market_data.projection(
-                intervals=frozenset({bar})
+                intervals=frozenset({bar}),
+                dataset_ids=frozenset(
+                    product_dataset_id(inst, interval) for inst in instruments.values()
+                ),
             ).generations
         }
         loaded: dict[str, tuple[CurrentMarketDataGeneration, ValidatedBarSeries]] = {}
@@ -117,11 +163,12 @@ class PairRotationAnalysis:
         def load(key: str) -> tuple[CurrentMarketDataGeneration, ValidatedBarSeries]:
             if key in loaded:
                 return loaded[key]
-            partner = coin_b if key == coin_a else coin_a
-            candidate_scope = self.universe.research_scope(
-                (key, partner), refresh_bindings=False
-            )
-            instrument = candidate_scope.instruments[0]
+            instrument = instruments.get(key)
+            if instrument is None:
+                partner = coin_b if key == coin_a else coin_a
+                instrument = self.universe.research_scope_from_snapshot(
+                    directory, state, rows, (key, partner)
+                ).instruments[0]
             dataset_id = product_dataset_id(instrument, interval)
             generation = generations.get(dataset_id)
             if generation is None or generation.provenance_status != "complete":
@@ -166,6 +213,41 @@ class PairRotationAnalysis:
             right - left != interval.duration for left, right in zip(times, times[1:])
         ):
             raise PairAnalysisError("Shared history contains missing bars.")
+        for key in wanted:
+            if key in rows and rows[key].trading:
+                try:
+                    load(key)
+                except PairAnalysisError, ProductUniverseError:
+                    continue
+        cache_key = (
+            coin_a,
+            coin_b,
+            bar,
+            days,
+            band_lookback,
+            "none" if no_anchor else explicit_anchor,
+            scope.directory_id,
+            scope.economic_identity_confirmed,
+            data_through,
+            tuple(
+                (
+                    key,
+                    rows[key].venue_asset_code,
+                    rows[key].name,
+                    rows[key].identity_state,
+                    gen.dataset_id,
+                    gen.semantic_fingerprint,
+                    gen.coverage_start,
+                    gen.coverage_end_exclusive,
+                )
+                for key, (gen, _) in loaded.items()
+            ),
+        )
+        with _ANALYSIS_LOCK:
+            cached_analysis = _ANALYSIS_CACHE.get(cache_key)
+            if cached_analysis is not None:
+                _ANALYSIS_CACHE.move_to_end(cache_key)
+                return deepcopy(cached_analysis)
         close_a = np.array([a_bars[time].close for time in times], dtype=np.float64)
         close_b = np.array([b_bars[time].close for time in times], dtype=np.float64)
         ratio = close_a / close_b
@@ -175,14 +257,10 @@ class PairRotationAnalysis:
         returns_a, returns_b = log_returns(close_a), log_returns(close_b)
         candidates: dict[str, tuple[Floats, Floats, Floats]] = {}
         anchor_prices: dict[str, Floats] = {}
-        wanted = dict.fromkeys((*DEFAULT_ANCHORS, *((anchor,) if anchor else ())))
         for key in wanted:
-            if key not in rows or not rows[key].trading:
+            if key not in loaded:
                 continue
-            try:
-                _, series = load(key)
-            except PairAnalysisError:
-                continue
+            _, series = loaded[key]
             prices = {
                 item.candle_open_time: item.close
                 for item in series.bars
@@ -197,7 +275,11 @@ class PairRotationAnalysis:
                 candidates[key] = returns_a, returns_b, log_returns(closes)
         ranking = rank_anchors(candidates)
         selected = (
-            anchor if anchor is not None else (ranking[0].anchor if ranking else None)
+            None
+            if no_anchor
+            else explicit_anchor
+            if explicit_anchor is not None
+            else (ranking[0].anchor if ranking else None)
         )
         selected_prices = anchor_prices.get(selected) if selected else None
         anchor_returns = (
@@ -227,7 +309,7 @@ class PairRotationAnalysis:
                 rolling_dependence(returns_a, returns_b, window=band_lookback)
             ),
         }
-        return {
+        result = {
             "schema_version": "qap.api.pair-rotation-analysis.v1",
             "coin_a": _coin(rows[coin_a]),
             "coin_b": _coin(rows[coin_b]),
@@ -277,3 +359,9 @@ class PairRotationAnalysis:
                 for item, _ in loaded.values()
             ],
         }
+        with _ANALYSIS_LOCK:
+            _ANALYSIS_CACHE[cache_key] = deepcopy(result)
+            _ANALYSIS_CACHE.move_to_end(cache_key)
+            while len(_ANALYSIS_CACHE) > 32:
+                _ANALYSIS_CACHE.popitem(last=False)
+        return result

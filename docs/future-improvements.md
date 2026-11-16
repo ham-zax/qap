@@ -1,5 +1,30 @@
 # Future improvements
 
+Proposals from the 2026-11-16 terminal continuation. These entries authorize no implementation.
+
+- **Stop full verification after early failures.** The compiler continued through a
+  397-second Python suite after formatting and TypeScript failures. A corrected
+  full run repeated that suite. Consider stopping before expensive checks when
+  an earlier check fails. Preserve the existing lock and every required gate.
+
+- **Running API provenance.** The browser received HTTP 422 from an older process,
+  although current source supported the request. Expose a source revision and
+  startup time in health output. Compare that contract before browser checks.
+  Preserve active paper sessions during any restart.
+- **Frontend acceptance coverage.** Mock tests passed while terminal controls lacked
+  styles and saved runs restored only coin identifiers. Consider a small browser
+  smoke test against the actual API contract, with desktop and mobile checks.
+- **Complete coin discovery.** A 600-row response contained only 396 trading rows.
+  A 1,000-row response contained all 415 current trading rows. Consider explicit
+  pagination or server-side eligibility filtering before the directory exceeds
+  the current request limit.
+- **Bounded evidence output.** Combined reads exceeded the tool output limit during
+  recovery. Keep each result bounded and extract only checkpoint fields from history.
+- **Repeated directory fingerprints.** A warm analysis profile spends 1.01 seconds
+  in five research-scope calls. Directory fingerprints account for 0.97 seconds.
+  Consider reusing the digest for an immutable snapshot. Check copied models,
+  changed snapshots, and historical v1 hashes before introducing any cache.
+
 Proposals from the 2026-10-23 M3 session. These entries authorize no implementation.
 
 - **Route generation before type checks.** The first build rejected a new route

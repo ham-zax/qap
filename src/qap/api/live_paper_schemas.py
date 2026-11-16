@@ -26,7 +26,9 @@ class LivePaperCreateDto(AnalysisModel):
         pair = PairRotationRequestDto(coin_a=self.coin_a, coin_b=self.coin_b)
         object.__setattr__(self, "coin_a", pair.coin_a)
         object.__setattr__(self, "coin_b", pair.coin_b)
-        if self.anchor is not None:
+        if self.anchor == "none":
+            object.__setattr__(self, "anchor", None)
+        elif self.anchor is not None:
             venue, separator, code = self.anchor.partition(":")
             if venue != "binance" or not separator or not code:
                 raise ValueError("Choose a Binance anchor listing.")

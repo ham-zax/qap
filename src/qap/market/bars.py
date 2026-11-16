@@ -28,25 +28,31 @@ _FIXED_INTERVALS: dict[str, timedelta] = {
 def _validated_utc(timestamp: object, *, field: str) -> datetime:
     if not isinstance(timestamp, datetime):
         raise TypeError(f"{field} must be a datetime")
+    if timestamp.tzinfo is UTC:
+        return timestamp
     if timestamp.tzinfo is None or timestamp.utcoffset() != timedelta(0):
         raise ValueError(f"{field} must be timezone-aware UTC")
     return timestamp.astimezone(UTC)
 
 
 def _validated_instrument(value: object) -> VenueInstrument:
+    if type(value) is VenueInstrument:
+        return value
     if not isinstance(value, VenueInstrument):
         raise TypeError("instrument must be a VenueInstrument")
     return value
 
 
 def _validated_interval(value: object) -> "BarInterval":
+    if type(value) is BarInterval:
+        return value
     if not isinstance(value, BarInterval):
         raise TypeError("interval must be a BarInterval")
     return value
 
 
 def _validated_price(value: object, *, field: str) -> float:
-    if not isinstance(value, float):
+    if type(value) is not float and not isinstance(value, float):
         raise TypeError(f"{field} price must be a float")
     if not math.isfinite(value) or value <= 0:
         raise ValueError(f"{field} price must be positive finite")
@@ -56,7 +62,7 @@ def _validated_price(value: object, *, field: str) -> float:
 def _validated_volume(value: object) -> float | None:
     if value is None:
         return None
-    if not isinstance(value, float):
+    if type(value) is not float and not isinstance(value, float):
         raise TypeError("volume must be a float when present")
     if not math.isfinite(value) or value < 0:
         raise ValueError("volume must be finite and non-negative")

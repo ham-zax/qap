@@ -103,7 +103,7 @@ describe('wealthReadout', () => {
   it('shows strategy, HODL and the control for the hovered bar', () => {
     const readout = wealthReadout(wealth, new Date((T0 + 900) * 1000).toISOString())!
     expect(readout.rows.map((row) => [row.label, row.value])).toEqual([
-      ['Rotating', '10,100.50 USDT'], ['Just holding', '9,990.00 USDT'], ['Rebalance weekly', '10,010.00 USDT'],
+      ['Strategy', '10,100.50 USDT'], ['Hold 50/50', '9,990.00 USDT'], ['Rebalance weekly', '10,010.00 USDT'],
     ])
   })
   it('uses the recorded terminal values on the latest bar', () => {
@@ -118,7 +118,7 @@ describe('LabCharts readout', () => {
   it('gives screen readers the latest values and follows the hovered bar visually', () => {
     render(<LabCharts analysis={analysis()} />)
     const readout = render(<>{chartProps().readout}</>)
-    const sentence = 'BTC per ETH, latest bar 2026-10-01 00:45 UTC: BTC per ETH 23.5, Usual level 22, Normal range, top 23.5, Normal range, bottom 20.5, How unusual +2.00, SOL 0.5 USDT.'
+    const sentence = 'BTC per ETH, latest bar 2026-10-01 00:45 UTC: BTC per ETH 23.5, Moving average 22, Upper band (+2σ) 23.5, Lower band (−2σ) 20.5, Z-score +2.00, SOL 0.5 USDT.'
     expect(readout.getByText(sentence).classList.contains('sr-only')).toBe(true)
     expect(readout.getByText('Latest bar')).not.toBeNull()
 

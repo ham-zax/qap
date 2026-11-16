@@ -26,6 +26,17 @@ Status values: `open`, `in-progress`, `review`, `done`, `blocked`.
 
 ---
 
+## Phase 24 terminal integration
+
+Update context — 2026-11-16: record integration checks after the provider handoff.
+The approved [Phase 24 design](docs/plans/24-binance-terminal-ui-redesign.md) retains its requirements.
+
+| id | status | acceptance | evidence |
+|----|--------|------------|----------|
+| P24 | review | Terminal layout, full coin discovery, Simple/Pro controls, saved snapshots, and bottom tabs. | All 12 compiler gates pass. Browser checks cover desktop, mobile, themes, search, saved runs, and a real strategy test. Rapid pair edits, explicit no-anchor support, and the header mode switch now pass targeted checks. All 12 compiler gates pass in 442.12s after cold-start optimizations (`research_scope_from_snapshot`, `coins_for_listings`, fast-path bar/fingerprint checks, concurrent projection). Prepared browser requests take 1,006 ms and 91 ms; fresh-process cold HTTP takes 2,171 ms, so sub-2s cold-start remains open. See the [checkpoint](docs/aegis/work/2026-11-16-phase24-terminal/20-checkpoint.md). |
+
+---
+
 ## Historical Archive — Phase 19 Lab Continuation (2026-10-27)
 
 All 18 cards (`L1`–`L8`, `A1`–`A6`, `U1`, `B1`–`B3`) reached `review` and were committed in `9e5ef1a` (`feat: complete Pair Rotation Lab MVP, caching, proof gates, and review fixes`). See Git commit `9e5ef1a:TASKS.md` and `docs/plans/19-pair-rotation-lab-mvp.md` for per-card historical evidence.

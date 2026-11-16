@@ -148,6 +148,7 @@ export interface LabStrategyFormSettings {
   anchor_threshold: number
   rotation_pct: LabRotationPct
   crash_defense_mode: LabCrashDefenseMode
+  regime_break_drawdown: number
   auto_tune: boolean
   minimum_hold: number
   cooldown: number
@@ -169,6 +170,7 @@ export const DEFAULT_STRATEGY_SETTINGS: LabStrategyFormSettings = {
   anchor_threshold: 0.002,
   rotation_pct: 100,
   crash_defense_mode: 'coins_only',
+  regime_break_drawdown: 0.15,
   auto_tune: true,
   minimum_hold: 4,
   cooldown: 4,
@@ -200,6 +202,7 @@ export function toBackendLabSettings(form: LabStrategyFormSettings): BackendLabS
     anchor_threshold: form.anchor_threshold,
     rotation_size: Number((form.rotation_pct / 200).toFixed(4)),
     crash_defense_mode: form.crash_defense_mode,
+    regime_break_drawdown: form.regime_break_drawdown,
     auto_tune: form.auto_tune,
     minimum_hold: form.minimum_hold,
     cooldown: form.cooldown,
@@ -226,6 +229,7 @@ export function fromBackendLabSettings(raw: BackendLabSettingsOutput): LabStrate
     anchor_threshold: raw.anchor_threshold ?? DEFAULT_STRATEGY_SETTINGS.anchor_threshold,
     rotation_pct,
     crash_defense_mode: raw.crash_defense_mode ?? DEFAULT_STRATEGY_SETTINGS.crash_defense_mode,
+    regime_break_drawdown: raw.regime_break_drawdown !== undefined ? Number(raw.regime_break_drawdown) : DEFAULT_STRATEGY_SETTINGS.regime_break_drawdown,
     auto_tune: raw.auto_tune ?? DEFAULT_STRATEGY_SETTINGS.auto_tune,
     minimum_hold: raw.minimum_hold ?? DEFAULT_STRATEGY_SETTINGS.minimum_hold,
     cooldown: raw.cooldown ?? DEFAULT_STRATEGY_SETTINGS.cooldown,

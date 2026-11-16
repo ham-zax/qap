@@ -52,8 +52,8 @@ def test_advisor_mean_reverting_regime() -> None:
     assert out["regime_label"] == "mean_reverting"
     assert out["bar_warning"] is None
     assert out["simple_summary"] and out["pro_summary"]
-    assert len(out["suggestions"]) == 3
-    assert [s["rank"] for s in out["suggestions"]] == [1, 2, 3]
+    assert len(out["suggestions"]) == 4
+    assert [s["rank"] for s in out["suggestions"]] == [1, 2, 3, 4]
     assert out["suggestions"][0]["preset_id"] == "zscore_kalman"
     for s in out["suggestions"]:
         LabSettings.model_validate(s["settings"])
@@ -74,7 +74,7 @@ def test_advisor_15m_noisy_emits_bar_warning() -> None:
     assert out["regime_label"] == "mixed_or_noisy"
     assert out["bar_warning"] is not None
     assert "15m" in out["bar_warning"]
-    assert out["suggestions"][0]["recommended_bar"] == "1h"
+    assert out["suggestions"][0]["recommended_bar"] == "4h"
     for s in out["suggestions"]:
         LabSettings.model_validate(s["settings"])
 

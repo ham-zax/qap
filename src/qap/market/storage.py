@@ -268,6 +268,8 @@ def _optional_metadata_datetime(
 def _float_or_none(value: object, *, field: str, row_number: int) -> float | None:
     if value is None:
         return None
+    if type(value) is float:
+        return value
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise MarketDataStorageError(
             f"Parquet row {row_number} has invalid {field} value"
@@ -283,6 +285,8 @@ def _datetime_or_none(
 ) -> datetime | None:
     if value is None:
         return None
+    if type(value) is datetime:
+        return value
     if not isinstance(value, datetime):
         raise MarketDataStorageError(
             f"Parquet row {row_number} has invalid {field} value"
@@ -325,12 +329,29 @@ def read_parquet_bar_series(path: str | Path) -> ValidatedBarSeries:
     )
     interval = BarInterval(_required_metadata(metadata, b"interval"))
     columns = cast(Mapping[str, list[object]], table.to_pydict())
+    rows = zip(
+        columns["candle_open_time"],
+        columns["source_close_time"],
+        columns["open"],
+        columns["high"],
+        columns["low"],
+        columns["close"],
+        columns["volume"],
+        strict=True,
+    )
 
     bars: list[MarketBar] = []
-    for index in range(table.num_rows):
-        row_number = index + 1
+    for row_number, (
+        raw_open_time,
+        raw_close_time,
+        raw_open,
+        raw_high,
+        raw_low,
+        raw_close,
+        raw_volume,
+    ) in enumerate(rows, start=1):
         candle_open = _datetime_or_none(
-            columns["candle_open_time"][index],
+            raw_open_time,
             field="candle_open_time",
             row_number=row_number,
         )
@@ -338,16 +359,10 @@ def read_parquet_bar_series(path: str | Path) -> ValidatedBarSeries:
             raise MarketDataStorageError(
                 f"Parquet row {row_number} is missing candle_open_time"
             )
-        open_price = _float_or_none(
-            columns["open"][index], field="open", row_number=row_number
-        )
-        high = _float_or_none(
-            columns["high"][index], field="high", row_number=row_number
-        )
-        low = _float_or_none(columns["low"][index], field="low", row_number=row_number)
-        close = _float_or_none(
-            columns["close"][index], field="close", row_number=row_number
-        )
+        open_price = _float_or_none(raw_open, field="open", row_number=row_number)
+        high = _float_or_none(raw_high, field="high", row_number=row_number)
+        low = _float_or_none(raw_low, field="low", row_number=row_number)
+        close = _float_or_none(raw_close, field="close", row_number=row_number)
         if open_price is None or high is None or low is None or close is None:
             raise MarketDataStorageError(
                 f"Parquet row {row_number} is missing an OHLC value"
@@ -358,7 +373,7 @@ def read_parquet_bar_series(path: str | Path) -> ValidatedBarSeries:
                 interval=interval,
                 candle_open_time=candle_open,
                 source_close_time=_datetime_or_none(
-                    columns["source_close_time"][index],
+                    raw_close_time,
                     field="source_close_time",
                     row_number=row_number,
                 ),
@@ -367,7 +382,7 @@ def read_parquet_bar_series(path: str | Path) -> ValidatedBarSeries:
                 low=low,
                 close=close,
                 volume=_float_or_none(
-                    columns["volume"][index],
+                    raw_volume,
                     field="volume",
                     row_number=row_number,
                 ),

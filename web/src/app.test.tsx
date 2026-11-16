@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -84,5 +84,36 @@ describe('QAP route errors', () => {
     )
     expect(screen.getByRole('button', { name: 'Retry' })).toBeVisible()
     expect(screen.getByText('operation_not_found')).toBeVisible()
+  })
+
+  it('keeps the header to one slim row with a single theme button', async () => {
+    const app = createQapApp({
+      fetchImpl: vi.fn<typeof fetch>().mockImplementation(async () =>
+        new Response(JSON.stringify(workspace), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+      history: createMemoryHistory({ initialEntries: ['/missing-route'] }),
+    })
+
+    await app.router.load()
+    render(<App {...app} />)
+
+    expect(await screen.findByRole('heading', { name: 'Page not found' })).toBeVisible()
+    expect(screen.queryByText('Local workspace')).not.toBeInTheDocument()
+    expect(screen.queryByText('Read-only examples')).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Color theme' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Background collection is stopped' })).toHaveAttribute(
+      'href',
+      '/operations',
+    )
+
+    const toggle = screen.getByRole('button', { name: 'Switch to light theme' })
+    expect(toggle).toHaveAttribute('title', 'Light theme')
+    fireEvent.click(toggle)
+    expect(await screen.findByRole('button', { name: 'Switch to dark theme' })).toBeVisible()
+    expect(document.documentElement.dataset.theme).toBe('light')
+    localStorage.clear()
   })
 })

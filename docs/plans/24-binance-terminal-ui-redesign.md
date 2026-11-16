@@ -2,6 +2,18 @@
 
 **Status:** Approved by Hamza 2026-11-15 after live walkthrough & cold-start Binance trader teardown.
 
+Implementation status — 2026-11-16: in review. The terminal integration passes all
+12 compiler gates. See the [continuation checkpoint](../aegis/work/2026-11-16-phase24-terminal/20-checkpoint.md)
+for executed browser checks and remaining acceptance gaps.
+The follow-up adds rapid pair-edit handling, sample no-anchor support, and the header mode switch.
+Prepared browser requests meet two seconds. Cold requests under test load remain above that target.
+
+Update context — 2026-11-16
+Trigger: provider handoff and integration checks.
+Purpose: record current evidence separately from approved requirements.
+Impact: no change to economic, benchmark, or research decisions.
+Evidence: the continuation checkpoint and `/tmp/qap-phase24-gate.log`.
+
 ```text
 Update context — 2026-11-15
 Trigger: Hamza rated the Stage S6 3-column text-heavy layout 1/10 (slow directory load, only 3 Binance coins shown, 5-line disclaimer inside top bar, weird patronizing copy like "Usual level over 672" / "Pick for me" / "Recent togetherness", fake Simple/Advanced toggle, silent saved-study jumps) and approved all 4 structured UX decisions.

@@ -101,10 +101,10 @@ export function ratioReadout(analysis: LabAnalysis, timestamp: string | null, op
   const swatch = (token: string, dashed: boolean, drawn: boolean) => drawn ? { swatch: { token, dashed } } : {}
   const rows: ReadoutRow[] = [
     { key: 'ratio', label: `${analysis.coin_a.code} per ${analysis.coin_b.code}`, value: formatRatio(ratio), swatch: { token: '--chart-series-1', dashed: false } },
-    { key: 'mean', label: 'Usual level', value: formatRatio(mean), ...swatch('--qap-muted', true, options.bands) },
-    { key: 'upper', label: 'Normal range, top', value: formatRatio(band(2)), ...swatch('--qap-border-strong', true, options.bands) },
-    { key: 'lower', label: 'Normal range, bottom', value: formatRatio(band(-2)), ...swatch('--qap-border-strong', true, options.bands) },
-    { key: 'z', label: 'How unusual', value: formatZ(zScore(ratio, mean, std)) },
+    { key: 'mean', label: 'Moving average', value: formatRatio(mean), ...swatch('--qap-muted', true, options.bands) },
+    { key: 'upper', label: 'Upper band (+2σ)', value: formatRatio(band(2)), ...swatch('--qap-border-strong', true, options.bands) },
+    { key: 'lower', label: 'Lower band (−2σ)', value: formatRatio(band(-2)), ...swatch('--qap-border-strong', true, options.bands) },
+    { key: 'z', label: 'Z-score', value: formatZ(zScore(ratio, mean, std)) },
   ]
   if (analysis.anchor && data.anchor_close) {
     rows.push({
@@ -118,8 +118,8 @@ export function ratioReadout(analysis: LabAnalysis, timestamp: string | null, op
 }
 
 export const WEALTH_LABELS: Record<string, string> = {
-  strategy: 'Rotating',
-  hodl: 'Just holding',
+  strategy: 'Strategy',
+  hodl: 'Hold 50/50',
   hold_a: 'Hold coin A',
   hold_b: 'Hold coin B',
   daily: 'Rebalance daily',

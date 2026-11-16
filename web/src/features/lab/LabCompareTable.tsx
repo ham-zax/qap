@@ -11,6 +11,12 @@ function pct(value: number | null | undefined): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`
 }
 
+function dollars(value: unknown): string {
+  const amount = Number(value)
+  return value == null || !Number.isFinite(amount) ? '—'
+    : amount.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
+}
+
 export function LabCompareTable({ compare, onOpenStudy, onClose }: LabCompareTableProps) {
   return (
     <section className="lab-card lab-compare-panel" aria-label="Preset comparison">
@@ -28,10 +34,12 @@ export function LabCompareTable({ compare, onOpenStudy, onClose }: LabCompareTab
             <tr>
               <th>Method</th>
               <th>Hedge / Lookback</th>
-              <th>vs HODL</th>
-              <th>vs Control</th>
+              <th>Ending $10,000</th>
+              <th>vs Hold</th>
+              <th>vs Rebalance</th>
               <th>Folds</th>
               <th>Swaps</th>
+              <th>Fees</th>
               <th>Verdict</th>
               <th />
             </tr>
@@ -47,6 +55,7 @@ export function LabCompareTable({ compare, onOpenStudy, onClose }: LabCompareTab
                     {best && <span className="lab-chip">Best</span>}
                   </td>
                   <td>{applied.hedge_method} · {applied.lookback}</td>
+                  <td className="bt-mono">{dollars(item.result.wealth?.terminal_values.strategy)}</td>
                   <td className={(item.result.proof.vs_hodl_pct ?? 0) > 0 ? 'lab-proof-better' : 'lab-proof-worse'}>
                     {pct(item.result.proof.vs_hodl_pct)}
                   </td>
@@ -55,6 +64,7 @@ export function LabCompareTable({ compare, onOpenStudy, onClose }: LabCompareTab
                   </td>
                   <td>{item.result.proof.folds_passing}/{item.result.proof.folds_total}</td>
                   <td>{item.result.proof.validation_trades}</td>
+                  <td className="bt-mono">{dollars(item.result.statistics?.strategy?.fees_usdt)}</td>
                   <td>{item.result.call.headline}</td>
                   <td>
                     <button type="button" onClick={() => onOpenStudy(item.study_id)}>

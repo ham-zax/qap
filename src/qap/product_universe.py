@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import fcntl
 import os
-from collections.abc import Generator
+from collections.abc import Generator, Mapping
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -203,11 +203,21 @@ class ProductUniverse:
                 "Current market directory has not been refreshed."
             )
         state = self.read_state()
-        rows = coins(directory, self.registry_snapshot(), state)
-        selected = tuple(
-            next((row for row in rows if row.listing_id == key), None)
-            for key in listing_ids
-        )
+        rows = {
+            row.listing_id: row
+            for row in coins(directory, self.registry_snapshot(), state)
+        }
+        return self.research_scope_from_snapshot(directory, state, rows, listing_ids)
+
+    def research_scope_from_snapshot(
+        self,
+        directory: ProductMarketDirectory,
+        state: ProductUniverseState,
+        rows_by_id: Mapping[str, ResearchCoin],
+        listing_ids: tuple[str, str],
+    ) -> ProductResearchScope:
+        """Build research scope from an already-loaded directory/coin snapshot."""
+        selected = tuple(rows_by_id.get(key) for key in listing_ids)
         if listing_ids[0] == listing_ids[1] or any(row is None for row in selected):
             raise ProductUniverseError("Choose two distinct eligible spot listings.")
         instruments: list[ResolvedProductInstrument] = []

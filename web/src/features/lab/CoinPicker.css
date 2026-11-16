@@ -91,8 +91,41 @@
   box-shadow: var(--qap-shadow-overlay);
 }
 
+.coin-picker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--qap-border);
+}
+
+.lab .coin-picker-chips button {
+  min-height: 28px;
+  padding: 0 10px;
+  background: var(--qap-subtle);
+  border: 1px solid var(--qap-border);
+  border-radius: 999px;
+  color: var(--qap-secondary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.lab .coin-picker-chips button:hover {
+  border-color: var(--qap-foreground);
+  color: var(--qap-foreground);
+}
+
+.lab .coin-picker-chips button[aria-pressed='true'] {
+  background: var(--qap-accent);
+  border-color: var(--qap-accent);
+  color: var(--qap-accent-contrast);
+}
+
 .coin-picker-results {
-  max-height: 288px;
+  max-height: 300px;
   margin: 8px -4px 0;
   overflow-y: auto;
   overscroll-behavior: contain;

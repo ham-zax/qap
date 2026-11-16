@@ -13,6 +13,9 @@ const coins = [
   { listing_id: 'binance:BTC', venue: 'binance', trading: true, venue_asset_code: 'BTC', name: 'Bitcoin', identity_state: 'resolved', source: 'venue', call_available: true },
   { listing_id: 'binance:ETH', venue: 'binance', trading: true, venue_asset_code: 'ETH', name: 'Ethereum', identity_state: 'resolved', source: 'venue', call_available: true },
   { listing_id: 'binance:SOL', venue: 'binance', trading: true, venue_asset_code: 'SOL', name: 'Solana', identity_state: 'resolved', source: 'venue', call_available: true },
+  { listing_id: 'binance:BNB', venue: 'binance', trading: true, venue_asset_code: 'BNB', name: 'BNB', identity_state: 'resolved', source: 'venue', call_available: true },
+  { listing_id: 'binance:DOGE', venue: 'binance', trading: true, venue_asset_code: 'DOGE', name: 'Dogecoin', identity_state: 'resolved', source: 'venue', call_available: true },
+  { listing_id: 'binance:LINK', venue: 'binance', trading: true, venue_asset_code: 'LINK', name: 'Chainlink', identity_state: 'resolved', source: 'venue', call_available: true },
 ]
 
 function makeAnalysis(): LabAnalysis {
@@ -20,21 +23,21 @@ function makeAnalysis(): LabAnalysis {
     schema_version: 'qap.api.pair-rotation-analysis.v1',
     coin_a: { id: 'binance:BTC', code: 'BTC', name: 'Bitcoin', identity_state: 'resolved' },
     coin_b: { id: 'binance:ETH', code: 'ETH', name: 'Ethereum', identity_state: 'resolved' },
-    bar: '15m',
+    bar: '1h',
     window_days: 180,
-    band_lookback: 672,
+    band_lookback: 168,
     data_through: '2026-10-24T00:00:00Z',
-    bars_used: 4,
+    bars_used: 4320,
     identity_confirmed: true,
     anchor: { id: 'binance:SOL', code: 'SOL', name: 'Solana', identity_state: 'resolved' },
-    anchor_ranking: [],
+    anchor_ranking: [{ anchor: { id: 'binance:SOL', code: 'SOL', name: 'Solana', identity_state: 'resolved' }, beta_a: 1.0, beta_b: 0.9, joint_explained: 0.61 }],
     series: {
       time: [1790897400, 1790898300, 1790899200, 1790900100],
       close_a: [60000, 60500, 61000, 61500],
       close_b: [3000, 3010, 3020, 3030],
       ratio: [20, 20.1, 20.2, 20.3],
-      mean: [null, 20.05, 20.1, 20.15],
-      std: [null, 0.05, 0.08, 0.1],
+      mean: [20, 20.05, 20.1, 20.15],
+      std: [0.05, 0.05, 0.08, 0.1],
       anchor_close: [150, 151, 152, 153],
     },
     measurements: {
@@ -47,14 +50,14 @@ function makeAnalysis(): LabAnalysis {
       regime: { volatility: 'normal', volatility_percentile: 45, trend: 'ranging', efficiency: 0.2 },
       anchor_a: null,
       anchor_b: null,
-      kalman: null,
+      kalman: { beta: 0.99, standard_error: 0.05, beta_change: 0.01 },
       granger: null,
-      copula: null,
+      copula: { family: 'student', lower_tail: 0.48, upper_tail: 0.48, observations: 2000 },
       rolling_dependence: null,
     },
     datasets: [{
       dataset_id: 'exact-btc',
-      interval: '15m',
+      interval: '1h',
       venue_symbol: 'BTCUSDT',
       semantic_fingerprint: 'b'.repeat(64),
       coverage_start: '2026-04-01T00:00:00Z',
@@ -68,17 +71,17 @@ const json = (value: unknown, status = 200) =>
 
 const advisorPayload = {
   regime_label: 'mean_reverting',
-  simple_summary: 'BTC and ETH tend to snap back together after short-term divergences.',
+  simple_summary: 'BTC and ETH snap back together after short-term divergences.',
   pro_summary: 'Regime=mean_reverting; coint_p=0.015; half_life_bars=32; hurst=0.41.',
-  bar_warning: '15m candles generate high swap counts where fees often exceed gross spread.',
+  bar_warning: null,
   suggestions: [
     {
       rank: 1,
       preset_id: 'zscore_kalman',
       title: 'Kalman Z-Score Mean Reversion',
-      simple_reason: 'Adapts smoothly to gradual shifts in the pair ratio.',
+      simple_reason: 'Buys the coin that lags behind its usual ratio.',
       pro_reason: 'Kalman hedge with lookback=64, entry=2.0, exit=0.4.',
-      recommended_bar: '15m',
+      recommended_bar: '1h',
       recommended_anchor: null,
       settings: { method: 'zscore', hedge_method: 'kalman', lookback: 64, entry: 2.0, exit: 0.4, rotation_size: '0.25', crash_defense_mode: 'park_anchor' },
     },
@@ -91,7 +94,7 @@ const studyPayload = {
   pinned: false,
   result: {
     schema_version: 'qap.lab.study.v1',
-    analysis: { coin_a: { id: 'binance:BTC', code: 'BTC', name: 'Bitcoin', identity_state: 'resolved' }, coin_b: { id: 'binance:ETH', code: 'ETH', name: 'Ethereum', identity_state: 'resolved' } },
+    analysis: makeAnalysis(),
     requested_settings: { method: 'copula', hedge_method: 'ratio', lookback: 120, entry: 2.0, exit: 0.5, rotation_size: '0.25', crash_defense_mode: 'park_usdt' },
     applied_settings: { method: 'copula', hedge_method: 'ratio', lookback: 120, entry: 2.0, exit: 0.5, rotation_size: '0.25', crash_defense_mode: 'park_usdt' },
     call: { status: 'into_a', headline: 'Rotate ETH → BTC', reason: 'Spread tail triggered.', target_weight_a: '0.625', rotation_fraction: '0.25' },
@@ -99,7 +102,8 @@ const studyPayload = {
       passes: true, data_role: 'validation', final_oos_used: false, validation_reused: false, settings_tried: 4,
       control: 'weekly', raw_p_value: 0.015, corrected_p_value: 0.025, significance: 0.05, folds_passing: 4,
       folds_total: 5, minimum_passing_folds: 3, validation_trades: 18, minimum_trades: 10, vs_hodl_pct: 3.4,
-      vs_control_pct: 1.9, tuning_start: '2026-04-01T00:00:00Z', tuning_end: '2026-07-01T00:00:00Z',
+      vs_control_pct: 1.9, cost_paid_pct: 1.12, gross_vs_hodl_pct: 4.52,
+      tuning_start: '2026-04-01T00:00:00Z', tuning_end: '2026-07-01T00:00:00Z',
       proof_start: '2026-07-02T00:00:00Z', proof_end: '2026-10-24T00:00:00Z', correction: 'Holm-Bonferroni.', limitations: [],
     },
     signal: {
@@ -148,7 +152,7 @@ const studyPayload = {
         executed_legs: 36,
         fees_usdt: '42.10',
         slippage_usdt: '11.40',
-        terminal_holdings: { 'binance:BTC': '0.112', 'binance:ETH': '1.24' },
+        terminal_holdings: { 'binance:BTC': '0.1723', 'binance:ETH': '0' },
       },
     },
     code_fingerprint: 'abcdef1234567890',
@@ -158,44 +162,46 @@ const studyPayload = {
 }
 
 const activePaperSession = {
+  schema_version: 'qap.lab.paper_session.v1',
   session_id: 'paper-1',
   actor_id: 'local',
   status: 'active',
   created_at: '2026-10-24T00:00:00Z',
-  updated_at: '2026-10-24T00:01:00Z',
+  updated_at: '2026-10-24T00:05:00Z',
   stopped_at: null,
   coin_a: 'binance:BTC',
   coin_b: 'binance:ETH',
-  anchor: null,
-  bar: '15m',
+  anchor: 'binance:SOL',
+  bar: '1h',
   order_rtt_ms: 75,
   max_staleness_ms: 500,
-  settings: studyPayload.result.applied_settings,
-  simple_status: 'Monitoring L2 books; 1 rotation filled.',
-  vs_hodl_pct: 0.42,
-  vs_control_pct: 0.18,
+  starting_value: '10000',
+  settings: { method: 'copula' },
   decisions_count: 3,
+  simple_status: 'Active paper tracking on BTC/ETH.',
+  vs_hodl_pct: 0.42,
+  vs_control_pct: 0.31,
   portfolios: {
-    strategy: { value_usdt: '10042.00', return_pct: 0.42, holdings: {}, fees_usdt: '1.20', slippage_usdt: '0.35', rotations: 1 },
-    hodl: { value_usdt: '10000.00', return_pct: 0.0, holdings: {}, fees_usdt: '0', slippage_usdt: '0', rotations: 0 },
-    drift_control: { value_usdt: '10024.00', return_pct: 0.24, holdings: {}, fees_usdt: '0.50', slippage_usdt: '0.10', rotations: 1 },
+    strategy: { holdings: { BTC: '0.16', ETH: '0' }, value_usdt: '10042.00', return_pct: 0.42, fees_usdt: '2.00', slippage_usdt: '0.50', rotations: 1 },
+    hodl: { holdings: { BTC: '0.08', ETH: '1.6' }, value_usdt: '10000.00', return_pct: 0, fees_usdt: '0', slippage_usdt: '0', rotations: 0 },
+    drift_control: { holdings: { BTC: '0.08', ETH: '1.6' }, value_usdt: '10011.00', return_pct: 0.11, fees_usdt: '0', slippage_usdt: '0', rotations: 0 },
   },
-  trades: [{ step_index: 1, decision_time: '2026-10-24T00:01:00Z', direction: 'into_a', route: 'ETH -> USDT -> BTC', fees_usdt: '1.20', slippage_usdt: '0.35', rejected_reasons: [], fills: [] }],
+  trades: [],
   latency_audit: [{
     step_index: 1,
-    t_exch_us: 1790900100000000,
-    t_recv_ns: 1790900100012000000,
-    t_decide_ns: 1790900100012500000,
-    t_fill_leg1_ns: 1790900100087500000,
-    t_fill_leg2_ns: 1790900100162500000,
-    recv_to_decide_ms: 0.5,
+    t_exch_us: 1790897400000000,
+    t_recv_ns: 1790897400045000000,
+    t_decide_ns: 1790897400047000000,
+    t_fill_leg1_ns: 1790897400122000000,
+    t_fill_leg2_ns: 1790897400197000000,
+    order_rtt_ms: 75,
+    recv_to_decide_ms: 2.0,
     decide_to_fill_leg1_ms: 75.0,
     decide_to_fill_leg2_ms: 150.0,
-    order_rtt_ms: 75.0,
-    book_age_leg1_ms: 12.0,
-    book_age_leg2_ms: 14.0,
-    signal_preference: 0.5,
-    action: 'into_a',
+    book_age_leg1_ms: 12.4,
+    book_age_leg2_ms: 18.2,
+    signal_preference: 1,
+    action: 'swap',
     rejected_reasons: [],
   }],
 }
@@ -203,23 +209,20 @@ const activePaperSession = {
 beforeEach(() => localStorage.clear())
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
-describe('Three-column Finance Cockpit (/lab)', () => {
-  it('submits customized strategy settings, toggles Simple/Advanced, switches wealth units, and inspects drawer & scorecard', async () => {
+describe('Lab Binance Terminal + Bottom Tabs', () => {
+  it('opens in Simple preset mode by default, unlocks Pro knobs, switches Wealth units, and navigates bottom tabs', async () => {
     const studyPosts: Array<{ settings?: Record<string, unknown> }> = []
     let pinnedState = false
 
     vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = new URL(String(input), 'http://localhost')
       if (url.pathname.endsWith('/coins')) return json({ directory_status: 'observed', coins })
-      if (url.pathname.endsWith('/open')) return json({ operation_id: 'op-1' }, 202)
-      if (url.pathname.includes('/operations/')) return json({ status: 'completed' })
       if (url.pathname.endsWith('/advisor')) return json(advisorPayload)
       if (url.pathname.endsWith('/studies') && init?.method === 'POST') {
-        const body = JSON.parse(String(init.body)) as { settings?: Record<string, unknown> }
-        studyPosts.push(body)
-        return json({ ...studyPayload, pinned: pinnedState })
+        studyPosts.push(JSON.parse(String(init.body)))
+        return json(studyPayload)
       }
-      if (url.pathname.endsWith('/studies')) {
+      if (url.pathname.endsWith('/studies') && !init?.method) {
         return json({
           studies: [{
             study_id: 'study-cockpit-1',
@@ -244,20 +247,27 @@ describe('Three-column Finance Cockpit (/lab)', () => {
 
     render(<LabDashboard />)
 
-    // Smart Strategy Advisor loads in Simple mode first
-    expect(await screen.findByText('BTC and ETH tend to snap back together after short-term divergences.')).toBeVisible()
-    expect(screen.getByText(/15m candles generate high swap counts/)).toBeVisible()
+    // Simple mode renders Advisor preset card and hides raw Pro inputs
+    expect(await screen.findByText('Kalman Z-Score Mean Reversion')).toBeVisible()
+    expect(screen.queryByLabelText(/Tail Entry Prob/)).not.toBeInTheDocument()
 
-    // Switch strategy method to Spread Copula and customize sizing & crash defense
+    // Overview KPI tiles appear with standard trader terms
+    expect(screen.getByText('Return Correlation')).toBeVisible()
+    expect(screen.getByText('Mean-Reversion Half-Life')).toBeVisible()
+
+    // Switch Simple -> Pro: full trader controls unlock
+    const viewGroup = screen.getByRole('group', { name: 'View mode' })
+    fireEvent.click(within(viewGroup).getByRole('button', { name: 'Pro' }))
+
     fireEvent.click(screen.getByRole('button', { name: 'Spread Copula' }))
-    fireEvent.change(screen.getByLabelText('Tail probability'), { target: { value: '0.03' } })
-    fireEvent.click(screen.getByRole('button', { name: '50%' }))
-    fireEvent.change(screen.getByLabelText('Crash defense'), { target: { value: 'park_usdt' } })
+    fireEvent.change(screen.getByLabelText(/Tail Entry Prob/), { target: { value: '0.03' } })
+    fireEvent.click(within(screen.getByRole('group', { name: 'Swap size' })).getByRole('button', { name: '50%' }))
+    fireEvent.change(screen.getByLabelText(/Crash Stop/), { target: { value: 'park_usdt' } })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Apply & Run Test' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Test Strategy ($10,000)' }))
 
-    expect(await screen.findByRole('heading', { name: 'Rotate ETH → BTC' })).toBeVisible()
-    expect(studyPosts).toHaveLength(1)
+    expect(await screen.findByText('Validated Edge (4/5 Folds)')).toBeVisible()
+    expect(screen.getByText('$10,000 → $10,340')).toBeVisible()
     expect(studyPosts[0]?.settings).toMatchObject({
       method: 'copula',
       copula_probability: 0.03,
@@ -265,60 +275,44 @@ describe('Three-column Finance Cockpit (/lab)', () => {
       crash_defense_mode: 'park_usdt',
     })
 
-    // Dirty badge appears when a knob moves after running a study
-    fireEvent.click(screen.getByRole('button', { name: '75%' }))
-    expect(screen.getByText('Settings changed')).toBeVisible()
-
-    // Ratio chart receives trade markers
+    // Ratio chart receives trade markers and Pro signal oscillator pane appears
     expect(screen.getByRole('img', { name: 'BTC per ETH' })).toHaveAttribute('data-markers', 'Buy BTC')
-
-    // Toggle Simple -> Advanced: pro summary & active signal sub-chart appear
-    const viewGroup = screen.getByRole('group', { name: 'View mode' })
-    fireEvent.click(within(viewGroup).getByRole('button', { name: 'Advanced' }))
-    expect(screen.getByText(/Regime=mean_reverting; coint_p=0.015/)).toBeVisible()
     expect(screen.getByRole('img', { name: 'Active signal' })).toBeVisible()
 
-    // Toggle Wealth units: USDT Value -> BTC Units -> ETH Units
+    // Unsaved changes badge appears when Swap Size changes after test
+    fireEvent.click(within(screen.getByRole('group', { name: 'Swap size' })).getByRole('button', { name: '75%' }))
+    expect(screen.getByText('Unsaved changes')).toBeVisible()
+
+    // Switch above-the-fold chart tab to Wealth Curve ($10,000) and toggle units
+    fireEvent.click(screen.getByRole('tab', { name: /Wealth Curve/ }))
     const unitGroup = screen.getByRole('group', { name: 'Wealth unit' })
     fireEvent.click(within(unitGroup).getByRole('button', { name: 'BTC Units' }))
     expect(screen.getByText('0.1723 BTC')).toBeVisible()
     fireEvent.click(within(unitGroup).getByRole('button', { name: 'ETH Units' }))
     expect(screen.getByText('3.4466 ETH')).toBeVisible()
 
-    // Backtest Scorecard displays statistics
-    const scorecard = screen.getByRole('region', { name: 'Backtest scorecard' })
-    expect(within(scorecard).getByText('-2.15%')).toBeVisible()
-    expect(within(scorecard).getByText('18')).toBeVisible()
-    expect(within(scorecard).getByText('42.10 USDT')).toBeVisible()
-    expect(within(scorecard).getByText('11.40 USDT')).toBeVisible()
-
-    // Expand Trade/Fold drawer and inspect tabs
-    fireEvent.click(screen.getByText(/Where the data comes from & audit trail/))
+    // Inspect bottom tabs: Simulated Swaps, Pro Diagnostics, Saved Runs
+    fireEvent.click(screen.getByRole('tab', { name: /Simulated Swaps/ }))
     expect(screen.getByText('ETH -> USDT -> BTC')).toBeVisible()
-    fireEvent.click(screen.getByRole('tab', { name: /Walk-Forward Folds/ }))
-    expect(screen.getByText('+1.80%')).toBeVisible()
-    expect(screen.getByText('2026-07-02 → 2026-08-01')).toBeVisible()
 
-    // Pin saved study
+    fireEvent.click(screen.getByRole('tab', { name: 'Pro Diagnostics' }))
+    expect(screen.getByText('+1.80%')).toBeVisible()
+    expect(screen.getByText(/2026-07-02/)).toBeVisible()
+
+    fireEvent.click(screen.getByRole('tab', { name: /Saved Runs/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Pin BTC/ETH' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Unpin BTC/ETH' })).toBeVisible())
   })
 
-  it('compares presets via /studies/compare and operates Live L2 Paper session controls', async () => {
+  it('auto-switches to Compare Strategies tab on preset comparison and runs Live Paper inside the Live Paper tab', async () => {
     let paperStepCount = 0
     vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = new URL(String(input), 'http://localhost')
       if (url.pathname.endsWith('/coins')) return json({ directory_status: 'observed', coins })
-      if (url.pathname.endsWith('/open')) return json({ operation_id: 'op-1' }, 202)
-      if (url.pathname.includes('/operations/')) return json({ status: 'completed' })
       if (url.pathname.endsWith('/advisor')) return json(advisorPayload)
       if (url.pathname.endsWith('/studies')) return json({ studies: [], next_offset: null })
       if (url.pathname.endsWith('/studies/compare')) {
-        return json({
-          advisor: advisorPayload,
-          best_study_id: 'study-cockpit-1',
-          studies: [studyPayload],
-        })
+        return json({ advisor: advisorPayload, best_study_id: 'study-cockpit-1', studies: [studyPayload] })
       }
       if (url.pathname.endsWith('/paper-sessions') && !init?.method) return json({ sessions: [], next_offset: null })
       if (url.pathname.endsWith('/paper-sessions') && init?.method === 'POST') return json(activePaperSession, 201)
@@ -333,19 +327,20 @@ describe('Three-column Finance Cockpit (/lab)', () => {
     }))
 
     render(<LabDashboard />)
-    expect(await screen.findByText('BTC and ETH tend to snap back together after short-term divergences.')).toBeVisible()
+    expect(await screen.findByText('Kalman Z-Score Mean Reversion')).toBeVisible()
 
-    // Compare All Presets
+    // Compare All Presets auto-switches bottom tab to Compare Strategies
     fireEvent.click(screen.getByRole('button', { name: 'Compare All Presets' }))
     const compareRegion = await screen.findByRole('region', { name: 'Preset comparison' })
     expect(within(compareRegion).getByText('+3.40%')).toBeVisible()
     expect(within(compareRegion).getByText('Best')).toBeVisible()
 
-    // Live L2 Paper Monitor: Start -> Step -> Stop
+    // Switch bottom tab to Live Paper: Start -> Step -> Stop
+    fireEvent.click(screen.getByRole('tab', { name: /Live Paper/ }))
     const paperRegion = screen.getByRole('region', { name: 'Live L2 paper monitor' })
     fireEvent.click(within(paperRegion).getByRole('button', { name: 'Start Live Paper' }))
     expect(await within(paperRegion).findByText('+0.42%')).toBeVisible()
-    expect(within(paperRegion).getByText('75.0 ms')).toBeVisible()
+    expect(within(paperRegion).getByText('45.0 ms')).toBeVisible()
 
     fireEvent.click(within(paperRegion).getByRole('button', { name: 'Step 3s' }))
     expect(await within(paperRegion).findByText('+0.55%')).toBeVisible()

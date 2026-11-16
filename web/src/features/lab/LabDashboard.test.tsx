@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, renderHook, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useLab } from './useLab'
 import { LabDashboard } from './LabDashboard'
 import type { LabAnalysis } from './labContract'
 
@@ -10,6 +11,7 @@ vi.mock('../../components/charts/TimeSeriesChart', () => ({
 const coins = [
   { listing_id: 'binance:BTC', venue: 'binance', trading: true, venue_asset_code: 'BTC', name: 'Bitcoin', identity_state: 'unresolved', source: 'venue', call_available: false },
   { listing_id: 'binance:W', venue: 'binance', trading: true, venue_asset_code: 'W', name: 'Wormhole', identity_state: 'unresolved', source: 'venue', call_available: false },
+  { listing_id: 'binance:SOL', venue: 'binance', trading: true, venue_asset_code: 'SOL', name: 'Solana', identity_state: 'resolved', source: 'venue', call_available: true },
 ]
 
 function analysis(): LabAnalysis {
@@ -17,202 +19,244 @@ function analysis(): LabAnalysis {
     schema_version: 'qap.api.pair-rotation-analysis.v1',
     coin_a: { id: 'binance:BTC', code: 'BTC', name: 'Bitcoin', identity_state: 'unresolved' },
     coin_b: { id: 'binance:W', code: 'W', name: 'Wormhole', identity_state: 'unresolved' },
-    bar: '15m', window_days: 180, band_lookback: 672, data_through: '2026-10-02T00:00:00Z', bars_used: 2,
+    bar: '1h', window_days: 180, band_lookback: 168, data_through: '2026-10-02T00:00:00Z', bars_used: 4320,
     identity_confirmed: false, anchor: null, anchor_ranking: [],
-    series: { time: [1790897400, 1790898300], close_a: [10, 11], close_b: [2, 2], ratio: [5, 5.5], mean: [null, null], std: [null, null], anchor_close: null },
+    series: { time: [1790897400, 1790901000], close_a: [10, 11], close_b: [2, 2], ratio: [5, 5.5], mean: [5.0, 5.0], std: [0.25, 0.25], anchor_close: null },
     measurements: { correlation: null, cointegration: null, hedge_ratio: null, half_life: null, hurst: null, ratio_percentile: 100, regime: null, anchor_a: null, anchor_b: null, kalman: null, granger: null, copula: null, rolling_dependence: null },
-    datasets: [{ dataset_id: 'exact-btc', interval: '15m', venue_symbol: 'BTCUSDT', semantic_fingerprint: 'a'.repeat(64), coverage_start: '2026-04-01T00:00:00Z', cutoff: '2026-10-02T00:00:00Z' }],
+    datasets: [{ dataset_id: 'exact-btc', interval: '1h', venue_symbol: 'BTCUSDT', semantic_fingerprint: 'a'.repeat(64), coverage_start: '2026-04-01T00:00:00Z', cutoff: '2026-10-02T00:00:00Z' }],
   }
 }
 
-const response = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } })
+const response = (value: unknown, status = 200) =>
+  new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } })
 
 const studyResponse = {
   study_id: 'study-1',
   created_at: '2026-10-24T00:00:00Z',
   pinned: false,
   result: {
-    call: { status: 'into_a', headline: 'Rotate into BTC', reason: 'The ratio is stretched.', target_weight_a: '0.625', rotation_fraction: '0.25' },
+    schema_version: 'qap.lab.study.v1',
+    requested_settings: { method: 'zscore', hedge_method: 'ratio', lookback: 96, entry: 2.0, exit: 0.5, rotation_size: '0.5', crash_defense_mode: 'coins_only' },
+    applied_settings: { method: 'zscore', hedge_method: 'ratio', lookback: 96, entry: 2.0, exit: 0.5, rotation_size: '0.5', crash_defense_mode: 'coins_only' },
+    call: { status: 'into_a', headline: 'Rotate into BTC', reason: 'The ratio is stretched.', target_weight_a: '0.75', rotation_fraction: '0.25' },
     proof: {
       passes: true, data_role: 'validation', final_oos_used: false, validation_reused: false, settings_tried: 6,
       control: 'weekly', raw_p_value: 0.02, corrected_p_value: 0.03, significance: 0.05, folds_passing: 4,
       folds_total: 5, minimum_passing_folds: 4, validation_trades: 42, minimum_trades: 30, vs_hodl_pct: 2.5,
-      vs_control_pct: 1.5, tuning_start: '2025-01-01T00:00:00Z', tuning_end: '2025-03-31T00:00:00Z',
-      proof_start: '2025-04-01T00:00:00Z', proof_end: '2025-06-30T00:00:00Z', correction: 'Benjamini-Hochberg.', limitations: [],
+      vs_control_pct: 1.5, cost_paid_pct: 1.2, gross_vs_hodl_pct: 3.7, tuning_start: '2025-01-01T00:00:00Z',
+      tuning_end: '2025-03-31T00:00:00Z', proof_start: '2025-04-01T00:00:00Z', proof_end: '2025-06-30T00:00:00Z',
+      correction: 'Benjamini-Hochberg.', limitations: [],
     },
+    signal: { time: [1790897400, 1790901000], values: [-1.2, -2.1], upper: 2.0, lower: -2.0, unit: 'sigma' },
     wealth: {
-      time: [1790897400, 1790898300],
+      time: [1790897400, 1790901000],
       value: { strategy: [10000, 10250], hodl: [10000, 10100], daily: [10000, 10050] },
       coins_a: { strategy: [0.1, 0.1025], hodl: [0.1, 0.101], daily: [0.1, 0.1005] },
       coins_b: { strategy: [5, 5.1], hodl: [5, 5.05], daily: [5, 5.02] },
       terminal_values: { strategy: '10250', hodl: '10100', daily: '10050' },
       window_kind: 'validation',
     },
-    analysis: { coin_a: { id: 'binance:BTC', code: 'BTC', name: 'Bitcoin' }, coin_b: { id: 'binance:W', code: 'W', name: 'Wormhole' } },
+    trades: [],
+    folds: [],
+    statistics: {},
+    code_fingerprint: 'deadbeef1234',
+    execution_route: 'two legs via USDT',
+    execution_metadata: [],
+    analysis: analysis(),
   },
 }
 
 beforeEach(() => localStorage.clear())
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
-describe('Pair Rotation Lab', () => {
-  it('restores saved coins and supported anchors beyond the discovery page', async () => {
-    localStorage.setItem('qap.lab.settings.v1', JSON.stringify({ coin_a: 'binance:X', coin_b: 'binance:Y', anchor: null, bar: '15m', days: 180, band_lookback: 672 }))
-    const initial = Array.from({ length: 100 }, (_, index) => ({ ...coins[0], listing_id: `binance:A${index}`, venue_asset_code: `A${index}` }))
-    const fetcher = vi.fn(async (input: string | URL | Request) => {
-      const url = new URL(String(input), 'http://localhost')
-      if (url.pathname.endsWith('/coins')) {
-        const query = url.searchParams.get('q')
-        const selected = query && ['X', 'Y', 'SOL'].includes(query) ? [{ ...coins[0], listing_id: `binance:${query}`, venue_asset_code: query }] : []
-        return response({ directory_status: 'observed', coins: query ? selected : initial })
-      }
-      if (url.pathname.endsWith('/open')) return response({ operation_id: 'test-operation' }, 202)
-      if (url.pathname.includes('/operations/')) return response({ status: 'completed' })
-      return response(analysis())
-    })
-    vi.stubGlobal('fetch', fetcher)
-    render(<LabDashboard />)
-    await screen.findByText('Not tested yet', { selector: '.lab-idle h2' })
-    expect(screen.getByLabelText('Coin A: X')).toBeVisible()
-    expect(screen.getByLabelText('Coin B: Y')).toBeVisible()
-    expect(screen.getByRole('option', { name: 'SOL' })).toBeInTheDocument()
-    expect(fetcher.mock.calls.some(([path]) => String(path).includes('coin_a=binance%3AX') && String(path).includes('coin_b=binance%3AY'))).toBe(true)
-  })
-
-  it('prepares data automatically and labels unresolved descriptive evidence honestly', async () => {
+describe('Pair Rotation Lab — Binance Terminal', () => {
+  it('loads cached analysis immediately without calling /open when history is already on disk', async () => {
     const fetcher = vi.fn(async (input: string | URL | Request) => {
       const path = String(input)
       if (path.includes('/coins?')) return response({ directory_status: 'observed', coins })
-      if (path.endsWith('/open')) return response({ operation_id: 'test-operation' }, 202)
-      if (path.includes('/operations/')) return response({ status: 'completed', progress: { stage: 'data ready', completed: 8, total: 8 } })
+      if (path.includes('/studies') || path.includes('/paper-sessions')) return response({ studies: [], sessions: [], next_offset: null })
       return response(analysis())
     })
     vi.stubGlobal('fetch', fetcher)
     render(<LabDashboard />)
-    expect(await screen.findByText('Not tested yet', { selector: '.lab-idle h2' })).toBeVisible()
-    expect(screen.getByText(/Coin identity is unresolved/)).toBeVisible()
-    expect(screen.queryByText('No reliable edge')).not.toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'BTC per W' })).toBeVisible()
-    fireEvent.click(screen.getByText(/Where the data comes from/))
+
+    expect(await screen.findByRole('img', { name: 'BTC per W' })).toBeVisible()
+    expect(screen.getByText('5.5')).toBeVisible()
+    expect(screen.getByText(/\+10\.0% · \+2\.0σ/)).toBeVisible()
+    expect(screen.getByText(/Listing identity is unconfirmed/)).toBeVisible()
+    expect(fetcher.mock.calls.filter(([path]) => String(path).endsWith('/open'))).toHaveLength(0)
+
+    //Inspect dataset provenance in Pro Diagnostics tab
+    fireEvent.click(screen.getByRole('tab', { name: 'Pro Diagnostics' }))
     expect(screen.getByText('a'.repeat(64))).toBeVisible()
-    fireEvent.change(screen.getByRole('combobox', { name: 'Candle size' }), { target: { value: '1h' } })
-    await waitFor(() => expect(fetcher.mock.calls.some(([path]) => String(path).includes('bar=1h'))).toBe(true))
-    expect(fetcher.mock.calls.filter(([path]) => String(path).endsWith('/open'))).toHaveLength(1)
-    expect(JSON.parse(localStorage.getItem('qap.lab.settings.v1') ?? '{}').bar).toBe('1h')
+
+    // Change interval via pill strip
+    const intervalGroup = screen.getByRole('group', { name: 'Interval' })
+    fireEvent.click(within(intervalGroup).getByRole('button', { name: '4h' }))
+    await waitFor(() => expect(fetcher.mock.calls.some(([path]) => String(path).includes('bar=4h'))).toBe(true))
+    expect(JSON.parse(localStorage.getItem('qap.lab.settings.v1') ?? '{}').bar).toBe('4h')
   })
 
-  it('runs one saved study and clears its call when settings change', async () => {
-    const posts: Array<{ url: string; body: unknown }> = []
+  it('falls back to /open automatically when /analysis reports unprepared pair data', async () => {
+    let prepared = false
     const opens: unknown[] = []
     vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const path = String(input)
       if (path.includes('/coins?')) return response({ directory_status: 'observed', coins })
+      if (path.includes('/analysis?')) {
+        if (!prepared) return response({ error: { message: 'Not prepared yet' } }, 409)
+        return response(analysis())
+      }
       if (path.endsWith('/open')) {
         opens.push(JSON.parse(String(init?.body)))
-        return response({ operation_id: 'test-operation' }, 202)
+        prepared = true
+        return response({ operation_id: 'op-1' }, 202)
       }
       if (path.includes('/operations/')) return response({ status: 'completed' })
-      if (path.endsWith('/studies')) {
-        posts.push({ url: path, body: JSON.parse(String(init?.body)) })
+      return response({ studies: [], sessions: [], next_offset: null })
+    }))
+
+    render(<LabDashboard />)
+    expect(await screen.findByRole('img', { name: 'BTC per W' })).toBeVisible()
+    expect(opens).toHaveLength(1)
+    expect(opens[0]).toMatchObject({ coin_a: 'binance:BTC', coin_b: 'binance:W', include_execution: true })
+  })
+
+  it('runs a $10,000 strategy test, switches to Wealth Curve tab, and restores/clears saved runs', async () => {
+    const posts: Array<{ body: unknown }> = []
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const path = String(input)
+      if (path.includes('/coins?')) return response({ directory_status: 'observed', coins })
+      if (path.endsWith('/studies') && init?.method === 'POST') {
+        posts.push({ body: JSON.parse(String(init.body)) })
         return response(studyResponse)
       }
+      if (path.includes('/studies') || path.includes('/paper-sessions')) return response({ studies: [], sessions: [], next_offset: null })
       return response(analysis())
     }))
+
     render(<LabDashboard />)
-    expect(await screen.findByText('Not tested yet', { selector: '.lab-idle h2' })).toBeVisible()
-    fireEvent.click(screen.getByRole('button', { name: 'Run the test' }))
-    expect(await screen.findByRole('heading', { name: 'Rotate into BTC' })).toBeVisible()
-    expect(screen.getByText('Validation passes.')).toBeVisible()
-    expect(screen.getByRole('img', { name: 'Money over time, after fees' })).toBeVisible()
-    expect(screen.getByText('10,250.00 USDT')).toBeVisible()
-    expect(screen.queryByText('Not tested yet')).not.toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: 'BTC per W' })).toBeVisible()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Test Strategy ($10,000)' }))
+    expect(await screen.findByText('Validated Edge (4/5 Folds)')).toBeVisible()
+    expect(screen.getByText('$10,000 → $10,250')).toBeVisible()
+    expect(screen.getByText(/Signal: Swap toward BTC/)).toBeVisible()
     expect(posts).toHaveLength(1)
-    expect(posts[0]!.body).toMatchObject({ coin_a: 'binance:BTC', coin_b: 'binance:W', anchor: null, bar: '15m', days: 180, band_lookback: 672 })
-    expect(opens[0]).toMatchObject({ coin_a: 'binance:BTC', coin_b: 'binance:W', include_execution: true })
-    expect(JSON.parse(localStorage.getItem('qap.lab.study.v1') ?? '{}').study_id).toBe('study-1')
-    fireEvent.change(screen.getByRole('combobox', { name: 'Candle size' }), { target: { value: '1h' } })
-    expect(await screen.findByText('Not tested yet', { selector: '.lab-idle h2' })).toBeVisible()
-    expect(screen.queryByRole('heading', { name: 'Rotate into BTC' })).not.toBeInTheDocument()
+    expect(posts[0]!.body).toMatchObject({ coin_a: 'binance:BTC', coin_b: 'binance:W', bar: '1h', days: 180, band_lookback: 168 })
+
+    // Switch above-the-fold chart tab to Wealth Curve ($10,000)
+    fireEvent.click(screen.getByRole('tab', { name: /Wealth Curve/ }))
+    expect(screen.getByRole('img', { name: 'Money over time, after fees' })).toBeVisible()
   })
 
-  it('restores the last saved study after a reload and clears it on request', async () => {
-    localStorage.setItem('qap.lab.settings.v1', JSON.stringify({ coin_a: 'binance:BTC', coin_b: 'binance:W', anchor: null, bar: '15m', days: 180, band_lookback: 672 }))
-    localStorage.setItem('qap.lab.study.v1', JSON.stringify({
-      study_id: 'study-1',
-      request: { coin_a: 'binance:BTC', coin_b: 'binance:W', anchor: null, bar: '15m', days: 180, band_lookback: 672 },
+  it('tests the clicked fallback preset when the advisor is unavailable', async () => {
+    const posts: Array<{ settings: { method: string } }> = []
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const path = String(input)
+      if (path.includes('/coins?')) return response({ directory_status: 'observed', coins })
+      if (path.includes('/advisor?')) return response({ error: { message: 'Advisor unavailable' } }, 503)
+      if (path.endsWith('/studies') && init?.method === 'POST') {
+        posts.push(JSON.parse(String(init.body)))
+        return response(studyResponse)
+      }
+      if (path.includes('/studies') || path.includes('/paper-sessions')) return response({ studies: [], sessions: [] })
+      return response(analysis())
     }))
+    render(<LabDashboard />)
+    await screen.findByRole('img', { name: 'BTC per W' })
+    const card = screen.getByText('Tail Mispricing · Spread Copula').closest('article')!
+    fireEvent.click(within(card).getByRole('button', { name: 'Test' }))
+    await waitFor(() => expect(posts[0]?.settings.method).toBe('copula'))
+  })
+
+  it('restores the saved snapshot and all controls, then clears it on a history change', async () => {
+    const snapshot = { ...analysis(), bar: '4h', window_days: 90, band_lookback: 42,
+      anchor: { id: 'binance:SOL', code: 'SOL', name: 'Solana', identity_state: 'resolved' } }
     const fetcher = vi.fn(async (input: string | URL | Request) => {
       const path = String(input)
       if (path.includes('/coins?')) return response({ directory_status: 'observed', coins })
-      if (path.endsWith('/open')) return response({ operation_id: 'test-operation' }, 202)
-      if (path.includes('/operations/')) return response({ status: 'completed' })
-      if (path.endsWith('/studies/study-1')) return response(studyResponse)
+      if (path.endsWith('/studies/study-1')) return response({ ...studyResponse, result: { ...studyResponse.result, analysis: snapshot } })
+      if (path.includes('/studies?')) return response({ studies: [{ study_id: 'study-1', coin_a: snapshot.coin_a,
+        coin_b: snapshot.coin_b, method: 'zscore', headline: 'Saved result', pinned: false }], next_offset: null })
+      if (path.includes('/paper-sessions')) return response({ sessions: [] })
       return response(analysis())
     })
     vi.stubGlobal('fetch', fetcher)
     render(<LabDashboard />)
-    expect(await screen.findByRole('heading', { name: 'Rotate into BTC' })).toBeVisible()
-    expect(screen.getByText('Saved result')).toBeVisible()
-    expect(screen.getByText(/^Study from /)).toBeVisible()
-    expect(fetcher.mock.calls.some(([path]) => String(path).endsWith('/studies/study-1'))).toBe(true)
-    fireEvent.click(screen.getByRole('button', { name: 'Clear result' }))
-    expect(screen.getByText('Not tested yet', { selector: '.lab-idle h2' })).toBeVisible()
-    expect(screen.queryByText('Saved result')).not.toBeInTheDocument()
-    expect(localStorage.getItem('qap.lab.study.v1')).toBeNull()
+    await screen.findByRole('img', { name: 'BTC per W' })
+    fireEvent.click(screen.getByRole('tab', { name: /Saved Runs/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /BTC\/W · zscore/ }))
+    expect(await screen.findByText(/Viewing Saved Run: BTC\/W · 4h/)).toBeVisible()
+    expect(within(screen.getByRole('group', { name: 'Interval' })).getByRole('button', { name: '4h' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(screen.getByRole('group', { name: 'History window' })).getByRole('button', { name: '90D' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('combobox', { name: 'Benchmark' })).toHaveValue('binance:SOL')
+    expect(fetcher.mock.calls.filter(([path]) => String(path).includes('/analysis?'))).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }))
+    expect(screen.queryByText(/Viewing Saved Run/)).not.toBeInTheDocument()
+    fireEvent.click(within(screen.getByRole('group', { name: 'History window' })).getByRole('button', { name: '30D' }))
+    await waitFor(() => expect(fetcher.mock.calls.some(([path]) => String(path).includes('days=30'))).toBe(true))
+    expect(screen.queryByText(/Validated Edge/)).not.toBeInTheDocument()
   })
 
-  it('does not restore a saved study that belongs to other settings', async () => {
-    localStorage.setItem('qap.lab.settings.v1', JSON.stringify({ coin_a: 'binance:BTC', coin_b: 'binance:W', anchor: null, bar: '15m', days: 180, band_lookback: 672 }))
-    localStorage.setItem('qap.lab.study.v1', JSON.stringify({
-      study_id: 'study-1',
-      request: { coin_a: 'binance:BTC', coin_b: 'binance:W', anchor: null, bar: '1h', days: 180, band_lookback: 672 },
-    }))
-    const fetcher = vi.fn(async (input: string | URL | Request) => {
+  it('allows another comparison after the user changes an in-flight comparison window', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
       const path = String(input)
       if (path.includes('/coins?')) return response({ directory_status: 'observed', coins })
-      if (path.endsWith('/open')) return response({ operation_id: 'test-operation' }, 202)
-      if (path.includes('/operations/')) return response({ status: 'completed' })
+      if (path.endsWith('/studies/compare')) return new Promise<Response>(() => {})
+      if (path.includes('/studies') || path.includes('/paper-sessions')) return response({ studies: [], sessions: [] })
       return response(analysis())
-    })
-    vi.stubGlobal('fetch', fetcher)
+    }))
     render(<LabDashboard />)
-    expect(await screen.findByText('Not tested yet', { selector: '.lab-idle h2' })).toBeVisible()
-    await waitFor(() => expect(fetcher.mock.calls.some(([path]) => String(path).includes('bar=15m'))).toBe(true))
-    expect(fetcher.mock.calls.some(([path]) => String(path).includes('/studies/'))).toBe(false)
+    await screen.findByRole('img', { name: 'BTC per W' })
+    fireEvent.click(screen.getByRole('button', { name: 'Compare All Presets' }))
+    expect(screen.getByRole('button', { name: 'Comparing…' })).toBeDisabled()
+    fireEvent.click(within(screen.getByRole('group', { name: 'History window' })).getByRole('button', { name: '30D' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Compare All Presets' })).toBeEnabled())
   })
 
-  it('shows a typed preparation failure and retries the same pair', async () => {
+  it('shows preparation failure and retries cleanly', async () => {
     let failed = true
     vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
       const path = String(input)
       if (path.includes('/coins?')) return response({ directory_status: 'observed', coins })
-      if (path.endsWith('/open')) return response({ operation_id: 'test-operation' }, 202)
+      if (path.includes('/analysis?')) {
+        if (failed) return response({ error: { message: 'Missing history' } }, 409)
+        return response(analysis())
+      }
+      if (path.endsWith('/open')) return response({ operation_id: 'op-err' }, 202)
       if (path.includes('/operations/')) return response(failed ? { status: 'failed', failure: { message: 'Venue unavailable' } } : { status: 'completed' })
-      return response(analysis())
+      return response({ studies: [], sessions: [], next_offset: null })
     }))
+
     render(<LabDashboard />)
     expect(await screen.findByRole('alert')).toHaveTextContent('Venue unavailable')
-    expect(screen.queryByRole('img', { name: 'BTC per W' })).not.toBeInTheDocument()
     failed = false
-    fireEvent.click(screen.getByRole('button', { name: 'Retry analysis' }))
-    expect(await screen.findByText('Not tested yet', { selector: '.lab-idle h2' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(await screen.findByRole('img', { name: 'BTC per W' })).toBeVisible()
   })
+})
 
-  it('discards a late result after the user changes the interval', async () => {
-    let finishOld: ((value: Response) => void) | undefined
-    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
-      const path = String(input)
-      if (path.includes('/coins?')) return response({ directory_status: 'observed', coins })
-      if (path.endsWith('/open')) return response({ operation_id: 'test-operation' }, 202)
-      if (path.includes('/operations/')) return response({ status: 'completed' })
-      if (path.includes('bar=15m')) return new Promise<Response>((resolve) => { finishOld = resolve })
-      return response({ ...analysis(), coin_a: { ...analysis().coin_a, code: 'NEW' } })
-    }))
-    render(<LabDashboard />)
-    await waitFor(() => expect(finishOld).toBeDefined())
-    fireEvent.change(screen.getByRole('combobox', { name: 'Candle size' }), { target: { value: '1h' } })
-    expect(await screen.findByRole('img', { name: 'NEW per W' })).toBeVisible()
-    finishOld!(response({ ...analysis(), coin_a: { ...analysis().coin_a, code: 'OLD' } }))
-    await waitFor(() => expect(screen.queryByRole('img', { name: 'OLD per W' })).not.toBeInTheDocument())
-  })
+
+it('groups two coin edits and ignores an obsolete in-flight result', async () => {
+  let finishOld: ((value: Response) => void) | undefined
+  const paths: string[] = []
+  vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+    const path = String(input)
+    if (path.includes('/coins?')) return response({ directory_status: 'observed', coins })
+    if (path.includes('/analysis?')) {
+      paths.push(path)
+      if (paths.length === 1) return new Promise<Response>((resolve) => { finishOld = resolve })
+      return response({ ...analysis(), coin_a: { ...analysis().coin_a, code: 'SOL' } })
+    }
+    return response({ studies: [], sessions: [] })
+  }))
+  const { result } = renderHook(() => useLab())
+  await waitFor(() => expect(paths).toHaveLength(1))
+  act(() => { result.current.change({ coin_a: 'binance:SOL' }); result.current.change({ coin_b: 'binance:BTC' }) })
+  await waitFor(() => expect(result.current.analysis?.coin_a.code).toBe('SOL'))
+  expect(paths).toHaveLength(2)
+  expect(paths[1]).toContain('coin_a=binance%3ASOL&coin_b=binance%3ABTC')
+  await act(async () => { finishOld!(response(analysis())) })
+  expect(result.current.analysis?.coin_a.code).toBe('SOL')
 })

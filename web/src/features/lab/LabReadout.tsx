@@ -14,7 +14,7 @@ export function LabReadout({ title, current, latest }: { title: string; current:
       <p className="lab-readout-time"><span>{current.latest ? 'Latest bar' : 'Hovered bar'}</span><time>{current.time}</time></p>
       <dl>
         {current.rows.map((row) => <div key={row.key} className={row.value === 'Unavailable' ? 'lab-readout-unavailable' : undefined}>
-          <dt>{row.swatch && <i className={row.swatch.dashed ? 'lab-swatch lab-swatch-dashed' : 'lab-swatch'} style={{ color: `var(${row.swatch.token})` }} />}{row.label}{row.key === 'z' && <small title="z-score">z</small>}</dt>
+          <dt>{row.swatch && <i className={row.swatch.dashed ? 'lab-swatch lab-swatch-dashed' : 'lab-swatch'} style={{ color: `var(${row.swatch.token})` }} />}{row.label}</dt>
           <dd>{row.value}</dd>
         </div>)}
       </dl>
