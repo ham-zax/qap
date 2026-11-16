@@ -24,7 +24,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://127.0.0.1:8000',
+      '/api': process.env.QAP_API_PROXY_TARGET || 'http://127.0.0.1:8000',
     },
   },
 })
