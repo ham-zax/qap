@@ -311,8 +311,17 @@ def rolling_mean_std(values: Floats, lookback: int) -> tuple[Floats, Floats]:
     window_mean = window_sum / lookback
     variance = (window_squares - lookback * window_mean**2) / (lookback - 1)
     deviation = np.sqrt(np.maximum(variance, 0.0))
-    flat = deviation <= 1e-12 * np.maximum(1.0, np.abs(window_mean + shift))
-    mean[lookback - 1 :] = window_mean + shift
+    nonzero_diffs = np.concatenate(([0], np.cumsum(np.diff(values) != 0)))
+    constant_window = (
+        nonzero_diffs[lookback - 1 :] - nonzero_diffs[: values.size - lookback + 1]
+    ) == 0
+    window_actual_mean = window_mean + shift
+    flat = constant_window | (
+        deviation <= 1e-12 * np.maximum(np.abs(window_actual_mean), abs(shift))
+    )
+    mean[lookback - 1 :] = np.where(
+        constant_window, values[lookback - 1 :], window_actual_mean
+    )
     std[lookback - 1 :] = np.where(flat, 0.0, deviation)
     return mean, std
 

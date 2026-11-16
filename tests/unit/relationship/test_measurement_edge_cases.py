@@ -10,7 +10,9 @@ from qap.relationship.pair_measurements import (
     hedge_ratio,
     hurst,
     percentile_of_last,
+    ratio_bands,
     regime,
+    rolling_mean_std,
 )
 
 
@@ -46,3 +48,20 @@ def test_invalid_fit_settings_and_nonfinite_percentile_are_refused() -> None:
 def test_collinear_cointegration_is_unavailable() -> None:
     values = np.cumsum(np.random.default_rng(3).standard_normal(300))
     assert cointegration(values, 2 * values) is None
+
+
+def test_tiny_ratio_bands_keep_positive_std_and_finite_zscore() -> None:
+    rng = np.random.default_rng(11)
+    tiny_a = 1.5e-5 * np.exp(np.cumsum(rng.normal(0.0, 0.005, 100)))
+    large_b = 90_000.0 * np.exp(np.cumsum(rng.normal(0.0, 0.002, 100)))
+    bands = ratio_bands(tiny_a / large_b, lookback=30)
+    assert np.all(bands.std[29:] > 0.0)
+    assert np.all(np.isfinite(bands.z[29:]))
+
+
+def test_rolling_mean_std_handles_trailing_constant_zeros() -> None:
+    rng = np.random.default_rng(20261027)
+    values = np.r_[rng.standard_normal(40), np.zeros(20)]
+    mean, std = rolling_mean_std(values, 20)
+    assert mean[-1] == 0.0
+    assert std[-1] == 0.0

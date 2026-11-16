@@ -54,8 +54,10 @@ def rolling_correlation(a: Floats, b: Floats, window: int) -> Floats:
     _, std_b = rolling_mean_std(b, window)
     with np.errstate(divide="ignore", invalid="ignore"):
         result = rolling_covariance(a, b, window) / (std_a * std_b)
-    # Running sums leave ~sqrt(eps) residue in flat windows; treat that as flat.
-    flat = (std_a <= 1e-6 * float(np.std(a))) | (std_b <= 1e-6 * float(np.std(b)))
+    # rolling_mean_std zeroes flat windows; treat non-positive std as flat causally.
+    flat = (
+        (~np.isfinite(std_a)) | (~np.isfinite(std_b)) | (std_a <= 0.0) | (std_b <= 0.0)
+    )
     # A flat leg leaves correlation undefined; never clip its division to +/-1.
     return np.where(flat, np.nan, np.clip(result, -1.0, 1.0))
 
@@ -89,7 +91,8 @@ def hedge_residual(
             tls_beta = (difference + np.sqrt(difference**2 + 4 * covariance**2)) / (
                 2 * covariance
             )
-            beta = np.where((std_b > 0) & (covariance != 0), tls_beta, 0.0)
+            nonzero_cov = np.abs(covariance) > 1e-12 * (std_a * std_b)
+            beta = np.where((std_a > 0) & (std_b > 0) & nonzero_cov, tls_beta, 0.0)
     # A changing hedge with rolling intercept is causal and scale-invariant.
     return (da - mean_a) - beta * (db - mean_b)
 

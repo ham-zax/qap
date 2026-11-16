@@ -15,7 +15,11 @@ from pydantic import ValidationError
 from qap.policy.lab_settings import LabSettings, SignalMethod
 from qap.policy.lab_signals import signal_path
 from qap.relationship.lab_copula import rolling_spread_copula
-from qap.relationship.lab_features import hedge_residual, kalman_hedge
+from qap.relationship.lab_features import (
+    hedge_residual,
+    kalman_hedge,
+    rolling_correlation,
+)
 from qap.relationship.pair_measurements import Floats
 
 HedgeKind = Literal["ratio", "ols", "tls", "kalman"]
@@ -142,3 +146,22 @@ def test_lab_settings_s1_defaults_and_copula_band_validation() -> None:
         LabSettings(copula_probability=0.35, copula_exit_band=0.15)
     with pytest.raises(ValidationError):
         LabSettings(copula_probability=0.40, copula_exit_band=0.15)
+
+
+def test_rolling_correlation_is_causal_and_tls_guards_zero_covariance() -> None:
+    rng = np.random.default_rng(91)
+    a = rng.normal(0.0, 0.01, 120)
+    b = rng.normal(0.0, 0.01, 120)
+    baseline = rolling_correlation(a, b, 30)
+    mutated_a = a.copy()
+    mutated_a[80:] *= 1_000.0
+    later = rolling_correlation(mutated_a, b, 30)
+    np.testing.assert_allclose(
+        baseline[:80], later[:80], rtol=1e-12, atol=1e-12, equal_nan=True
+    )
+
+    # Exact orthogonal legs on a window where std_a > std_b must not blow up TLS beta.
+    x_cycle = np.tile([0.01, 0.0, -0.01, 0.0], 25)
+    y_cycle = np.tile([0.0, 0.02, 0.0, -0.02], 25)
+    res = hedge_residual(np.exp(y_cycle), np.exp(x_cycle), window=20, method="tls")
+    assert np.all(np.abs(res[19:]) < 1.0)
