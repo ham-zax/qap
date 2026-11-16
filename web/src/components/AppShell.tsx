@@ -1,11 +1,14 @@
 import { Link, useRouterState } from '@tanstack/react-router'
+import { AlertTriangle } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import type { WorkspaceStatusDto } from '../api/types'
 import { AppShellHeaderModeContext, useLabViewMode } from '../features/lab/labStorage'
+import { cn } from '@/lib/utils'
+import { Button } from './ui/button'
+import { ThemeToggle } from './ui/theme-toggle'
 import { ChartAttribution } from './ChartAttribution'
 import { ScreenGuide, screenGuideForPath } from './ScreenGuide'
-import { ThemeToggle } from './ui/ThemeToggle'
 
 interface AppShellProps {
   children: ReactNode
@@ -13,11 +16,13 @@ interface AppShellProps {
   collectorStatus?: WorkspaceStatusDto['current_evidence_collector_status']
 }
 
-const navLinkClass =
-  'flex min-h-9 items-center justify-center rounded-md px-2.5 py-1.5 text-sm font-semibold no-underline transition-[background-color,color] duration-150'
-
 function navClass(active: boolean) {
-  return `${navLinkClass} ${active ? 'bg-subtle text-foreground' : 'text-secondary hover:bg-subtle hover:text-foreground'}`
+  return cn(
+    'inline-flex h-8 items-center justify-center rounded-md px-2.5 text-sm font-medium no-underline transition-colors',
+    active
+      ? 'bg-secondary text-foreground shadow-xs'
+      : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground',
+  )
 }
 
 export function AppShell({ children, workspaceMode, collectorStatus }: AppShellProps) {
@@ -34,9 +39,9 @@ export function AppShell({ children, workspaceMode, collectorStatus }: AppShellP
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
-        <header className="app-header flex flex-row items-center justify-between gap-2 border-b border-border py-1">
+        <header className="app-header flex flex-row items-center justify-between gap-2 border-b border-border py-1.5">
           <div className="flex flex-row items-center gap-3">
-            <Link className="brand" to="/">
+            <Link className="brand tracking-tight" to="/">
               QAP
             </Link>
             <nav className="flex flex-row items-center gap-1" aria-label="Primary navigation">
@@ -54,18 +59,50 @@ export function AppShell({ children, workspaceMode, collectorStatus }: AppShellP
           </div>
           <div className="flex flex-row items-center gap-2">
             {collectorWarning ? (
-              <Link className="text-xs text-warning" to="/operations">
+              <Link
+                className="inline-flex items-center gap-1 rounded-md border border-warning/35 bg-warning/10 px-2 py-1 text-xs font-medium text-warning no-underline hover:bg-warning/15"
+                to="/operations"
+              >
+                <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
                 {collectorStatus === 'failed' ? 'Background collection failed' : 'Background collection is stopped'}
               </Link>
             ) : null}
             {onLab ? (
-              <div className="bt-segmented" role="group" aria-label="View mode">
-                <button type="button" aria-pressed={viewMode === 'simple'} onClick={() => setViewMode('simple')}>
+              <div
+                className="inline-flex items-center gap-0.5 rounded-lg border border-border bg-muted p-0.5"
+                role="group"
+                aria-label="View mode"
+              >
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={viewMode === 'simple' ? 'secondary' : 'ghost'}
+                  aria-pressed={viewMode === 'simple'}
+                  onClick={() => setViewMode('simple')}
+                  className={cn(
+                    'h-7 rounded-md px-2.5 text-xs font-medium',
+                    viewMode === 'simple'
+                      ? 'bg-background text-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
                   Simple
-                </button>
-                <button type="button" aria-pressed={viewMode === 'advanced'} onClick={() => setViewMode('advanced')}>
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={viewMode === 'advanced' ? 'secondary' : 'ghost'}
+                  aria-pressed={viewMode === 'advanced'}
+                  onClick={() => setViewMode('advanced')}
+                  className={cn(
+                    'h-7 rounded-md px-2.5 text-xs font-medium',
+                    viewMode === 'advanced'
+                      ? 'bg-background text-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
                   Pro
-                </button>
+                </Button>
               </div>
             ) : null}
             <ThemeToggle />
@@ -75,10 +112,10 @@ export function AppShell({ children, workspaceMode, collectorStatus }: AppShellP
           {children}
           {guide ? <ScreenGuide guide={guide} /> : null}
         </main>
-      <footer>
-        <p>Research only. Trades are simulated. No real orders are placed.</p>
-        <ChartAttribution />
-      </footer>
+        <footer>
+          <p>Research only. Trades are simulated. No real orders are placed.</p>
+          <ChartAttribution />
+        </footer>
       </div>
     </AppShellHeaderModeContext.Provider>
   )

@@ -1,12 +1,25 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { Activity, Compass, Gauge, GitCompare, Timer } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { DashboardCard } from '@/components/watermelon/dashboard-card'
+import { StatCard } from '@/components/watermelon/stat-card'
+import { InfoTip } from './InfoTip'
+import { LabCompareTable } from './LabCompareTable'
+import { LabDiagnosticsTab } from './LabDiagnosticsTab'
+import { LabLivePaperPanel } from './LabLivePaperPanel'
+import { LabSavedRuns } from './LabSavedRuns'
 import { BAR_MINUTES, type LabAnalysis, type LabViewMode } from './labContract'
 import type { LivePaperSession } from './labPaperApi'
 import type { LabCompareResult, LabSavedSummary, LabStudy } from './labStudyApi'
-import { InfoTip } from './InfoTip'
-import { LabCompareTable } from './LabCompareTable'
-import { LabLivePaperPanel } from './LabLivePaperPanel'
-import { LabSavedRuns } from './LabSavedRuns'
-import './LabTerminal.css'
 
 export type BottomTabId = 'overview' | 'compare' | 'swaps' | 'saved' | 'paper' | 'diagnostics'
 
@@ -29,7 +42,6 @@ export interface LabBottomTabsProps {
   onStopPaper: () => void
 }
 
-const TAB_ORDER: readonly BottomTabId[] = ['overview', 'compare', 'swaps', 'saved', 'paper', 'diagnostics']
 const HURST_READING = { reverting: 'Mean-Reverting', random: 'Random Walk', trending: 'Trending' } as const
 const DASH = '—'
 
@@ -60,7 +72,11 @@ function halfLifeReading(analysis: LabAnalysis): { value: string; sub: string } 
   if (!halfLife?.reverting || halfLife.bars == null) return { value: 'Non-reverting', sub: 'No measured decay' }
   const minutes = halfLife.bars * BAR_MINUTES[analysis.bar]
   const value =
-    minutes >= 1440 ? `${(minutes / 1440).toFixed(1)} days` : minutes >= 60 ? `${(minutes / 60).toFixed(1)} h` : `${Math.round(minutes)} min`
+    minutes >= 1440
+      ? `${(minutes / 1440).toFixed(1)} days`
+      : minutes >= 60
+        ? `${(minutes / 60).toFixed(1)} h`
+        : `${Math.round(minutes)} min`
   return { value, sub: `${halfLife.bars.toFixed(0)} bars at ${analysis.bar}` }
 }
 
@@ -87,16 +103,23 @@ function utcStamp(raw: string): string {
   return Number.isNaN(stamp.getTime()) ? raw : stamp.toISOString().slice(0, 16).replace('T', ' ')
 }
 
-function foldWindow(row: Record<string, unknown>): string {
-  const start = row.test_start ?? row.start
-  const end = row.test_end ?? row.end
-  return start == null || end == null ? DASH : `${String(start).slice(0, 10)} → ${String(end).slice(0, 10)}`
-}
-
 export function LabBottomTabs({
-  analysis, study, viewMode, compareResult, savedStudies, activeStudyId, savedLoading,
-  paperSession, paperBusy, paperError, onOpenStudy, onTogglePinStudy, onClearCompare,
-  onStartPaper, onStepPaper, onStopPaper,
+  analysis,
+  study,
+  viewMode,
+  compareResult,
+  savedStudies,
+  activeStudyId,
+  savedLoading,
+  paperSession,
+  paperBusy,
+  paperError,
+  onOpenStudy,
+  onTogglePinStudy,
+  onClearCompare,
+  onStartPaper,
+  onStepPaper,
+  onStopPaper,
 }: LabBottomTabsProps) {
   const [activeTab, setActiveTab] = useState<BottomTabId>('overview')
   const seenCompare = useRef<LabCompareResult | null>(compareResult)
@@ -108,16 +131,12 @@ export function LabBottomTabs({
 
   const measurements = analysis?.measurements ?? null
   const trades = study?.result.trades ?? []
-  const folds = study?.result.folds ?? []
-  const proof = study?.result.proof ?? null
-  const datasets = analysis?.datasets ?? []
-  const coinA = analysis?.coin_a.code ?? 'A'
-  const coinB = analysis?.coin_b.code ?? 'B'
   const strategyStats = study?.result.statistics?.strategy as Record<string, unknown> | undefined
   const holdings = (strategyStats?.terminal_holdings ?? {}) as Record<string, string>
-  const holdingText = Object.entries(holdings)
-    .map(([asset, qty]) => `${asset.replace('binance:', '')} ${Number(qty).toLocaleString('en-US', { maximumSignificantDigits: 5 })}`)
-    .join(' · ') || DASH
+  const holdingText =
+    Object.entries(holdings)
+      .map(([asset, qty]) => `${asset.replace('binance:', '')} ${Number(qty).toLocaleString('en-US', { maximumSignificantDigits: 5 })}`)
+      .join(' · ') || DASH
 
   const tabs: ReadonlyArray<{ id: BottomTabId; label: string; live?: boolean }> = [
     { id: 'overview', label: 'Overview' },
@@ -128,198 +147,195 @@ export function LabBottomTabs({
     { id: 'diagnostics', label: 'Pro Diagnostics' },
   ]
 
-  const kpis = analysis ? [
-    { label: 'Return Correlation', value: fixed(measurements?.correlation?.pearson), sub: correlationWord(measurements?.correlation?.pearson ?? null), hint: 'Simultaneous log-return Pearson correlation. Above 0.70 indicates strong co-movement; below 0.40 indicates weak coupling.' },
-    { label: 'Mean-Reversion Half-Life', ...halfLifeReading(analysis), hint: 'Estimated bars for a ratio dislocation to decay halfway back to its mean. Half-life < 48 bars signals fast snap-back.' },
-    { label: 'Market Regime', value: measurements?.hurst ? HURST_READING[measurements.hurst.reading] : DASH, sub: measurements?.hurst ? `H = ${measurements.hurst.exponent.toFixed(2)}` : 'Not enough bars', hint: 'Hurst exponent: H < 0.45 = mean-reverting, 0.45–0.55 = random walk, H > 0.55 = trending.' },
-    { label: 'Benchmark Fit', ...benchmarkReading(analysis), hint: 'Joint R² share of pair return variance explained by the top reference asset (BTC, ETH, BNB, SOL).' },
-  ] : []
+  const kpis = analysis
+    ? [
+        {
+          label: 'Return Correlation',
+          value: fixed(measurements?.correlation?.pearson),
+          sub: correlationWord(measurements?.correlation?.pearson ?? null),
+          icon: GitCompare,
+          tone: 'info' as const,
+          hint: 'Simultaneous log-return Pearson correlation. Above 0.70 indicates strong co-movement; below 0.40 indicates weak coupling.',
+        },
+        {
+          label: 'Mean-Reversion Half-Life',
+          ...halfLifeReading(analysis),
+          icon: Timer,
+          tone: 'positive' as const,
+          hint: 'Estimated bars for a ratio dislocation to decay halfway back to its mean. Half-life < 48 bars signals fast snap-back.',
+        },
+        {
+          label: 'Market Regime',
+          value: measurements?.hurst ? HURST_READING[measurements.hurst.reading] : DASH,
+          sub: measurements?.hurst ? `H = ${measurements.hurst.exponent.toFixed(2)}` : 'Not enough bars',
+          icon: Gauge,
+          tone: 'warning' as const,
+          hint: 'Hurst exponent: H < 0.45 = mean-reverting, 0.45–0.55 = random walk, H > 0.55 = trending.',
+        },
+        {
+          label: 'Benchmark Fit',
+          ...benchmarkReading(analysis),
+          icon: Compass,
+          tone: 'neutral' as const,
+          hint: 'Joint R² share of pair return variance explained by the top reference asset (BTC, ETH, BNB, SOL).',
+        },
+      ]
+    : []
 
-  const summary = strategyStats ? [
-    ['Max Drawdown', signedPct(strategyStats.maximum_drawdown_pct)],
-    ['Total Swaps', typeof strategyStats.rotations === 'number' ? strategyStats.rotations.toLocaleString('en-US') : DASH],
-    ['Total Fees (USDT)', money(strategyStats.fees_usdt)],
-    ['Total Slippage (USDT)', money(strategyStats.slippage_usdt)],
-    ['Ending Holdings', holdingText],
-  ] : []
-
-  const econometrics = [
-    { test: 'Cointegration ADF', reading: measurements?.cointegration ? `stat ${measurements.cointegration.statistic.toFixed(2)}` : DASH, detail: measurements?.cointegration ? `p = ${measurements.cointegration.p_value.toFixed(4)} · ${measurements.cointegration.passes ? 'Passes' : 'Fails'}` : 'Unavailable' },
-    { test: 'Hedge slopes', reading: measurements?.hedge_ratio ? `OLS ${measurements.hedge_ratio.ols.toFixed(3)} · TLS ${measurements.hedge_ratio.tls.toFixed(3)}` : DASH, detail: measurements?.kalman ? `Kalman β ${measurements.kalman.beta.toFixed(3)} ± ${measurements.kalman.standard_error.toFixed(3)}` : 'Kalman unavailable' },
-    { test: 'Tail dependence', reading: measurements?.copula ? `λL ${measurements.copula.lower_tail.toFixed(2)} · λU ${measurements.copula.upper_tail.toFixed(2)}` : DASH, detail: measurements?.copula ? `${measurements.copula.family} family · ${measurements.copula.observations} returns` : 'Unavailable' },
-    { test: 'Granger lead-lag', reading: measurements?.granger ? `${coinA}→${coinB} p ${measurements.granger.a_to_b.p_value.toFixed(3)}` : DASH, detail: measurements?.granger ? `${coinB}→${coinA} p ${measurements.granger.b_to_a.p_value.toFixed(3)} · lag ${measurements.granger.max_lag}` : 'Unavailable' },
-  ]
-
-  function moveTab(event: KeyboardEvent<HTMLButtonElement>, current: BottomTabId) {
-    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
-    if (step === 0) return
-    event.preventDefault()
-    const next = TAB_ORDER[(TAB_ORDER.indexOf(current) + step + TAB_ORDER.length) % TAB_ORDER.length]
-    setActiveTab(next)
-    document.getElementById(`bt-tab-${next}`)?.focus()
-  }
+  const summary = strategyStats
+    ? [
+        ['Max Drawdown', signedPct(strategyStats.maximum_drawdown_pct)],
+        ['Total Swaps', typeof strategyStats.rotations === 'number' ? strategyStats.rotations.toLocaleString('en-US') : DASH],
+        ['Total Fees (USDT)', money(strategyStats.fees_usdt)],
+        ['Total Slippage (USDT)', money(strategyStats.slippage_usdt)],
+        ['Ending Holdings', holdingText],
+      ]
+    : []
 
   return (
-    <section className="bt-bottom-workspace" aria-label="Research and execution tabs">
-      <div className="bt-tab-bar" role="tablist" aria-label="Workspace panels">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id} type="button" role="tab" id={`bt-tab-${tab.id}`} className="bt-tab"
-            aria-selected={activeTab === tab.id} aria-controls={`bt-panel-${tab.id}`}
-            tabIndex={activeTab === tab.id ? 0 : -1} title={tab.live ? 'Paper session running' : undefined}
-            onClick={() => setActiveTab(tab.id)} onKeyDown={(event) => moveTab(event, tab.id)}
-          >
-            {tab.label}
-            {tab.live && <span className="bt-live-dot" aria-hidden="true" />}
-          </button>
-        ))}
-      </div>
+    <DashboardCard className="p-0" aria-label="Research and execution tabs">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as BottomTabId)} className="gap-0">
+        <div className="overflow-x-auto border-b border-border px-3 py-2">
+          <TabsList aria-label="Workspace panels" className="h-8 bg-muted p-0.5">
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab.id}
+                id={`bt-tab-${tab.id}`}
+                value={tab.id}
+                aria-controls={`bt-panel-${tab.id}`}
+                onClick={() => setActiveTab(tab.id)}
+                title={tab.live ? 'Paper session running' : undefined}
+                className="h-7 gap-1.5 px-3 text-xs font-medium"
+              >
+                {tab.id === 'paper' && tab.live ? (
+                  <Activity className="size-3.5 text-positive" aria-hidden="true" />
+                ) : null}
+                {tab.label}
+                {tab.live && <span className="size-1.5 rounded-full bg-positive animate-pulse" aria-hidden="true" />}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
-      <div className="bt-panel" role="tabpanel" id={`bt-panel-${activeTab}`} aria-labelledby={`bt-tab-${activeTab}`} tabIndex={0}>
-        {activeTab === 'overview' && (analysis ? (
-          <>
-            <div className="bt-kpi-grid">
-              {kpis.map((kpi) => (
-                <div key={kpi.label} className="bt-kpi-tile">
-                  <span className="bt-kpi-label">
-                    {kpi.label}
-                    <InfoTip label={`${kpi.label} guidance`} text={kpi.hint} />
-                  </span>
-                  <strong className="bt-kpi-value bt-mono">{kpi.value}</strong>
-                  <span className="bt-kpi-sub">{kpi.sub}</span>
+        <div className="p-4">
+          <TabsContent value="overview" id="bt-panel-overview" aria-labelledby="bt-tab-overview" className="mt-0 space-y-4">
+            {analysis ? (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {kpis.map((kpi) => (
+                    <StatCard
+                      key={kpi.label}
+                      label={kpi.label}
+                      value={kpi.value}
+                      sub={kpi.sub}
+                      icon={kpi.icon}
+                      tone={kpi.tone}
+                      tip={<InfoTip label={`${kpi.label} guidance`} text={kpi.hint} />}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
-            {summary.length > 0 && (
-              <dl className="bt-summary-strip" aria-label="Backtest summary">
-                {summary.map(([label, value]) => (
-                  <div key={label}><dt>{label}</dt><dd className="bt-mono">{value}</dd></div>
-                ))}
-              </dl>
-            )}
-          </>
-        ) : (
-          <p className="bt-empty">Choose two coins to load correlation, half-life, regime, and benchmark fit.</p>
-        ))}
-
-        {activeTab === 'compare' && (compareResult ? (
-          <LabCompareTable compare={compareResult} onOpenStudy={onOpenStudy} onClose={onClearCompare} />
-        ) : (
-          <p className="bt-empty">Click Compare All Presets in the Strategy panel to benchmark Z-Score, Copula, and Trend side-by-side.</p>
-        ))}
-
-        {activeTab === 'swaps' && (trades.length === 0 ? (
-          <p className="bt-empty">No simulated swaps yet. Run a strategy test to fill this log.</p>
-        ) : (
-          <div className="bt-table-scroll">
-            <table className="bt-table">
-              <caption className="bt-visually-hidden">Simulated validation swaps</caption>
-              <thead>
-                <tr><th scope="col">Time (UTC)</th><th scope="col">Action</th><th scope="col">Route</th><th scope="col" className="bt-num">Fees (USDT)</th><th scope="col" className="bt-num">Slippage (USDT)</th><th scope="col" className="bt-num">Legs</th></tr>
-              </thead>
-              <tbody>
-                {trades.map((trade, index) => (
-                  <tr key={`${trade.fill_index}-${index}`}>
-                    <td className="bt-mono">{utcStamp(trade.time)}</td>
-                    <td>{actionLabel(trade.direction, analysis)}</td>
-                    <td className="bt-muted-cell">{trade.route}</td>
-                    <td className="bt-mono bt-num">{Number(trade.fees_usdt).toFixed(4)}</td>
-                    <td className="bt-mono bt-num">{Number(trade.slippage_usdt).toFixed(4)}</td>
-                    <td className="bt-mono bt-num">{trade.fills.length}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ))}
-
-        {activeTab === 'saved' && (
-          <LabSavedRuns studies={savedStudies} activeStudyId={activeStudyId} loading={savedLoading} onSelect={onOpenStudy} onTogglePin={onTogglePinStudy} />
-        )}
-
-        {activeTab === 'paper' && (
-          <LabLivePaperPanel session={paperSession} busy={paperBusy} error={paperError} canStart={Boolean(analysis)} onStart={onStartPaper} onStep={onStepPaper} onStop={onStopPaper} />
-        )}
-
-        {activeTab === 'diagnostics' && (
-          <div className="bt-diag-grid">
-            <section className="bt-diag-col" aria-label="Econometric and dependence tests">
-              <h3 className="bt-diag-title">Econometric &amp; dependence tests</h3>
-              {viewMode === 'simple' && (
-                <p className="bt-note">Pro mode adds strategy controls and a signal chart. These tables stay available in either mode.</p>
-              )}
-              <div className="bt-table-scroll">
-                <table className="bt-table">
-                  <thead>
-                    <tr><th scope="col">Test</th><th scope="col">Reading</th><th scope="col">Detail</th></tr>
-                  </thead>
-                  <tbody>
-                    {econometrics.map((row) => (
-                      <tr key={row.test}><td>{row.test}</td><td className="bt-mono">{row.reading}</td><td className="bt-muted-cell">{row.detail}</td></tr>
+                {summary.length > 0 && (
+                  <dl
+                    className="m-0 grid grid-cols-2 gap-3 border-t border-border pt-3 sm:grid-cols-3 lg:grid-cols-5"
+                    aria-label="Backtest summary"
+                  >
+                    {summary.map(([label, value]) => (
+                      <div key={label} className="rounded-lg border border-border bg-muted/35 px-3 py-2">
+                        <dt className="text-[11px] text-muted-foreground">{label}</dt>
+                        <dd className="m-0 mt-0.5 font-mono text-xs font-semibold text-foreground tabular-nums">
+                          {value}
+                        </dd>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </dl>
+                )}
+              </>
+            ) : (
+              <p className="m-0 py-4 text-xs text-muted-foreground">
+                Choose two coins to load correlation, half-life, regime, and benchmark fit.
+              </p>
+            )}
+          </TabsContent>
+
+          <TabsContent value="compare" id="bt-panel-compare" aria-labelledby="bt-tab-compare" className="mt-0">
+            {compareResult ? (
+              <LabCompareTable compare={compareResult} onOpenStudy={onOpenStudy} onClose={onClearCompare} />
+            ) : (
+              <p className="m-0 py-4 text-xs text-muted-foreground">
+                Click Compare All Presets in the Strategy panel to benchmark Z-Score, Copula, and Trend side-by-side.
+              </p>
+            )}
+          </TabsContent>
+
+          <TabsContent value="swaps" id="bt-panel-swaps" aria-labelledby="bt-tab-swaps" className="mt-0">
+            {trades.length === 0 ? (
+              <p className="m-0 py-4 text-xs text-muted-foreground">
+                No simulated swaps yet. Run a strategy test to fill this log.
+              </p>
+            ) : (
+              <div className="max-h-96 overflow-auto rounded-lg border border-border">
+                <Table>
+                  <caption className="sr-only">Simulated validation swaps</caption>
+                  <TableHeader className="bg-muted/60">
+                    <TableRow>
+                      <TableHead className="h-9 text-xs">Time (UTC)</TableHead>
+                      <TableHead className="h-9 text-xs">Action</TableHead>
+                      <TableHead className="h-9 text-xs">Route</TableHead>
+                      <TableHead className="h-9 text-right text-xs">Fees (USDT)</TableHead>
+                      <TableHead className="h-9 text-right text-xs">Slippage (USDT)</TableHead>
+                      <TableHead className="h-9 text-right text-xs">Legs</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {trades.map((trade, index) => (
+                      <TableRow key={`${trade.fill_index}-${index}`}>
+                        <TableCell className="font-mono text-xs tabular-nums">{utcStamp(trade.time)}</TableCell>
+                        <TableCell className="text-xs font-medium">{actionLabel(trade.direction, analysis)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{trade.route}</TableCell>
+                        <TableCell className="text-right font-mono text-xs tabular-nums">
+                          {Number(trade.fees_usdt).toFixed(4)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-xs tabular-nums">
+                          {Number(trade.slippage_usdt).toFixed(4)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-xs tabular-nums">
+                          {trade.fills.length}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            </section>
+            )}
+          </TabsContent>
 
-            <section className="bt-diag-col" aria-label="Walk-forward folds and audit provenance">
-              <h3 className="bt-diag-title">Walk-forward folds &amp; audit provenance</h3>
-              {folds.length === 0 ? (
-                <p className="bt-empty">Run a strategy test to inspect validation folds and SPA p-values.</p>
-              ) : (
-                <div className="bt-table-scroll">
-                  <table className="bt-table">
-                    <thead>
-                      <tr><th scope="col">Fold</th><th scope="col">Test window</th><th scope="col" className="bt-num">Strategy return</th><th scope="col" className="bt-num">Control return</th><th scope="col">Passed</th></tr>
-                    </thead>
-                    <tbody>
-                      {folds.map((fold, index) => (
-                        <tr key={index}>
-                          <td className="bt-mono">{String(fold.fold ?? index + 1)}</td>
-                          <td className="bt-mono">{foldWindow(fold)}</td>
-                          <td className="bt-mono bt-num">{signedPct(fold.strategy_return_pct)}</td>
-                          <td className="bt-mono bt-num">{signedPct(fold.control_return_pct)}</td>
-                          <td>{fold.passes === true ? 'Yes' : fold.passes === false ? 'No' : DASH}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+          <TabsContent value="saved" id="bt-panel-saved" aria-labelledby="bt-tab-saved" className="mt-0">
+            <LabSavedRuns
+              studies={savedStudies}
+              activeStudyId={activeStudyId}
+              loading={savedLoading}
+              onSelect={onOpenStudy}
+              onTogglePin={onTogglePinStudy}
+            />
+          </TabsContent>
 
-              {proof && (
-                <dl className="bt-proof-strip" aria-label="SPA significance">
-                  <div><dt>SPA raw p</dt><dd className="bt-mono">{fixed(proof.raw_p_value, 4)}</dd></div>
-                  <div><dt>SPA corrected p</dt><dd className="bt-mono">{fixed(proof.corrected_p_value, 4)}</dd></div>
-                  <div><dt>Settings tried</dt><dd className="bt-mono">{proof.settings_tried.toLocaleString('en-US')}</dd></div>
-                </dl>
-              )}
+          <TabsContent value="paper" id="bt-panel-paper" aria-labelledby="bt-tab-paper" className="mt-0">
+            <LabLivePaperPanel
+              session={paperSession}
+              busy={paperBusy}
+              error={paperError}
+              canStart={Boolean(analysis)}
+              onStart={onStartPaper}
+              onStep={onStepPaper}
+              onStop={onStopPaper}
+            />
+          </TabsContent>
 
-              <h4 className="bt-diag-subtitle">Dataset SHA-256</h4>
-              {datasets.length === 0 ? (
-                <p className="bt-empty">No dataset loaded.</p>
-              ) : (
-                <div className="bt-table-scroll">
-                  <table className="bt-table">
-                    <thead>
-                      <tr><th scope="col">Market</th><th scope="col">Interval</th><th scope="col">SHA-256</th></tr>
-                    </thead>
-                    <tbody>
-                      {datasets.map((dataset) => (
-                        <tr key={dataset.dataset_id}>
-                          <td>{dataset.venue_symbol}</td>
-                          <td className="bt-mono">{dataset.interval}</td>
-                          <td className="bt-mono bt-hash">{dataset.semantic_fingerprint}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
-          </div>
-        )}
-      </div>
-    </section>
+          <TabsContent value="diagnostics" id="bt-panel-diagnostics" aria-labelledby="bt-tab-diagnostics" className="mt-0">
+            <LabDiagnosticsTab analysis={analysis} study={study} viewMode={viewMode} />
+          </TabsContent>
+        </div>
+      </Tabs>
+    </DashboardCard>
   )
 }

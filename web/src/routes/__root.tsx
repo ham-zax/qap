@@ -6,6 +6,7 @@ import type { QapQueries } from '../api/queries'
 import { AppShell } from '../components/AppShell'
 import { ErrorDetails } from '../components/ErrorDetails'
 import { StatusMessage } from '../components/StatusMessage'
+import { Button } from '../components/ui/button'
 
 export interface QapRouterContext {
   apiClient: QapApiClient
@@ -27,7 +28,11 @@ export const Route = createRootRouteWithContext<QapRouterContext>()({
       <StatusMessage
         title="Evidence could not be loaded"
         tone="error"
-        action={<button onClick={reset}>Retry</button>}
+        action={
+          <Button type="button" variant="outline" onClick={reset}>
+            Retry
+          </Button>
+        }
       >
         <ErrorDetails error={error} />
       </StatusMessage>

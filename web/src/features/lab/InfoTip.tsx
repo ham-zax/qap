@@ -1,4 +1,8 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { Info } from 'lucide-react'
+import { useState } from 'react'
+
+import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 export interface InfoTipProps {
   label: string
@@ -8,48 +12,32 @@ export interface InfoTipProps {
 
 export function InfoTip({ label, text, align = 'left' }: InfoTipProps) {
   const [open, setOpen] = useState(false)
-  const tipId = useId()
-  const rootRef = useRef<HTMLSpanElement | null>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onDocClick(event: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
-        setOpen(false)
-      }
-    }
-    function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onDocClick)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDocClick)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
 
   return (
-    <span className="bt-info-tip" ref={rootRef}>
-      <button
-        type="button"
-        className="bt-info-btn"
-        aria-label={label}
-        aria-expanded={open}
-        aria-describedby={open ? tipId : undefined}
-        onClick={(event) => {
-          event.preventDefault()
-          event.stopPropagation()
-          setOpen((prev) => !prev)
-        }}
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label={label}
+          aria-expanded={open}
+          onClick={(event) => {
+            event.stopPropagation()
+          }}
+          className="size-5 rounded-full border border-border-strong bg-muted p-0 text-muted-foreground hover:border-primary hover:text-foreground"
+        >
+          <Info className="size-3" aria-hidden="true" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        role="tooltip"
+        align={align === 'right' ? 'end' : 'start'}
+        sideOffset={6}
+        className="w-64 max-w-[75vw] rounded-lg border border-border-strong bg-popover p-3 text-xs leading-relaxed text-popover-foreground shadow-lg"
       >
-        i
-      </button>
-      {open && (
-        <span id={tipId} role="tooltip" className={`bt-info-popover bt-info-popover--${align}`}>
-          {text}
-        </span>
-      )}
-    </span>
+        {text}
+      </PopoverContent>
+    </Popover>
   )
 }

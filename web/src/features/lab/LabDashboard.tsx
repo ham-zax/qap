@@ -1,38 +1,56 @@
+import { AlertCircle, AlertTriangle, RotateCcw } from 'lucide-react'
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
 import { LabActionPanel } from './LabActionPanel'
 import { LabBottomTabs } from './LabBottomTabs'
 import { LabHeroCharts } from './LabHeroCharts'
 import { LabTickerBar } from './LabTickerBar'
 import { DEFAULT_BAND_LOOKBACK } from './labContract'
 import { useLab } from './useLab'
-import './lab.css'
-import './LabPanels.css'
-import './LabTerminal.css'
-import './LabControls.css'
 
 export function LabDashboard() {
   const lab = useLab()
   const { request, analysis, progress, error, study, studyRestored, studyError, studyRunning, viewMode } = lab
 
   if (!request) {
+    const pct = progress ? Math.round((progress.completed / Math.max(1, progress.total)) * 100) : 15
     return (
-      <div className="bt-terminal lab">
+      <div className="lab space-y-4">
         {error ? (
-          <div className="bt-chart-state" role="alert">
-            <p>{error}</p>
-            <button type="button" className="bt-btn-secondary" onClick={lab.retry}>Retry</button>
-          </div>
+          <Card className="shadow-primary p-6">
+            <Alert variant="destructive">
+              <AlertCircle className="size-4" aria-hidden="true" />
+              <AlertTitle>Markets unavailable</AlertTitle>
+              <AlertDescription className="mt-1 space-y-3">
+                <p className="m-0">{error}</p>
+                <Button type="button" variant="outline" size="sm" onClick={lab.retry} className="gap-1.5">
+                  <RotateCcw className="size-3.5" aria-hidden="true" />
+                  Retry
+                </Button>
+              </AlertDescription>
+            </Alert>
+          </Card>
         ) : (
-          <div className="bt-chart-state" role="status">
-            <p>{progress ? `${progress.stage} (${progress.completed}/${progress.total})` : 'Loading Binance markets…'}</p>
-            <progress max={Math.max(1, progress?.total ?? 1)} value={progress?.completed ?? 0} aria-label="Directory load progress" />
-          </div>
+          <Card className="shadow-primary p-6" role="status">
+            <CardContent className="space-y-4 px-0">
+              <p className="m-0 text-sm text-muted-foreground">
+                {progress ? `${progress.stage} (${progress.completed}/${progress.total})` : 'Loading Binance markets…'}
+              </p>
+              <Progress value={pct} aria-label="Directory load progress" className="max-w-md" />
+              <Skeleton className="h-72 w-full rounded-xl" />
+            </CardContent>
+          </Card>
         )}
       </div>
     )
   }
 
   return (
-    <div className="bt-terminal lab">
+    <div className="lab space-y-4">
       <LabTickerBar
         request={request}
         coins={lab.coins}
@@ -45,13 +63,22 @@ export function LabDashboard() {
       />
 
       {analysis && !analysis.identity_confirmed && (
-        <p className="lab-warning-banner" role="note">
-          Listing identity is unconfirmed in CoinGecko registry. Price ratio charts load normally; strategy verdicts stay blocked until confirmed.
-        </p>
+        <Alert className="border-warning/45 bg-warning/10 text-warning" role="note">
+          <AlertTriangle className="size-4" aria-hidden="true" />
+          <AlertDescription className="text-xs text-warning">
+            Listing identity is unconfirmed in CoinGecko registry. Price ratio charts load normally; strategy verdicts stay blocked until confirmed.
+          </AlertDescription>
+        </Alert>
       )}
-      {lab.compareError && <p className="lab-warning-banner" role="alert">{lab.compareError}</p>}
 
-      <div className="bt-hero-grid">
+      {lab.compareError && (
+        <Alert variant="destructive" role="alert">
+          <AlertCircle className="size-4" aria-hidden="true" />
+          <AlertDescription className="text-xs">{lab.compareError}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_356px]">
         <LabHeroCharts
           analysis={analysis}
           study={study}

@@ -1,3 +1,14 @@
+import { HelpCircle } from 'lucide-react'
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
 interface ScreenGuideContent {
   intent: string
   action: string
@@ -44,30 +55,44 @@ export function screenGuideForPath(pathname: string): ScreenGuideContent | null 
 
 function GuideItem({ label, children }: { label: string; children: string }) {
   return (
-    <div className="rounded-md border border-border bg-canvas/40 p-4">
-      <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-        {label}
-      </p>
-      <p className="mt-2 mb-0 text-sm leading-6 text-secondary">{children}</p>
-    </div>
+    <Card className="gap-2 rounded-lg bg-muted/40 py-3.5 shadow-none">
+      <CardHeader className="px-4 pb-0">
+        <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          {label}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-4 text-sm leading-6 text-foreground/85">{children}</CardContent>
+    </Card>
   )
 }
 
 export function ScreenGuide({ guide }: { guide: ScreenGuideContent }) {
   return (
-    <details className="mt-12 border-t border-border pt-4">
-      <summary className="min-h-11 cursor-pointer py-2 text-sm text-muted">
-        Help with this page
-      </summary>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <GuideItem label="Intent">{guide.intent}</GuideItem>
-        <GuideItem label="What to do">{guide.action}</GuideItem>
-        <GuideItem label="Example">{guide.example}</GuideItem>
-        <GuideItem label="What happens next">{guide.next}</GuideItem>
-      </div>
-      <p className="mt-4 mb-0 rounded-md border border-warning/35 bg-canvas/35 p-3 text-sm leading-6 text-secondary">
-        <strong className="text-foreground">This does not mean:</strong> {guide.boundary}
-      </p>
-    </details>
+    <Accordion type="single" collapsible className="mt-10 border-t border-border pt-2">
+      <AccordionItem value="screen-guide" className="border-b-0">
+        <AccordionTrigger className="py-3 text-sm text-muted-foreground hover:text-foreground hover:no-underline">
+          <span className="inline-flex items-center gap-2">
+            <HelpCircle className="size-4" aria-hidden="true" />
+            Help with this page
+          </span>
+        </AccordionTrigger>
+        <AccordionContent className="space-y-4 pb-2">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <GuideItem label="Intent">{guide.intent}</GuideItem>
+            <GuideItem label="What to do">{guide.action}</GuideItem>
+            <GuideItem label="Example">{guide.example}</GuideItem>
+            <GuideItem label="What happens next">{guide.next}</GuideItem>
+          </div>
+          <Alert className="border-warning/40 bg-warning/5">
+            <AlertTitle className="text-xs font-semibold uppercase tracking-wide text-warning">
+              This does not mean:
+            </AlertTitle>
+            <AlertDescription className="text-sm text-foreground/85">
+              {guide.boundary}
+            </AlertDescription>
+          </Alert>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   )
 }
