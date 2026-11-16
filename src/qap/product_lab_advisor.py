@@ -166,12 +166,18 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
         anchor_id if (anchor_r2 is not None and float(anchor_r2) >= 0.25) else None
     )
     copula_defense = "park_anchor" if copula_anchor is not None else "park_usdt"
+    copula_simple = (
+        "Waits for rare 2% tail divergences and parks in the benchmark on breaks."
+        if copula_anchor is not None
+        else "Waits for rare 2% tail divergences and parks in USDT on breaks."
+    )
 
     kalman_shielded = (
         "zscore_kalman",
         "Drawdown-Shielded Kalman Reversion",
         "Adapts to ratio drift and parks in USDT if drawdown exceeds 12%.",
-        f"Kalman hedge lookback={rec_lookback}, entry=2.2, exit=0.4, min_hold=8, park_usdt@12%.",
+        f"Kalman hedge lookback={rec_lookback}, entry=2.2, "
+        "exit=0.4, min_hold=8, park_usdt@12%.",
         rec_bar,
         None,
         {
@@ -189,8 +195,9 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
     tail_copula = (
         "spread_copula",
         "4h Tail Copula + Benchmark Defense",
-        "Waits for rare 2% tail divergences and parks in the benchmark on breaks.",
-        f"4h tail copula lookback=96, p=0.02, exit_band=0.15, min_hold=12, {copula_defense}@15%.",
+        copula_simple,
+        "4h tail copula lookback=96, p=0.02, exit_band=0.15, "
+        f"min_hold=12, {copula_defense}@15%.",
         rec_bar,
         copula_anchor,
         {
@@ -242,12 +249,30 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
     if regime_label == "mean_reverting":
         ordered = [kalman_shielded, tail_copula, wide_ols, slow_trend]
     elif regime_label == "trending":
+        trending_copula_defense = "park_anchor" if anchor_id else "park_usdt"
+        trending_copula_simple = (
+            "Waits for rare 2% tail divergences and parks in the benchmark on breaks."
+            if anchor_id
+            else "Waits for rare 2% tail divergences and parks in USDT on breaks."
+        )
+        trending_copula_pro = (
+            "4h tail copula lookback=96, p=0.02, exit_band=0.15, "
+            f"min_hold=12, {trending_copula_defense}@15%."
+        )
         ordered = [
             slow_trend,
-            ("spread_copula_anchor", *tail_copula[1:4], rec_bar, anchor_id, {
-                **tail_copula[6],
-                "crash_defense_mode": "park_anchor" if anchor_id else "park_usdt",
-            }),
+            (
+                "spread_copula_anchor",
+                "4h Tail Copula + Benchmark Defense",
+                trending_copula_simple,
+                trending_copula_pro,
+                rec_bar,
+                anchor_id,
+                {
+                    **tail_copula[6],
+                    "crash_defense_mode": trending_copula_defense,
+                },
+            ),
             wide_ols,
             kalman_shielded,
         ]

@@ -355,7 +355,7 @@ def test_actor_header_advisor_and_compare_endpoints(tmp_path: Path) -> None:
     assert adv.status_code == 200, adv.text
     adv_body = adv.json()
     assert adv_body["regime_label"] in ("mean_reverting", "trending", "mixed_or_noisy")
-    assert len(adv_body["suggestions"]) == 3
+    assert len(adv_body["suggestions"]) == 4
 
     cmp_res = client.post(
         "/api/pair-rotation/studies/compare",
@@ -370,13 +370,13 @@ def test_actor_header_advisor_and_compare_endpoints(tmp_path: Path) -> None:
     )
     assert cmp_res.status_code == 200, cmp_res.text
     cmp_body = cmp_res.json()
-    assert len(cmp_body["studies"]) == 3
+    assert len(cmp_body["studies"]) == 4
     alice_studies = client.get(
         "/api/pair-rotation/studies", headers={"X-QAP-Actor-Id": "sub_alice"}
     ).json()["studies"]
     bob_studies = client.get(
         "/api/pair-rotation/studies", headers={"X-QAP-Actor-Id": "sub_bob"}
     ).json()["studies"]
-    assert len(alice_studies) == 3
+    assert len(alice_studies) == 4
     assert bob_studies == []
     assert client.get("/api/pair-rotation/studies").json()["studies"] == []

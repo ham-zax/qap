@@ -3,9 +3,10 @@ import { useEffect, useId, useRef, useState } from 'react'
 export interface InfoTipProps {
   label: string
   text: string
+  align?: 'left' | 'right'
 }
 
-export function InfoTip({ label, text }: InfoTipProps) {
+export function InfoTip({ label, text, align = 'left' }: InfoTipProps) {
   const [open, setOpen] = useState(false)
   const tipId = useId()
   const rootRef = useRef<HTMLSpanElement | null>(null)
@@ -45,7 +46,7 @@ export function InfoTip({ label, text }: InfoTipProps) {
         i
       </button>
       {open && (
-        <span id={tipId} role="tooltip" className="bt-info-popover">
+        <span id={tipId} role="tooltip" className={`bt-info-popover bt-info-popover--${align}`}>
           {text}
         </span>
       )}

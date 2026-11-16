@@ -166,7 +166,7 @@ def test_lab_cli_analyze_study_compare_and_saved(
     ana = json.loads(capsys.readouterr().out)
     assert "series" not in ana
     assert "advisor" in ana
-    assert len(ana["advisor"]["suggestions"]) == 3
+    assert len(ana["advisor"]["suggestions"]) == 4
 
     assert (
         main(
@@ -219,7 +219,7 @@ def test_lab_cli_analyze_study_compare_and_saved(
 
     assert main(["saved", *base_flags, "--limit", "10"]) == 0
     saved = json.loads(capsys.readouterr().out)
-    assert len(saved["studies"]) == 4
+    assert len(saved["studies"]) == 5
 
     assert (
         main(

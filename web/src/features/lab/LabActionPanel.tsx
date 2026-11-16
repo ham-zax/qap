@@ -10,6 +10,7 @@ import {
   type LabStrategyFormSettings,
   type LabViewMode,
 } from './labContract'
+import { InfoTip } from './InfoTip'
 import type { LabAdvisor, LabAdvisorSuggestion, LabStudy } from './labStudyApi'
 
 export interface LabActionPanelProps {
@@ -28,6 +29,7 @@ export interface LabActionPanelProps {
   bandLookback: number
   bar: LabBar
   onChangeBandLookback: (value: number) => void
+  onSelectBar?: (bar: LabBar) => void
   onDismissSavedBanner?: () => void
   onEditSettings?: () => void
   onChangeSettings: (patch: Partial<LabStrategyFormSettings>) => void
@@ -68,10 +70,44 @@ function tone(value: number | null | undefined): string {
 /** Human duration of a bar count on the active candle interval. */
 function barSpan(bars: number, bar: LabBar): string {
   const minutes = bars * BAR_MINUTES[bar]
-  if (!Number.isFinite(minutes) || minutes <= 0) return '—'
+  if (!Number.isFinite(minutes) || minutes <= 0) return '0 bars'
   if (minutes < 60) return `${Math.round(minutes)} min`
   if (minutes < 1440) return `${(minutes / 60).toFixed(1)} h`
   return `${(minutes / 1440).toFixed(1)} days`
+}
+
+/** Approximate two-tailed normal probability in % for a z-score threshold. */
+function approxTailPct(z: number): string {
+  const t = 1 / (1 + 0.2316419 * Math.abs(z))
+  const d = 0.3989423 * Math.exp((-z * z) / 2)
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))))
+  const twoTail = Math.max(0.01, Math.min(99, 2 * p * 100))
+  return twoTail >= 10 ? `${twoTail.toFixed(0)}%` : `${twoTail.toFixed(1)}%`
+}
+
+function RangeField({ label, valueText, badge, value, min, max, step, onChange }: {
+  label: string; valueText: string; badge?: string; value: number; min: number; max: number; step: number; onChange: (value: number) => void
+}) {
+  return <label className="bt-field bt-range-field">
+    <span className="bt-range-head">
+      <span>{label}</span>
+      <span className="bt-range-readout bt-mono">
+        <strong>{valueText}</strong>
+        {badge ? <small className="bt-range-badge">{badge}</small> : null}
+      </span>
+    </span>
+    <input
+      type="range"
+      min={min}
+      max={max}
+      step={step}
+      value={Math.min(max, Math.max(min, value))}
+      onChange={(event) => {
+        const parsed = Number(event.target.value)
+        if (Number.isFinite(parsed)) onChange(parsed)
+      }}
+    />
+  </label>
 }
 
 function NumberField({ label, hint, value, min, max, step, onChange }: {
@@ -110,6 +146,7 @@ export function LabActionPanel({
   bandLookback,
   bar,
   onChangeBandLookback,
+  onSelectBar,
   onDismissSavedBanner,
   onEditSettings,
   onChangeSettings,
@@ -130,6 +167,14 @@ export function LabActionPanel({
   const coinCode = call?.status === 'into_b' ? analysis?.coin_b.code ?? 'Coin B' : analysis?.coin_a.code ?? 'Coin A'
   const activePreset = advisor?.suggestions.find((item) => JSON.stringify(fromBackendLabSettings(item.settings)) === JSON.stringify(settings))?.preset_id ?? null
   const dismissSaved = onDismissSavedBanner ?? onClearStudy
+  const leadLagNeeds1m = settings.method === 'lead_lag' && bar !== '1m'
+  const exitMax = Math.max(0, Math.min(2.5, Number((settings.entry - 0.1).toFixed(1))))
+  const copulaExitMax = Math.max(0.05, Math.min(0.35, Number((0.49 - settings.copula_probability).toFixed(2))))
+  const copulaEntryPct = Math.round(settings.copula_probability * 100)
+  const copulaBandPct = Math.round(settings.copula_exit_band * 100)
+  const proofGateSummary = proof
+    ? `3-Gate Check — Cost Gate (gross >= 2× fees): ${proof.cost_gate_passed ? 'PASS' : 'FAIL'} · Walk-Forward (${proof.folds_passing}/${proof.folds_total} folds, need >= ${proof.minimum_passing_folds}): ${proof.folds_passing >= proof.minimum_passing_folds ? 'PASS' : 'FAIL'} · SPA corrected p=${proof.corrected_p_value != null ? proof.corrected_p_value.toFixed(3) : '—'} (need <= ${proof.significance}): ${proof.corrected_p_value != null && proof.corrected_p_value <= proof.significance ? 'PASS' : 'FAIL'}.`
+    : ''
 
   return <aside className="bt-action-panel" aria-label="Strategy workbench">
     {(savedBanner || studyRestored) && (
@@ -155,9 +200,12 @@ export function LabActionPanel({
         <p className="bt-verdict-error" role="alert">{studyError}</p>
       ) : study && proof && call ? (
         <>
-          <span className={`bt-status-badge ${proof.passes ? 'bt-badge-pos' : 'bt-badge-neutral'}`}>
-            {proof.passes ? `Validated Edge (${proof.folds_passing}/${proof.folds_total} Folds)` : call.headline}
-          </span>
+          <div className="bt-verdict-status-row">
+            <span className={`bt-status-badge ${proof.passes ? 'bt-badge-pos' : 'bt-badge-neutral'}`}>
+              {proof.passes ? `Validated Edge (${proof.folds_passing}/${proof.folds_total} Folds)` : call.headline}
+            </span>
+            <InfoTip label="Validation gate criteria" text={proofGateSummary} />
+          </div>
           <dl className="bt-verdict-numbers">
             <div>
               <dt>Strategy</dt>
@@ -223,15 +271,38 @@ export function LabActionPanel({
             ))}
           </div>
           {advisorLoading && !advisor && <p className="bt-note">Matching presets to this pair…</p>}
+          {leadLagNeeds1m && (
+            <div className="bt-inline-alert" role="note">
+              <span>Anchor Lead-Lag requires 1m candles.</span>
+              {onSelectBar && (
+                <button type="button" className="bt-banner-clear" onClick={() => onSelectBar('1m')}>Switch to 1m</button>
+              )}
+            </div>
+          )}
         </>
       ) : (
         <>
           <div className="bt-method-grid" role="group" aria-label="Strategy method">
             {METHODS.map((method) => (
               <button key={method.id} type="button" className="bt-method-pill" aria-pressed={settings.method === method.id}
-                onClick={() => onChangeSettings({ method: method.id })}>{method.label}</button>
+                onClick={() => {
+                  onChangeSettings({ method: method.id })
+                  if (method.id === 'lead_lag' && bar !== '1m' && onSelectBar) onSelectBar('1m')
+                }}>
+                <span>{method.label}</span>
+                {method.id === 'lead_lag' && <small className="bt-method-badge">Requires 1m</small>}
+              </button>
             ))}
           </div>
+
+          {leadLagNeeds1m && (
+            <div className="bt-inline-alert" role="note">
+              <span>Anchor Lead-Lag requires 1m candles.</span>
+              {onSelectBar && (
+                <button type="button" className="bt-banner-clear" onClick={() => onSelectBar('1m')}>Switch to 1m</button>
+              )}
+            </div>
+          )}
 
           <div className="bt-field-stack">
             {settings.method === 'zscore' && (
@@ -245,27 +316,38 @@ export function LabActionPanel({
                     <option value="kalman">Kalman Filter</option>
                   </select>
                 </label>
-                <NumberField label="Lookback (bars)" hint={barSpan(settings.lookback, bar)} value={settings.lookback}
-                  min={20} max={10000} onChange={(lookback) => onChangeSettings({ lookback })} />
-                <div className="bt-field-row">
-                  <NumberField label="Entry (σ)" value={settings.entry} min={0.1} max={10} step={0.1}
-                    onChange={(entry) => onChangeSettings({ entry })} />
-                  <NumberField label="Exit (σ)" value={settings.exit} min={0} max={5} step={0.1}
-                    onChange={(exit) => onChangeSettings({ exit })} />
-                </div>
+                <RangeField label="Lookback (bars)" valueText={`${settings.lookback}`} badge={barSpan(settings.lookback, bar)}
+                  value={settings.lookback} min={24} max={720} step={12}
+                  onChange={(lookback) => onChangeSettings({ lookback })} />
+                <RangeField label="Entry (σ)" valueText={`${settings.entry.toFixed(1)}σ`} badge={`~${approxTailPct(settings.entry)} tail`}
+                  value={settings.entry} min={0.5} max={4.5} step={0.1}
+                  onChange={(entry) => onChangeSettings({
+                    entry,
+                    exit: settings.exit >= entry ? Math.max(0, Number((entry - 0.1).toFixed(1))) : settings.exit,
+                  })} />
+                <RangeField label="Exit (σ)" valueText={`${settings.exit.toFixed(1)}σ`} badge={`< ${settings.entry.toFixed(1)}σ`}
+                  value={Math.min(settings.exit, exitMax)} min={0} max={exitMax} step={0.1}
+                  onChange={(exit) => onChangeSettings({ exit })} />
               </>
             )}
 
             {settings.method === 'copula' && (
               <>
-                <NumberField label="Lookback (bars)" hint={barSpan(settings.lookback, bar)} value={settings.lookback}
-                  min={20} max={10000} onChange={(lookback) => onChangeSettings({ lookback })} />
-                <div className="bt-field-row">
-                  <NumberField label="Tail Entry Prob" value={settings.copula_probability} min={0.01} max={0.45} step={0.01}
-                    onChange={(copula_probability) => onChangeSettings({ copula_probability })} />
-                  <NumberField label="Neutral Exit Band" value={settings.copula_exit_band} min={0.01} max={0.44} step={0.01}
-                    onChange={(copula_exit_band) => onChangeSettings({ copula_exit_band })} />
-                </div>
+                <RangeField label="Lookback (bars)" valueText={`${settings.lookback}`} badge={barSpan(settings.lookback, bar)}
+                  value={settings.lookback} min={24} max={720} step={12}
+                  onChange={(lookback) => onChangeSettings({ lookback })} />
+                <RangeField label="Tail Entry Prob" valueText={`${copulaEntryPct}%`}
+                  value={settings.copula_probability} min={0.01} max={0.25} step={0.01}
+                  onChange={(copula_probability) => onChangeSettings({
+                    copula_probability,
+                    copula_exit_band: Math.min(settings.copula_exit_band, Math.max(0.05, Number((0.49 - copula_probability).toFixed(2)))),
+                  })} />
+                <RangeField label="Neutral Exit Band" valueText={`${copulaBandPct}%`}
+                  value={Math.min(settings.copula_exit_band, copulaExitMax)} min={0.05} max={copulaExitMax} step={0.01}
+                  onChange={(copula_exit_band) => onChangeSettings({ copula_exit_band })} />
+                <p className="bt-note">
+                  Enter below {copulaEntryPct}% / above {100 - copulaEntryPct}%, exit between {50 - copulaBandPct}%–{50 + copulaBandPct}%.
+                </p>
               </>
             )}
 
@@ -284,10 +366,16 @@ export function LabActionPanel({
 
             {settings.method === 'lead_lag' && (
               <>
-                <NumberField label="Lookback (bars)" hint={barSpan(settings.lookback, bar)} value={settings.lookback}
-                  min={20} max={10000} onChange={(lookback) => onChangeSettings({ lookback })} />
+                <RangeField label="Lookback (bars)" valueText={`${settings.lookback}`} badge={barSpan(settings.lookback, bar)}
+                  value={settings.lookback} min={24} max={720} step={12}
+                  onChange={(lookback) => onChangeSettings({ lookback })} />
                 <NumberField label="Benchmark Jump Threshold" value={settings.anchor_threshold} min={0.0001} max={0.5} step={0.0005}
                   onChange={(anchor_threshold) => onChangeSettings({ anchor_threshold })} />
+                {analysis && !analysis.anchor && (
+                  <p className="bt-warning" role="note">
+                    No auto-detected benchmark covers this full window. Select a Benchmark in the top bar for Anchor Lead-Lag.
+                  </p>
+                )}
               </>
             )}
 
@@ -310,22 +398,36 @@ export function LabActionPanel({
               </select>
             </label>
 
+            {settings.crash_defense_mode === 'park_anchor' && analysis && !analysis.anchor && (
+              <p className="bt-warning" role="note">
+                No auto-detected benchmark covers this full window. Select a Benchmark in the top bar or switch Crash Stop to Park in USDT.
+              </p>
+            )}
+
+            {settings.crash_defense_mode !== 'coins_only' && (
+              <RangeField label="Crash Drawdown Trigger" valueText={`${Math.round(settings.regime_break_drawdown * 100)}%`}
+                value={settings.regime_break_drawdown} min={0.05} max={0.40} step={0.01}
+                onChange={(regime_break_drawdown) => onChangeSettings({ regime_break_drawdown })} />
+            )}
+
+            <RangeField label="Minimum Hold (bars)" valueText={`${settings.minimum_hold}`} badge={barSpan(settings.minimum_hold, bar)}
+              value={settings.minimum_hold} min={0} max={48} step={1}
+              onChange={(minimum_hold) => onChangeSettings({ minimum_hold })} />
+            <RangeField label="Cooldown (bars)" valueText={`${settings.cooldown}`} badge={barSpan(settings.cooldown, bar)}
+              value={settings.cooldown} min={0} max={48} step={1}
+              onChange={(cooldown) => onChangeSettings({ cooldown })} />
+
             <NumberField label="MA Band Period" hint={barSpan(bandLookback, bar)} value={bandLookback}
               min={2} max={10000} onChange={onChangeBandLookback} />
 
             <label className="bt-checkbox-row">
               <input type="checkbox" checked={settings.auto_tune} onChange={(event) => onChangeSettings({ auto_tune: event.target.checked })} />
-              Auto-tune on training folds
+              <span>Auto-tune on training folds</span>
+              <small className="bt-inline-badge">Tests 0.8× / 1.0× / 1.2× on train split only</small>
             </label>
 
             <details className="bt-execution">
               <summary>Execution &amp; Fees</summary>
-              <div className="bt-field-row">
-                <NumberField label="Minimum hold" hint={barSpan(settings.minimum_hold, bar)} value={settings.minimum_hold}
-                  min={0} max={10000} onChange={(minimum_hold) => onChangeSettings({ minimum_hold })} />
-                <NumberField label="Cooldown" hint={barSpan(settings.cooldown, bar)} value={settings.cooldown}
-                  min={0} max={10000} onChange={(cooldown) => onChangeSettings({ cooldown })} />
-              </div>
               <div className="bt-field-row">
                 <NumberField label="Fee (bps)" value={settings.fee_bps} min={0.1} max={100} step={0.5}
                   onChange={(fee_bps) => onChangeSettings({ fee_bps })} />
@@ -339,7 +441,7 @@ export function LabActionPanel({
     </section>
 
     <div className="bt-action-buttons">
-      <button type="button" className="bt-btn-primary" disabled={!analysis || studyRunning} onClick={() => onRunTest()}>
+      <button type="button" className="bt-btn-primary" disabled={!analysis || studyRunning || leadLagNeeds1m} onClick={() => onRunTest()}>
         {studyRunning ? 'Running Backtest…' : 'Test Strategy ($10,000)'}
       </button>
       <button type="button" className="bt-btn-secondary" disabled={!analysis || compareRunning} onClick={onCompareAll}>

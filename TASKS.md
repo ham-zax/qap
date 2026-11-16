@@ -33,7 +33,7 @@ The approved [Phase 24 design](docs/plans/24-binance-terminal-ui-redesign.md) re
 
 | id | status | acceptance | evidence |
 |----|--------|------------|----------|
-| P24 | review | Terminal layout, full coin discovery, Simple/Pro controls, saved snapshots, and bottom tabs. | All 12 compiler gates pass. Browser checks cover desktop, mobile, themes, search, saved runs, and a real strategy test. Rapid pair edits, explicit no-anchor support, and the header mode switch now pass targeted checks. All 12 compiler gates pass in 442.12s after cold-start optimizations (`research_scope_from_snapshot`, `coins_for_listings`, fast-path bar/fingerprint checks, concurrent projection). Prepared browser requests take 1,006 ms and 91 ms; fresh-process cold HTTP takes 2,171 ms, so sub-2s cold-start remains open. See the [checkpoint](docs/aegis/work/2026-11-16-phase24-terminal/20-checkpoint.md). |
+| P24 | review | Terminal layout, full coin discovery, Simple/Pro controls, saved snapshots, and bottom tabs. | All 12 compiler gates pass. Browser checks cover desktop, mobile, themes, search, saved runs, and a real strategy test. Rapid pair edits, explicit no-anchor support, header mode switch, 4 strategy presets, Anchor Lead-Lag 1m preparation/guard, and slider/InfoTip UI upgrades pass targeted and full checks. Fresh-process HTTP on check port 8001 measures 1,911 ms cold no-anchor analysis, 543 ms warm auto-anchor, and 50–59 ms advisor. See the [checkpoint](docs/aegis/work/2026-11-16-phase24-terminal/20-checkpoint.md). |
 
 ---
 

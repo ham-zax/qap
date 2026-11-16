@@ -113,3 +113,29 @@ def test_advisor_handles_real_analysis_dict_anchor_and_anchor_ranking() -> None:
     dto = LabAdvisorDto.model_validate(advise_pair_strategies(real_shape))
     assert dto.regime_label == "trending"
     assert dto.suggestions[1].recommended_anchor == "binance:SOL"
+
+
+def test_advisor_no_silent_anchor_fallback_for_btc_eth_or_explicit_none() -> None:
+    btc_eth_no_anchor = _analysis(anchor_r2=None)
+    btc_eth_no_anchor["coin_a"] = {"id": "binance:BTC", "code": "BTC"}
+    btc_eth_no_anchor["coin_b"] = {"id": "binance:ETH", "code": "ETH"}
+    btc_eth_no_anchor["anchor"] = None
+    btc_eth_no_anchor["anchor_ranking"] = []
+    out = advise_pair_strategies(btc_eth_no_anchor)
+    copula = next(s for s in out["suggestions"] if s["preset_id"] == "spread_copula")
+    assert copula["recommended_anchor"] is None
+    assert copula["settings"]["crash_defense_mode"] == "park_usdt"
+    assert "USDT" in copula["simple_reason"]
+
+    explicit_none = _analysis(anchor_r2=0.6)
+    explicit_none["anchor"] = None
+    explicit_none["suggested_anchor"] = None
+    explicit_none["anchor_ranking"] = [
+        {"anchor": {"id": "binance:SOL", "code": "SOL"}, "joint_explained": 0.6}
+    ]
+    out_none = advise_pair_strategies(explicit_none)
+    copula_none = next(
+        s for s in out_none["suggestions"] if s["preset_id"] == "spread_copula"
+    )
+    assert copula_none["recommended_anchor"] is None
+    assert copula_none["settings"]["crash_defense_mode"] == "park_usdt"

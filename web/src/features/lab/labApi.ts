@@ -84,10 +84,16 @@ function analysisPath(request: LabRequest): string {
 }
 
 async function preparePair(request: LabRequest, signal: AbortSignal, progress: (value: LabProgress) => void) {
-  await operation('/api/pair-rotation/open', { coin_a: request.coin_a, coin_b: request.coin_b, include_execution: true }, signal, progress)
+  const openBody = request.bar === '1m'
+    ? { coin_a: request.coin_a, coin_b: request.coin_b, base_interval: '1m' as const, lookback_days: request.days, include_execution: true }
+    : { coin_a: request.coin_a, coin_b: request.coin_b, include_execution: true }
+  await operation('/api/pair-rotation/open', openBody, signal, progress)
   if (request.anchor && request.anchor !== 'none' && ![request.coin_a, request.coin_b].includes(request.anchor)) {
     progress({ stage: 'Loading anchor history', completed: 0, total: 1 })
-    await operation('/api/pair-rotation/open', { coin_a: request.coin_a, coin_b: request.anchor }, signal, progress)
+    const anchorBody = request.bar === '1m'
+      ? { coin_a: request.coin_a, coin_b: request.anchor, base_interval: '1m' as const, lookback_days: request.days }
+      : { coin_a: request.coin_a, coin_b: request.anchor }
+    await operation('/api/pair-rotation/open', anchorBody, signal, progress)
   }
 }
 

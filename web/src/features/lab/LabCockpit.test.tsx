@@ -348,4 +348,65 @@ describe('Lab Binance Terminal + Bottom Tabs', () => {
     fireEvent.click(within(paperRegion).getByRole('button', { name: 'Stop Session' }))
     expect(await within(paperRegion).findByText('Stopped')).toBeVisible()
   })
+
+  it('auto-switches to 1m for Anchor Lead-Lag, reveals drawdown slider, and opens InfoTip popovers', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+      const url = new URL(String(input), 'http://localhost')
+      if (url.pathname.endsWith('/coins')) return json({ directory_status: 'observed', coins })
+      if (url.pathname.endsWith('/advisor')) return json(advisorPayload)
+      if (url.pathname.endsWith('/studies')) return json({ studies: [], next_offset: null })
+      if (url.pathname.endsWith('/paper-sessions')) return json({ sessions: [], next_offset: null })
+      return json(makeAnalysis())
+    }))
+
+    render(<LabDashboard />)
+    expect(await screen.findByText('Kalman Z-Score Mean Reversion')).toBeVisible()
+
+    // InfoTip opens on click
+    fireEvent.click(screen.getByRole('button', { name: 'Benchmark guidance' }))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/highest-R² market driver/i)
+
+    // Switch to Pro mode
+    fireEvent.click(screen.getByRole('button', { name: 'Pro' }))
+
+    // Selecting Park in USDT reveals the Crash Drawdown Trigger slider
+    fireEvent.change(screen.getByLabelText('Crash Stop'), { target: { value: 'park_usdt' } })
+    expect(screen.getByLabelText(/Crash Drawdown Trigger/i)).toBeVisible()
+
+    // Selecting Anchor Lead-Lag auto-switches interval to 1m
+    fireEvent.click(screen.getByRole('button', { name: /Anchor Lead-Lag/ }))
+    await waitFor(() => {
+      expect(within(screen.getByRole('group', { name: 'Interval' })).getByRole('button', { name: '1m' })).toHaveAttribute('aria-pressed', 'true')
+    })
+
+    // Switching away from 1m while Anchor Lead-Lag is active disables Test Strategy and offers Switch to 1m
+    fireEvent.click(within(screen.getByRole('group', { name: 'Interval' })).getByRole('button', { name: '1h' }))
+    expect(screen.getByText(/Anchor Lead-Lag requires 1m candles/i)).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Test Strategy ($10,000)' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to 1m' }))
+    await waitFor(() => {
+      expect(within(screen.getByRole('group', { name: 'Interval' })).getByRole('button', { name: '1m' })).toHaveAttribute('aria-pressed', 'true')
+    })
+  })
+
+  it('shows explicit benchmark guidance when no auto-detected anchor covers the window', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+      const url = new URL(String(input), 'http://localhost')
+      if (url.pathname.endsWith('/coins')) return json({ directory_status: 'observed', coins })
+      if (url.pathname.endsWith('/advisor')) return json(advisorPayload)
+      if (url.pathname.endsWith('/studies')) return json({ studies: [], next_offset: null })
+      if (url.pathname.endsWith('/paper-sessions')) return json({ sessions: [], next_offset: null })
+      return json({ ...makeAnalysis(), anchor: null, anchor_ranking: [] })
+    }))
+
+    render(<LabDashboard />)
+    expect(await screen.findByText('Kalman Z-Score Mean Reversion')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Pro' }))
+    fireEvent.change(screen.getByLabelText('Crash Stop'), { target: { value: 'park_anchor' } })
+    expect(screen.getAllByText(/No auto-detected benchmark covers this full window/i)).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: /Anchor Lead-Lag/ }))
+    await waitFor(() => {
+      expect(screen.getByText(/Select a Benchmark in the top bar for Anchor Lead-Lag/i)).toBeVisible()
+    })
+  })
 })

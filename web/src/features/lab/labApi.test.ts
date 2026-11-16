@@ -146,4 +146,25 @@ describe('Preparation contention', () => {
     expect(fetcher.mock.calls).toHaveLength(1)
     expect(fetcher).toHaveBeenCalledWith(expect.stringContaining('anchor=none'), expect.anything())
   })
+
+  it('requests 1m base_interval when preparing a 1m pair analysis', async () => {
+    let prepared = false
+    const openBodies: unknown[] = []
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const path = String(input)
+      if (path.endsWith('/open')) {
+        prepared = true
+        openBodies.push(JSON.parse(String(init?.body)))
+        return json({ operation_id: 'op-1m' }, 202)
+      }
+      if (path.includes('/operations/')) return json({ status: 'completed' })
+      if (!prepared) return json({ error: { message: 'Missing 1m history.' } }, 409)
+      return json({ ...analysis(), bar: '1m' })
+    }))
+    const result = await loadLab({ ...request, bar: '1m', days: 30, band_lookback: 1440 }, new AbortController().signal, noop)
+    expect(result.bar).toBe('1m')
+    expect(openBodies).toEqual([
+      { coin_a: 'binance:BTC', coin_b: 'binance:ETH', base_interval: '1m', lookback_days: 30, include_execution: true },
+    ])
+  })
 })

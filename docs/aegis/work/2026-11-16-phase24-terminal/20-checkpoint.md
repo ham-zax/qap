@@ -86,9 +86,17 @@ Added fast-path bar/fingerprint/storage checks, `AssetResolver.resolve_markets`,
 `coins_for_listings`, single-snapshot `research_scope_from_snapshot` in
 `PairRotationAnalysis.analyze`, and bounded concurrent `ProductMarketData.projection()`.
 
-Fresh-process HTTP after edits on check port 8001:
-- Cold no-anchor analysis: 2,171 ms (down from 2,210 ms; 30 MB directory JSON parse + provenance + math).
-- Warm automatic-anchor analysis: 896 ms.
-- Cached no-anchor hit: 56 ms.
-- All 12 compiler gates pass in 442.12 seconds (`pytest_full` 385.73s, `web_vitest_full` 11.41s).
-- Log: `/tmp/qap-phase24-final-gate.log`.
+Fresh-process HTTP after edits on check port 8001 (`create_default_app --factory`):
+- Cold no-anchor analysis: 1,911 ms (under the 2,000 ms target; down from 2,210 ms / 2,171 ms).
+- Warm automatic-anchor analysis: 543 ms.
+- Cached no-anchor hit: 186 ms (first cached hit; 56 ms on repeat).
+- Advisor auto / no-anchor: 59 ms / 50 ms.
+
+## Strategy presets, Lead-Lag 1m, and UI control upgrades — 2026-11-16
+
+Completed remaining review items:
+- Fixed `product_lab_advisor.py` to emit all 4 strategy presets (`zscore_kalman`, `spread_copula`, `zscore_ols_wide`, `ratio_trend`) and avoid claiming benchmark parking when no benchmark is selected or covers the window.
+- Fixed Anchor Lead-Lag `1m` validation mismatch: selecting `lead_lag` auto-switches the bar interval to `1m`, warns and disables testing if switched away, and `preparePair` in `labApi.ts` passes `base_interval: '1m'` when preparing 1m data.
+- Added slider controls (`RangeField`), conditional Crash Drawdown Trigger slider, inline Auto-tune badge, `InfoTip` click popovers (benchmark, validation gate, Overview KPIs), and aligned tests in `LabCockpit.test.tsx`, `labApi.test.ts`, `test_lab_advisor.py`, `test_lab_cli.py`, and `test_lab_studies.py`.
+- All 12 compiler gates pass in 454.50 seconds (`pytest_full` 400.68s, `web_vitest_full` 12.67s, `web_build` 5.65s; log `/tmp/qap-phase24-final-verify.log`).
+- Check services on port 8001 stopped after measurement; original services on ports 8000 and 5173 remain untouched.

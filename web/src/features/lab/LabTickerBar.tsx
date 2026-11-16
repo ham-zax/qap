@@ -125,6 +125,7 @@ export function LabTickerBar({
       </label>
       <InfoTip
         label="Benchmark guidance"
+        align="right"
         text="Auto picks the highest-R² market driver (BTC, ETH, BNB, SOL) covering the full window to strip market-wide beta. None runs pure two-coin ratio analysis."
       />
     </div>
