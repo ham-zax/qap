@@ -6,6 +6,7 @@ import {
   type IChartApi,
   type IRange,
   type ISeriesApi,
+  type LogicalRange,
   type MouseEventParams,
   type SeriesMarker,
   type Time,
@@ -67,6 +68,8 @@ interface TimeSeriesChartProps {
   sharedVisibleRange?: ChartVisibleRange | null
   /** Reports the hovered bar, or null when the pointer leaves. Presentation only. */
   onHoverTimeChange?: (timestamp: string | null) => void
+  /** Fires once per series load when the user pans past the earliest loaded bar. */
+  onReachLeftEdge?: () => void
   /** Replaces the default legend and cursor tooltip with a caller-owned readout. */
   readout?: ReactNode
 }
@@ -123,6 +126,7 @@ export function TimeSeriesChart({
   onVisibleRangeChange,
   sharedVisibleRange,
   onHoverTimeChange,
+  onReachLeftEdge,
   readout,
 }: TimeSeriesChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -131,6 +135,10 @@ export function TimeSeriesChart({
   const applyingSharedCursor = useRef(false)
   const applyingSharedRange = useRef(false)
   const lastCursorTime = useRef<string | null>(null)
+  const userInteractedRef = useRef(false)
+  const leftEdgeFiredRef = useRef(false)
+  const onReachLeftEdgeRef = useRef(onReachLeftEdge)
+  onReachLeftEdgeRef.current = onReachLeftEdge
   const [cursor, setCursor] = useState<CursorSnapshot | null>(null)
   const titleId = useId()
   const { resolved: theme } = useTheme()
@@ -138,6 +146,13 @@ export function TimeSeriesChart({
   useEffect(() => {
     const container = containerRef.current
     if (!container || typeof ResizeObserver === 'undefined') return
+    userInteractedRef.current = false
+    leftEdgeFiredRef.current = false
+    const markInteracted = () => {
+      userInteractedRef.current = true
+    }
+    container.addEventListener('pointerdown', markInteracted)
+    container.addEventListener('wheel', markInteracted, { passive: true })
 
     const styles = getComputedStyle(document.documentElement)
     const seriesColors = SERIES_COLOR_VARS.map((name, index) =>
@@ -251,12 +266,29 @@ export function TimeSeriesChart({
         onVisibleRangeChange?.(fromChartVisibleRange(range))
       }
     }
+    const logicalRangeHandler = (range: LogicalRange | null) => {
+      if (
+        !applyingSharedRange.current &&
+        userInteractedRef.current &&
+        !leftEdgeFiredRef.current &&
+        range != null &&
+        range.from < -5 &&
+        onReachLeftEdgeRef.current
+      ) {
+        leftEdgeFiredRef.current = true
+        onReachLeftEdgeRef.current()
+      }
+    }
     chart.timeScale().subscribeVisibleTimeRangeChange(visibleRangeHandler)
+    chart.timeScale().subscribeVisibleLogicalRangeChange(logicalRangeHandler)
     chart.timeScale().fitContent()
 
     return () => {
+      container.removeEventListener('pointerdown', markInteracted)
+      container.removeEventListener('wheel', markInteracted)
       chart.unsubscribeCrosshairMove(crosshairHandler)
       chart.timeScale().unsubscribeVisibleTimeRangeChange(visibleRangeHandler)
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(logicalRangeHandler)
       markerPlugin?.detach()
       chart.remove()
       chartRef.current = null

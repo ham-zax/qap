@@ -276,7 +276,7 @@ describe('Lab Binance Terminal + Bottom Tabs', () => {
     })
 
     // Ratio chart receives trade markers and Pro signal oscillator pane appears
-    expect(screen.getByRole('img', { name: 'BTC per ETH' })).toHaveAttribute('data-markers', 'Buy BTC')
+    expect(screen.getByRole('img', { name: 'BTC per ETH' })).toHaveAttribute('data-markers', 'Swap → BTC')
     expect(screen.getByRole('img', { name: 'Active signal' })).toBeVisible()
 
     // Unsaved changes badge appears when Swap Size changes after test
@@ -407,6 +407,26 @@ describe('Lab Binance Terminal + Bottom Tabs', () => {
     fireEvent.click(screen.getByRole('button', { name: /Anchor Lead-Lag/ }))
     await waitFor(() => {
       expect(screen.getByText(/Select a Benchmark in the top bar for Anchor Lead-Lag/i)).toBeVisible()
+    })
+  })
+
+  it('expands the chart history window when Load 1Y is clicked', async () => {
+    const requestedDays: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+      const url = new URL(String(input), 'http://localhost')
+      if (url.pathname.endsWith('/coins')) return json({ directory_status: 'observed', coins })
+      if (url.pathname.endsWith('/analysis')) requestedDays.push(url.searchParams.get('days') ?? '')
+      if (url.pathname.endsWith('/advisor')) return json(advisorPayload)
+      if (url.pathname.endsWith('/studies')) return json({ studies: [], next_offset: null })
+      if (url.pathname.endsWith('/paper-sessions')) return json({ sessions: [], next_offset: null })
+      return json(makeAnalysis())
+    }))
+
+    render(<LabDashboard />)
+    const loadOlder = await screen.findByRole('button', { name: 'Load 1Y' })
+    fireEvent.click(loadOlder)
+    await waitFor(() => {
+      expect(requestedDays).toContain('365')
     })
   })
 })

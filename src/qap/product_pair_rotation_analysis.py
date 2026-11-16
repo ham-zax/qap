@@ -217,7 +217,12 @@ class PairRotationAnalysis:
             if key in rows and rows[key].trading:
                 try:
                     load(key)
-                except PairAnalysisError, ProductUniverseError:
+                except (PairAnalysisError, ProductUniverseError) as exc:
+                    if key == explicit_anchor:
+                        code = rows[key].venue_asset_code
+                        raise PairAnalysisError(
+                            f"Prepare {code} data to cover the selected pair window."
+                        ) from exc
                     continue
         cache_key = (
             coin_a,
@@ -274,6 +279,15 @@ class PairRotationAnalysis:
             if key not in (coin_a, coin_b):
                 candidates[key] = returns_a, returns_b, log_returns(closes)
         ranking = rank_anchors(candidates)
+        if explicit_anchor is not None and explicit_anchor not in anchor_prices:
+            code = (
+                rows[explicit_anchor].venue_asset_code
+                if explicit_anchor in rows
+                else explicit_anchor
+            )
+            raise PairAnalysisError(
+                f"Prepare {code} data to cover the selected pair window."
+            )
         selected = (
             None
             if no_anchor

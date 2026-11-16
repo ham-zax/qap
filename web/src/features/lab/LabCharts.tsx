@@ -54,7 +54,7 @@ export function LabCharts({
     if (trade.direction === 'into_a') {
       return {
         timestamp: trade.time,
-        label: `Buy ${analysis.coin_a.code}`,
+        label: `Swap → ${analysis.coin_a.code}`,
         selected: true,
         executed: true,
         colorToken: '--chart-coin-a',
@@ -65,7 +65,7 @@ export function LabCharts({
     if (trade.direction === 'into_b') {
       return {
         timestamp: trade.time,
-        label: `Buy ${analysis.coin_b.code}`,
+        label: `Swap → ${analysis.coin_b.code}`,
         selected: true,
         executed: true,
         colorToken: '--chart-coin-b',
@@ -75,14 +75,14 @@ export function LabCharts({
     }
     return {
       timestamp: trade.time,
-      label: trade.direction === 'into_anchor' ? 'Park Anchor' : 'Park USDT',
+      label: trade.direction === 'into_anchor' ? `Park → ${analysis.anchor?.code ?? 'Benchmark'}` : 'Park → USDT',
       selected: true,
       executed: true,
       colorToken: '--qap-warning',
       shape: 'circle',
       position: 'aboveBar',
     }
-  }), [trades, analysis.coin_a.code, analysis.coin_b.code])
+  }), [trades, analysis.coin_a.code, analysis.coin_b.code, analysis.anchor?.code])
 
   const options = useMemo(() => ({ bands, anchor: anchor && Boolean(analysis.anchor) }), [bands, anchor, analysis.anchor])
   const latest = useMemo(() => ratioReadout(analysis, null, options), [analysis, options])

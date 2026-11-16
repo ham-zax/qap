@@ -15,8 +15,17 @@ import { LabReadout } from './LabReadout'
 import { LabSignalChart } from './LabSignalChart'
 import { WealthChart } from './LabWealth'
 import { ratioReadout } from './labReadout'
-import type { LabAnalysis, LabProgress, LabViewMode } from './labContract'
+import type { LabAnalysis, LabDays, LabProgress, LabViewMode } from './labContract'
 import type { LabStudy } from './labStudyApi'
+
+const WINDOW_LABELS: Record<LabDays, string> = { 30: '30D', 90: '90D', 180: '180D', 365: '1Y' }
+
+function nextWindow(days?: LabDays): LabDays | null {
+  if (days === 30) return 90
+  if (days === 90) return 180
+  if (days === 180) return 365
+  return null
+}
 
 export interface LabHeroChartsProps {
   analysis: LabAnalysis | null
@@ -24,6 +33,8 @@ export interface LabHeroChartsProps {
   progress: LabProgress | null
   error: string | null
   viewMode: LabViewMode
+  currentDays?: LabDays
+  onExpandWindow?: () => void
   onRetry: () => void
 }
 
@@ -38,7 +49,16 @@ function signedPct(value: number | null | undefined): string {
   })}%`
 }
 
-export function LabHeroCharts({ analysis, study, progress, error, viewMode, onRetry }: LabHeroChartsProps) {
+export function LabHeroCharts({
+  analysis,
+  study,
+  progress,
+  error,
+  viewMode,
+  currentDays,
+  onExpandWindow,
+  onRetry,
+}: LabHeroChartsProps) {
   const [activeTab, setActiveTab] = useState<ChartTab>('ratio')
   const [bands, setBands] = useState(true)
   const [anchor, setAnchor] = useState(true)
@@ -93,7 +113,7 @@ export function LabHeroCharts({ analysis, study, progress, error, viewMode, onRe
       if (trade.direction === 'into_a') {
         return {
           timestamp: trade.time,
-          label: `Buy ${analysis.coin_a.code}`,
+          label: `Swap → ${analysis.coin_a.code}`,
           selected: true,
           executed: true,
           colorToken: '--chart-coin-a',
@@ -104,7 +124,7 @@ export function LabHeroCharts({ analysis, study, progress, error, viewMode, onRe
       if (trade.direction === 'into_b') {
         return {
           timestamp: trade.time,
-          label: `Buy ${analysis.coin_b.code}`,
+          label: `Swap → ${analysis.coin_b.code}`,
           selected: true,
           executed: true,
           colorToken: '--chart-coin-b',
@@ -114,7 +134,7 @@ export function LabHeroCharts({ analysis, study, progress, error, viewMode, onRe
       }
       return {
         timestamp: trade.time,
-        label: trade.direction === 'into_anchor' ? 'Park Anchor' : 'Park USDT',
+        label: trade.direction === 'into_anchor' ? `Park → ${analysis.anchor?.code ?? 'Benchmark'}` : 'Park → USDT',
         selected: true,
         executed: true,
         colorToken: '--qap-warning',
@@ -142,6 +162,7 @@ export function LabHeroCharts({ analysis, study, progress, error, viewMode, onRe
   const vsHodl = study?.result.proof.vs_hodl_pct ?? null
   const ratioTitle = analysis ? `${analysis.coin_a.code} per ${analysis.coin_b.code}` : 'Ratio'
   const progressPct = progress ? Math.round((progress.completed / Math.max(1, progress.total)) * 100) : 20
+  const nextDays = nextWindow(currentDays)
 
   return (
     <DashboardCard className="bt-hero-charts flex flex-col gap-3 p-3.5" aria-label="Market and backtest charts">
@@ -220,6 +241,20 @@ export function LabHeroCharts({ analysis, study, progress, error, viewMode, onRe
                       Show Signal Trigger Lines
                     </Label>
                   )}
+                  {nextDays && onExpandWindow ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={onExpandWindow}
+                      title={`Expand window to ${WINDOW_LABELS[nextDays]} (or pan past the left edge)`}
+                      className="h-6 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                    >
+                      Load {WINDOW_LABELS[nextDays]}
+                    </Button>
+                  ) : currentDays === 365 ? (
+                    <span className="text-[11px] text-muted-foreground">1Y max window</span>
+                  ) : null}
                 </>
               )}
               {activeTab === 'wealth' && wealth && Boolean(wealth.value.hold_a || wealth.value.hold_b) && (
@@ -286,6 +321,7 @@ export function LabHeroCharts({ analysis, study, progress, error, viewMode, onRe
                     sharedVisibleRange={showSignal ? visibleRange : undefined}
                     onVisibleRangeChange={onVisibleRangeChange}
                     onHoverTimeChange={setHover}
+                    onReachLeftEdge={nextDays ? onExpandWindow : undefined}
                     readout={<LabReadout title={ratioTitle} current={current} latest={latest} />}
                   />
                   {showSignal && signal && (

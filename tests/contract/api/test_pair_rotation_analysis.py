@@ -133,3 +133,21 @@ def test_tampered_generation_never_becomes_analysis(
     )
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "pair_rotation_analysis_unavailable"
+
+
+def test_explicit_missing_or_stale_anchor_returns_409(
+    prepared: tuple[TestClient, Path],
+) -> None:
+    client, _ = prepared
+    response = client.get(
+        "/api/pair-rotation/analysis",
+        params={
+            "coin_a": "binance:W",
+            "coin_b": "binance:BTC",
+            "bar": "1h",
+            "days": 30,
+            "anchor": "binance:SOL",
+        },
+    )
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "pair_rotation_analysis_unavailable"

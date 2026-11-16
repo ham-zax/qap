@@ -5,7 +5,6 @@ import {
   DEFAULT_BAND_LOOKBACK,
   LAB_BARS,
   fromBackendLabSettings,
-  toBackendLabSettings,
   type LabAnalysis,
   type LabBar,
   type LabCoinMatch,
@@ -25,14 +24,7 @@ import {
   useLabViewMode,
   writeStoredStudy,
 } from './labStorage'
-import {
-  createLivePaperSession,
-  getLivePaperSession,
-  listLivePaperSessions,
-  stepLivePaperSession,
-  stopLivePaperSession,
-  type LivePaperSession,
-} from './labPaperApi'
+import { useLabPaper } from './useLabPaper'
 import {
   compareLabStudies,
   computeLabStudy,
@@ -75,16 +67,22 @@ export function useLab() {
   const [savedStudies, setSavedStudies] = useState<LabSavedSummary[]>([])
   const [savedLoading, setSavedLoading] = useState(false)
 
-  const [paperSession, setPaperSession] = useState<LivePaperSession | null>(null)
-  const [paperBusy, setPaperBusy] = useState(false)
-  const [paperError, setPaperError] = useState<string | null>(null)
+  const {
+    paperSession,
+    paperBusy,
+    paperError,
+    resetPaperSession,
+    syncActivePaperSession,
+    startPaperSession,
+    stepPaperSession,
+    stopPaperSession,
+  } = useLabPaper(request, strategySettings)
 
   const forcePrepare = useRef(false)
   const pendingLoadedStudy = useRef<LabStudy | null>(null)
   const studyController = useRef<AbortController | null>(null)
   const restoreController = useRef<AbortController | null>(null)
   const compareController = useRef<AbortController | null>(null)
-  const paperController = useRef<AbortController | null>(null)
   const pendingAutoTest = useRef<LabStrategyFormSettings | null>(null)
 
   const updateStrategySettings = useCallback((patch: Partial<LabStrategyFormSettings>) => {
@@ -182,10 +180,7 @@ export function useLab() {
     pendingLoadedStudy.current = null
     studyController.current?.abort()
     compareController.current?.abort()
-    paperController.current?.abort()
-    setPaperSession(null)
-    setPaperBusy(false)
-    setPaperError(null)
+    resetPaperSession()
     setStudy(carriedStudy)
     if (!carriedStudy) setLoadedSavedBanner(null)
     setStudyRestored(Boolean(carriedStudy))
@@ -231,22 +226,10 @@ export function useLab() {
       .finally(() => { if (!controller.signal.aborted) setAdvisorLoading(false) })
 
     refreshSaved(controller.signal)
-
-    void listLivePaperSessions(controller.signal)
-      .then((list) => {
-        if (controller.signal.aborted || !list || !Array.isArray(list.sessions)) return
-        const active = list.sessions.find((row) => row.status === 'active' && row.coin_a === request.coin_a && row.coin_b === request.coin_b)
-        if (active) {
-          return getLivePaperSession(active.session_id, controller.signal).then((detail) => {
-            if (!controller.signal.aborted && detail && detail.session_id) setPaperSession(detail)
-          })
-        }
-        return undefined
-      })
-      .catch(() => { /* Paper session list is optional. */ })
+    syncActivePaperSession(request, controller.signal)
 
     return () => controller.abort()
-  }, [request, attempt, executeStudy, refreshSaved])
+  }, [request, attempt, executeStudy, refreshSaved, resetPaperSession, syncActivePaperSession])
 
   useEffect(() => {
     if (!analysis || !request || study || studyRunning || studyError) return
@@ -276,7 +259,6 @@ export function useLab() {
     studyController.current?.abort()
     restoreController.current?.abort()
     compareController.current?.abort()
-    paperController.current?.abort()
   }, [])
 
   const testStrategy = useCallback((method?: LabStrategyFormSettings['method']) => {
@@ -401,71 +383,6 @@ export function useLab() {
     setLoadedSavedBanner(null)
     try { localStorage.removeItem(STUDY_KEY) } catch { /* Storage optional. */ }
   }, [])
-
-  const startPaperSession = useCallback(() => {
-    if (!request || paperBusy) return
-    paperController.current?.abort()
-    const controller = new AbortController()
-    paperController.current = controller
-    setPaperBusy(true)
-    setPaperError(null)
-    void createLivePaperSession({
-      coin_a: request.coin_a,
-      coin_b: request.coin_b,
-      anchor: request.anchor === 'none' ? null : request.anchor,
-      bar: request.bar,
-      order_rtt_ms: 75,
-      max_staleness_ms: 500,
-      settings: toBackendLabSettings(strategySettings),
-    }, controller.signal)
-      .then((session) => {
-        if (!controller.signal.aborted) { setPaperSession(session); setPaperBusy(false) }
-      })
-      .catch((cause: unknown) => {
-        if (!controller.signal.aborted) {
-          setPaperError(cause instanceof Error ? cause.message : 'Could not start live paper session.')
-          setPaperBusy(false)
-        }
-      })
-  }, [request, paperBusy, strategySettings])
-
-  const stepPaperSession = useCallback((durationSeconds = 3.0) => {
-    if (!paperSession || paperBusy) return
-    paperController.current?.abort()
-    const controller = new AbortController()
-    paperController.current = controller
-    setPaperBusy(true)
-    setPaperError(null)
-    void stepLivePaperSession(paperSession.session_id, durationSeconds, controller.signal)
-      .then((session) => {
-        if (!controller.signal.aborted) { setPaperSession(session); setPaperBusy(false) }
-      })
-      .catch((cause: unknown) => {
-        if (!controller.signal.aborted) {
-          setPaperError(cause instanceof Error ? cause.message : 'Paper step failed.')
-          setPaperBusy(false)
-        }
-      })
-  }, [paperSession, paperBusy])
-
-  const stopPaperSession = useCallback(() => {
-    if (!paperSession || paperBusy) return
-    paperController.current?.abort()
-    const controller = new AbortController()
-    paperController.current = controller
-    setPaperBusy(true)
-    setPaperError(null)
-    void stopLivePaperSession(paperSession.session_id, controller.signal)
-      .then((session) => {
-        if (!controller.signal.aborted) { setPaperSession(session); setPaperBusy(false) }
-      })
-      .catch((cause: unknown) => {
-        if (!controller.signal.aborted) {
-          setPaperError(cause instanceof Error ? cause.message : 'Could not stop paper session.')
-          setPaperBusy(false)
-        }
-      })
-  }, [paperSession, paperBusy])
 
   return {
     request, coins, analysis, progress, error, change,

@@ -9,8 +9,15 @@ import { LabActionPanel } from './LabActionPanel'
 import { LabBottomTabs } from './LabBottomTabs'
 import { LabHeroCharts } from './LabHeroCharts'
 import { LabTickerBar } from './LabTickerBar'
-import { DEFAULT_BAND_LOOKBACK } from './labContract'
+import { DEFAULT_BAND_LOOKBACK, type LabDays } from './labContract'
 import { useLab } from './useLab'
+
+function nextHistoryWindow(days: LabDays): LabDays | null {
+  if (days === 30) return 90
+  if (days === 90) return 180
+  if (days === 180) return 365
+  return null
+}
 
 export function LabDashboard() {
   const lab = useLab()
@@ -85,6 +92,11 @@ export function LabDashboard() {
           progress={progress}
           error={error}
           viewMode={viewMode}
+          currentDays={request.days}
+          onExpandWindow={() => {
+            const next = nextHistoryWindow(request.days)
+            if (next) lab.change({ days: next })
+          }}
           onRetry={lab.retry}
         />
 

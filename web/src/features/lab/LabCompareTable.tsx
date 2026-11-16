@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/table'
 import { DetailTag } from '@/components/watermelon/dashboard-card'
 import { cn } from '@/lib/utils'
-import type { LabCompareResult } from './labStudyApi'
+import { METHOD_SHORT_LABELS } from './strategyRegistry'
+import type { LabAdvisorSuggestion, LabCompareResult, LabStudySettings } from './labStudyApi'
 
 interface LabCompareTableProps {
   compare: LabCompareResult
@@ -23,6 +24,51 @@ interface LabCompareTableProps {
 }
 
 type SortField = 'ending' | 'hodl' | 'control' | 'swaps'
+
+function sameCandidate(left: LabStudySettings | undefined, right: LabStudySettings | undefined): boolean {
+  if (!left || !right) return false
+  if ((left.method ?? 'zscore') !== (right.method ?? 'zscore')) return false
+  return (
+    (left.hedge_method ?? 'ratio') === (right.hedge_method ?? 'ratio') &&
+    (left.lookback ?? 96) === (right.lookback ?? 96) &&
+    Number(left.entry ?? 2) === Number(right.entry ?? 2) &&
+    Number(left.exit ?? 0.5) === Number(right.exit ?? 0.5) &&
+    Number(left.copula_probability ?? 0.05) === Number(right.copula_probability ?? 0.05) &&
+    Number(left.copula_exit_band ?? 0.15) === Number(right.copula_exit_band ?? 0.15) &&
+    (left.fast_window ?? 12) === (right.fast_window ?? 12) &&
+    (left.slow_window ?? 48) === (right.slow_window ?? 48) &&
+    (left.crash_defense_mode ?? 'coins_only') === (right.crash_defense_mode ?? 'coins_only') &&
+    Number(left.rotation_size ?? 0.5) === Number(right.rotation_size ?? 0.5)
+  )
+}
+
+function matchPreset(
+  study: LabCompareResult['studies'][number],
+  index: number,
+  compare: LabCompareResult,
+): LabAdvisorSuggestion | null {
+  const suggestions = compare.advisor.suggestions
+  const exact = suggestions.find((item) => sameCandidate(item.settings, study.result.requested_settings))
+  if (exact) return exact
+  if (
+    suggestions.length === compare.studies.length &&
+    suggestions[index]?.settings.method === study.result.applied_settings.method
+  ) {
+    return suggestions[index] ?? null
+  }
+  return null
+}
+
+function paramsLabel(applied: LabCompareResult['studies'][number]['result']['applied_settings']): string {
+  const method = applied.method ?? 'zscore'
+  if (method === 'zscore') return `zscore · ${applied.hedge_method ?? 'ratio'} · ${applied.lookback ?? 96}`
+  if (method === 'copula') {
+    const tail = Math.round(Number(applied.copula_probability ?? 0.05) * 100)
+    return `copula · ${tail}% tail · ${applied.lookback ?? 96}`
+  }
+  if (method === 'trend') return `trend · ${applied.fast_window ?? 12}/${applied.slow_window ?? 48} MA`
+  return `lead_lag · 1m · ${applied.lookback ?? 96}`
+}
 
 function pct(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return '—'
@@ -53,19 +99,28 @@ export function LabCompareTable({ compare, onOpenStudy, onClose }: LabCompareTab
     }
   }
 
+  const indexedRows = useMemo(
+    () =>
+      compare.studies.map((item, index) => ({
+        item,
+        preset: matchPreset(item, index, compare),
+      })),
+    [compare],
+  )
+
   const rows = useMemo(() => {
-    if (!sortField) return compare.studies
-    return [...compare.studies].sort((left, right) => {
+    if (!sortField) return indexedRows
+    return [...indexedRows].sort((left, right) => {
       const valueOf = (item: (typeof compare.studies)[number]): number => {
         if (sortField === 'ending') return Number(item.result.wealth?.terminal_values.strategy ?? 0)
         if (sortField === 'hodl') return item.result.proof.vs_hodl_pct ?? -Infinity
         if (sortField === 'control') return item.result.proof.vs_control_pct ?? -Infinity
         return item.result.proof.validation_trades ?? 0
       }
-      const delta = valueOf(left) - valueOf(right)
+      const delta = valueOf(left.item) - valueOf(right.item)
       return sortDir === 'asc' ? delta : -delta
     })
-  }, [compare.studies, sortField, sortDir])
+  }, [indexedRows, sortField, sortDir])
 
   return (
     <Card role="region" className="shadow-primary gap-3 rounded-xl py-4" aria-label="Preset comparison">
@@ -89,8 +144,8 @@ export function LabCompareTable({ compare, onOpenStudy, onClose }: LabCompareTab
           <Table>
             <TableHeader className="bg-muted/60">
               <TableRow>
-                <TableHead className="h-9 text-xs">Method</TableHead>
-                <TableHead className="h-9 text-xs">Hedge / Lookback</TableHead>
+                <TableHead className="h-9 text-xs">Preset / Strategy</TableHead>
+                <TableHead className="h-9 text-xs">Method &amp; Params</TableHead>
                 <TableHead className="h-9 text-right text-xs">
                   <button
                     type="button"
@@ -138,16 +193,18 @@ export function LabCompareTable({ compare, onOpenStudy, onClose }: LabCompareTab
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((item) => {
+              {rows.map(({ item, preset }) => {
                 const best = item.study_id === compare.best_study_id
                 const applied = item.result.applied_settings
+                const method = applied.method ?? 'zscore'
+                const presetTitle = preset?.title ?? METHOD_SHORT_LABELS[method]
                 const vsHodl = item.result.proof.vs_hodl_pct ?? 0
                 const vsCtrl = item.result.proof.vs_control_pct ?? 0
                 return (
                   <TableRow key={item.study_id} className={cn(best && 'bg-primary/8')}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <strong>{applied.method}</strong>
+                    <TableCell className="font-medium" title={preset?.simple_reason}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <strong className="text-xs text-foreground">{presetTitle}</strong>
                         {best && (
                           <Badge className="gap-1 bg-primary/15 text-primary hover:bg-primary/20">
                             <Trophy className="size-3" aria-hidden="true" />
@@ -157,7 +214,7 @@ export function LabCompareTable({ compare, onOpenStudy, onClose }: LabCompareTab
                       </div>
                     </TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">
-                      {applied.hedge_method} · {applied.lookback}
+                      {paramsLabel(applied)}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs tabular-nums">
                       {dollars(item.result.wealth?.terminal_values.strategy)}

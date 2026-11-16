@@ -48,7 +48,7 @@ export function LabSignalChart({
     <div className="lab-signal-subpane">
       <TimeSeriesChart
         title="Active signal"
-        description={`Synchronized strategy signal (${signal.unit}) with entry thresholds (${signal.lower} / ${signal.upper}).`}
+        description={`Synchronized strategy signal (${signal.unit}) with entry thresholds (${Number(signal.lower.toFixed(4))} / ${Number(signal.upper.toFixed(4))}).`}
         series={series}
         height={180}
         sharedCursorTime={sharedCursorTime}
