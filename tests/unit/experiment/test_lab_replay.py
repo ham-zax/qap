@@ -225,3 +225,41 @@ def test_trailing_median_volume_fallback_and_missing_cost_threshold() -> None:
         LabInputs(many_zeros_a, normal_b), settings, one_signal(size=35, at=30)
     )
     assert missing_res.costs_supported is False
+
+
+def test_park_usdt_with_direct_market_checks_usdt_leg_volumes() -> None:
+    interval = BarInterval("1h")
+    times = [
+        datetime(2026, 1, 1, tzinfo=UTC) + timedelta(hours=index) for index in range(10)
+    ]
+    inst_a = VenueInstrument("binance", "AUSDT", AssetId("A"), AssetId("USDT"))
+    inst_b = VenueInstrument("binance", "BUSDT", AssetId("B"), AssetId("USDT"))
+    inst_ab = VenueInstrument("binance", "AB", AssetId("A"), AssetId("B"))
+    # Drop A and B by 25% at bar 3 to trigger park_usdt while direct AB has zero volume.
+    prices = [100.0 if index < 3 else 75.0 for index in range(10)]
+    series_a = validate_bar_series(
+        tuple(
+            MarketBar(inst_a, interval, t, p, p, p, p, 1_000_000.0)
+            for t, p in zip(times, prices, strict=True)
+        )
+    )
+    series_b = validate_bar_series(
+        tuple(
+            MarketBar(inst_b, interval, t, p, p, p, p, 1_000_000.0)
+            for t, p in zip(times, prices, strict=True)
+        )
+    )
+    series_ab = validate_bar_series(
+        tuple(MarketBar(inst_ab, interval, t, 1.0, 1.0, 1.0, 1.0, 0.0) for t in times)
+    )
+    settings = LabSettings(
+        minimum_hold=0,
+        cooldown=0,
+        crash_defense_mode="park_usdt",
+        regime_break_drawdown=0.15,
+    )
+    sig = LabSignal(np.zeros(10), np.zeros(10), "test", 1, -1, True)
+    result = run_lab_replay(LabInputs(series_a, series_b, series_ab), settings, sig)
+    assert result.costs_supported is True
+    assert len(result.trades) == 1
+    assert result.trades[0].direction == "into_usdt"

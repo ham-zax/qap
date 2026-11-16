@@ -23,7 +23,7 @@ from qap.portfolio import (
     PortfolioLedger,
     PortfolioState,
 )
-from qap.portfolio._decimal import divide, exact_add, exact_multiply
+from qap.portfolio._decimal import divide, exact_add, exact_multiply, exact_subtract
 
 _ZERO = Decimal("0")
 _ONE = Decimal("1")
@@ -284,7 +284,11 @@ def sweep_rebalance(
             elif res.rejected_reason is not None:
                 rejected.append(res.rejected_reason)
 
-    avail_usdt = ledger.current_state.quantity(USDT)
+    target_usdt_reserve = plan.target_values.get(USDT, _ZERO)
+    avail_usdt = max(
+        _ZERO,
+        exact_subtract(ledger.current_state.quantity(USDT), target_usdt_reserve),
+    )
     if buys and avail_usdt > _ZERO:
         if "leg2" not in leg_cache:
             if fill_books_leg2 is not None:
@@ -302,12 +306,18 @@ def sweep_rebalance(
             if inst.venue_symbol not in books2:
                 rejected.append(f"missing_book:{inst.venue_symbol}")
                 continue
+            spendable_now = max(
+                _ZERO,
+                exact_subtract(
+                    ledger.current_state.quantity(USDT), target_usdt_reserve
+                ),
+            )
             if target_weights.get(USDT, _ZERO) == _ZERO and len(buys) == 1:
-                budget = ledger.current_state.quantity(USDT)
+                budget = spendable_now
             elif total_req > _ZERO:
                 share = divide(exact_multiply(delta, mid_prices[asset]), total_req)
                 budget = min(
-                    ledger.current_state.quantity(USDT),
+                    spendable_now,
                     exact_multiply(avail_usdt, share),
                 )
             else:

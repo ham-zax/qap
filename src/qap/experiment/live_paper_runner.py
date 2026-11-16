@@ -336,6 +336,8 @@ class LivePaperSessionManager:
             strat_rejected: list[str] = []
             age1 = age2 = None
             qty_a_before = strat_ledger.current_state.quantity(inst_a.base)
+            next_parked = bool(state["parked"])
+            next_peak_val = max(float(state["peak_value"]), float(strat_val))
             if target_weights is not None:
                 strat_fills, strat_rejected, age1, age2 = sweep(
                     ledger=strat_ledger,
@@ -347,6 +349,8 @@ class LivePaperSessionManager:
                         next_pref,
                         step_idx,
                     )
+                    next_parked = parked
+                    next_peak_val = peak_val
                     record_portfolio_fills(state["portfolios"]["strategy"], strat_fills)
                     state["trades"].append(
                         trade_record(
@@ -405,7 +409,7 @@ class LivePaperSessionManager:
                 )
 
             state["decisions_count"] = step_idx
-            state["peak_value"], state["parked"] = peak_val, parked
+            state["peak_value"], state["parked"] = next_peak_val, next_parked
             state["updated_at"] = datetime.now(UTC).isoformat()
             state["latency_audit"].append(
                 latency_record(

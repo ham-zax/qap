@@ -247,6 +247,7 @@ def prove_lab_strategy(
     tuning_gross = tuning.terminal_value + tuning_cost - tuning_hodl.terminal_value
     cost_gate = tuning_gross >= settings.cost_budget_multiple * tuning_cost
     tuning_start_value = Decimal(str(tuning.values[0]))
+    tuning_hodl_end = tuning_hodl.terminal_value
     proof["cost_gate_passed"] = cost_gate
     proof["tuning_cost_pct"] = (
         float(tuning_cost / tuning_start_value) * 100
@@ -254,8 +255,8 @@ def prove_lab_strategy(
         else None
     )
     proof["tuning_gross_vs_hodl_pct"] = (
-        float(tuning_gross / tuning_start_value) * 100
-        if tuning_start_value > 0
+        float((tuning.terminal_value + tuning_cost) / tuning_hodl_end - 1) * 100
+        if tuning_hodl_end > 0
         else None
     )
     controls = {

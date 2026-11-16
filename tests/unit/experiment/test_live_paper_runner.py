@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 from qap.artifact_integrity import read_and_validate_integrity
+from qap.experiment.live_paper_execution import sweep_rebalance
 from qap.experiment.live_paper_runner import (
     LivePaperError,
     LivePaperSessionManager,
@@ -20,7 +21,7 @@ from qap.market import VenueInstrument
 from qap.market.binance_ws_stream import TimedL2Book
 from qap.market.microstructure import public_book_snapshot_from_rows
 from qap.policy.lab_settings import LabSettings
-from qap.portfolio import AssetId
+from qap.portfolio import AssetId, PortfolioLedger, PortfolioState
 
 D = Decimal
 USDT = AssetId("USDT")
@@ -332,3 +333,89 @@ def _started(root: Path) -> LivePaperSessionManager:
     manager = make_manager(root)
     start(manager)
     return manager
+
+
+def test_rejected_park_keeps_parked_false_and_allows_retry(tmp_path: Path) -> None:
+    park_settings = LabSettings(
+        method="zscore",
+        auto_tune=False,
+        lookback=20,
+        entry=5.0,
+        exit=0.5,
+        minimum_hold=0,
+        cooldown=0,
+        crash_defense_mode="park_usdt",
+        regime_break_drawdown=0.15,
+    )
+    manager = make_manager(tmp_path)
+    manager.create_session(
+        "binance:BTC",
+        "binance:ETH",
+        settings=park_settings,
+        initial_books=books(100.0, 50.0, received_ns=RECV_NS),
+        historical_closes=history(),
+        session_id="park1",
+    )
+    # 30% drawdown triggers park_usdt, but stale book rejects leg1.
+    stale = books(70.0, 35.0, received_ns=RECV_NS - 1000 * MS)
+    rejected_view = manager.step_session(
+        "park1",
+        books=books(70.0, 35.0, received_ns=RECV_NS),
+        decide_ns=RECV_NS + 2 * MS,
+        fill_books_leg1=stale,
+        fill_books_leg2=books(70.0, 35.0, received_ns=RECV_NS + 145 * MS),
+    )
+    assert rejected_view["trades"] == []
+    raw_after_reject = json.loads(
+        (manager.sessions_root / "park1" / "session.json").read_text("utf-8")
+    )
+    assert raw_after_reject["parked"] is False
+
+    # Next step with fresh books retries and successfully parks into USDT.
+    parked_view = manager.step_session(
+        "park1",
+        books=books(70.0, 35.0, received_ns=RECV_NS),
+        decide_ns=RECV_NS + 2 * MS,
+        fill_books_leg1=books(70.0, 35.0, received_ns=RECV_NS + 70 * MS),
+        fill_books_leg2=books(70.0, 35.0, received_ns=RECV_NS + 145 * MS),
+    )
+    assert len(parked_view["trades"]) == 1
+    assert parked_view["trades"][0]["direction"] == "into_usdt"
+    raw_after_park = json.loads(
+        (manager.sessions_root / "park1" / "session.json").read_text("utf-8")
+    )
+    assert raw_after_park["parked"] is True
+
+
+def test_sweep_rebalance_preserves_target_usdt_reserve() -> None:
+    ledger = PortfolioLedger(PortfolioState.from_holdings({USDT: D("10000")}))
+    fill_books = books(100.0, 50.0, received_ns=RECV_NS)
+    fills, rejected, _, _ = sweep_rebalance(
+        ledger=ledger,
+        portfolio_key="strategy",
+        session_id="reserve-test",
+        step_index=1,
+        target_weights={
+            AssetId("BTC"): D("0.5"),
+            AssetId("ETH"): D("0.3"),
+            USDT: D("0.2"),
+        },
+        mid_prices={AssetId("BTC"): D("100"), AssetId("ETH"): D("50"), USDT: D("1")},
+        inst_by_asset={AssetId("BTC"): BTC, AssetId("ETH"): ETH},
+        basket=(AssetId("BTC"), AssetId("ETH"), USDT),
+        settings=SETTINGS,
+        order_rtt_ms=75.0,
+        max_staleness_ms=500.0,
+        t_fill_leg1_ns=RECV_NS + RTT_NS,
+        t_fill_leg2_ns=RECV_NS + 2 * RTT_NS,
+        req_insts=[BTC, ETH],
+        book_provider=forbid_live,
+        leg_cache={},
+        fill_books_leg1=fill_books,
+        fill_books_leg2=fill_books,
+        meta_map={},
+        decision_time=NOW,
+    )
+    assert rejected == []
+    assert len(fills) == 2
+    assert ledger.current_state.quantity(USDT) >= D("2000")

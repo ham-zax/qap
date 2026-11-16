@@ -110,11 +110,21 @@ def _quote_mark(inputs: LabInputs, index: int, quote: AssetId) -> float:
 
 
 def _costs(
-    settings: LabSettings, inputs: LabInputs, index: int, notional: Decimal
+    settings: LabSettings,
+    inputs: LabInputs,
+    index: int,
+    notional: Decimal,
+    *,
+    use_direct: bool | None = None,
+    use_third_anchor: bool = False,
 ) -> tuple[CostModel, bool]:
-    legs = (
-        (inputs.direct,) if inputs.direct is not None else (inputs.first, inputs.second)
-    )
+    direct_route = (inputs.direct is not None) if use_direct is None else use_direct
+    if direct_route and inputs.direct is not None:
+        legs: tuple[ValidatedBarSeries, ...] = (inputs.direct,)
+    elif use_third_anchor and inputs.anchor is not None:
+        legs = (inputs.first, inputs.second, inputs.anchor)
+    else:
+        legs = (inputs.first, inputs.second)
     participation_terms: list[float] = []
     supported = True
     for series in legs:
@@ -186,14 +196,6 @@ def _execute(
     notional = plan.one_way_rebalance_notional
     if notional < settings.minimum_notional:
         return None, True
-    costs, supported = _costs(settings, inputs, decision_index, notional)
-    next_a, next_b = inputs.first.bars[fill_index], inputs.second.bars[fill_index]
-    next_anchor = None if inputs.anchor is None else inputs.anchor.bars[fill_index]
-    identifier = f"lab-{decision_index}"
-    execution_time = next_a.candle_open_time
-    metadata = {
-        snapshot.metadata.instrument: snapshot.metadata for snapshot in inputs.metadata
-    }
     uses_only_ab = target_weights.get(USDT, Decimal(0)) == 0 and (
         not has_third_anchor
         or anchor_asset is None
@@ -203,6 +205,31 @@ def _execute(
         )
     )
     used_direct = uses_only_ab and inputs.direct is not None
+    use_third_anchor = (
+        not used_direct
+        and has_third_anchor
+        and anchor_asset is not None
+        and inputs.anchor is not None
+        and (
+            target_weights.get(anchor_asset, Decimal(0)) > 0
+            or ledger.current_state.quantity(anchor_asset) > 0
+        )
+    )
+    costs, supported = _costs(
+        settings,
+        inputs,
+        decision_index,
+        notional,
+        use_direct=used_direct,
+        use_third_anchor=use_third_anchor,
+    )
+    next_a, next_b = inputs.first.bars[fill_index], inputs.second.bars[fill_index]
+    next_anchor = None if inputs.anchor is None else inputs.anchor.bars[fill_index]
+    identifier = f"lab-{decision_index}"
+    execution_time = next_a.candle_open_time
+    metadata = {
+        snapshot.metadata.instrument: snapshot.metadata for snapshot in inputs.metadata
+    }
     if used_direct and inputs.direct is not None:
         direct = inputs.direct.bars[fill_index]
         execution = execute_direct_rebalance_leg(

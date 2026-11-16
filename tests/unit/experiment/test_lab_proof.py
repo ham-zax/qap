@@ -400,3 +400,34 @@ def test_auto_tune_copula_clamps_candidates_within_exit_band() -> None:
     )
     assert result.applied_settings.copula_probability < 0.35
     assert result.signal.available is True
+
+
+def test_tuning_gross_vs_hodl_pct_uses_tuning_hodl_denominator() -> None:
+    data = market_inputs()
+    settings = LabSettings(
+        lookback=40,
+        entry=1.0,
+        exit=0.2,
+        minimum_hold=1,
+        cooldown=1,
+        auto_tune=False,
+    )
+    result = prove_lab_strategy(
+        data,
+        settings,
+        trial_count=1,
+        identity_confirmed=True,
+        execution_ready=True,
+    )
+    split = result.split
+    tuning = run_lab_replay(data, settings, result.signal, end=split)
+    tuning_hodl = run_lab_replay(data, settings, result.signal, kind="hodl", end=split)
+    tuning_cost = sum(
+        (Decimal(t.fees_usdt) + Decimal(t.slippage_usdt) for t in tuning.trades),
+        Decimal(0),
+    )
+    expected = (
+        float((tuning.terminal_value + tuning_cost) / tuning_hodl.terminal_value - 1)
+        * 100
+    )
+    assert result.proof["tuning_gross_vs_hodl_pct"] == pytest.approx(expected)
