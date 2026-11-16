@@ -1,8 +1,8 @@
 /*
- * Design tokens. Tailwind utilities (bg-panel, text-muted, border-positive/45 …)
- * resolve through the theme variables below, so every utility follows the active
- * theme. Dark is the default; light applies from the system preference unless the
- * user pins a theme with data-theme on <html>.
+ * Design tokens. Tailwind utilities (bg-card, text-muted-foreground, bg-panel,
+ * border-positive/45 …) resolve through the theme variables below, so every
+ * Watermelon UI and QAP component follows the active theme.
+ * Dark is the default; light applies via [data-theme="light"].
  */
 @theme inline {
   --font-sans: "Geist Variable", "Geist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -10,29 +10,44 @@
   --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", monospace;
 
+  /* QAP surface & semantic tokens */
   --color-canvas: var(--qap-canvas);
   --color-panel: var(--qap-panel);
   --color-subtle: var(--qap-subtle);
   --color-raised: var(--qap-raised);
-  --color-foreground: var(--qap-foreground);
-  --color-secondary: var(--qap-secondary);
-  --color-muted: var(--qap-muted);
-  --color-border: var(--qap-border);
-  --color-border-strong: var(--qap-border-strong);
-  --color-accent: var(--qap-accent);
-  --color-accent-contrast: var(--qap-accent-contrast);
   --color-positive: var(--qap-positive);
   --color-negative: var(--qap-negative);
   --color-warning: var(--qap-warning);
   --color-info: var(--qap-info);
+  --color-border-strong: var(--qap-border-strong);
+  --color-accent-contrast: var(--qap-accent-contrast);
 
-  /* Buttons 6px, panels and inputs 8px (design-direction §5). */
+  /* Watermelon / shadcn standard semantic tokens bridged to QAP tokens */
+  --color-background: var(--qap-canvas);
+  --color-foreground: var(--qap-foreground);
+  --color-card: var(--qap-panel);
+  --color-card-foreground: var(--qap-foreground);
+  --color-popover: var(--qap-raised);
+  --color-popover-foreground: var(--qap-foreground);
+  --color-primary: var(--qap-accent);
+  --color-primary-foreground: var(--qap-accent-contrast);
+  --color-secondary: var(--qap-subtle);
+  --color-secondary-foreground: var(--qap-foreground);
+  --color-muted: var(--qap-subtle);
+  --color-muted-foreground: var(--qap-muted);
+  --color-accent: var(--qap-raised);
+  --color-accent-foreground: var(--qap-foreground);
+  --color-destructive: var(--qap-negative);
+  --color-destructive-foreground: #ffffff;
+  --color-border: var(--qap-border);
+  --color-input: var(--qap-control-border);
+  --color-ring: var(--qap-accent);
+
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
 
-  /* Type scale 12/13/14/16/22/28 (design-direction §4): title 22, display 28. */
   --text-display: 1.75rem;
   --text-display--line-height: 2.25rem;
   --text-display--letter-spacing: -0.02em;
@@ -42,6 +57,7 @@
 
   --shadow-card: var(--qap-shadow-card);
   --shadow-overlay: var(--qap-shadow-overlay);
+  --shadow-primary: var(--qap-shadow-primary);
 }
 
 :root {
@@ -66,6 +82,33 @@
   --qap-context: #0f141a;
   --qap-shadow-card: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.4);
   --qap-shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.5);
+  --qap-shadow-primary:
+    0px 0px 0px 1px rgb(255 255 255 / 0.06),
+    0px 1px 2px -1px rgb(0 0 0 / 0.5),
+    0px 2px 4px 0px rgb(0 0 0 / 0.45);
+
+  --background: var(--qap-canvas);
+  --foreground: var(--qap-foreground);
+  --card: var(--qap-panel);
+  --card-foreground: var(--qap-foreground);
+  --popover: var(--qap-raised);
+  --popover-foreground: var(--qap-foreground);
+  --primary: var(--qap-accent);
+  --primary-foreground: var(--qap-accent-contrast);
+  --secondary: var(--qap-subtle);
+  --secondary-foreground: var(--qap-foreground);
+  --muted: var(--qap-subtle);
+  --muted-foreground: var(--qap-muted);
+  --accent: var(--qap-raised);
+  --accent-foreground: var(--qap-foreground);
+  --destructive: var(--qap-negative);
+  --border: var(--qap-border);
+  --input: var(--qap-control-border);
+  --ring: var(--qap-accent);
+  --live: var(--qap-positive);
+  --status-completed: var(--qap-positive);
+  --status-processing: var(--qap-info);
+  --status-exception: var(--qap-negative);
 
   --chart-series-1: #5aa0ff;
   --chart-series-2: #d8dde5;
@@ -74,6 +117,11 @@
   --chart-series-5: #b394f7;
   --chart-grid: #1b222c;
   --chart-anchor: rgb(107 118 134 / 0.3);
+  --chart-1: var(--chart-series-1);
+  --chart-2: var(--chart-series-2);
+  --chart-3: var(--chart-series-3);
+  --chart-4: var(--chart-series-4);
+  --chart-5: var(--chart-series-5);
 }
 
 @media (prefers-color-scheme: light) {
@@ -98,6 +146,10 @@
     --qap-context: #f0f3f7;
     --qap-shadow-card: 0 1px 2px rgb(17 23 35 / 0.06), 0 1px 1px rgb(17 23 35 / 0.04);
     --qap-shadow-overlay: 0 12px 32px rgb(17 23 35 / 0.16);
+    --qap-shadow-primary:
+      0px 0px 0px 0.5px rgb(0 0 0 / 0.06),
+      0px 1px 2px -1px rgb(0 0 0 / 0.06),
+      0px 2px 4px 0px rgb(0 0 0 / 0.04);
 
     --chart-series-1: #1f5fd6;
     --chart-series-2: #394150;
@@ -130,6 +182,10 @@
   --qap-context: #f0f3f7;
   --qap-shadow-card: 0 1px 2px rgb(17 23 35 / 0.06), 0 1px 1px rgb(17 23 35 / 0.04);
   --qap-shadow-overlay: 0 12px 32px rgb(17 23 35 / 0.16);
+  --qap-shadow-primary:
+    0px 0px 0px 0.5px rgb(0 0 0 / 0.06),
+    0px 1px 2px -1px rgb(0 0 0 / 0.06),
+    0px 2px 4px 0px rgb(0 0 0 / 0.04);
 
   --chart-series-1: #1f5fd6;
   --chart-series-2: #394150;
@@ -156,22 +212,14 @@
   --status-warning: var(--qap-warning);
   --status-info: var(--qap-info);
 
-  /* Phase 16 shared evidence/topology treatments. */
   --state-evidence: var(--qap-info);
   --surface-context: var(--qap-context);
 
-  /* Legacy aliases remain until their owning routes migrate. */
   --surface-0: var(--surface-canvas);
   --surface-1: var(--surface-panel);
   --surface-2: var(--surface-subtle);
-  --border: var(--border-default);
   --text: var(--text-primary);
-  --accent: var(--accent-primary);
-  --positive: var(--status-positive);
-  --negative: var(--status-negative);
-  --warning: var(--status-warning);
 
-  /* Named series (design-direction §3); chart-series-1..5 use the same order. */
   --chart-strategy: var(--chart-series-1);
   --chart-hodl: var(--chart-series-2);
   --chart-rebalancing: var(--chart-series-3);
