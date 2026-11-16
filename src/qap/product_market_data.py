@@ -34,6 +34,10 @@ from qap.product_market_data_cache import (
     stat_key,
 )
 from qap.product_market_data_generation import (
+    ProductGenerationReadError,
+    resolve_immutable_generation,
+)
+from qap.product_market_data_generation import (
     generation_relative_path as _generation_relative_path,
 )
 from qap.product_market_data_generation import (
@@ -284,6 +288,21 @@ class ProductMarketData:
             return
         root = data_root.resolve()
         for parent in derivation.parents:
+            expected_path = _generation_relative_path(
+                parent.dataset_id, parent.semantic_fingerprint
+            )
+            if parent.relative_path == expected_path:
+                try:
+                    resolve_immutable_generation(
+                        root,
+                        dataset_id=parent.dataset_id,
+                        semantic_fingerprint=parent.semantic_fingerprint,
+                    )
+                except ProductGenerationReadError as exc:
+                    raise ProductMarketDataError(
+                        "Derived generation parent is unavailable or invalid."
+                    ) from exc
+                continue
             try:
                 path = (root / parent.relative_path).resolve(strict=True)
                 path.relative_to(root)
@@ -400,6 +419,16 @@ class ProductMarketData:
                     raise ProductMarketDataError(
                         "Published generation provenance failed readback."
                     )
+                GENERATION_CACHE.put(
+                    (
+                        data_root,
+                        dataset_id,
+                        fingerprint,
+                        stat_key(generation_path),
+                        stat_key(provenance_path),
+                    ),
+                    (provenance, reread),
+                )
                 admitted = resolve_catalog_source(
                     next_catalog,
                     dataset_id=dataset_id,

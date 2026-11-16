@@ -64,7 +64,7 @@ class ProjectionRowCache:
 class GenerationCache:
     """Bounded stat-keyed cache of immutable (provenance, series) pairs."""
 
-    def __init__(self, maxsize: int = 32) -> None:
+    def __init__(self, maxsize: int = 128) -> None:
         self._lock = Lock()
         self._maxsize = maxsize
         self._entries: OrderedDict[

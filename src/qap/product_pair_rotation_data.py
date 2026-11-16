@@ -8,10 +8,8 @@ from datetime import UTC, datetime, timedelta
 
 from qap.market import (
     BarInterval,
-    MarketBar,
     ValidatedBarSeries,
     fingerprint_bar_series,
-    validate_bar_series,
 )
 from qap.market.adapters.gate_historical import (
     GateHistoricalAdapter,
@@ -30,6 +28,7 @@ from qap.product_market_data_models import (
     CurrentMarketDataGeneration,
     MarketDataDerivation,
     MarketDataGenerationInput,
+    MarketDataGenerationProvenance,
     MarketDataParentGeneration,
     ProductMarketDataProjection,
 )
@@ -39,6 +38,11 @@ from qap.product_market_data_prepare import (
     product_dataset_id,
 )
 from qap.product_pair_rotation_markets import direct_instrument
+from qap.product_pair_rotation_resample import (
+    derived_needs_update,
+    extend_derived_15m,
+    floor_to_interval,
+)
 from qap.product_universe import (
     ProductResearchScope,
     ProductUniverse,
@@ -46,10 +50,8 @@ from qap.product_universe import (
     ResolvedProductInstrument,
 )
 
-_BASE_INTERVAL = BarInterval("15m")
 _DERIVED_INTERVALS = (BarInterval("1h"), BarInterval("4h"), BarInterval("1d"))
 _RESAMPLE_IMPLEMENTATION = "qap.product.pair-rotation-resample.v1"
-_EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 
 ProgressCallback = Callable[[str, int, int], None]
 
@@ -60,12 +62,6 @@ def _require_utc(value: object, *, field: str) -> datetime:
     if value.tzinfo is None or value.utcoffset() != timedelta(0):
         raise ProductMarketDataPreparationError(f"{field} must be UTC-aware")
     return value.astimezone(UTC)
-
-
-def _floor_to_interval(moment: datetime, interval: BarInterval) -> datetime:
-    elapsed = moment - _EPOCH
-    steps = elapsed // interval.duration
-    return _EPOCH + steps * interval.duration
 
 
 def _eligible_pair(
@@ -95,83 +91,6 @@ def _eligible_pair(
             "Pair rotation requires 2 distinct Binance venue symbols."
         )
     return first, second
-
-
-def _resample_15m(
-    series: ValidatedBarSeries,
-    target: BarInterval,
-    *,
-    start: datetime,
-    cutoff: datetime,
-) -> ValidatedBarSeries | None:
-    if series.interval != _BASE_INTERVAL:
-        raise ProductMarketDataPreparationError(
-            "Pair rotation resampling requires a 15m source series."
-        )
-    if target.duration % _BASE_INTERVAL.duration != timedelta(0):
-        raise ProductMarketDataPreparationError(
-            f"Cannot derive {target.label} from 15m bars."
-        )
-    expected = target.duration // _BASE_INTERVAL.duration
-    selected = tuple(
-        bar
-        for bar in series.bars
-        if bar.candle_open_time >= start and bar.bar_end_exclusive <= cutoff
-    )
-    if not selected:
-        return None
-    grouped: dict[datetime, list[MarketBar]] = {}
-    for bar in selected:
-        bucket = _floor_to_interval(bar.candle_open_time, target)
-        grouped.setdefault(bucket, []).append(bar)
-    derived: list[MarketBar] = []
-    for bucket in sorted(grouped):
-        group = grouped[bucket]
-        if len(group) != expected:
-            continue
-        if group[0].candle_open_time != bucket:
-            continue
-        if group[-1].bar_end_exclusive != bucket + target.duration:
-            continue
-        present_volumes = [bar.volume for bar in group if bar.volume is not None]
-        volume: float | None
-        if len(present_volumes) != len(group):
-            volume = None
-        else:
-            total_volume = 0.0
-            for item in present_volumes:
-                total_volume += item
-            volume = total_volume
-        derived.append(
-            MarketBar(
-                instrument=series.instrument,
-                interval=target,
-                candle_open_time=bucket,
-                open=group[0].open,
-                high=max(bar.high for bar in group),
-                low=min(bar.low for bar in group),
-                close=group[-1].close,
-                volume=volume,
-                source_close_time=None,
-            )
-        )
-    if not derived:
-        return None
-    try:
-        return validate_bar_series(derived)
-    except (TypeError, ValueError) as exc:
-        raise ProductMarketDataPreparationError(
-            f"Derived {target.label} series is not contiguous."
-        ) from exc
-
-
-def _find_current(
-    projection: ProductMarketDataProjection, dataset_id: str
-) -> CurrentMarketDataGeneration | None:
-    return next(
-        (item for item in projection.generations if item.dataset_id == dataset_id),
-        None,
-    )
 
 
 class PairRotationData:
@@ -211,7 +130,7 @@ class PairRotationData:
         effective_now = _require_utc(
             datetime.now(UTC) if now is None else now, field="now"
         )
-        cutoff = _floor_to_interval(effective_now, base)
+        cutoff = floor_to_interval(effective_now, base)
         day_anchor = cutoff - timedelta(days=lookback_count)
         start = datetime(day_anchor.year, day_anchor.month, day_anchor.day, tzinfo=UTC)
         if start >= cutoff:
@@ -231,6 +150,17 @@ class PairRotationData:
         gate: GateHistoricalAdapter | None = None
         done = 0
         try:
+            all_dataset_ids = frozenset(
+                product_dataset_id(instrument, interval)
+                for instrument in instruments
+                for interval in (base, *derived_intervals)
+            )
+            current_by_id = {
+                item.dataset_id: item
+                for item in self._market_data.projection(
+                    dataset_ids=all_dataset_ids
+                ).generations
+            }
             if active_binance is None:
                 owned_binance = BinanceHistoricalAcquirer()
                 active_binance = owned_binance
@@ -238,12 +168,7 @@ class PairRotationData:
             for instrument in instruments:
                 dataset_15m = product_dataset_id(instrument, base)
                 try:
-                    current = _find_current(
-                        self._market_data.projection(
-                            dataset_ids=frozenset({dataset_15m})
-                        ),
-                        dataset_15m,
-                    )
+                    current = current_by_id.get(dataset_15m)
                     generation = self._preparation.extended_generation(
                         scope=scope,
                         instrument=instrument,
@@ -256,7 +181,24 @@ class PairRotationData:
                         gate=gate,
                     )
                     if generation is not None:
-                        self._market_data.publish_generation(scope, generation)
+                        provenance = self._market_data.publish_generation(
+                            scope, generation
+                        )
+                        current_by_id[dataset_15m] = CurrentMarketDataGeneration(
+                            dataset_id=provenance.dataset_id,
+                            relative_path=provenance.relative_path,
+                            venue=provenance.venue,
+                            venue_symbol=provenance.venue_symbol,
+                            base_asset=provenance.base_asset,
+                            quote_asset=provenance.quote_asset,
+                            interval=provenance.interval,
+                            semantic_fingerprint=provenance.semantic_fingerprint,
+                            coverage_start=provenance.coverage_start,
+                            coverage_end_exclusive=provenance.coverage_end_exclusive,
+                            provenance_status="complete",
+                            provenance_relative_path=None,
+                            issue=None,
+                        )
                 except (
                     BinanceHistoricalAcquisitionError,
                     GateHistoricalDataError,
@@ -279,12 +221,7 @@ class PairRotationData:
             for instrument in instruments:
                 try:
                     parent_dataset = product_dataset_id(instrument, base)
-                    parent_current = _find_current(
-                        self._market_data.projection(
-                            dataset_ids=frozenset({parent_dataset})
-                        ),
-                        parent_dataset,
-                    )
+                    parent_current = current_by_id.get(parent_dataset)
                     if (
                         parent_current is None
                         or parent_current.provenance_status != "complete"
@@ -308,63 +245,71 @@ class PairRotationData:
                         raise ProductMarketDataPreparationError(
                             "Market data root is not configured."
                         )
-                    parent_provenance, parent_series = resolve_immutable_generation(
-                        data_root,
-                        dataset_id=parent_current.dataset_id,
-                        semantic_fingerprint=parent_current.semantic_fingerprint,
-                    )
+                    parent_loaded: (
+                        tuple[MarketDataGenerationProvenance, ValidatedBarSeries] | None
+                    ) = None
                     for target in derived_intervals:
-                        derived = _resample_15m(
-                            parent_series, target, start=start, cutoff=cutoff
-                        )
-                        if derived is not None:
-                            derived_dataset = product_dataset_id(instrument, target)
-                            existing = _find_current(
-                                self._market_data.projection(
-                                    dataset_ids=frozenset({derived_dataset})
-                                ),
-                                derived_dataset,
+                        derived_dataset = product_dataset_id(instrument, target)
+                        existing = current_by_id.get(derived_dataset)
+                        if derived_needs_update(
+                            existing, target, start=start, cutoff=cutoff
+                        ):
+                            if parent_loaded is None:
+                                parent_loaded = resolve_immutable_generation(
+                                    data_root,
+                                    dataset_id=parent_current.dataset_id,
+                                    semantic_fingerprint=parent_current.semantic_fingerprint,
+                                )
+                            parent_provenance, parent_series = parent_loaded
+                            derived = extend_derived_15m(
+                                parent_series,
+                                target,
+                                start=start,
+                                cutoff=cutoff,
+                                existing=existing,
+                                data_root=data_root,
                             )
-                            fingerprint = fingerprint_bar_series(derived)
-                            if (
-                                existing is not None
-                                and existing.provenance_status == "complete"
-                                and existing.coverage_start
-                                == derived.bars[0].candle_open_time
-                                and existing.coverage_end_exclusive
-                                == derived.bars[-1].bar_end_exclusive
-                                and existing.semantic_fingerprint == fingerprint
-                            ):
-                                pass
-                            else:
-                                derived_input = MarketDataGenerationInput(
-                                    dataset_id=derived_dataset,
-                                    resolved_instrument=instrument,
-                                    series=derived,
-                                    acquisition_implementation=(
-                                        _RESAMPLE_IMPLEMENTATION
-                                    ),
-                                    upstream_sources=(
-                                        parent_provenance.upstream_sources
-                                    ),
-                                    derivation=MarketDataDerivation(
-                                        derivation_id=_RESAMPLE_IMPLEMENTATION,
-                                        parents=(
-                                            MarketDataParentGeneration(
-                                                dataset_id=parent_current.dataset_id,
-                                                relative_path=(
-                                                    parent_current.relative_path
-                                                ),
-                                                semantic_fingerprint=(
-                                                    parent_current.semantic_fingerprint
+                            if derived is not None:
+                                fingerprint = fingerprint_bar_series(derived)
+                                if (
+                                    existing is not None
+                                    and existing.provenance_status == "complete"
+                                    and existing.coverage_start
+                                    == derived.bars[0].candle_open_time
+                                    and existing.coverage_end_exclusive
+                                    == derived.bars[-1].bar_end_exclusive
+                                    and existing.semantic_fingerprint == fingerprint
+                                ):
+                                    pass
+                                else:
+                                    derived_input = MarketDataGenerationInput(
+                                        dataset_id=derived_dataset,
+                                        resolved_instrument=instrument,
+                                        series=derived,
+                                        acquisition_implementation=(
+                                            _RESAMPLE_IMPLEMENTATION
+                                        ),
+                                        upstream_sources=(
+                                            parent_provenance.upstream_sources
+                                        ),
+                                        derivation=MarketDataDerivation(
+                                            derivation_id=_RESAMPLE_IMPLEMENTATION,
+                                            parents=(
+                                                MarketDataParentGeneration(
+                                                    dataset_id=parent_current.dataset_id,
+                                                    relative_path=(
+                                                        parent_current.relative_path
+                                                    ),
+                                                    semantic_fingerprint=(
+                                                        parent_current.semantic_fingerprint
+                                                    ),
                                                 ),
                                             ),
                                         ),
-                                    ),
-                                )
-                                self._market_data.publish_generation(
-                                    scope, derived_input
-                                )
+                                    )
+                                    self._market_data.publish_generation(
+                                        scope, derived_input
+                                    )
                         done += 1
                         if progress is not None:
                             progress(

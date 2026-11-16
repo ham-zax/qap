@@ -448,3 +448,82 @@ def test_client_startup_failure_releases_maintenance_and_allows_retry(
     assert owner.projection().maintenance.status == "failed"
     worker.prepare(scope, now=_NOW, lookback_days=5, binance=FakeBinance())
     assert owner.projection().maintenance.status == "idle"
+
+
+def test_partial_bar_top_up_skips_unchanged_derived_intervals(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    universe, market_data = _owners(tmp_path)
+    worker = PairRotationData(universe, market_data)
+    scope = _scope(_instrument("BTC", "BTCUSDT"), _instrument("ETH", "ETHUSDT"))
+    fake = FakeBinance()
+    start_now = datetime(2025, 3, 10, 14, 5, tzinfo=UTC)
+    first = worker.prepare(scope, now=start_now, lookback_days=5, binance=fake)
+    assert market_data.market_data_root is not None
+    derived_before = {
+        item.dataset_id: item.semantic_fingerprint
+        for item in first.generations
+        if not item.dataset_id.endswith(":15m")
+    }
+    resamples = 0
+    original_resample = __import__(
+        "qap.product_pair_rotation_resample", fromlist=["resample_15m"]
+    ).resample_15m
+
+    def counting_resample(*args: object, **kwargs: object) -> object:
+        nonlocal resamples
+        resamples += 1
+        return original_resample(*args, **kwargs)
+
+    monkeypatch.setattr(
+        "qap.product_pair_rotation_resample.resample_15m", counting_resample
+    )
+    fake.calls.clear()
+    second = worker.prepare(
+        scope,
+        now=start_now + timedelta(minutes=15),
+        lookback_days=5,
+        binance=fake,
+    )
+    derived_after = {
+        item.dataset_id: item.semantic_fingerprint
+        for item in second.generations
+        if not item.dataset_id.endswith(":15m")
+    }
+    assert len(fake.calls) == 2
+    assert resamples == 0
+    assert derived_after == derived_before
+
+
+def test_delta_top_up_resamples_only_new_tail_buckets(
+    tmp_path: Path,
+) -> None:
+    universe, market_data = _owners(tmp_path)
+    worker = PairRotationData(universe, market_data)
+    scope = _scope(_instrument("BTC", "BTCUSDT"), _instrument("ETH", "ETHUSDT"))
+    fake = FakeBinance()
+    first = worker.prepare(scope, now=_NOW, lookback_days=5, binance=fake)
+    assert market_data.market_data_root is not None
+    btc_1h_id = product_dataset_id(scope.instruments[0], BarInterval("1h"))
+    first_1h = next(item for item in first.generations if item.dataset_id == btc_1h_id)
+    _, first_series = resolve_immutable_generation(
+        market_data.market_data_root,
+        dataset_id=btc_1h_id,
+        semantic_fingerprint=first_1h.semantic_fingerprint,
+    )
+    fake.calls.clear()
+    second = worker.prepare(
+        scope, now=_NOW + timedelta(hours=2), lookback_days=5, binance=fake
+    )
+    second_1h = next(
+        item for item in second.generations if item.dataset_id == btc_1h_id
+    )
+    _, second_series = resolve_immutable_generation(
+        market_data.market_data_root,
+        dataset_id=btc_1h_id,
+        semantic_fingerprint=second_1h.semantic_fingerprint,
+    )
+    assert len(fake.calls) == 2
+    assert second_series.bars[: len(first_series.bars)] == first_series.bars
+    assert len(second_series.bars) == len(first_series.bars) + 2
+    assert second_1h.coverage_end_exclusive == datetime(2025, 3, 10, 16, 0, tzinfo=UTC)
