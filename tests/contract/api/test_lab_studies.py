@@ -380,3 +380,98 @@ def test_actor_header_advisor_and_compare_endpoints(tmp_path: Path) -> None:
     assert len(alice_studies) == 4
     assert bob_studies == []
     assert client.get("/api/pair-rotation/studies").json()["studies"] == []
+
+
+def test_study_signal_provenance_and_legacy_saved_compatibility(
+    tmp_path: Path,
+) -> None:
+    import json
+
+    client = varying_study_client(tmp_path)
+    created = client.post(
+        "/api/pair-rotation/studies",
+        json=COMMAND | {"settings": TRADING_SETTINGS},
+    )
+    assert created.status_code == 200, created.text
+    body = created.json()
+    assert body["result"]["proof"]["proof_protocol"] == "qap.lab.proof.v2"
+    assert body["result"]["proof"]["signal_provenance"] == "walk_forward_stitched"
+    assert body["result"]["signal"]["provenance"] == "walk_forward_stitched"
+    assert body["result"]["signal"]["preferences"] is not None
+    assert body["result"]["signal"]["upper_series"] is not None
+
+    # Simulate an older saved study missing AR-5/AR-6 provenance fields.
+    sid = body["study_id"]
+    study_path = (
+        tmp_path
+        / "runs"
+        / "product"
+        / "pair-rotation-lab"
+        / "studies"
+        / sid
+        / "result.json"
+    )
+    raw = json.loads(study_path.read_text("utf-8"))
+    for key in (
+        "proof_protocol",
+        "signal_provenance",
+        "bootstrap_replicates",
+        "bootstrap_seed",
+        "bootstrap_block_size",
+    ):
+        raw["result"]["proof"].pop(key, None)
+    for key in (
+        "preferences",
+        "upper_series",
+        "lower_series",
+        "provenance",
+        "signal_variable",
+    ):
+        raw["result"]["signal"].pop(key, None)
+    from qap.artifact_integrity import build_integrity_record
+    from qap.product_lab_store import canonical_json, content_id
+
+    legacy_id = content_id(raw["result"])
+    raw["study_id"] = legacy_id
+    legacy_dir = study_path.parent.with_name(legacy_id)
+    legacy_dir.mkdir(parents=True, exist_ok=True)
+    (legacy_dir / "result.json").write_bytes(canonical_json(raw))
+    (legacy_dir / "integrity.json").write_text(
+        build_integrity_record(
+            legacy_dir, artifact_id=legacy_id, file_names=("result.json",)
+        ).model_dump_json()
+    )
+    reopened = client.get(f"/api/pair-rotation/studies/{legacy_id}")
+    assert reopened.status_code == 200, reopened.text
+    legacy = reopened.json()["result"]
+    assert legacy["proof"]["signal_provenance"] is None
+    assert legacy["signal"]["provenance"] is None
+
+    ratio_resp = client.post(
+        "/api/pair-rotation/studies",
+        json=COMMAND
+        | {
+            "bootstrap_replicates": 199,
+            "settings": {
+                "method": "zscore",
+                "hedge_method": "ratio",
+                "auto_tune": False,
+            },
+        },
+    )
+    assert ratio_resp.status_code == 200, ratio_resp.text
+    ratio_body = ratio_resp.json()["result"]
+    assert ratio_body["proof"]["bootstrap_replicates"] == 199
+    assert (
+        ratio_body["signal"]["signal_variable"] == "normalized 1:1 price-ratio z-score"
+    )
+
+    unresolvable = client.post(
+        "/api/pair-rotation/studies",
+        json=COMMAND
+        | {
+            "bootstrap_replicates": 10,
+            "settings": {"method": "zscore", "auto_tune": True},
+        },
+    )
+    assert unresolvable.status_code == 409

@@ -147,3 +147,17 @@ def test_copula_tails_matches_full_fit_below_cap() -> None:
     assert result.lower_tail == direct.lower_tail
     assert result.upper_tail == direct.upper_tail
     assert result.observations == direct.training_observations
+
+
+def test_return_copula_tails_distinct_from_spread_conditional_rank() -> None:
+    from qap.relationship.lab_copula import rolling_spread_copula
+
+    close_a, close_b = _walk(400)
+    ret_cop = copula_tails(close_a, close_b)
+    spread_rank = rolling_spread_copula(close_a, close_b, window=96)
+    assert ret_cop is not None
+    assert spread_rank is not None
+    finite_ranks = spread_rank[np.isfinite(spread_rank)]
+    assert finite_ranks.size > 0
+    assert (finite_ranks >= 0.0).all() and (finite_ranks <= 1.0).all()
+    assert ret_cop.observations == close_a.size - 2

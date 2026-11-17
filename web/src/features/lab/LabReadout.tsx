@@ -35,11 +35,11 @@ export function LabReadout({
           </span>
           <time className="font-mono text-xs text-foreground tabular-nums">{current.time}</time>
         </p>
-        <dl className="m-0 grid flex-1 grid-cols-2 gap-x-5 gap-y-2 sm:flex sm:flex-wrap">
+        <dl className="m-0 grid w-full flex-1 grid-cols-2 gap-x-4 gap-y-2 sm:w-auto sm:flex sm:flex-wrap">
           {current.rows.map((row) => {
             const unavailable = row.value === 'Unavailable'
             return (
-              <div key={row.key} className="flex min-w-24 flex-col gap-0.5">
+              <div key={row.key} className="flex min-w-0 flex-col gap-0.5 sm:min-w-24">
                 <dt className="flex items-center gap-1.5 text-[11px] whitespace-nowrap text-muted-foreground">
                   {row.swatch && (
                     <i

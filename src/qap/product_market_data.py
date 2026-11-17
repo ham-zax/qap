@@ -33,6 +33,13 @@ from qap.product_market_data_cache import (
     ProjectionKey,
     stat_key,
 )
+from qap.product_market_data_catalog import (
+    ScannerCatalog,
+    ScannerCatalogError,
+    ScannerSourceSpec,
+    load_scanner_catalog,
+    resolve_catalog_source,
+)
 from qap.product_market_data_generation import (
     ProductGenerationReadError,
     resolve_immutable_generation,
@@ -56,13 +63,6 @@ from qap.product_market_data_models import (
     validated_utc,
 )
 from qap.product_universe import ProductResearchScope
-from qap.scanner.catalog import (
-    ScannerCatalog,
-    ScannerCatalogError,
-    ScannerSourceSpec,
-    load_scanner_catalog,
-    resolve_catalog_source,
-)
 
 _LIFECYCLE_PATH = PurePosixPath("product-market-data/lifecycle.jsonl")
 

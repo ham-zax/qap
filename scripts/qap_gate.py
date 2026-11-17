@@ -38,6 +38,52 @@ if live != saved:
     sys.exit(1)
 """
 
+_PROTOCOL_CHECK_CODE = """
+import sys
+from pathlib import Path
+from qap.experiment.lab_statistics import (
+    DEFAULT_SPA_REPLICATES,
+    PROOF_PROTOCOL_VERSION,
+    check_family_resolution,
+)
+from qap.policy.lab_strategy_registry import STRATEGY_REGISTRY
+
+if DEFAULT_SPA_REPLICATES < 9_999:
+    print("DEFAULT_SPA_REPLICATES must be >= 9999.", file=sys.stderr)
+    sys.exit(1)
+if PROOF_PROTOCOL_VERSION != "qap.lab.proof.v2":
+    print(f"Bad PROOF_PROTOCOL_VERSION: {PROOF_PROTOCOL_VERSION}", file=sys.stderr)
+    sys.exit(1)
+res = check_family_resolution(
+    outer_family_size=1,
+    pair_trial_count=1,
+    replicates=DEFAULT_SPA_REPLICATES,
+    alpha=0.05,
+)
+if not res.resolvable:
+    print("Default SPA replicates cannot resolve a single hypothesis.", file=sys.stderr)
+    sys.exit(1)
+if not STRATEGY_REGISTRY:
+    print("STRATEGY_REGISTRY is empty.", file=sys.stderr)
+    sys.exit(1)
+rd1 = Path("docs/research/2026-11-16-rd1-research-policy-proposal.md")
+if not rd1.is_file():
+    print("Missing RD-1 proposal document.", file=sys.stderr)
+    sys.exit(1)
+text = rd1.read_text(encoding="utf-8")
+if "Status: approved" in text:
+    required = (
+        "## 1. Per-Method Assumptions",
+        "## 3. Anchor-Residual Stationarity",
+        "## 4. Benchmarks, Multiple Testing",
+        "## 5. Attribution Controls",
+    )
+    missing = [heading for heading in required if heading not in text]
+    if missing:
+        print(f"Approved RD-1 missing sections: {missing}", file=sys.stderr)
+        sys.exit(1)
+"""
+
 
 @dataclass(frozen=True, slots=True)
 class GateStep:
@@ -46,6 +92,7 @@ class GateStep:
     cwd: Path
     hint: str
     timeout_seconds: float = 300.0
+    show_tail_on_pass: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,6 +151,11 @@ def run_step(step: GateStep) -> GateOutcome:
 
 
 def build_steps(args: argparse.Namespace) -> list[GateStep]:
+    if args.full and (args.skip_invariants or args.skip_openapi or args.skip_web):
+        raise ValueError(
+            "--full cannot be combined with --skip-invariants, "
+            "--skip-openapi, or --skip-web."
+        )
     steps: list[GateStep] = [
         GateStep(
             name="ruff_check",
@@ -170,6 +222,35 @@ def build_steps(args: argparse.Namespace) -> list[GateStep]:
                 ),
             )
         )
+    steps.extend(
+        [
+            GateStep(
+                name="regression_checks",
+                command=(
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "tests/unit/experiment/test_live_paper_runner.py",
+                    "tests/unit/experiment/test_live_paper_candles.py",
+                    "tests/unit/test_run_lab_trials.py",
+                ),
+                cwd=ROOT,
+                hint=(
+                    "Fix regressions in partial-fill recovery, neutral-signal "
+                    "cancellation, tradable remainders, metadata round-trips, "
+                    "candle timing, or declared-versus-executed research settings."
+                ),
+                timeout_seconds=300.0,
+            ),
+            GateStep(
+                name="research_protocol",
+                command=("uv", "run", "python", "-c", _PROTOCOL_CHECK_CODE),
+                cwd=ROOT,
+                hint="Fix research protocol / bootstrap / registry consistency.",
+            ),
+        ]
+    )
     if args.pytest:
         steps.append(
             GateStep(
@@ -204,10 +285,11 @@ def build_steps(args: argparse.Namespace) -> list[GateStep]:
             [
                 GateStep(
                     name="pytest_full",
-                    command=("uv", "run", "pytest", "-q"),
+                    command=("uv", "run", "pytest", "-q", "--durations=15"),
                     cwd=ROOT,
                     hint="Fix regressions in the full Python test suite.",
                     timeout_seconds=900.0,
+                    show_tail_on_pass=True,
                 ),
                 GateStep(
                     name="engine_parity",
@@ -295,7 +377,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Do not acquire /tmp/qap-gate-heavy.lock (for self-tests only).",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.full and (args.skip_invariants or args.skip_openapi or args.skip_web):
+        parser.error(
+            "--full cannot be combined with --skip-invariants, "
+            "--skip-openapi, or --skip-web."
+        )
+    return args
 
 
 def _execute(steps: list[GateStep], *, fail_fast: bool, stream: TextIO) -> int:
@@ -303,12 +391,15 @@ def _execute(steps: list[GateStep], *, fail_fast: bool, stream: TextIO) -> int:
     passed_count = 0
     failed_count = 0
     for step in steps:
+        print(f"[RUN ] {step.name} ...", file=stream, flush=True)
         outcome = run_step(step)
         if outcome.passed:
             passed_count += 1
             print(
                 f"[PASS] {step.name} ({outcome.seconds:.2f}s)", file=stream, flush=True
             )
+            if step.show_tail_on_pass and outcome.output_tail:
+                print(outcome.output_tail, file=stream, flush=True)
             continue
         failed_count += 1
         cmd_str = " ".join(step.command)
@@ -338,8 +429,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.no_lock:
         return _execute(steps, fail_fast=args.fail_fast, stream=sys.stdout)
     LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    lock_started = time.monotonic()
+    print(f"[LOCK] acquiring {LOCK_PATH} ...", flush=True)
     with LOCK_PATH.open("a+b") as lock_file:
         fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        lock_waited = time.monotonic() - lock_started
+        print(f"[LOCK] acquired {LOCK_PATH} (waited {lock_waited:.2f}s)", flush=True)
         return _execute(steps, fail_fast=args.fail_fast, stream=sys.stdout)
 
 

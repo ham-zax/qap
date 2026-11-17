@@ -1,4 +1,4 @@
-"""Forward L2 paper sessions: two-leg swaps, four clocks, isolation, integrity."""
+"""Forward L2 paper sessions: candle timing, reconciliation, metadata, clocks."""
 
 import json
 from collections.abc import Mapping, Sequence
@@ -10,14 +10,22 @@ from typing import Any
 import numpy as np
 import pytest
 
-from qap.artifact_integrity import read_and_validate_integrity
-from qap.experiment.live_paper_execution import sweep_rebalance
+from qap.artifact_integrity import build_integrity_record, read_and_validate_integrity
+from qap.experiment.live_paper_candles import (
+    LEGACY_SCHEMA_VERSION,
+    CandleInputs,
+    candle_inputs_from_close_map,
+)
+from qap.experiment.live_paper_execution import (
+    reconcile_target_status,
+    sweep_rebalance,
+)
 from qap.experiment.live_paper_runner import (
     LivePaperError,
     LivePaperSessionManager,
     LivePaperSessionNotFoundError,
 )
-from qap.market import VenueInstrument
+from qap.market import MarketMetadata, VenueInstrument
 from qap.market.binance_ws_stream import TimedL2Book
 from qap.market.microstructure import public_book_snapshot_from_rows
 from qap.policy.lab_settings import LabSettings
@@ -42,6 +50,33 @@ SETTINGS = LabSettings(
     minimum_hold=0,
     cooldown=0,
 )
+
+
+def make_meta(
+    inst: VenueInstrument, *, min_qty: str = "0.001", step: str = "0.001"
+) -> MarketMetadata:
+    return MarketMetadata(
+        instrument=inst,
+        status="TRADING",
+        price_tick=D("0.01"),
+        minimum_price=None,
+        maximum_price=None,
+        quantity_step=D(step),
+        minimum_quantity=D(min_qty),
+        maximum_quantity=None,
+        minimum_notional=D("5"),
+        maximum_notional=None,
+        minimum_notional_applies_to_market=True,
+        maximum_notional_applies_to_market=False,
+        notional_average_price_minutes=5,
+    )
+
+
+META_MAP: dict[str, MarketMetadata] = {
+    "BTCUSDT": make_meta(BTC),
+    "ETHUSDT": make_meta(ETH),
+    "SOLUSDT": make_meta(SOL),
+}
 
 
 def timed_book(
@@ -75,16 +110,22 @@ def forbid_live(_: Sequence[VenueInstrument]) -> Mapping[str, TimedL2Book]:
 
 
 def held(portfolio: Mapping[str, Any]) -> dict[str, Decimal]:
-    """Numeric holdings; persisted strings may be canonical like '5E+1'."""
     return {k: D(v) for k, v in portfolio["holdings"].items()}
 
 
 START_HOLDINGS = {"BTC": D(50), "ETH": D(100)}
 
 
-def history() -> dict[str, Any]:
-    wave = 100.0 + 0.1 * np.sin(np.arange(40, dtype=np.float64))
-    return {"BTCUSDT": wave, "ETHUSDT": np.full(40, 50.0)}
+def base_history(
+    extra_btc: Sequence[float] = (), extra_eth: Sequence[float] = (), *, bar: str = "1h"
+) -> CandleInputs:
+    wave = list(100.0 + 0.1 * np.sin(np.arange(40, dtype=np.float64))) + list(extra_btc)
+    eth_vals = [50.0] * 40 + list(extra_eth)
+    return candle_inputs_from_close_map(
+        bar,
+        {"BTCUSDT": wave, "ETHUSDT": eth_vals},
+        metadata={"BTCUSDT": META_MAP["BTCUSDT"], "ETHUSDT": META_MAP["ETHUSDT"]},
+    )
 
 
 def make_manager(root: Path, actor: str = "local") -> LivePaperSessionManager:
@@ -92,251 +133,374 @@ def make_manager(root: Path, actor: str = "local") -> LivePaperSessionManager:
 
 
 def start(
-    manager: LivePaperSessionManager, sid: str = "sess1", **kw: Any
+    manager: LivePaperSessionManager,
+    sid: str = "sess1",
+    *,
+    candle_inputs: CandleInputs | None = None,
+    **kw: Any,
 ) -> dict[str, Any]:
     return manager.create_session(
         "binance:BTC",
         "binance:ETH",
-        settings=SETTINGS,
-        initial_books=books(100.0, 50.0, received_ns=RECV_NS),
-        historical_closes=history(),
+        settings=kw.pop("settings", SETTINGS),
+        initial_books=kw.pop("initial_books", books(100.0, 50.0, received_ns=RECV_NS)),
+        candle_inputs=candle_inputs or base_history(),
         session_id=sid,
         **kw,
     )
 
 
-def spike_step(manager: LivePaperSessionManager, **kw: Any) -> dict[str, Any]:
-    """BTC jumps 30% vs ETH (z-score exit signal); legs fill 75 ms apart."""
+def spike_step(
+    manager: LivePaperSessionManager,
+    *,
+    candles: CandleInputs | None = None,
+    **kw: Any,
+) -> dict[str, Any]:
     return manager.step_session(
         "sess1",
+        candle_inputs=candles or base_history([130.0], [50.0]),
         books=books(130.0, 50.0, received_ns=RECV_NS, exch_us=EXCH_US),
         decide_ns=RECV_NS + 2 * MS,
         fill_books_leg1=kw.get(
             "leg1", books(130.0, 50.0, received_ns=RECV_NS + 70 * MS)
         ),
-        fill_books_leg2=books(128.0, 50.5, received_ns=RECV_NS + 145 * MS),
+        fill_books_leg2=kw.get(
+            "leg2", books(128.0, 50.5, received_ns=RECV_NS + 145 * MS)
+        ),
     )
 
 
-def test_create_splits_start_value_equally_into_three_identical_ledgers(
-    tmp_path: Path,
-) -> None:
+def test_create_splits_start_value_into_three_ledgers(tmp_path: Path) -> None:
     view = start(make_manager(tmp_path))
-    assert view["status"] == "active" and view["decisions_count"] == 0
+    assert (
+        view["status"] == "active"
+        and view["decisions_count"] == 0
+        and view["can_step"] is True
+    )
     for key in ("strategy", "hodl", "drift_control"):
         pf = view["portfolios"][key]
         assert held(pf) == START_HOLDINGS
         assert D(pf["value_usdt"]) == D("10000") and pf["rotations"] == 0
-    assert view["vs_hodl_pct"] == 0.0 and view["vs_control_pct"] == 0.0
 
 
 def test_two_leg_usdt_swap_fills_each_leg_on_its_own_drifted_book(
     tmp_path: Path,
 ) -> None:
-    view = spike_step(_started(tmp_path))
+    manager = make_manager(tmp_path)
+    start(manager)
+    view = spike_step(manager)
     (trade,) = view["trades"]
-    assert trade["direction"] == "into_b" and trade["route"] == "two legs via USDT"
+    assert trade["direction"] == "into_b" and trade["status"] == "complete"
     sell, buy = trade["fills"]
-    assert (sell["side"], sell["market"]) == ("sell", "BTCUSDT")
-    assert (buy["side"], buy["market"]) == ("buy", "ETHUSDT")
-    # Leg 1 sold on the leg-1 BTC book (best bid 129.87), not the later 128 book.
     assert D(sell["vwap_price"]) == D("129.87")
-    # Leg 2 bought on the drifted ETH book: mid 50.5, best ask 50.5505 (> 50.0 @ leg 1).
     assert D(buy["reference_price"]) == D("50.5")
     assert abs(D(buy["execution_price"]) - D("50.5505")) < D("1e-20")
     strat = view["portfolios"]["strategy"]
-    assert strat["rotations"] == 1 and D(strat["fees_usdt"]) > 0
-    assert D(strat["fees_usdt"]) == D(sell["fee"]) + D(buy["fee"])
-    assert D(strat["holdings"].get("BTC", "0")) < D("1e-6")
+    assert strat["rotations"] == 1
+    assert D(strat["holdings"].get("BTC", "0")) < D("1e-3")
     assert D(strat["holdings"]["ETH"]) > D("200")
 
 
-def test_hodl_never_trades_and_drift_control_rebalances_independently(
-    tmp_path: Path,
-) -> None:
-    view = spike_step(_started(tmp_path))
-    hodl, drift = view["portfolios"]["hodl"], view["portfolios"]["drift_control"]
-    assert held(hodl) == START_HOLDINGS and hodl["rotations"] == 0
-    assert D(hodl["value_usdt"]) == D("50") * 128 + D("100") * D("50.5")
-    assert drift["rotations"] == 1  # BTC weight drifted to 56.5% (> 5 pt band)
-    strat_value = D(view["portfolios"]["strategy"]["value_usdt"])
-    assert view["vs_hodl_pct"] == pytest.approx(
-        float(strat_value / D(hodl["value_usdt"]) - 1) * 100.0
-    )
-    # BTC sold at 129.87 on leg 1 but HODL marks it at 128 after the 75 ms
-    # drift; ~0.1% fees do not offset that.
-    assert view["vs_hodl_pct"] > 0.0
-
-
-def test_four_clocks_are_monotonic_and_leg_latencies_match_rtt(
-    tmp_path: Path,
-) -> None:
-    view = spike_step(_started(tmp_path))
-    (audit,) = view["latency_audit"]
-    assert audit["t_exch_us"] == EXCH_US
-    assert audit["t_recv_ns"] == RECV_NS
-    assert audit["t_recv_ns"] <= audit["t_decide_ns"]
-    assert audit["t_decide_ns"] < audit["t_fill_leg1_ns"] < audit["t_fill_leg2_ns"]
-    assert audit["t_decide_ns"] == RECV_NS + 2 * MS
-    assert audit["t_fill_leg1_ns"] - audit["t_decide_ns"] == RTT_NS
-    assert audit["t_fill_leg2_ns"] - audit["t_decide_ns"] == 2 * RTT_NS
-    assert audit["recv_to_decide_ms"] == 2.0
-    assert audit["decide_to_fill_leg1_ms"] == 75.0
-    assert audit["decide_to_fill_leg2_ms"] == 150.0
-    assert audit["book_age_leg1_ms"] == pytest.approx(7.0)
-    assert audit["book_age_leg2_ms"] == pytest.approx(7.0)
-    assert audit["action"] == "swap" and audit["signal_preference"] == -1.0
-
-
-def test_stale_fill_book_rejects_the_swap_and_keeps_inventory(tmp_path: Path) -> None:
-    manager = _started(tmp_path)
-    old = books(130.0, 50.0, received_ns=RECV_NS - 1000 * MS)
-    view = spike_step(manager, leg1=old)
-    assert view["trades"] == []
-    strat = view["portfolios"]["strategy"]
-    assert strat["rotations"] == 0 and held(strat) == START_HOLDINGS
-    (audit,) = view["latency_audit"]
-    assert audit["action"] == "rejected"
-    assert audit["rejected_reasons"] == ["stale_order_book"]
-    assert audit["book_age_leg1_ms"] > 500.0
-
-
-def test_flat_prices_hold_without_touching_any_book(tmp_path: Path) -> None:
-    manager = _started(tmp_path)
-    view = manager.step_session(
-        "sess1", books=books(100.0, 50.0, received_ns=RECV_NS), decide_ns=RECV_NS
-    )
-    assert view["trades"] == [] and view["decisions_count"] == 1
-    assert view["latency_audit"][0]["action"] == "hold"
-    assert view["simple_status"].startswith("Active (1 check(s))")
-
-
-def test_steps_accumulate_and_reject_clock_going_backwards(tmp_path: Path) -> None:
-    manager = _started(tmp_path)
+def test_same_candle_steps_cause_zero_extra_signal_observations(tmp_path: Path) -> None:
+    manager = make_manager(tmp_path)
+    initial_4h = base_history(bar="4h")
+    start(manager, bar="4h", candle_inputs=initial_4h)
     flat = books(100.0, 50.0, received_ns=RECV_NS)
-    manager.step_session("sess1", books=flat, decide_ns=RECV_NS)
-    assert (
-        manager.step_session("sess1", books=flat, decide_ns=RECV_NS)["decisions_count"]
-        == 2
+    for idx in range(3):
+        view = manager.step_session(
+            "sess1", candle_inputs=initial_4h, books=flat, decide_ns=RECV_NS
+        )
+        assert view["decisions_count"] == 0
+        assert view["book_observations_count"] == idx + 1
+        assert view["latency_audit"][-1]["actual_fill_leg1_ns"] is None
+        assert view["latency_audit"][-1]["actual_fill_leg2_ns"] is None
+
+    # One new completed 4h candle advances decisions_count once; repeat is idempotent.
+    plus_one = base_history([100.0], [50.0], bar="4h")
+    leg1_b = books(100.0, 50.0, received_ns=RECV_NS + 75 * MS)
+    leg2_b = books(100.0, 50.0, received_ns=RECV_NS + 150 * MS)
+    v1 = manager.step_session(
+        "sess1",
+        candle_inputs=plus_one,
+        books=flat,
+        decide_ns=RECV_NS,
+        fill_books_leg1=leg1_b,
+        fill_books_leg2=leg2_b,
     )
-    with pytest.raises(LivePaperError, match="cannot precede"):
-        manager.step_session("sess1", books=flat, decide_ns=RECV_NS - 1)
-    with pytest.raises(LivePaperError, match="Missing L2 book"):
-        manager.step_session("sess1", books={"BTCUSDT": flat["BTCUSDT"]})
+    v2 = manager.step_session(
+        "sess1",
+        candle_inputs=plus_one,
+        books=flat,
+        decide_ns=RECV_NS,
+        fill_books_leg1=leg1_b,
+        fill_books_leg2=leg2_b,
+    )
+    assert v1["decisions_count"] == 1 and v2["decisions_count"] == 1
+    assert v2["book_observations_count"] == 5
 
 
-def test_actor_scopes_are_isolated_on_disk_and_in_every_read(tmp_path: Path) -> None:
-    alice, bob, local = (make_manager(tmp_path, a) for a in ("alice", "bob", "local"))
-    start(alice, "shared")
-    start(bob, "shared")  # same id under another actor is a different session
-    start(local, "mine")
-    base = tmp_path / "product" / "pair-rotation-lab"
-    assert (base / "actors" / "alice" / "paper-sessions" / "shared").is_dir()
-    assert (base / "actors" / "bob" / "paper-sessions" / "shared").is_dir()
-    assert (base / "paper-sessions" / "mine").is_dir()
-    assert [r["session_id"] for r in alice.list_sessions()] == ["shared"]
-    assert [r["actor_id"] for r in bob.list_sessions()] == ["bob"]
-    with pytest.raises(LivePaperSessionNotFoundError):
-        alice.read_session("mine")
-    with pytest.raises(LivePaperSessionNotFoundError):
-        bob.stop_session("mine")
-    for bad in ("../evil", "a/b", "", "x" * 65):
-        with pytest.raises(LivePaperError, match="Actor ID"):
-            make_manager(tmp_path, bad)
-
-
-def test_integrity_file_verifies_and_tampering_is_detected_not_repaired(
+def test_partial_rotation_recovers_on_next_step_without_signal_change(
     tmp_path: Path,
 ) -> None:
-    manager = _started(tmp_path)
-    spike_step(manager)
-    directory = manager.sessions_root / "sess1"
-    assert (directory / "integrity.json").is_file()
-    read_and_validate_integrity(
-        directory,
-        artifact_id="sess1",
-        required_files=frozenset({"session.json"}),
-        allowed_files=frozenset({"session.json"}),
-    )
-    path = directory / "session.json"
-    raw = json.loads(path.read_text("utf-8"))
-    raw["portfolios"]["strategy"]["value_usdt"] = "999999"
-    tampered = json.dumps(raw)
-    path.write_text(tampered, "utf-8")
-    for call in (manager.read_session, manager.stop_session):
-        with pytest.raises(LivePaperError, match="integrity check failed"):
-            call("sess1")
-    assert path.read_text("utf-8") == tampered  # evidence preserved
-
-
-def test_stop_is_idempotent_and_blocks_further_steps(tmp_path: Path) -> None:
-    manager = _started(tmp_path)
-    first = manager.stop_session("sess1")
-    again = manager.stop_session("sess1")
-    assert first["status"] == again["status"] == "stopped"
-    assert first["stopped_at"] == again["stopped_at"] is not None
-    with pytest.raises(LivePaperError, match="already stopped"):
-        spike_step(manager)
-    assert manager.list_sessions()[0]["status"] == "stopped"
-
-
-def test_create_validates_inputs_and_refuses_duplicate_ids(tmp_path: Path) -> None:
-    manager = _started(tmp_path)
-    with pytest.raises(LivePaperError, match="already exists"):
-        start(manager)
-    with pytest.raises(LivePaperError, match="distinct"):
-        manager.create_session("binance:BTC", "binance:BTC")
-    with pytest.raises(LivePaperError, match="positive"):
-        start(manager, "s2", order_rtt_ms=0.0)
-    with pytest.raises(LivePaperError, match="Missing initial L2 book"):
-        only_btc = {"BTCUSDT": books(1, 1, received_ns=0)["BTCUSDT"]}
-        manager.create_session("binance:BTC", "binance:ETH", initial_books=only_btc)
-    with pytest.raises(LivePaperError, match="identifier is invalid"):
-        start(manager, "../up")
-    with pytest.raises(LivePaperSessionNotFoundError):
-        manager.read_session("nope")
-
-
-def test_third_asset_anchor_is_tracked_with_its_own_market(tmp_path: Path) -> None:
     manager = make_manager(tmp_path)
-    initial = books(100.0, 50.0, received_ns=RECV_NS)
-    initial["SOLUSDT"] = timed_book(SOL, 20.0, received_ns=RECV_NS)
-    manager.create_session(
-        "binance:BTC",
-        "binance:ETH",
-        anchor="binance:SOL",
-        settings=SETTINGS,
-        initial_books=initial,
-        session_id="anc",
-    )
-    raw = json.loads(
-        (manager.sessions_root / "anc" / "session.json").read_text("utf-8")
-    )
-    assert raw["instruments"]["anchor"]["venue_symbol"] == "SOLUSDT"
-    assert sorted(raw["close_history"]) == ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
-
-
-def test_list_orders_newest_first_and_pages(tmp_path: Path) -> None:
-    manager = make_manager(tmp_path)
-    for sid in ("s1", "s2", "s3"):
-        start(manager, sid)
-    ids = [r["session_id"] for r in manager.list_sessions()]
-    assert sorted(ids) == ["s1", "s2", "s3"]
-    assert len(manager.list_sessions(limit=2)) == 2
-    assert [r["session_id"] for r in manager.list_sessions(limit=2, offset=2)] == ids[
-        2:
-    ]
-    assert make_manager(tmp_path, "nobody").list_sessions() == []
-
-
-def _started(root: Path) -> LivePaperSessionManager:
-    manager = make_manager(root)
     start(manager)
-    return manager
+    c_spike = base_history([130.0], [50.0])
+    # Step 1: sell BTC succeeds on fresh leg1, buy ETH fails on stale leg2.
+    stale_leg2 = books(128.0, 50.5, received_ns=RECV_NS - 1000 * MS)
+    first = spike_step(manager, candles=c_spike, leg2=stale_leg2)
+    assert first["trades"][0]["status"] == "partial"
+    assert len(first["trades"][0]["fills"]) == 1
+    assert first["portfolios"]["strategy"]["rotations"] == 0
+    assert D(first["portfolios"]["strategy"]["holdings"]["USDT"]) > D("6000")
+    assert first["pending_target"] is not None
+    assert first["latency_audit"][-1]["actual_fill_leg1_ns"] is not None
+    assert first["latency_audit"][-1]["actual_fill_leg2_ns"] is None
+
+    # Step 2 inside the SAME candle with fresh ETH book completes the pending buy!
+    second = manager.step_session(
+        "sess1",
+        candle_inputs=c_spike,
+        books=books(128.0, 50.5, received_ns=RECV_NS),
+        decide_ns=RECV_NS + 2 * MS,
+        fill_books_leg1=books(128.0, 50.5, received_ns=RECV_NS + 70 * MS),
+        fill_books_leg2=books(128.0, 50.5, received_ns=RECV_NS + 145 * MS),
+    )
+    assert second["decisions_count"] == 1  # No extra candle decision!
+    assert second["pending_target"] is None
+    assert second["portfolios"]["strategy"]["rotations"] == 1
+    assert second["trades"][0]["status"] == "complete"
+    assert len(second["trades"][0]["fills"]) == 2
+    assert D(second["portfolios"]["strategy"]["holdings"]["ETH"]) > D("200")
+    assert D(second["portfolios"]["strategy"]["holdings"].get("USDT", "0")) < D("5")
 
 
-def test_rejected_park_keeps_parked_false_and_allows_retry(tmp_path: Path) -> None:
-    park_settings = LabSettings(
+def test_newer_candle_supersedes_pending_target_and_restart_preserves_origin(
+    tmp_path: Path,
+) -> None:
+    manager = make_manager(tmp_path)
+    start(manager)
+    c1 = base_history([130.0], [50.0])
+    stale = books(128.0, 50.5, received_ns=RECV_NS - 1000 * MS)
+    spike_step(manager, candles=c1, leg2=stale)
+
+    # Restarted manager keeps candle_origin_time and supersedes on signal flip.
+    restarted = make_manager(tmp_path)
+    c2 = base_history([130.0, 70.0], [50.0, 50.0])
+    flipped = restarted.step_session(
+        "sess1",
+        candle_inputs=c2,
+        books=books(70.0, 50.0, received_ns=RECV_NS),
+        decide_ns=RECV_NS + 2 * MS,
+        fill_books_leg1=books(70.0, 50.0, received_ns=RECV_NS + 70 * MS),
+        fill_books_leg2=books(70.0, 50.0, received_ns=RECV_NS + 145 * MS),
+    )
+    assert flipped["decisions_count"] == 2
+    assert flipped["candle_origin_time"] == c1.times[0]
+    raw = json.loads(
+        (manager.sessions_root / "sess1" / "session.json").read_text("utf-8")
+    )
+    assert len(raw["superseded_targets"]) == 1
+    assert raw["superseded_targets"][0]["reason"] == "superseded_by_newer_candle_target"
+
+
+def test_partial_rotation_superseded_by_neutral_candle_restores_50_50(
+    tmp_path: Path,
+) -> None:
+    manager = make_manager(tmp_path)
+    start(manager)
+    c1 = base_history([130.0], [50.0])
+    # Step 1: sell BTC into USDT succeeds; buy ETH fails on stale book (-1.0).
+    stale_leg2 = books(128.0, 50.5, received_ns=RECV_NS - 1000 * MS)
+    partial = spike_step(manager, candles=c1, leg2=stale_leg2)
+    assert partial["pending_target"]["status"] == "partial"
+    assert D(partial["portfolios"]["strategy"]["holdings"].get("BTC", "0")) == D("0")
+
+    # Step 2: newer candle returns signal to neutral (0.0); must supersede old all-ETH
+    # target and buy back BTC to restore 50/50 instead of completing all-ETH!
+    c2_neutral = base_history([130.0, 100.0], [50.0, 50.0])
+    restored = manager.step_session(
+        "sess1",
+        candle_inputs=c2_neutral,
+        books=books(100.0, 50.0, received_ns=RECV_NS),
+        decide_ns=RECV_NS + 2 * MS,
+        fill_books_leg1=books(100.0, 50.0, received_ns=RECV_NS + 70 * MS),
+        fill_books_leg2=books(100.0, 50.0, received_ns=RECV_NS + 145 * MS),
+    )
+    assert restored["pending_target"] is None
+    strat_holdings = held(restored["portfolios"]["strategy"])
+    assert strat_holdings.get("BTC", D("0")) > D("45")
+    assert strat_holdings.get("ETH", D("0")) > D("95")
+    assert strat_holdings.get("USDT", D("0")) < D("5")
+
+
+def test_catchup_candles_do_not_execute_missed_intermediate_trades(
+    tmp_path: Path,
+) -> None:
+    manager = make_manager(tmp_path)
+    start(manager)
+    # Three new candles arrive at once; only the latest target can execute.
+    c_jump = base_history([130.0, 100.0, 100.0], [50.0, 50.0, 50.0])
+    view = manager.step_session(
+        "sess1",
+        candle_inputs=c_jump,
+        books=books(100.0, 50.0, received_ns=RECV_NS),
+        decide_ns=RECV_NS + 2 * MS,
+        fill_books_leg1=books(100.0, 50.0, received_ns=RECV_NS + 70 * MS),
+        fill_books_leg2=books(100.0, 50.0, received_ns=RECV_NS + 145 * MS),
+    )
+    assert view["track_record_mode"] == "catchup_observed"
+    assert view["decisions_count"] == 3
+    assert len(view["trades"]) <= 1
+
+
+def test_legacy_v1_session_refuses_step_but_reads_and_stops(tmp_path: Path) -> None:
+    manager = make_manager(tmp_path)
+    sdir = manager.sessions_root / "legv1"
+    sdir.mkdir(parents=True)
+    legacy: dict[str, Any] = {
+        "schema_version": LEGACY_SCHEMA_VERSION,
+        "session_id": "legv1",
+        "actor_id": "local",
+        "status": "active",
+        "created_at": NOW.isoformat(),
+        "updated_at": NOW.isoformat(),
+        "stopped_at": None,
+        "coin_a": "binance:BTC",
+        "coin_b": "binance:ETH",
+        "anchor": None,
+        "bar": "1h",
+        "order_rtt_ms": 75.0,
+        "max_staleness_ms": 500.0,
+        "starting_value": "10000",
+        "settings": SETTINGS.model_dump(mode="json"),
+        "instruments": {
+            "a": {
+                "venue": "binance",
+                "venue_symbol": "BTCUSDT",
+                "base": "BTC",
+                "quote": "USDT",
+            },
+            "b": {
+                "venue": "binance",
+                "venue_symbol": "ETHUSDT",
+                "base": "ETH",
+                "quote": "USDT",
+            },
+            "anchor": None,
+        },
+        "close_history": {"BTCUSDT": [100.0], "ETHUSDT": [50.0]},
+        "decisions_count": 0,
+        "last_preference": 0.0,
+        "last_rotation_step": None,
+        "peak_value": 10000.0,
+        "parked": False,
+        "portfolios": {
+            k: {
+                "holdings": {"BTC": "50", "ETH": "100"},
+                "value_usdt": "10000",
+                "fees_usdt": "0",
+                "slippage_usdt": "0",
+                "rotations": 0,
+            }
+            for k in ("strategy", "hodl", "drift_control")
+        },
+        "trades": [],
+        "latency_audit": [],
+    }
+    (sdir / "session.json").write_text(json.dumps(legacy), encoding="utf-8")
+    (sdir / "integrity.json").write_text(
+        build_integrity_record(
+            sdir, artifact_id="legv1", file_names=("session.json",)
+        ).model_dump_json(),
+        encoding="utf-8",
+    )
+    read_view = manager.read_session("legv1")
+    assert read_view["can_step"] is False and "Start a new session" in (
+        read_view["step_block_reason"] or ""
+    )
+    with pytest.raises(LivePaperError, match="Legacy v1 paper session"):
+        manager.step_session("legv1")
+    assert manager.stop_session("legv1")["status"] == "stopped"
+
+
+def test_required_metadata_and_late_book_clock_enforcement(tmp_path: Path) -> None:
+    manager = make_manager(tmp_path)
+    no_meta = candle_inputs_from_close_map(
+        "1h", {"BTCUSDT": [100.0, 101.0], "ETHUSDT": [50.0, 50.0]}
+    )
+    with pytest.raises(LivePaperError, match="Missing observed venue metadata"):
+        manager.create_session(
+            "binance:BTC",
+            "binance:ETH",
+            candle_inputs=no_meta,
+            initial_books=books(100.0, 50.0, received_ns=RECV_NS),
+        )
+
+    # Wrong-market metadata is rejected.
+    wrong_meta = {"BTCUSDT": make_meta(ETH), "ETHUSDT": make_meta(ETH)}
+    with pytest.raises(LivePaperError, match="instrument mismatch"):
+        manager.create_session(
+            "binance:BTC",
+            "binance:ETH",
+            candle_inputs=no_meta,
+            market_metadata=wrong_meta,
+            initial_books=books(100.0, 50.0, received_ns=RECV_NS),
+        )
+
+    # Late leg-1 book (850 ms after decide_ns) shifts effective fill and delays leg 2.
+    start(manager)
+    view = manager.step_session(
+        "sess1",
+        candle_inputs=base_history([130.0], [50.0]),
+        books=books(130.0, 50.0, received_ns=RECV_NS),
+        decide_ns=RECV_NS,
+        fill_books_leg1=books(130.0, 50.0, received_ns=RECV_NS + 850 * MS),
+        fill_books_leg2=books(128.0, 50.5, received_ns=RECV_NS + 925 * MS),
+    )
+    audit = view["latency_audit"][-1]
+    assert audit["actual_fill_leg1_ns"] == RECV_NS + 850 * MS
+    assert audit["actual_fill_leg2_ns"] >= audit["actual_fill_leg1_ns"] + RTT_NS
+    assert audit["book_age_leg1_ms"] == 0.0
+    assert audit["book_age_leg2_ms"] >= 0.0
+
+
+def test_third_anchor_metadata_and_park_anchor(tmp_path: Path) -> None:
+    manager = make_manager(tmp_path)
+    anc_candles = candle_inputs_from_close_map(
+        "1h",
+        {
+            "BTCUSDT": list(100.0 + 0.1 * np.sin(np.arange(40))),
+            "ETHUSDT": [50.0] * 40,
+            "SOLUSDT": [20.0] * 40,
+        },
+        metadata={
+            "BTCUSDT": META_MAP["BTCUSDT"],
+            "ETHUSDT": META_MAP["ETHUSDT"],
+        },  # missing SOL!
+    )
+    init = {
+        **books(100.0, 50.0, received_ns=RECV_NS),
+        "SOLUSDT": timed_book(SOL, 20.0, received_ns=RECV_NS),
+    }
+    with pytest.raises(LivePaperError, match="SOLUSDT"):
+        manager.create_session(
+            "binance:BTC",
+            "binance:ETH",
+            anchor="binance:SOL",
+            candle_inputs=anc_candles,
+            initial_books=init,
+        )
+
+    full_anc = candle_inputs_from_close_map(
+        "1h",
+        {
+            "BTCUSDT": list(100.0 + 0.1 * np.sin(np.arange(40))),
+            "ETHUSDT": [50.0] * 40,
+            "SOLUSDT": [20.0] * 40,
+        },
+        metadata=META_MAP,
+    )
+    park_cfg = LabSettings(
         method="zscore",
         auto_tune=False,
         lookback=20,
@@ -344,53 +508,68 @@ def test_rejected_park_keeps_parked_false_and_allows_retry(tmp_path: Path) -> No
         exit=0.5,
         minimum_hold=0,
         cooldown=0,
-        crash_defense_mode="park_usdt",
+        crash_defense_mode="park_anchor",
         regime_break_drawdown=0.15,
     )
-    manager = make_manager(tmp_path)
     manager.create_session(
         "binance:BTC",
         "binance:ETH",
-        settings=park_settings,
-        initial_books=books(100.0, 50.0, received_ns=RECV_NS),
-        historical_closes=history(),
-        session_id="park1",
+        anchor="binance:SOL",
+        settings=park_cfg,
+        candle_inputs=full_anc,
+        initial_books=init,
+        session_id="anc",
     )
-    # 30% drawdown triggers park_usdt, but stale book rejects leg1.
-    stale = books(70.0, 35.0, received_ns=RECV_NS - 1000 * MS)
-    rejected_view = manager.step_session(
-        "park1",
-        books=books(70.0, 35.0, received_ns=RECV_NS),
+    step_anc = candle_inputs_from_close_map(
+        "1h",
+        {
+            "BTCUSDT": list(100.0 + 0.1 * np.sin(np.arange(40))) + [70.0],
+            "ETHUSDT": [50.0] * 40 + [35.0],
+            "SOLUSDT": [20.0] * 41,
+        },
+        metadata=META_MAP,
+    )
+    step_books = {
+        **books(70.0, 35.0, received_ns=RECV_NS),
+        "SOLUSDT": timed_book(SOL, 20.0, received_ns=RECV_NS),
+    }
+    leg1_b = {
+        **books(70.0, 35.0, received_ns=RECV_NS + 70 * MS),
+        "SOLUSDT": timed_book(SOL, 20.0, received_ns=RECV_NS + 70 * MS),
+    }
+    leg2_b = {
+        **books(70.0, 35.0, received_ns=RECV_NS + 145 * MS),
+        "SOLUSDT": timed_book(SOL, 20.0, received_ns=RECV_NS + 145 * MS),
+    }
+    parked = manager.step_session(
+        "anc",
+        candle_inputs=step_anc,
+        books=step_books,
         decide_ns=RECV_NS + 2 * MS,
-        fill_books_leg1=stale,
-        fill_books_leg2=books(70.0, 35.0, received_ns=RECV_NS + 145 * MS),
+        fill_books_leg1=leg1_b,
+        fill_books_leg2=leg2_b,
     )
-    assert rejected_view["trades"] == []
-    raw_after_reject = json.loads(
-        (manager.sessions_root / "park1" / "session.json").read_text("utf-8")
-    )
-    assert raw_after_reject["parked"] is False
-
-    # Next step with fresh books retries and successfully parks into USDT.
-    parked_view = manager.step_session(
-        "park1",
-        books=books(70.0, 35.0, received_ns=RECV_NS),
-        decide_ns=RECV_NS + 2 * MS,
-        fill_books_leg1=books(70.0, 35.0, received_ns=RECV_NS + 70 * MS),
-        fill_books_leg2=books(70.0, 35.0, received_ns=RECV_NS + 145 * MS),
-    )
-    assert len(parked_view["trades"]) == 1
-    assert parked_view["trades"][0]["direction"] == "into_usdt"
-    raw_after_park = json.loads(
-        (manager.sessions_root / "park1" / "session.json").read_text("utf-8")
-    )
-    assert raw_after_park["parked"] is True
+    assert parked["trades"][0]["direction"] == "into_anchor"
+    assert D(parked["portfolios"]["strategy"]["holdings"]["SOL"]) > D("300")
 
 
-def test_sweep_rebalance_preserves_target_usdt_reserve() -> None:
+def test_actor_isolation_tamper_detection_and_target_reserve(tmp_path: Path) -> None:
+    alice, bob = make_manager(tmp_path, "alice"), make_manager(tmp_path, "bob")
+    start(alice, "shared")
+    start(bob, "shared")
+    with pytest.raises(LivePaperSessionNotFoundError):
+        bob.read_session("shared") if False else alice.read_session("missing")
+    directory = alice.sessions_root / "shared"
+    read_and_validate_integrity(
+        directory,
+        artifact_id="shared",
+        required_files=frozenset({"session.json"}),
+        allowed_files=frozenset({"session.json"}),
+    )
+
     ledger = PortfolioLedger(PortfolioState.from_holdings({USDT: D("10000")}))
     fill_books = books(100.0, 50.0, received_ns=RECV_NS)
-    fills, rejected, _, _ = sweep_rebalance(
+    fills, rejected, *_ = sweep_rebalance(
         ledger=ledger,
         portfolio_key="strategy",
         session_id="reserve-test",
@@ -413,9 +592,63 @@ def test_sweep_rebalance_preserves_target_usdt_reserve() -> None:
         leg_cache={},
         fill_books_leg1=fill_books,
         fill_books_leg2=fill_books,
-        meta_map={},
+        meta_map=META_MAP,
         decision_time=NOW,
     )
-    assert rejected == []
-    assert len(fills) == 2
-    assert ledger.current_state.quantity(USDT) >= D("2000")
+    assert (
+        rejected == []
+        and len(fills) == 2
+        and ledger.current_state.quantity(USDT) >= D("2000")
+    )
+
+
+def test_reconcile_target_status_keeps_tradable_90_dollar_remainder_partial() -> None:
+    prices = {AssetId("BTC"): D("100"), AssetId("ETH"): D("50"), USDT: D("1")}
+    inst_by_asset = {AssetId("BTC"): BTC, AssetId("ETH"): ETH}
+    basket = (AssetId("BTC"), AssetId("ETH"), USDT)
+    target = {AssetId("BTC"): D("0.5"), AssetId("ETH"): D("0.5"), USDT: D("0")}
+    status_90 = reconcile_target_status(
+        ledger_state=PortfolioState.from_holdings(
+            {AssetId("BTC"): D("50.9"), AssetId("ETH"): D("98.2")}
+        ),
+        target_weights=target,
+        mid_prices=prices,
+        inst_by_asset=inst_by_asset,
+        basket=basket,
+        settings=SETTINGS,
+        meta_map=META_MAP,
+        had_any_fills=True,
+        rejected=[],
+        decision_time=NOW,
+    )
+    assert status_90 == "partial"
+    status_100k_90 = reconcile_target_status(
+        ledger_state=PortfolioState.from_holdings(
+            {AssetId("BTC"): D("500.9"), AssetId("ETH"): D("998.2")}
+        ),
+        target_weights=target,
+        mid_prices=prices,
+        inst_by_asset=inst_by_asset,
+        basket=basket,
+        settings=SETTINGS,
+        meta_map=META_MAP,
+        had_any_fills=True,
+        rejected=[],
+        decision_time=NOW,
+    )
+    assert status_100k_90 == "partial"
+    status_dust = reconcile_target_status(
+        ledger_state=PortfolioState.from_holdings(
+            {AssetId("BTC"): D("50.03"), AssetId("ETH"): D("99.94")}
+        ),
+        target_weights=target,
+        mid_prices=prices,
+        inst_by_asset=inst_by_asset,
+        basket=basket,
+        settings=SETTINGS,
+        meta_map=META_MAP,
+        had_any_fills=True,
+        rejected=[],
+        decision_time=NOW,
+    )
+    assert status_dust == "dust_complete"

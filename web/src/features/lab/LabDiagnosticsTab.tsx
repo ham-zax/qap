@@ -45,35 +45,35 @@ export function LabDiagnosticsTab({
 
   const econometrics = [
     {
-      test: 'Cointegration ADF',
+      test: 'Log-Price Cointegration (ADF)',
       reading: measurements?.cointegration ? `stat ${measurements.cointegration.statistic.toFixed(2)}` : DASH,
       detail: measurements?.cointegration
-        ? `p = ${measurements.cointegration.p_value.toFixed(4)} · ${measurements.cointegration.passes ? 'Passes' : 'Fails'}`
+        ? `p = ${measurements.cointegration.p_value.toFixed(4)} · ${measurements.cointegration.passes ? 'Passes' : 'Fails'} (static OLS log-price residual)`
         : 'Unavailable',
     },
     {
-      test: 'Hedge slopes',
+      test: 'Log-Price Hedge Slopes',
       reading: measurements?.hedge_ratio
         ? `OLS ${measurements.hedge_ratio.ols.toFixed(3)} · TLS ${measurements.hedge_ratio.tls.toFixed(3)}`
         : DASH,
       detail: measurements?.kalman
-        ? `Kalman β ${measurements.kalman.beta.toFixed(3)} ± ${measurements.kalman.standard_error.toFixed(3)}`
+        ? `Adaptive Kalman β ${measurements.kalman.beta.toFixed(3)} ± ${measurements.kalman.standard_error.toFixed(3)} (time-varying, not fixed equilibrium)`
         : 'Kalman unavailable',
     },
     {
-      test: 'Tail dependence',
+      test: 'Return-Copula Tail Dependence',
       reading: measurements?.copula
         ? `λL ${measurements.copula.lower_tail.toFixed(2)} · λU ${measurements.copula.upper_tail.toFixed(2)}`
         : DASH,
       detail: measurements?.copula
-        ? `${measurements.copula.family} family · ${measurements.copula.observations} returns`
+        ? `${measurements.copula.family} · ${measurements.copula.observations} log returns (distinct from traded spread conditional rank)`
         : 'Unavailable',
     },
     {
-      test: 'Granger lead-lag',
+      test: 'Linear Granger Test (Returns)',
       reading: measurements?.granger ? `${coinA}→${coinB} p ${measurements.granger.a_to_b.p_value.toFixed(3)}` : DASH,
       detail: measurements?.granger
-        ? `${coinB}→${coinA} p ${measurements.granger.b_to_a.p_value.toFixed(3)} · lag ${measurements.granger.max_lag}`
+        ? `${coinB}→${coinA} p ${measurements.granger.b_to_a.p_value.toFixed(3)} · lag ${measurements.granger.max_lag} (in-sample linear VAR)`
         : 'Unavailable',
     },
   ]
@@ -161,26 +161,34 @@ export function LabDiagnosticsTab({
         )}
 
         {proof && (
-          <dl className="m-0 grid grid-cols-3 gap-2.5" aria-label="SPA significance">
-            <div className="rounded-lg border border-border bg-muted/35 px-3 py-2">
-              <dt className="text-[11px] text-muted-foreground">SPA raw p</dt>
-              <dd className="m-0 mt-0.5 font-mono text-xs font-semibold text-foreground tabular-nums">
-                {fixed(proof.raw_p_value, 4)}
-              </dd>
-            </div>
-            <div className="rounded-lg border border-border bg-muted/35 px-3 py-2">
-              <dt className="text-[11px] text-muted-foreground">SPA corrected p</dt>
-              <dd className="m-0 mt-0.5 font-mono text-xs font-semibold text-foreground tabular-nums">
-                {fixed(proof.corrected_p_value, 4)}
-              </dd>
-            </div>
-            <div className="rounded-lg border border-border bg-muted/35 px-3 py-2">
-              <dt className="text-[11px] text-muted-foreground">Settings tried</dt>
-              <dd className="m-0 mt-0.5 font-mono text-xs font-semibold text-foreground tabular-nums">
-                {proof.settings_tried.toLocaleString('en-US')}
-              </dd>
-            </div>
-          </dl>
+          <div className="space-y-2">
+            <dl className="m-0 grid grid-cols-3 gap-2.5" aria-label="SPA significance">
+              <div className="rounded-lg border border-border bg-muted/35 px-3 py-2">
+                <dt className="text-[11px] text-muted-foreground">SPA raw p</dt>
+                <dd className="m-0 mt-0.5 font-mono text-xs font-semibold text-foreground tabular-nums">
+                  {fixed(proof.raw_p_value, 4)}
+                </dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/35 px-3 py-2">
+                <dt className="text-[11px] text-muted-foreground">SPA corrected p</dt>
+                <dd className="m-0 mt-0.5 font-mono text-xs font-semibold text-foreground tabular-nums">
+                  {fixed(proof.corrected_p_value, 4)}
+                </dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/35 px-3 py-2">
+                <dt className="text-[11px] text-muted-foreground">Settings tried</dt>
+                <dd className="m-0 mt-0.5 font-mono text-xs font-semibold text-foreground tabular-nums">
+                  {proof.settings_tried.toLocaleString('en-US')}
+                </dd>
+              </div>
+            </dl>
+            <p className="m-0 text-[11px] text-muted-foreground">
+              Protocol: {proof.proof_protocol ?? 'legacy v1 (499 SPA reps)'} · Signal:{' '}
+              {proof.signal_provenance === 'walk_forward_stitched'
+                ? 'Walk-forward stitched'
+                : 'Legacy (missing stitched provenance)'}
+            </p>
+          </div>
         )}
 
         <h4 className="m-0 pt-1 text-xs font-semibold text-muted-foreground">Dataset SHA-256</h4>

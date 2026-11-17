@@ -1,5 +1,16 @@
 # Stage S4-B — Low-Turnover Tail Copula & Crash-Defense Discovery Results (2026-11-15)
 
+Update context — 2026-11-16
+Trigger: Audit repair AR-7 ([Plan 25](../plans/25-audit-repairs-and-evidence-integrity.md), [2026-11-16 audit](2026-11-16-audit/README.md)).
+Purpose: Correct the turnover-ratio generalization, document percentage denominators and add-back gross semantics, and qualify the post-fix `park_anchor` evidence while keeping all 12 preregistered rows and raw JSONL immutable.
+Impact: Clarifies interpretation only; original `0/12` Holm result and blocked rows `S4B-07`..`S4B-10` remain unchanged.
+Evidence: [2026-11-15-stage-s4b-trial-plan.json](2026-11-15-stage-s4b-trial-plan.json), [2026-11-15-stage-s4b-trials.jsonl](2026-11-15-stage-s4b-trials.jsonl), commit `7f0f7e3`.
+
+**Dated Corrections (2026-11-16):**
+- **Turnover & 2× Cost Gate (correcting Finding #2 below):** Lower turnover is *not* mathematically incapable of improving net economics or the tuning gross-to-cost ratio. Eliminating trades whose expected gross spread is below `2 × cost` raises both net return and the gross-to-cost ratio. On S4-B's specific sample, the 1d and 2%-tail rules compressed gross gain alongside cost, so those configurations failed the gate without proving scale-invariance in general.
+- **Add-Back Gross & Denominators:** `gross_vs_hodl_pct` and `tuning_gross_vs_hodl_pct` are cost add-back approximations `((terminal + paid_costs) / HODL_end - 1) * 100`, not zero-cost counterfactual replays. `cost_paid_pct` and `tuning_cost_pct` divide by starting capital, while `vs_hodl_pct` divides by ending HODL wealth; the monetary `cost_budget_multiple` gate compares USDT dollars directly (`tuning_gross >= 2 * tuning_cost`).
+- **Post-Fix `park_anchor` Qualification:** Commit `7f0f7e3` resolved third-asset `park_anchor` metadata loading in `src/qap/product_lab_inputs.py` and `src/qap/product_lab_study.py`, and [TASKS.md](../../TASKS.md) notes an ad-hoc `AVAX/SOL` `-4.67%` observation after that fix. No saved rerun JSONL or immutable study artifact is archived alongside [2026-11-15-stage-s4b-trials.jsonl](2026-11-15-stage-s4b-trials.jsonl), so `S4B-07`..`S4B-10` remain recorded as `blocked` in the preregistered S4-B record.
+
 - **Actor ID:** `stage-s4b-20261115`
 - **Preregistration:** [2026-11-15-stage-s4b-trial-plan.json](2026-11-15-stage-s4b-trial-plan.json) (written before any trial ran)
 - **Raw trials:** [2026-11-15-stage-s4b-trials.jsonl](2026-11-15-stage-s4b-trials.jsonl) (12 lines, one per preregistered trial)

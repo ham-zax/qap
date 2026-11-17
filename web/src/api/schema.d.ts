@@ -1506,6 +1506,12 @@ export interface components {
         };
         /** LabProofDto */
         LabProofDto: {
+            /** Bootstrap Block Size */
+            bootstrap_block_size?: number | null;
+            /** Bootstrap Replicates */
+            bootstrap_replicates?: number | null;
+            /** Bootstrap Seed */
+            bootstrap_seed?: number | null;
             /** Control */
             control: string | null;
             /** Corrected P Value */
@@ -1542,6 +1548,8 @@ export interface components {
              * Format: date-time
              */
             proof_end: string;
+            /** Proof Protocol */
+            proof_protocol?: string | null;
             /**
              * Proof Start
              * Format: date-time
@@ -1551,6 +1559,8 @@ export interface components {
             raw_p_value: number | null;
             /** Settings Tried */
             settings_tried: number;
+            /** Signal Provenance */
+            signal_provenance?: string | null;
             /** Significance */
             significance: number;
             /** Tuning Cost Pct */
@@ -1929,12 +1939,22 @@ export interface components {
         LabSignalDto: {
             /** Lower */
             lower: number;
+            /** Lower Series */
+            lower_series?: (number | null)[] | null;
+            /** Preferences */
+            preferences?: (number | null)[] | null;
+            /** Provenance */
+            provenance?: string | null;
+            /** Signal Variable */
+            signal_variable?: string | null;
             /** Time */
             time: number[];
             /** Unit */
             unit: string;
             /** Upper */
             upper: number;
+            /** Upper Series */
+            upper_series?: (number | null)[] | null;
             /** Values */
             values: (number | null)[];
         };
@@ -1966,6 +1986,8 @@ export interface components {
              * @enum {string}
              */
             bar: "1m" | "15m" | "1h" | "4h" | "1d";
+            /** Bootstrap Replicates */
+            bootstrap_replicates?: number | null;
             /** Coin A */
             coin_a: string;
             /** Coin B */
@@ -2133,7 +2155,7 @@ export interface components {
         };
         /**
          * LivePaperLatencyDto
-         * @description Four clocks per decision: exchange (us), receive/decide/fill (ns).
+         * @description Declared delay vs actual supporting clocks per attempt.
          */
         LivePaperLatencyDto: {
             /**
@@ -2141,20 +2163,54 @@ export interface components {
              * @enum {string}
              */
             action: "swap" | "rejected" | "hold";
+            /** Actual Decide To Fill Leg1 Ms */
+            actual_decide_to_fill_leg1_ms?: number | null;
+            /** Actual Decide To Fill Leg2 Ms */
+            actual_decide_to_fill_leg2_ms?: number | null;
+            /** Actual Fill Leg1 Ns */
+            actual_fill_leg1_ns?: number | null;
+            /** Actual Fill Leg2 Ns */
+            actual_fill_leg2_ns?: number | null;
+            /**
+             * Attempt Index
+             * @default 1
+             */
+            attempt_index: number;
             /** Book Age Leg1 Ms */
             book_age_leg1_ms: number | null;
             /** Book Age Leg2 Ms */
             book_age_leg2_ms: number | null;
+            /** Candle Time */
+            candle_time?: number | null;
             /** Decide To Fill Leg1 Ms */
             decide_to_fill_leg1_ms: number;
             /** Decide To Fill Leg2 Ms */
             decide_to_fill_leg2_ms: number;
+            /**
+             * Execution Status
+             * @default hold
+             */
+            execution_status: string;
+            /**
+             * Legacy Clock
+             * @default false
+             */
+            legacy_clock: boolean;
+            /**
+             * Observation Type
+             * @default legacy_step
+             */
+            observation_type: string;
             /** Order Rtt Ms */
             order_rtt_ms: number;
             /** Recv To Decide Ms */
             recv_to_decide_ms: number;
             /** Rejected Reasons */
             rejected_reasons: string[];
+            /** Requested Fill Leg1 Ns */
+            requested_fill_leg1_ns?: number | null;
+            /** Requested Fill Leg2 Ns */
+            requested_fill_leg2_ns?: number | null;
             /** Signal Preference */
             signal_preference: number | null;
             /** Step Index */
@@ -2169,6 +2225,32 @@ export interface components {
             t_fill_leg2_ns: number;
             /** T Recv Ns */
             t_recv_ns: number;
+        };
+        /** LivePaperMetadataProvenanceDto */
+        LivePaperMetadataProvenanceDto: {
+            /** Observed At */
+            observed_at: string;
+            /** Payload Sha256 */
+            payload_sha256: string;
+            /** Source Id */
+            source_id: string;
+        };
+        /** LivePaperPendingTargetDto */
+        LivePaperPendingTargetDto: {
+            /** Attempts */
+            attempts: number;
+            /** Fills Count */
+            fills_count: number;
+            /** Reason */
+            reason: string;
+            /** Status */
+            status: string;
+            /** Target Id */
+            target_id: string;
+            /** Target Weights */
+            target_weights: {
+                [key: string]: string;
+            };
         };
         /** LivePaperPortfolioDto */
         LivePaperPortfolioDto: {
@@ -2200,10 +2282,27 @@ export interface components {
             /** Anchor */
             anchor: string | null;
             /**
+             * Anchor Mode
+             * @default auto
+             */
+            anchor_mode: string;
+            /**
              * Bar
              * @enum {string}
              */
             bar: "1m" | "15m" | "1h" | "4h" | "1d";
+            /**
+             * Book Observations Count
+             * @default 0
+             */
+            book_observations_count: number;
+            /**
+             * Can Step
+             * @default true
+             */
+            can_step: boolean;
+            /** Candle Origin Time */
+            candle_origin_time?: number | null;
             /** Coin A */
             coin_a: string;
             /** Coin B */
@@ -2215,13 +2314,25 @@ export interface components {
             created_at: string;
             /** Decisions Count */
             decisions_count: number;
+            /** Last Candle Time */
+            last_candle_time?: number | null;
             /** Latency Audit */
             latency_audit: components["schemas"]["LivePaperLatencyDto"][];
+            /** Market Metadata Provenance */
+            market_metadata_provenance?: {
+                [key: string]: components["schemas"]["LivePaperMetadataProvenanceDto"];
+            };
             /** Max Staleness Ms */
             max_staleness_ms: number;
             /** Order Rtt Ms */
             order_rtt_ms: number;
+            pending_target?: components["schemas"]["LivePaperPendingTargetDto"] | null;
             portfolios: components["schemas"]["LivePaperPortfoliosDto"];
+            /**
+             * Schema Version
+             * @default qap.lab.paper_session.v2
+             */
+            schema_version: string;
             /** Session Id */
             session_id: string;
             settings: components["schemas"]["LabSettings-Output"];
@@ -2232,8 +2343,15 @@ export interface components {
              * @enum {string}
              */
             status: "active" | "stopped";
+            /** Step Block Reason */
+            step_block_reason?: string | null;
             /** Stopped At */
             stopped_at: string | null;
+            /**
+             * Track Record Mode
+             * @default continuous_forward
+             */
+            track_record_mode: string;
             /** Trades */
             trades: components["schemas"]["LivePaperTradeDto"][];
             /**
@@ -2264,6 +2382,16 @@ export interface components {
              * @enum {string}
              */
             bar: "1m" | "15m" | "1h" | "4h" | "1d";
+            /**
+             * Book Observations Count
+             * @default 0
+             */
+            book_observations_count: number;
+            /**
+             * Can Step
+             * @default true
+             */
+            can_step: boolean;
             /** Coin A */
             coin_a: string;
             /** Coin B */
@@ -2275,6 +2403,11 @@ export interface components {
             created_at: string;
             /** Decisions Count */
             decisions_count: number;
+            /**
+             * Schema Version
+             * @default qap.lab.paper_session.v2
+             */
+            schema_version: string;
             /** Session Id */
             session_id: string;
             /** Simple Status */
@@ -2284,6 +2417,13 @@ export interface components {
              * @enum {string}
              */
             status: "active" | "stopped";
+            /** Step Block Reason */
+            step_block_reason?: string | null;
+            /**
+             * Track Record Mode
+             * @default continuous_forward
+             */
+            track_record_mode: string;
             /** Trades Count */
             trades_count: number;
             /**
@@ -2315,7 +2455,7 @@ export interface components {
              * Direction
              * @enum {string}
              */
-            direction: "into_a" | "into_b" | "into_usdt";
+            direction: "into_a" | "into_b" | "into_usdt" | "into_anchor";
             /** Fees Usdt */
             fees_usdt: string;
             /** Fills */
@@ -2326,8 +2466,16 @@ export interface components {
             route: string;
             /** Slippage Usdt */
             slippage_usdt: string;
+            /**
+             * Status
+             * @default complete
+             * @enum {string}
+             */
+            status: "complete" | "partial";
             /** Step Index */
             step_index: number;
+            /** Target Id */
+            target_id?: string | null;
         };
         /** MarketDataGenerationDto */
         MarketDataGenerationDto: {

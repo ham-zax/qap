@@ -5,13 +5,13 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
+from qap.product_market_data_catalog import load_scanner_catalog
 from qap.product_market_data_generation import (
     ProductGenerationReadError,
     provenance_relative_path,
     resolve_immutable_generation,
 )
 from qap.product_market_data_models import MarketDataGenerationProvenance
-from qap.scanner.catalog import load_scanner_catalog
 
 
 class IdentityRetirementPlan(BaseModel):

@@ -13,7 +13,7 @@ from qap.product_current_evidence import (
     SlotCounts,
     scheduled_slot,
 )
-from qap.scanner.prospective_protocol import DEPTH_CADENCE, L1_CADENCE
+from qap.product_market_data_protocol import DEPTH_CADENCE, L1_CADENCE
 
 
 def _utc(value: datetime, *, field: str) -> datetime:

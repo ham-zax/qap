@@ -109,10 +109,10 @@ export const STRATEGY_REGISTRY: Record<LabSignalMethod, StrategyDescriptor> = {
         id: 'hedge_method',
         label: 'Regression',
         options: [
-          { value: 'ratio', label: 'Direct Ratio' },
-          { value: 'ols', label: 'OLS Regression' },
-          { value: 'tls', label: 'Total Least Squares' },
-          { value: 'kalman', label: 'Kalman Filter' },
+          { value: 'ratio', label: 'Direct Ratio (1:1)' },
+          { value: 'ols', label: 'Rolling OLS (non-stationary possible)' },
+          { value: 'tls', label: 'Rolling TLS (non-stationary possible)' },
+          { value: 'kalman', label: 'Adaptive Kalman β' },
         ],
         getValue: (s) => s.hedge_method,
         patch: (value) => ({ hedge_method: value as LabHedgeMethod }),
@@ -158,7 +158,7 @@ export const STRATEGY_REGISTRY: Record<LabSignalMethod, StrategyDescriptor> = {
       {
         kind: 'slider',
         id: 'copula_probability',
-        label: 'Tail Entry Prob',
+        label: 'Tail Entry Rank',
         min: 0.01,
         max: 0.25,
         step: 0.01,
@@ -175,7 +175,7 @@ export const STRATEGY_REGISTRY: Record<LabSignalMethod, StrategyDescriptor> = {
       {
         kind: 'slider',
         id: 'copula_exit_band',
-        label: 'Neutral Exit Band',
+        label: 'Neutral Rank Band',
         min: 0.05,
         max: (s) => Math.max(0.05, Math.min(0.35, Number((0.49 - s.copula_probability).toFixed(2)))),
         step: 0.01,
@@ -192,7 +192,7 @@ export const STRATEGY_REGISTRY: Record<LabSignalMethod, StrategyDescriptor> = {
         text: (s) => {
           const entry = Math.round(s.copula_probability * 100)
           const band = Math.round(s.copula_exit_band * 100)
-          return `Enter below ${entry}% / above ${100 - entry}%, exit between ${50 - band}%–${50 + band}%.`
+          return `Conditional rank only (not a recovery probability): enter below ${entry}% / above ${100 - entry}%, exit between ${50 - band}%–${50 + band}%.`
         },
       },
     ],

@@ -11,6 +11,11 @@ import numpy as np
 
 from qap.experiment.lab_proof import LabProof, prove_lab_strategy, settings_candidates
 from qap.experiment.lab_replay import LabInputs
+from qap.experiment.lab_statistics import (
+    DEFAULT_SPA_REPLICATES,
+    PROOF_PROTOCOL_VERSION,
+    require_family_resolution,
+)
 from qap.experiment.provenance import code_fingerprint
 from qap.policy.lab_settings import LabSettings
 from qap.product_lab_advisor import advise_pair_strategies
@@ -165,6 +170,20 @@ def _execution_ready(inputs: LabInputs, settings: LabSettings) -> bool:
     return all(instrument in metadata for instrument in required)
 
 
+def _signal_variable(settings: LabSettings) -> str:
+    if settings.method == "zscore":
+        return (
+            "normalized 1:1 price-ratio z-score"
+            if settings.hedge_method == "ratio"
+            else f"{settings.hedge_method} log-price residual z-score"
+        )
+    if settings.method == "copula":
+        return "spread conditional rank (distinct from return-copula tails)"
+    if settings.method == "trend":
+        return "log-ratio moving-average spread"
+    return "anchor-beta residual return"
+
+
 class LabStudyService:
     def __init__(
         self,
@@ -190,6 +209,7 @@ class LabStudyService:
         reused: bool,
         fingerprint: str,
         execution_ready: bool,
+        bootstrap_replicates: int = DEFAULT_SPA_REPLICATES,
     ) -> dict[str, Any]:
         result = prove_lab_strategy(
             inputs,
@@ -198,6 +218,7 @@ class LabStudyService:
             identity_confirmed=analysis["identity_confirmed"],
             execution_ready=execution_ready,
             validation_reused=reused,
+            bootstrap_replicates=bootstrap_replicates,
         )
         if result.call["status"] in ("into_a", "into_b"):
             a, b = analysis["coin_a"]["code"], analysis["coin_b"]["code"]
@@ -225,9 +246,38 @@ class LabStudyService:
                     else None
                     for index in samples
                 ],
+                "preferences": [
+                    float(result.signal.preference[index])
+                    if index >= result.split
+                    and isfinite(result.signal.preference[index])
+                    else None
+                    for index in samples
+                ],
                 "upper": result.signal.upper,
                 "lower": result.signal.lower,
+                "upper_series": (
+                    None
+                    if result.upper_series is None
+                    else [
+                        float(result.upper_series[index])
+                        if isfinite(result.upper_series[index])
+                        else None
+                        for index in samples
+                    ]
+                ),
+                "lower_series": (
+                    None
+                    if result.lower_series is None
+                    else [
+                        float(result.lower_series[index])
+                        if isfinite(result.lower_series[index])
+                        else None
+                        for index in samples
+                    ]
+                ),
                 "unit": result.signal.unit,
+                "provenance": result.signal_provenance,
+                "signal_variable": _signal_variable(settings),
             },
             "wealth": _wealth(inputs, result),
             "trades": _trades(result),
@@ -258,6 +308,7 @@ class LabStudyService:
         band_lookback: int,
         anchor: str | None,
         settings: LabSettings,
+        bootstrap_replicates: int = DEFAULT_SPA_REPLICATES,
     ) -> dict[str, Any]:
         family = self.store.family_id(coin_a, coin_b)
         with self.store.family_lock(family):
@@ -280,13 +331,21 @@ class LabStudyService:
                 "anchor": anchor,
                 "bar": bar,
                 "days": days,
-                "protocol": "qap.lab.proof.v1",
+                "protocol": PROOF_PROTOCOL_VERSION,
                 "code_fingerprint": fingerprint,
             }
             configurations = [
                 {**common, "settings": candidate.model_dump(mode="json")}
                 for candidate in settings_candidates(settings)
             ]
+            projected_count = self.store.projected_trial_count(family, configurations)
+            require_family_resolution(
+                pair_label=f"{coin_a}/{coin_b}",
+                outer_family_size=1,
+                pair_trial_count=projected_count,
+                replicates=bootstrap_replicates,
+                alpha=settings.significance,
+            )
             count, reused = self.store.register_trials(
                 family,
                 configurations,
@@ -301,6 +360,7 @@ class LabStudyService:
                 reused=reused,
                 fingerprint=fingerprint,
                 execution_ready=_execution_ready(inputs, settings),
+                bootstrap_replicates=bootstrap_replicates,
             )
 
     def compare(
@@ -338,7 +398,7 @@ class LabStudyService:
                 "anchor": anchor,
                 "bar": bar,
                 "days": days,
-                "protocol": "qap.lab.proof.v1",
+                "protocol": PROOF_PROTOCOL_VERSION,
                 "code_fingerprint": fingerprint,
             }
             configurations = [
@@ -346,6 +406,14 @@ class LabStudyService:
                 for cand in candidates
                 for expanded in settings_candidates(cand)
             ]
+            projected_count = self.store.projected_trial_count(family, configurations)
+            require_family_resolution(
+                pair_label=f"{coin_a}/{coin_b}",
+                outer_family_size=1,
+                pair_trial_count=projected_count,
+                replicates=DEFAULT_SPA_REPLICATES,
+                alpha=min(cand.significance for cand in candidates),
+            )
             count, reused = self.store.register_trials(
                 family,
                 configurations,

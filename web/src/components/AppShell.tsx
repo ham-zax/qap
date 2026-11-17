@@ -39,7 +39,7 @@ export function AppShell({ children, workspaceMode, collectorStatus }: AppShellP
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
-        <header className="app-header flex flex-row items-center justify-between gap-2 border-b border-border py-1.5">
+        <header className="app-header flex flex-row flex-wrap items-center justify-between gap-2 border-b border-border py-1.5">
           <div className="flex flex-row items-center gap-3">
             <Link className="brand tracking-tight" to="/">
               QAP
@@ -57,7 +57,7 @@ export function AppShell({ children, workspaceMode, collectorStatus }: AppShellP
               </Link>
             </nav>
           </div>
-          <div className="flex flex-row items-center gap-2">
+          <div className="flex flex-row flex-wrap items-center gap-2">
             {collectorWarning ? (
               <Link
                 className="inline-flex items-center gap-1 rounded-md border border-warning/35 bg-warning/10 px-2 py-1 text-xs font-medium text-warning no-underline hover:bg-warning/15"

@@ -249,18 +249,18 @@ describe('Lab Binance Terminal + Bottom Tabs', () => {
 
     // Simple mode renders Advisor preset card and hides raw Pro inputs
     expect(await screen.findByText('Kalman Z-Score Mean Reversion')).toBeVisible()
-    expect(screen.queryByLabelText(/Tail Entry Prob/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Tail Entry Rank/)).not.toBeInTheDocument()
 
-    // Overview KPI tiles appear with standard trader terms
-    expect(screen.getByText('Return Correlation')).toBeVisible()
-    expect(screen.getByText('Mean-Reversion Half-Life')).toBeVisible()
+    // Overview KPI tiles appear with variable-scoped trader terms
+    expect(screen.getByText('Log-Return Correlation')).toBeVisible()
+    expect(screen.getByText('Log-Ratio Half-Life')).toBeVisible()
 
     // Switch Simple -> Pro: full trader controls unlock
     const viewGroup = screen.getByRole('group', { name: 'View mode' })
     fireEvent.click(within(viewGroup).getByRole('button', { name: 'Pro' }))
 
     fireEvent.click(screen.getByRole('button', { name: 'Spread Copula' }))
-    fireEvent.change(screen.getByLabelText(/Tail Entry Prob/), { target: { value: '0.03' } })
+    fireEvent.change(screen.getByLabelText(/Tail Entry Rank/), { target: { value: '0.03' } })
     fireEvent.click(within(screen.getByRole('group', { name: 'Swap size' })).getByRole('button', { name: '50%' }))
     fireEvent.change(screen.getByLabelText(/Crash Stop/), { target: { value: 'park_usdt' } })
 

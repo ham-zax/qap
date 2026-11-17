@@ -122,6 +122,36 @@ class LabStudyStore:
         self.require_id(identifier)
         return FileLock(self.root / "families" / identifier / ".lock")
 
+    def existing_trial_count(self, identifier: str) -> int:
+        self.require_id(identifier)
+        path = self.root / "families" / identifier / "trials.json"
+        raw = _read(path, {"schema_version": "qap.lab.trials.v1", "trials": {}})
+        if not isinstance(raw, dict):
+            raise LabStoreError("Lab trial registry has an invalid shape.")
+        state = cast(dict[str, Any], raw)
+        if state.get("schema_version") != "qap.lab.trials.v1" or not isinstance(
+            state.get("trials"), dict
+        ):
+            raise LabStoreError("Lab trial registry has an invalid shape.")
+        return len(cast(dict[str, Any], state["trials"]))
+
+    def projected_trial_count(
+        self, identifier: str, configurations: list[dict[str, Any]]
+    ) -> int:
+        self.require_id(identifier)
+        path = self.root / "families" / identifier / "trials.json"
+        raw = _read(path, {"schema_version": "qap.lab.trials.v1", "trials": {}})
+        if not isinstance(raw, dict):
+            raise LabStoreError("Lab trial registry has an invalid shape.")
+        state = cast(dict[str, Any], raw)
+        if state.get("schema_version") != "qap.lab.trials.v1" or not isinstance(
+            state.get("trials"), dict
+        ):
+            raise LabStoreError("Lab trial registry has an invalid shape.")
+        trials = cast(dict[str, Any], state["trials"])
+        projected = set(trials.keys()) | {content_id(item) for item in configurations}
+        return len(projected)
+
     def register_trials(
         self,
         identifier: str,

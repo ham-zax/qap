@@ -29,6 +29,8 @@ def test_build_steps_includes_core_and_optional_gates() -> None:
         "openapi_sync",
         "web_typecheck",
         "quant_invariants",
+        "regression_checks",
+        "research_protocol",
     ]
 
     scoped = build_steps(
@@ -97,5 +99,40 @@ def test_execute_fail_fast_stops_after_first_error() -> None:
     code = execute([failing, skipped], fail_fast=True, stream=buffer)
     output = buffer.getvalue()
     assert code == 1
+    assert "[RUN ] first_bad ..." in output
     assert "[FAIL] first_bad" in output
     assert "never_runs" not in output
+
+
+def test_full_rejects_skip_flags_and_exposes_durations() -> None:
+    import pytest
+
+    parse_args = GATE["parse_args"]
+    build_steps = GATE["build_steps"]
+    for flag in ("--skip-invariants", "--skip-openapi", "--skip-web"):
+        with pytest.raises(SystemExit):
+            parse_args(["--full", flag])
+    full_steps = build_steps(parse_args(["--full"]))
+    pytest_full = next(step for step in full_steps if step.name == "pytest_full")
+    assert "--durations=15" in pytest_full.command
+    assert pytest_full.show_tail_on_pass is True
+
+
+def test_execute_prints_active_step_and_optional_pass_tail() -> None:
+    gate_step_cls = GATE["GateStep"]
+    execute = GATE["_execute"]
+
+    step = gate_step_cls(
+        name="timed_step",
+        command=(sys.executable, "-c", "print('slowest 1.23s test_x')"),
+        cwd=ROOT,
+        hint="none",
+        show_tail_on_pass=True,
+    )
+    buffer = io.StringIO()
+    code = execute([step], fail_fast=False, stream=buffer)
+    output = buffer.getvalue()
+    assert code == 0
+    assert "[RUN ] timed_step ..." in output
+    assert "[PASS] timed_step" in output
+    assert "slowest 1.23s test_x" in output

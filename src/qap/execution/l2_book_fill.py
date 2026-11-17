@@ -48,6 +48,8 @@ class L2SweepResult:
     mid_price: Decimal
     vwap_price: Decimal | None
     book_age_ms: float
+    requested_fill_ns: int = 0
+    effective_fill_ns: int = 0
 
 
 def _divide_down(left: Decimal, right: Decimal) -> Decimal:
@@ -55,8 +57,24 @@ def _divide_down(left: Decimal, right: Decimal) -> Decimal:
         return canonical_decimal(left / right)
 
 
-def _rejected(reason: str, *, mid_price: Decimal, book_age_ms: float) -> L2SweepResult:
-    return L2SweepResult(None, reason, 0, mid_price, None, book_age_ms)
+def _rejected(
+    reason: str,
+    *,
+    mid_price: Decimal,
+    book_age_ms: float,
+    requested_fill_ns: int = 0,
+    effective_fill_ns: int = 0,
+) -> L2SweepResult:
+    return L2SweepResult(
+        None,
+        reason,
+        0,
+        mid_price,
+        None,
+        book_age_ms,
+        requested_fill_ns,
+        effective_fill_ns,
+    )
 
 
 def _validated_decimal(
@@ -113,6 +131,8 @@ def _sweep_sell(
     book: PublicBookSnapshot,
     mid_price: Decimal,
     book_age_ms: float,
+    requested_fill_ns: int,
+    effective_fill_ns: int,
     fee_rate: Decimal,
     requested_base: Decimal,
     precision: MarketPrecision | None,
@@ -127,17 +147,29 @@ def _sweep_sell(
             MarketPrecisionReason.BELOW_MINIMUM_QUANTITY.value,
             mid_price=mid_price,
             book_age_ms=book_age_ms,
+            requested_fill_ns=requested_fill_ns,
+            effective_fill_ns=effective_fill_ns,
         )
     gross_quote, consumed, remaining = _consume_levels(book.bids, target_base)
     if remaining > _ZERO:
         return _rejected(
-            "insufficient_book_depth", mid_price=mid_price, book_age_ms=book_age_ms
+            "insufficient_book_depth",
+            mid_price=mid_price,
+            book_age_ms=book_age_ms,
+            requested_fill_ns=requested_fill_ns,
+            effective_fill_ns=effective_fill_ns,
         )
     vwap = divide(gross_quote, target_base)
     if (
         err := _validate_precision(precision, base_qty=target_base, vwap=vwap)
     ) is not None:
-        return _rejected(err, mid_price=mid_price, book_age_ms=book_age_ms)
+        return _rejected(
+            err,
+            mid_price=mid_price,
+            book_age_ms=book_age_ms,
+            requested_fill_ns=requested_fill_ns,
+            effective_fill_ns=effective_fill_ns,
+        )
     fee_amount = exact_multiply(gross_quote, fee_rate)
     net_quote = exact_subtract(gross_quote, fee_amount)
     if net_quote < _ZERO:
@@ -160,7 +192,16 @@ def _sweep_sell(
             book.instrument.quote: net_quote,
         },
     )
-    return L2SweepResult(fill, None, consumed, mid_price, vwap, book_age_ms)
+    return L2SweepResult(
+        fill,
+        None,
+        consumed,
+        mid_price,
+        vwap,
+        book_age_ms,
+        requested_fill_ns,
+        effective_fill_ns,
+    )
 
 
 def _sweep_buy(
@@ -171,6 +212,8 @@ def _sweep_buy(
     book: PublicBookSnapshot,
     mid_price: Decimal,
     book_age_ms: float,
+    requested_fill_ns: int,
+    effective_fill_ns: int,
     fee_rate: Decimal,
     budget: Decimal,
     precision: MarketPrecision | None,
@@ -190,7 +233,11 @@ def _sweep_buy(
             remaining_quote = _ZERO
     if remaining_quote > _ZERO:
         return _rejected(
-            "insufficient_book_depth", mid_price=mid_price, book_age_ms=book_age_ms
+            "insufficient_book_depth",
+            mid_price=mid_price,
+            book_age_ms=book_age_ms,
+            requested_fill_ns=requested_fill_ns,
+            effective_fill_ns=effective_fill_ns,
         )
     filled_base = (
         precision.quantity_down(raw_base)
@@ -202,13 +249,21 @@ def _sweep_buy(
             MarketPrecisionReason.BELOW_MINIMUM_QUANTITY.value,
             mid_price=mid_price,
             book_age_ms=book_age_ms,
+            requested_fill_ns=requested_fill_ns,
+            effective_fill_ns=effective_fill_ns,
         )
     gross_quote, consumed, _ = _consume_levels(book.asks, filled_base)
     vwap = divide(gross_quote, filled_base)
     if (
         err := _validate_precision(precision, base_qty=filled_base, vwap=vwap)
     ) is not None:
-        return _rejected(err, mid_price=mid_price, book_age_ms=book_age_ms)
+        return _rejected(
+            err,
+            mid_price=mid_price,
+            book_age_ms=book_age_ms,
+            requested_fill_ns=requested_fill_ns,
+            effective_fill_ns=effective_fill_ns,
+        )
     fee_amount = exact_multiply(gross_quote, fee_rate)
     total_debit = exact_add(gross_quote, fee_amount)
     if total_debit > budget:
@@ -231,7 +286,16 @@ def _sweep_buy(
             book.instrument.quote: total_debit.copy_negate(),
         },
     )
-    return L2SweepResult(fill, None, consumed, mid_price, vwap, book_age_ms)
+    return L2SweepResult(
+        fill,
+        None,
+        consumed,
+        mid_price,
+        vwap,
+        book_age_ms,
+        requested_fill_ns,
+        effective_fill_ns,
+    )
 
 
 def sweep_l2_taker_order(
@@ -271,7 +335,9 @@ def sweep_l2_taker_order(
     mid_price = divide(
         exact_add(Decimal(str(book.best_bid)), Decimal(str(book.best_ask))), _TWO
     )
-    age_ms = (target_fill_ns - book_received_ns) / 1_000_000.0
+    requested_fill_ns = target_fill_ns
+    effective_fill_ns = max(target_fill_ns, book_received_ns)
+    age_ms = (effective_fill_ns - book_received_ns) / 1_000_000.0
 
     if side is FillSide.SELL:
         if base_quantity is None or quote_budget is not None:
@@ -279,7 +345,11 @@ def sweep_l2_taker_order(
         requested_base = _validated_decimal(base_quantity, field="base_quantity")
         if age_ms > max_staleness_ms:
             return _rejected(
-                "stale_order_book", mid_price=mid_price, book_age_ms=age_ms
+                "stale_order_book",
+                mid_price=mid_price,
+                book_age_ms=age_ms,
+                requested_fill_ns=requested_fill_ns,
+                effective_fill_ns=effective_fill_ns,
             )
         return _sweep_sell(
             fill_id=fill_id,
@@ -288,6 +358,8 @@ def sweep_l2_taker_order(
             book=book,
             mid_price=mid_price,
             book_age_ms=age_ms,
+            requested_fill_ns=requested_fill_ns,
+            effective_fill_ns=effective_fill_ns,
             fee_rate=fee_rate,
             requested_base=requested_base,
             precision=precision,
@@ -297,7 +369,13 @@ def sweep_l2_taker_order(
         raise ValueError("BUY sweep requires quote_budget and base_quantity=None")
     budget = _validated_decimal(quote_budget, field="quote_budget")
     if age_ms > max_staleness_ms:
-        return _rejected("stale_order_book", mid_price=mid_price, book_age_ms=age_ms)
+        return _rejected(
+            "stale_order_book",
+            mid_price=mid_price,
+            book_age_ms=age_ms,
+            requested_fill_ns=requested_fill_ns,
+            effective_fill_ns=effective_fill_ns,
+        )
     return _sweep_buy(
         fill_id=fill_id,
         decision_id=decision_id,
@@ -305,6 +383,8 @@ def sweep_l2_taker_order(
         book=book,
         mid_price=mid_price,
         book_age_ms=age_ms,
+        requested_fill_ns=requested_fill_ns,
+        effective_fill_ns=effective_fill_ns,
         fee_rate=fee_rate,
         budget=budget,
         precision=precision,

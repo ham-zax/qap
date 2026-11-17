@@ -11,10 +11,12 @@ from typing import Any, cast
 
 from pydantic import ValidationError
 
+from qap.experiment.lab_statistics import FamilyResolutionError
 from qap.experiment.live_paper_execution import BookProvider
 from qap.experiment.live_paper_runner import LivePaperError
 from qap.lab_cli_paper import (
     PAPER_COMMANDS,
+    PaperInputsProvider,
     add_paper_parsers,
     format_paper_md,
     run_paper_command,
@@ -30,6 +32,7 @@ from qap.product_pair_rotation_data import (
     PairRotationData,
     ProductMarketDataPreparationError,
 )
+from qap.product_paper_inputs import PaperInputError
 from qap.product_universe import ProductUniverse, ProductUniverseError
 
 
@@ -254,7 +257,10 @@ def _run_command(
 
 
 def main(
-    argv: Sequence[str] | None = None, *, book_provider: BookProvider | None = None
+    argv: Sequence[str] | None = None,
+    *,
+    book_provider: BookProvider | None = None,
+    paper_inputs_provider: PaperInputsProvider | None = None,
 ) -> int:
     parser = _build_parser()
     try:
@@ -262,13 +268,19 @@ def main(
     except SystemExit as exc:
         return int(exc.code) if isinstance(exc.code, int) else 2
     try:
-        payload = _run_command(args, book_provider)
-    except (ValidationError, ValueError, json.JSONDecodeError) as exc:
-        print(json.dumps({"error": str(exc)}), file=sys.stderr)
-        return 2
+        if args.command in PAPER_COMMANDS:
+            payload = run_paper_command(
+                args,
+                book_provider,
+                paper_inputs_provider=paper_inputs_provider,
+            )
+        else:
+            payload = _run_command(args, book_provider)
     except (
+        FamilyResolutionError,
         LabStoreError,
         LivePaperError,
+        PaperInputError,
         PairAnalysisError,
         ProductUniverseError,
         ProductMarketDataError,
@@ -277,6 +289,9 @@ def main(
     ) as exc:
         print(json.dumps({"error": str(exc)}), file=sys.stderr)
         return 3
+    except (ValidationError, ValueError, json.JSONDecodeError) as exc:
+        print(json.dumps({"error": str(exc)}), file=sys.stderr)
+        return 2
     if args.format != "md":
         text = json.dumps(payload, separators=(",", ":"), default=str)
     elif args.command in PAPER_COMMANDS:

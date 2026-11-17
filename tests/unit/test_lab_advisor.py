@@ -55,7 +55,14 @@ def test_advisor_mean_reverting_regime() -> None:
     assert len(out["suggestions"]) == 4
     assert [s["rank"] for s in out["suggestions"]] == [1, 2, 3, 4]
     assert out["suggestions"][0]["preset_id"] == "zscore_kalman"
+    # Fixed fallback lookback (96) must not use ratio half-life (40 * 2 = 80).
+    assert out["suggestions"][0]["settings"]["lookback"] == 96
+    assert "ratio_half_life_bars=40.0" in out["pro_summary"]
+    assert "return_copula=" in out["pro_summary"]
     for s in out["suggestions"]:
+        assert "Conservative" not in s["title"]
+        assert "above spot fees" not in s["simple_reason"]
+        assert "above fees" not in s["simple_reason"]
         LabSettings.model_validate(s["settings"])
 
 

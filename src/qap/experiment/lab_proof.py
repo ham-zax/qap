@@ -2,13 +2,18 @@
 
 from dataclasses import dataclass
 from decimal import Decimal
-from math import isfinite
-from typing import Any, cast
+from typing import Any
 
 import numpy as np
-from arch.bootstrap import SPA
 
 from qap.experiment.lab_replay import LabInputs, LabReplay, ReplayKind, run_lab_replay
+from qap.experiment.lab_statistics import (
+    DEFAULT_SPA_REPLICATES,
+    DEFAULT_SPA_SEED,
+    PROOF_PROTOCOL_VERSION,
+    corrected_spa,
+    spa_block_size,
+)
 from qap.policy.lab_settings import LabSettings
 from qap.policy.lab_signals import LabSignal, signal_path
 from qap.relationship.pair_measurements import Floats
@@ -26,6 +31,9 @@ class LabProof:
     proof: dict[str, Any]
     call: dict[str, Any]
     folds: tuple[dict[str, Any], ...]
+    upper_series: Floats | None = None
+    lower_series: Floats | None = None
+    signal_provenance: str = "context_only"
 
 
 def settings_candidates(settings: LabSettings) -> tuple[LabSettings, ...]:
@@ -59,32 +67,6 @@ def _returns(values: Floats) -> Floats:
     return np.diff(np.log(np.maximum(values, 1e-300)))
 
 
-def corrected_spa(
-    strategy: Floats, control: Floats, trials: int
-) -> tuple[float, float]:
-    """Stationary block bootstrap SPA, then conservative across-family correction."""
-    if strategy.size < 20 or strategy.shape != control.shape:
-        return 1.0, 1.0
-    advantage = strategy - control
-    if not np.isfinite(advantage).all() or float(np.mean(advantage)) <= 0:
-        return 1.0, 1.0
-    if float(np.std(advantage)) < 1e-15:
-        raw = 0.0
-    else:
-        test = SPA(
-            -control,
-            -strategy[:, None],
-            block_size=max(2, int(np.sqrt(strategy.size))),
-            reps=499,
-            seed=20260930,
-        )
-        test.compute()
-        raw = float(cast(Any, test.pvalues)["consistent"])
-    # A finite bootstrap cannot establish p=0; keep multiplicity effective.
-    raw = max(1.0 / 500, raw) if isfinite(raw) else 1.0
-    return raw, min(1.0, raw * max(1, trials))
-
-
 def _call(status: str, headline: str, reason: str) -> dict[str, Any]:
     return {
         "status": status,
@@ -103,6 +85,8 @@ def prove_lab_strategy(
     identity_confirmed: bool,
     execution_ready: bool = True,
     validation_reused: bool = False,
+    bootstrap_replicates: int = DEFAULT_SPA_REPLICATES,
+    bootstrap_seed: int = DEFAULT_SPA_SEED,
 ) -> LabProof:
     a = np.array([bar.close for bar in inputs.first.bars])
     b = np.array([bar.close for bar in inputs.second.bars])
@@ -148,8 +132,13 @@ def prove_lab_strategy(
             min(split, size - 1)
         ].candle_open_time.isoformat(),
         "proof_end": inputs.first.bars[-1].bar_end_exclusive.isoformat(),
+        "proof_protocol": PROOF_PROTOCOL_VERSION,
+        "signal_provenance": None,
+        "bootstrap_replicates": bootstrap_replicates,
+        "bootstrap_seed": bootstrap_seed,
+        "bootstrap_block_size": None,
         "correction": (
-            "Stationary-bootstrap SPA (499 replicates), "
+            f"Stationary-bootstrap SPA ({bootstrap_replicates} replicates), "
             "Bonferroni across all recorded settings"
         ),
         "limitations": [
@@ -158,6 +147,10 @@ def prove_lab_strategy(
             "Volume impact is an estimate, not calibrated execution evidence.",
             "Observed venue constraints are held fixed in historical simulation.",
             "Market notional filters use execution opens, not venue average prices.",
+            "Gross vs HODL % uses a cost add-back approximation "
+            "((terminal + paid costs) / HODL end - 1), not a zero-cost replay.",
+            "Cost % divides paid fees and slippage by starting portfolio value; "
+            "vs-HODL % divides relative gain by ending HODL value.",
         ],
     }
     if settings.crash_defense_mode == "park_anchor" and inputs.anchor is None:
@@ -267,6 +260,9 @@ def prove_lab_strategy(
     proof["control"] = control
     edges = np.linspace(split, size, settings.folds + 1, dtype=int)
     chosen = np.full(size, np.nan)
+    stitched_values = signals[tuning_index].values.copy()
+    stitched_upper = np.full(size, float(signals[tuning_index].upper), dtype=np.float64)
+    stitched_lower = np.full(size, float(signals[tuning_index].lower), dtype=np.float64)
     folds: list[dict[str, Any]] = []
     selected_index = 0
     for fold_index in range(settings.folds):
@@ -279,6 +275,9 @@ def prove_lab_strategy(
 
         selected_index = max(range(len(candidates)), key=older_score)
         chosen[start:end] = signals[selected_index].preference[start:end]
+        stitched_values[start:end] = signals[selected_index].values[start:end]
+        stitched_upper[start:end] = float(signals[selected_index].upper)
+        stitched_lower[start:end] = float(signals[selected_index].lower)
         folds.append(
             {
                 "fold": fold_index + 1,
@@ -292,6 +291,10 @@ def prove_lab_strategy(
                 ].bar_end_exclusive.isoformat(),
                 "test_start": inputs.first.bars[start].candle_open_time.isoformat(),
                 "test_end": inputs.first.bars[end - 1].bar_end_exclusive.isoformat(),
+                "candidate_index": selected_index,
+                "signal_unit": signals[selected_index].unit,
+                "signal_upper": float(signals[selected_index].upper),
+                "signal_lower": float(signals[selected_index].lower),
                 "settings": candidates[selected_index].model_dump(mode="json"),
                 "passes": False,
             }
@@ -314,8 +317,17 @@ def prove_lab_strategy(
             control_gain * 100,
         )
         fold["passes"] = gain > control_gain + 1e-12
+    strat_returns = _returns(strategy.values)
+    ctrl_returns = _returns(comparator.values)
+    proof["bootstrap_block_size"] = (
+        spa_block_size(strat_returns.size) if strat_returns.size >= 20 else None
+    )
     raw_p, adjusted_p = corrected_spa(
-        _returns(strategy.values), _returns(comparator.values), trial_count
+        strat_returns,
+        ctrl_returns,
+        trial_count,
+        replicates=bootstrap_replicates,
+        seed=bootstrap_seed,
     )
     passing = sum(bool(fold["passes"]) for fold in folds)
     above_hodl = strategy.terminal_value > benchmarks["hodl"].terminal_value
@@ -361,7 +373,20 @@ def prove_lab_strategy(
         and cost_gate
     )
     proof["passes"] = passed
-    applied, signal = candidates[selected_index], signals[selected_index]
+    proof["signal_provenance"] = "walk_forward_stitched"
+    applied = candidates[selected_index]
+    stitched_preference = np.concatenate(
+        (signals[tuning_index].preference[:split], chosen[split:])
+    )
+    signal = LabSignal(
+        values=stitched_values,
+        preference=stitched_preference,
+        unit=signals[selected_index].unit,
+        upper=signals[selected_index].upper,
+        lower=signals[selected_index].lower,
+        available=bool(np.isfinite(stitched_preference).any()),
+        reason=signals[selected_index].reason,
+    )
     if not identity_confirmed:
         call = _call(
             "identity_unresolved",
@@ -380,8 +405,8 @@ def prove_lab_strategy(
         call = _call(
             "cost_budget_failed",
             "Costs eat the edge",
-            "On the tuning period, the gain before costs was less than "
-            "twice the costs paid.",
+            "On the tuning period, the add-back gross gain above HODL "
+            "(terminal + paid costs - HODL) was less than twice the costs paid.",
         )
     elif not passed:
         call = _call(
@@ -404,6 +429,9 @@ def prove_lab_strategy(
                     "Validation passes. The current signal is unavailable.",
                 ),
                 tuple(folds),
+                upper_series=stitched_upper,
+                lower_series=stitched_lower,
+                signal_provenance="walk_forward_stitched",
             )
         preference = float(signal.preference[-1])
         target = applied.initial_weight + applied.rotation_size * Decimal(
@@ -441,5 +469,15 @@ def prove_lab_strategy(
                 str(applied.rotation_size),
             )
     return LabProof(
-        split, signal, applied, strategy, benchmarks, proof, call, tuple(folds)
+        split,
+        signal,
+        applied,
+        strategy,
+        benchmarks,
+        proof,
+        call,
+        tuple(folds),
+        upper_series=stitched_upper,
+        lower_series=stitched_lower,
+        signal_provenance="walk_forward_stitched",
     )

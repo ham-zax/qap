@@ -1,0 +1,71 @@
+{
+  "head": "5dbcdbdbbe75a9127966235f91abd3affe1f7163",
+  "scope": "offline diagnostic fixtures, not investment performance",
+  "source_sha256": {
+    "src/qap/experiment/lab_proof.py": "a4c692d71cfc34124768060b4b597c05870045cc61bae30819918156cc177356",
+    "src/qap/experiment/lab_replay.py": "21363265dd33cc6641e57b0a29863d162475febc1b387f313678d6f68343b801",
+    "src/qap/experiment/live_paper_runner.py": "cf3542e1713f01aa73d5ade484c3f626b4e80f7405305a60708b5bfb2ecc041e",
+    "src/qap/experiment/live_paper_state.py": "8d981312fda6dcaf7d04426dea0c8ff36f4b9d6e3f1f0198462767052bbdea1c",
+    "src/qap/experiment/live_paper_execution.py": "2d7baa0334c7bfba49127f017df2e696af73d939d7354185b2f8cc7100ec06f5",
+    "src/qap/execution/l2_book_fill.py": "aa909845f3f434e508cfde664f03cfa36e4425a8e165e1114d394d545c460b30",
+    "src/qap/relationship/lab_copula.py": "85cab455dc2508ce2d6935b6872c6b3f855f9d6620b3e9324d60fa8390cdae13",
+    "src/qap/policy/lab_signals.py": "35e029055079e3232440ab93507ec592bec9135fcbbc8186a622b773c84c1e2a",
+    "src/qap/policy/lab_strategy_registry.py": "af166ea7d07d7ea2c48bdbd0d2997ccb4ebcfb1a56b74ac54aaa7d5d979fb317"
+  },
+  "late_book": {
+    "target_fill_ms": 75,
+    "book_receipt_ms": 850,
+    "reported_book_age_ms": -775.0,
+    "filled": true
+  },
+  "optional_metadata": {
+    "without_metadata_filled": true,
+    "with_metadata_filled": false,
+    "with_metadata_rejection": "below_minimum_quantity"
+  },
+  "step_cadence": {
+    "initial_observations": 1,
+    "calls_without_candle_timestamps": 3,
+    "final_observations": 4
+  },
+  "partial_rotation": {
+    "first_rejections": [
+      "stale_order_book"
+    ],
+    "first_fills": 1,
+    "first_strategy_holdings": {
+      "ETH": "1E+2",
+      "USDT": "6487.0065"
+    },
+    "second_strategy_holdings": {
+      "ETH": "1E+2",
+      "USDT": "6487.0065"
+    },
+    "second_action": "hold",
+    "second_signal_preference": -1.0,
+    "strategy_trade_count_before": 1,
+    "strategy_trade_count_after": 1
+  },
+  "independent_walks": {
+    "seed": 20261116,
+    "anchor_cointegration_p_values": [
+      0.33177183465945714,
+      0.11026401153832704
+    ],
+    "finite_copula_outputs": 504
+  },
+  "bootstrap_resolution": {
+    "replicates": 499,
+    "raw_p_floor": 0.002,
+    "family_size": 24,
+    "holm_first_threshold": 0.0020833333333333333,
+    "recorded_trial_counts": [
+      3,
+      6,
+      9,
+      12
+    ],
+    "smallest_possible_corrected_p": 0.006,
+    "any_s4_row_can_start_holm_stepdown": false
+  }
+}

@@ -69,7 +69,7 @@ function correlationWord(pearson: number | null): string {
 
 function halfLifeReading(analysis: LabAnalysis): { value: string; sub: string } {
   const halfLife = analysis.measurements.half_life
-  if (!halfLife?.reverting || halfLife.bars == null) return { value: 'Non-reverting', sub: 'No measured decay' }
+  if (!halfLife?.reverting || halfLife.bars == null) return { value: 'Non-reverting', sub: '1:1 log-ratio only' }
   const minutes = halfLife.bars * BAR_MINUTES[analysis.bar]
   const value =
     minutes >= 1440
@@ -77,7 +77,7 @@ function halfLifeReading(analysis: LabAnalysis): { value: string; sub: string } 
       : minutes >= 60
         ? `${(minutes / 60).toFixed(1)} h`
         : `${Math.round(minutes)} min`
-  return { value, sub: `${halfLife.bars.toFixed(0)} bars at ${analysis.bar}` }
+  return { value, sub: `${halfLife.bars.toFixed(0)} bars at ${analysis.bar} (1:1 ratio only)` }
 }
 
 function benchmarkReading(analysis: LabAnalysis): { value: string; sub: string } {
@@ -150,34 +150,34 @@ export function LabBottomTabs({
   const kpis = analysis
     ? [
         {
-          label: 'Return Correlation',
+          label: 'Log-Return Correlation',
           value: fixed(measurements?.correlation?.pearson),
           sub: correlationWord(measurements?.correlation?.pearson ?? null),
           icon: GitCompare,
           tone: 'info' as const,
-          hint: 'Simultaneous log-return Pearson correlation. Above 0.70 indicates strong co-movement; below 0.40 indicates weak coupling.',
+          hint: 'Simultaneous log-return Pearson correlation over this window. Measures linear sample co-movement, not future prediction or tail dependence.',
         },
         {
-          label: 'Mean-Reversion Half-Life',
+          label: 'Log-Ratio Half-Life',
           ...halfLifeReading(analysis),
           icon: Timer,
           tone: 'positive' as const,
-          hint: 'Estimated bars for a ratio dislocation to decay halfway back to its mean. Half-life < 48 bars signals fast snap-back.',
+          hint: 'AR(1) reversion estimate on the 1:1 log price ratio only. Does not describe OLS, TLS, Kalman, or anchor-residual spreads.',
         },
         {
-          label: 'Market Regime',
+          label: 'Log-Ratio Hurst',
           value: measurements?.hurst ? HURST_READING[measurements.hurst.reading] : DASH,
-          sub: measurements?.hurst ? `H = ${measurements.hurst.exponent.toFixed(2)}` : 'Not enough bars',
+          sub: measurements?.hurst ? `H = ${measurements.hurst.exponent.toFixed(2)} (1:1 ratio)` : 'Not enough bars',
           icon: Gauge,
           tone: 'warning' as const,
-          hint: 'Hurst exponent: H < 0.45 = mean-reverting, 0.45–0.55 = random walk, H > 0.55 = trending.',
+          hint: 'Scaling exponent on the 1:1 log price ratio over this sample: H < 0.45 reverting, 0.45–0.55 random, H > 0.55 trending.',
         },
         {
           label: 'Benchmark Fit',
           ...benchmarkReading(analysis),
           icon: Compass,
           tone: 'neutral' as const,
-          hint: 'Joint R² share of pair return variance explained by the top reference asset (BTC, ETH, BNB, SOL).',
+          hint: 'Joint R² share of pair log-return variance explained by the top reference asset (BTC, ETH, BNB, SOL) over this sample.',
         },
       ]
     : []

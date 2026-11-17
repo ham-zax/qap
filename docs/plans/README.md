@@ -1,5 +1,13 @@
 # QAP Plan Map
 
+Update context — 2026-11-16
+Trigger: Hamza requests an audit-repair handoff for the current editing AI.
+Purpose: register the next repair sequence and retain the wider audit request.
+Impact: execute [Plan 25 — Audit repairs and evidence integrity](25-audit-repairs-and-evidence-integrity.md) after the current editing task.
+The plan preserves economic objectives, historical evidence, and the live-capital boundary.
+Evidence: [audit](../research/2026-11-16-audit/README.md) and [task tracker](../../TASKS.md).
+Earlier phase descriptions below retain their historical context.
+
 Update context — 2026-11-15
 Trigger: Hamza defined the MVP constitution, math-repair gate, configurable crash-defense setting, 0%–100% starter rotation, and millisecond-aware Binance WebSocket L2 paper trading plan before further coding.
 Purpose: Register Phase 20 and Phase 21 in the canonical plan map.

@@ -35,13 +35,13 @@ from qap.product_market_data_models import (
     MarketDataParentGeneration,
     ProductMarketDataProjection,
 )
+from qap.product_market_data_protocol import SCANNER_V1_SLICE1, ScannerHorizon
 from qap.product_universe import (
     ProductResearchScope,
     ProductUniverse,
     ProductUniverseError,
     ResolvedProductInstrument,
 )
-from qap.scanner.protocol import SCANNER_V1_SLICE1, ScannerHorizon
 
 MaintenanceKind = Literal["prepare_market_data", "refresh_market_data"]
 _EPOCH = datetime(1970, 1, 1, tzinfo=UTC)

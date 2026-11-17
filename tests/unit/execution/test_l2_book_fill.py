@@ -182,7 +182,9 @@ def test_stale_book_rejection_reports_age_and_creates_no_fill() -> None:
     assert result.levels_consumed == 0
 
 
-def test_fresh_book_arriving_after_target_fill_ns_is_not_rejected_as_stale() -> None:
+def test_fresh_book_arriving_after_target_fill_ns_uses_later_effective_fill_time() -> (
+    None
+):
     result = sweep_l2_taker_order(
         fill_id="f-fresh",
         decision_id="d-fresh",
@@ -196,6 +198,31 @@ def test_fresh_book_arriving_after_target_fill_ns_is_not_rejected_as_stale() -> 
     )
     assert result.rejected_reason is None
     assert result.fill is not None
+    assert result.requested_fill_ns == 75 * MS
+    assert result.effective_fill_ns == 850 * MS
+    assert result.book_age_ms == 0.0
+
+
+def test_delayed_collection_with_older_book_is_rejected_when_exceeding_staleness() -> (
+    None
+):
+    result = sweep_l2_taker_order(
+        fill_id="f-late",
+        decision_id="d-late",
+        execution_timestamp=AT,
+        side=FillSide.SELL,
+        book=make_book(),
+        book_received_ns=100 * MS,
+        target_fill_ns=700 * MS,
+        fee_bps=D("10"),
+        base_quantity=D("1"),
+        max_staleness_ms=500.0,
+    )
+    assert result.fill is None
+    assert result.rejected_reason == "stale_order_book"
+    assert result.requested_fill_ns == 700 * MS
+    assert result.effective_fill_ns == 700 * MS
+    assert result.book_age_ms == 600.0
 
 
 @pytest.mark.parametrize("qty", ["8.000001", "9"])

@@ -48,7 +48,7 @@ export function LabVerdictSection({
       : Math.round((call.status === 'into_a' ? targetWeightA : 1 - targetWeightA) * 100)
   const coinCode = call?.status === 'into_b' ? analysis?.coin_b.code ?? 'Coin B' : analysis?.coin_a.code ?? 'Coin A'
   const proofGateSummary = proof
-    ? `3-Gate Check — Cost Gate (gross >= 2× fees): ${proof.cost_gate_passed ? 'PASS' : 'FAIL'} · Walk-Forward (${proof.folds_passing}/${proof.folds_total} folds, need >= ${proof.minimum_passing_folds}): ${proof.folds_passing >= proof.minimum_passing_folds ? 'PASS' : 'FAIL'} · SPA corrected p=${proof.corrected_p_value != null ? proof.corrected_p_value.toFixed(3) : '—'} (need < ${proof.significance}): ${proof.corrected_p_value != null && proof.corrected_p_value < proof.significance ? 'PASS' : 'FAIL'}.`
+    ? `3-Gate Check — Cost Gate (tuning add-back gross >= 2× paid costs): ${proof.cost_gate_passed ? 'PASS' : 'FAIL'} · Walk-Forward (${proof.folds_passing}/${proof.folds_total} folds, need >= ${proof.minimum_passing_folds}): ${proof.folds_passing >= proof.minimum_passing_folds ? 'PASS' : 'FAIL'} · SPA corrected p=${proof.corrected_p_value != null ? proof.corrected_p_value.toFixed(3) : '—'} (need < ${proof.significance}): ${proof.corrected_p_value != null && proof.corrected_p_value < proof.significance ? 'PASS' : 'FAIL'}.`
     : ''
 
   return (
@@ -97,11 +97,12 @@ export function LabVerdictSection({
             </div>
           </dl>
           <p className="m-0 flex flex-wrap gap-2 font-mono text-xs tabular-nums">
-            <DetailTag tone={deltaTone(proof.vs_hodl_pct)}>{signedPct(proof.vs_hodl_pct)} vs Hold</DetailTag>
-            <DetailTag tone={deltaTone(proof.vs_control_pct)}>{signedPct(proof.vs_control_pct)} vs Rebalance</DetailTag>
+            <DetailTag tone={deltaTone(proof.vs_hodl_pct)}>{signedPct(proof.vs_hodl_pct)} vs ending Hold</DetailTag>
+            <DetailTag tone={deltaTone(proof.vs_control_pct)}>{signedPct(proof.vs_control_pct)} vs ending Rebalance</DetailTag>
           </p>
           <p className="m-0 font-mono text-[11px] text-muted-foreground tabular-nums">
-            {proof.validation_trades} swaps · {proof.cost_paid_pct?.toFixed(2) ?? '0.00'}% total fees &amp; slippage
+            {proof.validation_trades} swaps · {proof.cost_paid_pct?.toFixed(2) ?? '0.00'}% of start paid in fees &amp; slippage
+            {proof.gross_vs_hodl_pct != null ? ` · add-back gross ${signedPct(proof.gross_vs_hodl_pct)} vs Hold` : ''}
           </p>
           {(call.status === 'into_a' || call.status === 'into_b') && (
             <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary">

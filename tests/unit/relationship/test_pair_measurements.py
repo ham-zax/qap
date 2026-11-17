@@ -195,3 +195,26 @@ def test_cointegration_returns_none_on_rank_deficient_residual() -> None:
         warnings.simplefilter("always")
         assert cointegration(log_a, log_b) is None
     assert caught == []
+
+
+def test_beta_not_equal_to_one_distinguishes_ratio_and_hedge_residuals() -> None:
+    from qap.relationship.dependence_measurements import kalman_reading
+    from qap.relationship.lab_features import hedge_residual
+
+    rng = np.random.default_rng(20261116)
+    n = 400
+    log_b = np.linspace(0.0, 2.0, n) + np.cumsum(rng.normal(0.0, 0.01, n))
+    # True beta is 2.0 != 1.0, so 1:1 log ratio drifts while OLS/Kalman track beta=2.
+    log_a = 2.0 * log_b + rng.normal(0.0, 0.02, n)
+    close_a, close_b = 100.0 * np.exp(log_a), 50.0 * np.exp(log_b)
+
+    ratio_hl = half_life(log_a - log_b)
+    ols_res = hedge_residual(close_a, close_b, window=80, method="ols")[100:]
+    kalman_res = hedge_residual(close_a, close_b, window=80, method="kalman")[100:]
+    ols_hl = half_life(ols_res)
+    kalman = kalman_reading(log_a, log_b)
+
+    assert ratio_hl is None or not ratio_hl.reverting or (ratio_hl.bars or 0.0) > 50.0
+    assert ols_hl is not None and ols_hl.reverting and (ols_hl.bars or 999.0) < 5.0
+    assert kalman is not None and kalman.beta == pytest.approx(2.0, abs=0.15)
+    assert float(np.std(kalman_res)) < 0.1 * float(np.std((log_a - log_b)[100:]))

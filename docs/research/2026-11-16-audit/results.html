@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QAP historical validation comparison</title>
+<style>
+  body { margin: 0; color: var(--foreground); font-family: var(--font-sans, sans-serif); }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  label, select, p { font-size: 14px; line-height: 1.5; }
+  select { color: var(--foreground); background: var(--card); border: 1px solid var(--border); border-radius: var(--radius, 6px); padding: 7px; }
+  p { margin: 12px 0; }
+  .muted { color: var(--muted-foreground); }
+  svg { width: 100%; height: 310px; display: block; }
+  svg text { fill: var(--foreground); font-family: var(--font-sans, sans-serif); font-size: 13px; }
+  .grid { stroke: var(--border); stroke-width: 1; }
+  .zero { stroke: var(--foreground); stroke-width: 1; }
+  .positive { fill: var(--chart-1); }
+  .negative { fill: var(--destructive); }
+  .cost { fill: var(--chart-2); }
+  .note { border-left: 3px solid var(--warning); padding: 5px 12px; }
+  a { color: var(--primary); }
+</style>
+<body>
+<div class="controls">
+  <label for="metric">S4-B · six coins-only copula trials</label>
+  <select id="metric">
+    <option value="hodl">Net wealth vs HODL</option>
+    <option value="control">Net wealth vs simple control</option>
+    <option value="cost">Paid cost / starting wealth</option>
+  </select>
+</div>
+<svg id="chart" viewBox="0 0 680 310" role="img" aria-labelledby="chart-title chart-desc"></svg>
+<p id="reading" aria-live="polite"></p>
+<p class="note">No strategy passes the recorded proof. S4-A has 0/24 Holm survivors. S4-B has 0/12, including four blocked defense trials.</p>
+<p class="muted">These are historical validation results, not annual returns. The trials use overlapping market evidence. S4-A also has a bootstrap-resolution barrier.</p>
+<p class="muted">Source: repository S4-B records, 2026-11-15. Net wealth and paid-cost percentages use different denominators.</p>
+<script>
+const rows = [
+  { pair: 'SOL / ETH', hodl: -2.86, control: -2.86, cost: 3.01 },
+  { pair: 'BNB / ETH', hodl: -2.01, control: -2.01, cost: 2.08 },
+  { pair: 'LINK / ETH', hodl: 4.28, control: 3.81, cost: 2.82 },
+  { pair: 'AVAX / SOL', hodl: -6.77, control: -7.61, cost: 5.13 },
+  { pair: 'DOGE / XRP', hodl: 16.50, control: 16.22, cost: 5.57 },
+  { pair: 'LTC / BTC', hodl: -5.07, control: -6.09, cost: 3.40 },
+];
+const metric = document.getElementById('metric');
+function draw() {
+  const chart = document.getElementById('chart');
+  const width = Math.max(320, chart.clientWidth);
+  chart.setAttribute('viewBox', `0 0 ${width} 310`);
+  const key = metric.value;
+  const isCost = key === 'cost';
+  const low = isCost ? 0 : -10;
+  const high = isCost ? 7 : 22;
+  const x = n => 100 + (n - low) / (high - low) * (width - 180);
+  const ticks = isCost ? [0, 2, 4, 6] : [-10, 0, 10, 20];
+  const title = metric.options[metric.selectedIndex].text;
+  let parts = [`<title id="chart-title">${title}</title><desc id="chart-desc">Six historical S4-B validation results. DOGE/XRP gains 16.50 percent relative to HODL but fails the promotion procedure.</desc>`];
+  ticks.forEach(t => {
+    parts.push(`<line class="grid" x1="${x(t)}" y1="15" x2="${x(t)}" y2="270"/><text x="${x(t)}" y="294" text-anchor="middle">${t}%</text>`);
+  });
+  parts.push(`<line class="zero" x1="${x(0)}" y1="15" x2="${x(0)}" y2="270"/>`);
+  rows.forEach((row, i) => {
+    const value = row[key];
+    const y = 28 + i * 42;
+    const left = Math.min(x(0), x(value));
+    const width = Math.abs(x(value) - x(0));
+    const color = isCost ? 'cost' : value >= 0 ? 'positive' : 'negative';
+    const label = `${value > 0 && !isCost ? '+' : ''}${value.toFixed(2)}%`;
+    parts.push(`<text x="87" y="${y + 16}" text-anchor="end">${row.pair}</text><rect class="${color}" x="${left}" y="${y}" width="${width}" height="24" rx="3"><title>${row.pair}: ${label}</title></rect><text x="${chart.clientWidth - 3}" y="${y + 16}" text-anchor="end">${label}</text>`);
+  });
+  document.getElementById('chart').innerHTML = parts.join('');
+  document.getElementById('reading').textContent = isCost
+    ? 'Paid costs range from 2.08% to 5.57% of starting validation wealth.'
+    : 'Two of these six trials beat both benchmarks. Neither passes the complete proof.';
+}
+metric.addEventListener('change', draw);
+window.addEventListener('resize', draw);
+draw();
+</script>
+</body>
+</html>

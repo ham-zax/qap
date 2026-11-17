@@ -1,5 +1,15 @@
 # Stage S4-A — Preregistered 1h / 4h Strategy Discovery Results (2026-11-15)
 
+Update context — 2026-11-16
+Trigger: Audit repair AR-7 ([Plan 25](../plans/25-audit-repairs-and-evidence-integrity.md), [2026-11-16 audit](2026-11-16-audit/README.md)).
+Purpose: Clarify S4-A's `qap.lab.proof.v1` numerical-resolution limit and percentage denominators without modifying original trial outcomes or raw JSONL.
+Impact: None on original `0/24` rejection; higher bootstrap resolution (`9,999` replicates in `qap.lab.proof.v2`) does not imply any rejected S4-A trial passes.
+Evidence: [2026-11-15-stage-s4-trial-plan.json](2026-11-15-stage-s4-trial-plan.json), [2026-11-15-stage-s4-trials.jsonl](2026-11-15-stage-s4-trials.jsonl), and `src/qap/experiment/lab_proof.py`.
+
+**Dated Corrections (2026-11-16):**
+- **Bootstrap Resolution Limit (v1):** S4-A ran under `qap.lab.proof.v1` with `499` SPA bootstrap replicates (`raw_p_value >= 1/500 = 0.002`) and cumulative per-pair configuration multipliers up to `12` (`corrected_p_value >= 0.006`–`0.024`). Even at the minimum nonzero p-value, `corrected_p_value` exceeded the first Holm threshold `0.05 / 24 = 0.002083`. That finite-sample ceiling prevented statistical survival regardless of effect size, alongside S4-A's independent `cost_budget_failed` / `no_edge` failures. Repairing bootstrap resolution in `qap.lab.proof.v2` does not convert any S4-A trial into a pass.
+- **Add-Back Gross & Denominators:** `gross_vs_hodl_pct` in the table is a cost add-back approximation `((terminal_value + paid_costs) / HODL_end - 1) * 100`, not a zero-cost replay. `cost_paid_pct` divides paid fees and slippage by starting portfolio value (`10,000`), whereas `vs_hodl_pct` and `gross_vs_hodl_pct` divide by ending HODL wealth.
+
 - **Actor ID:** `stage-s4-20261115`
 - **Trials:** 24 preregistered trials across 6 liquid Binance pairs (`SOL/ETH`, `BNB/ETH`, `LINK/ETH`, `AVAX/SOL`, `DOGE/XRP`, `LTC/BTC`)
 - **Family Correction:** Holm-Bonferroni step-down at `alpha = 0.05` across all 24 trials (building on within-pair SPA + Bonferroni `corrected_p_value`)

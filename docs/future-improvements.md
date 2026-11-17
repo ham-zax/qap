@@ -1,5 +1,25 @@
 # Future improvements
 
+Proposals from the 2026-11-16 strategy audit.
+Trigger: Hamza requests a mathematical, economic, and product audit.
+Purpose: retain repair proposals with reproducible evidence.
+Decision impact: none. These proposals authorize no implementation or research-contract change.
+Evidence: [audit report](research/2026-11-16-audit/README.md) and its offline probes.
+
+- **Paper and replay equivalence.** Enforce completed-candle timing separately
+  from L2 execution sampling. Check duplicate candles, actual fill availability,
+  required venue metadata, and recovery after a successful sell and rejected buy.
+- **Statistical resolution preflight.** Calculate the smallest attainable p-value
+  after every correction before running a trial family. S4-A cannot pass its
+  current 499-replicate configuration. Define experiment-wide search accounting
+  separately from actor workspace isolation.
+- **Measurement and signal provenance.** Identify the actual residual behind
+  half-life, copula diagnostics, and displayed signals. Preserve the executed
+  walk-forward signal path and label cost add-back as an approximation.
+- **Research evidence freshness.** Reconcile current completion claims with
+  immutable historical results. The original S4-B records still contain four
+  blocked rows, although current source includes the anchor-metadata repair.
+
 Proposals from the 2026-11-16 terminal continuation. These entries authorize no implementation.
 
 - **Stop full verification after early failures.** The compiler continued through a
@@ -73,8 +93,9 @@ Proposals from the 2026-11-15 Phase 21 planning session. Deferred until Stages S
   requiring `--pm-on-fail=ignore` in non-interactive shells, and `@playwright/test`
   has no remaining E2E consumer. Update `packageManager` and refresh
   `pnpm-lock.yaml` in one dedicated dependency commit.
-- **Extract `scanner/catalog.py` into `market/` to retire `scanner/` tests.**
-  Full `pytest -q` still takes ~357 s largely due to `tests/scenarios/test_scanner_*`
-  and `tests/unit/scanner/`, retained only because `product_market_data.py`
-  imports `scanner/catalog.py`. Moving catalog lookup into `qap.market` allows
-  retiring `qap.scanner` and cutting full `pytest` below 60 s.
+- **Scanner retirement — addressed 2026-11-17.** The proposal sought to remove
+  the scanner dependency and reduce a roughly 357-second full Python suite below
+  60 seconds. The repair extracts shared code into `product_market_data_catalog.py`
+  and `product_market_data_protocol.py`, then removes retired scanner code and tests.
+  The [completion note](reviews/2026-11-16-audit-repair-completion.md) records a
+  106.36-second full Python suite. The original 60-second target remains unmet.

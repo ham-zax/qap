@@ -19,8 +19,8 @@ from qap.product_market_data_prepare import (
     ProductMarketDataPreparation,
     ProductMarketDataPreparationError,
 )
+from qap.product_market_data_protocol import ScannerHorizon
 from qap.product_universe import ProductUniverseError
-from qap.scanner.protocol import ScannerHorizon
 
 router = APIRouter(prefix="/api/product-market-data", tags=["product-market-data"])
 

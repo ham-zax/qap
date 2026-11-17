@@ -10,12 +10,12 @@ import pytest
 from qap.market import BarInterval, VenueInstrument
 from qap.portfolio import AssetId
 from qap.product_market_data import ProductMarketData, ProductMarketDataError
+from qap.product_market_data_catalog import load_scanner_catalog
 from qap.product_market_data_models import (
     MarketDataDerivation,
     MarketDataParentGeneration,
 )
 from qap.product_universe import ProductResearchScope, ResolvedProductInstrument
-from qap.scanner.catalog import load_scanner_catalog
 
 from .pair_rotation_support import NOW, OfflineBinance
 

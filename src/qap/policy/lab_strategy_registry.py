@@ -118,7 +118,7 @@ def _build_copula(
         return LabSignal(
             empty,
             empty.copy(),
-            "conditional probability",
+            "conditional rank",
             1,
             0,
             False,
@@ -135,7 +135,7 @@ def _build_copula(
             return 0.0
         return state
 
-    return _finalize_signal(prob_a, "conditional probability", upper, lower, step)
+    return _finalize_signal(prob_a, "conditional rank", upper, lower, step)
 
 
 def _build_lead_lag(

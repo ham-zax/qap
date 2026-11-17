@@ -1,7 +1,6 @@
 """Pure deterministic Smart Strategy Advisor for Simple and Pro Lab users."""
 
 from collections.abc import Mapping
-from math import isfinite
 from typing import Any, cast
 
 from qap.policy.lab_settings import LabSettings
@@ -119,20 +118,23 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
     if coint_passes or hurst_state == "reverting":
         regime_label = "mean_reverting"
         simple_summary = (
-            f"{coin_a} and {coin_b} tend to snap back together after short-term "
-            "divergences, so mean-reversion rotation presets are favored."
+            f"Log-ratio diagnostics for {coin_a}/{coin_b} show mean-reverting "
+            "behavior over this sample; mean-reversion presets are listed first "
+            "for validation."
         )
     elif hurst_state == "trending":
         regime_label = "trending"
         simple_summary = (
-            f"{coin_a} and {coin_b} are currently drifting in sustained trends, "
-            "so trend-following presets are favored over counter-trend swaps."
+            f"Log-ratio diagnostics for {coin_a}/{coin_b} show trending "
+            "behavior over this sample; trend presets are listed first for "
+            "validation."
         )
     else:
         regime_label = "mixed_or_noisy"
         simple_summary = (
-            f"{coin_a} and {coin_b} show mixed or noisy behavior right now; "
-            "tail-only copula or wider thresholds help avoid over-trading."
+            f"Log-ratio diagnostics for {coin_a}/{coin_b} are mixed or noisy "
+            "over this sample; conditional-rank and wider-band presets are "
+            "listed first for validation."
         )
 
     if isinstance(copula_info, Mapping):
@@ -145,45 +147,47 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
     else:
         copula_desc = "unavailable"
     pro_summary = (
-        f"Regime={regime_label}; coint_p={coint_p}; "
-        f"half_life_bars={half_life_bars}; hurst={hurst_val}; "
-        f"copula={copula_desc}; anchor_r2={anchor_r2}."
+        f"Ratio-only regime={regime_label}; log_price_coint_p={coint_p}; "
+        f"ratio_half_life_bars={half_life_bars}; ratio_hurst={hurst_val}; "
+        f"return_copula={copula_desc}; anchor_r2={anchor_r2}."
     )
 
     bar_warning = (
-        "15m candles generate high swap counts where 20 bps round-trip fees "
-        "often exceed gross spread; 4h presets are recommended to cut fee drag."
+        "15m candles generate high swap counts where round-trip costs often "
+        "exceed gross spread; 4h presets are listed to evaluate lower turnover."
         if bar == "15m"
         else None
     )
     rec_bar = "4h" if bar in ("1m", "15m", "1h") else bar
-    rec_lookback = (
-        int(min(500, max(60, round(2.0 * float(half_life_bars)))))
-        if (half_life_bars is not None and isfinite(float(half_life_bars)))
-        else 96
-    )
+    # Ratio half-life applies to the 1:1 log ratio only; adaptive Kalman uses
+    # its declared fixed fallback lookback rather than substituting ratio half-life.
+    fixed_kalman_lookback = 96
     copula_anchor = (
         anchor_id if (anchor_r2 is not None and float(anchor_r2) >= 0.25) else None
     )
     copula_defense = "park_anchor" if copula_anchor is not None else "park_usdt"
     copula_simple = (
-        "Waits for rare 2% tail divergences and parks in the benchmark on breaks."
+        "Enters only at 2% spread conditional-rank extremes (not a forecast "
+        "probability) and parks in the benchmark on breaks."
         if copula_anchor is not None
-        else "Waits for rare 2% tail divergences and parks in USDT on breaks."
+        else "Enters only at 2% spread conditional-rank extremes (not a forecast "
+        "probability) and parks in USDT on breaks."
     )
 
     kalman_shielded = (
         "zscore_kalman",
         "Drawdown-Shielded Kalman Reversion",
-        "Adapts to ratio drift and parks in USDT if drawdown exceeds 12%.",
-        f"Kalman hedge lookback={rec_lookback}, entry=2.2, "
+        "Adapts its log-price slope over time and parks in USDT if drawdown "
+        "exceeds 12%.",
+        f"Adaptive Kalman residual (not fixed equilibrium), "
+        f"lookback={fixed_kalman_lookback} (fixed fallback), entry=2.2, "
         "exit=0.4, min_hold=8, park_usdt@12%.",
         rec_bar,
         None,
         {
             "method": "zscore",
             "hedge_method": "kalman",
-            "lookback": rec_lookback,
+            "lookback": fixed_kalman_lookback,
             "entry": 2.2,
             "exit": 0.4,
             "minimum_hold": 8,
@@ -194,10 +198,10 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
     )
     tail_copula = (
         "spread_copula",
-        "4h Tail Copula + Benchmark Defense",
+        "4h Conditional-Rank Spread + Benchmark Defense",
         copula_simple,
-        "4h tail copula lookback=96, p=0.02, exit_band=0.15, "
-        f"min_hold=12, {copula_defense}@15%.",
+        "4h spread conditional-rank copula lookback=96, rank=0.02, "
+        f"exit_band=0.15, min_hold=12, {copula_defense}@15%.",
         rec_bar,
         copula_anchor,
         {
@@ -213,9 +217,11 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
     )
     wide_ols = (
         "zscore_ols_wide",
-        "Conservative Wide-Band OLS (2.5σ)",
-        "Only enters on 2.5σ extremes to keep gross spread well above spot fees.",
-        "OLS z-score lookback=120, entry=2.5, exit=0.3, min_hold=10, cooldown=8.",
+        "Wide-Band OLS (2.5σ)",
+        "Enters only on 2.5σ rolling OLS residual extremes to reduce swap count; "
+        "net performance still depends on realized spread and costs.",
+        "Rolling OLS residual (stationary spread not guaranteed), lookback=120, "
+        "entry=2.5, exit=0.3, min_hold=10, cooldown=8.",
         rec_bar,
         None,
         {
@@ -232,8 +238,8 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
     slow_trend = (
         "ratio_trend",
         "Slow Macro Ratio Trend (24/96)",
-        "Rides sustained multi-day relative strength with a 0.5% deadband.",
-        "Trend 24/96 crossover, deadband=0.005, min_hold=12, cooldown=8.",
+        "Follows multi-day log-ratio trends with a 0.5% deadband.",
+        "Log-ratio 24/96 MA spread, deadband=0.005, min_hold=12, cooldown=8.",
         rec_bar,
         None,
         {
@@ -251,19 +257,21 @@ def advise_pair_strategies(analysis: Mapping[str, Any]) -> dict[str, Any]:
     elif regime_label == "trending":
         trending_copula_defense = "park_anchor" if anchor_id else "park_usdt"
         trending_copula_simple = (
-            "Waits for rare 2% tail divergences and parks in the benchmark on breaks."
+            "Enters only at 2% spread conditional-rank extremes (not a forecast "
+            "probability) and parks in the benchmark on breaks."
             if anchor_id
-            else "Waits for rare 2% tail divergences and parks in USDT on breaks."
+            else "Enters only at 2% spread conditional-rank extremes (not a forecast "
+            "probability) and parks in USDT on breaks."
         )
         trending_copula_pro = (
-            "4h tail copula lookback=96, p=0.02, exit_band=0.15, "
-            f"min_hold=12, {trending_copula_defense}@15%."
+            "4h spread conditional-rank copula lookback=96, rank=0.02, "
+            f"exit_band=0.15, min_hold=12, {trending_copula_defense}@15%."
         )
         ordered = [
             slow_trend,
             (
                 "spread_copula_anchor",
-                "4h Tail Copula + Benchmark Defense",
+                "4h Conditional-Rank Spread + Benchmark Defense",
                 trending_copula_simple,
                 trending_copula_pro,
                 rec_bar,

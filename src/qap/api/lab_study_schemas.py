@@ -22,6 +22,7 @@ class LabStudyRequestDto(AnalysisModel):
     bar: Literal["1m", "15m", "1h", "4h", "1d"] = "15m"
     days: AnalysisDays = AnalysisDays.half_year
     band_lookback: int = Field(default=672, ge=2, le=10000)
+    bootstrap_replicates: int | None = Field(default=None, ge=1, le=200_000)
     settings: LabSettings = Field(default_factory=LabSettings)
 
     @model_validator(mode="after")
@@ -83,6 +84,11 @@ class LabProofDto(AnalysisModel):
     proof_start: datetime
     proof_end: datetime
     correction: str
+    proof_protocol: str | None = None
+    signal_provenance: str | None = None
+    bootstrap_replicates: int | None = None
+    bootstrap_seed: int | None = None
+    bootstrap_block_size: int | None = None
     limitations: list[str]
 
 
@@ -98,9 +104,14 @@ class LabWealthDto(AnalysisModel):
 class LabSignalDto(AnalysisModel):
     time: list[int]
     values: list[float | None]
+    preferences: list[float | None] | None = None
     upper: float
     lower: float
+    upper_series: list[float | None] | None = None
+    lower_series: list[float | None] | None = None
     unit: str
+    provenance: str | None = None
+    signal_variable: str | None = None
 
 
 class LabTradeDto(AnalysisModel):

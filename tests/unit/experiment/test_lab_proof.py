@@ -9,11 +9,19 @@ import pytest
 
 from qap.execution import MultiAssetPreflightError
 from qap.experiment.lab_proof import (
-    corrected_spa,
     prove_lab_strategy,
     settings_candidates,
 )
 from qap.experiment.lab_replay import LabInputs, LabReplay, ReplayKind, run_lab_replay
+from qap.experiment.lab_statistics import (
+    DEFAULT_SPA_REPLICATES,
+    DEFAULT_SPA_SEED,
+    PROOF_PROTOCOL_VERSION,
+    FamilyResolutionError,
+    check_family_resolution,
+    corrected_spa,
+    require_family_resolution,
+)
 from qap.market import (
     BarInterval,
     MarketBar,
@@ -155,11 +163,37 @@ def test_missing_authority_blocks_economic_calls(
 def test_bootstrap_floor_keeps_family_correction_effective() -> None:
     control = np.zeros(200)
     positive = np.full(200, 0.001)
-    raw, corrected = corrected_spa(positive, control, 1000)
-    assert raw == pytest.approx(1 / 500)
+    raw, corrected = corrected_spa(positive, control, 10_000)
+    assert raw == pytest.approx(1 / (DEFAULT_SPA_REPLICATES + 1))
     assert corrected == 1.0
+    small_raw, small_corrected = corrected_spa(positive, control, 3, replicates=49)
+    assert small_raw == pytest.approx(1 / 50)
+    assert small_corrected == pytest.approx(3 / 50)
     assert corrected_spa(-positive, control, 1) == (1.0, 1.0)
     assert corrected_spa(positive[:10], control[:10], 1) == (1.0, 1.0)
+
+
+def test_family_resolution_preflight_checks_holm_capacity() -> None:
+    impossible = check_family_resolution(
+        outer_family_size=24, pair_trial_count=3, replicates=499, alpha=0.05
+    )
+    assert impossible.resolvable is False
+    assert impossible.required_replicates == 1439
+    with pytest.raises(FamilyResolutionError, match="requires at least 1439"):
+        require_family_resolution(
+            pair_label="DOGE/XRP",
+            outer_family_size=24,
+            pair_trial_count=3,
+            replicates=499,
+            alpha=0.05,
+        )
+
+    viable = check_family_resolution(
+        outer_family_size=24, pair_trial_count=12, replicates=9_999, alpha=0.05
+    )
+    assert viable.resolvable is True
+    assert viable.min_attainable_corrected_p == pytest.approx(0.0012)
+    assert viable.holm_first_threshold == pytest.approx(0.05 / 24)
 
 
 def test_seeded_spa_is_repeatable_for_varying_advantage() -> None:
@@ -431,3 +465,76 @@ def test_tuning_gross_vs_hodl_pct_uses_tuning_hodl_denominator() -> None:
         * 100
     )
     assert result.proof["tuning_gross_vs_hodl_pct"] == pytest.approx(expected)
+    assert result.proof["proof_protocol"] == PROOF_PROTOCOL_VERSION
+    assert result.proof["bootstrap_replicates"] == DEFAULT_SPA_REPLICATES
+    assert result.proof["bootstrap_seed"] == DEFAULT_SPA_SEED
+    assert isinstance(result.proof["bootstrap_block_size"], int)
+    assert result.proof["bootstrap_block_size"] >= 2
+    assert f"{DEFAULT_SPA_REPLICATES} replicates" in result.proof["correction"]
+
+
+def test_fold_switching_stitches_executed_signal_and_thresholds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from dataclasses import replace
+
+    base = market_inputs()
+    n = len(base.first.bars)
+    settings = LabSettings(
+        lookback=40,
+        entry=2.0,
+        exit=0.2,
+        auto_tune=True,
+        folds=4,
+        minimum_passing_folds=3,
+    )
+    split = int(n * (1 - settings.proof_fraction))
+    edges = np.linspace(split, n, settings.folds + 1, dtype=int)
+    mid = int(edges[2])
+    # Coin A climbs strongly through `split` (candidate 0 `into_a` wins fold 0),
+    # then drops 60% on `[split:mid]` while `into_b` (candidate 2) outperforms.
+    bars_a = list(base.first.bars)
+    for idx in range(split, n):
+        scale = 0.35 if idx < mid else 0.4
+        bars_a[idx] = replace(
+            bars_a[idx],
+            open=bars_a[idx].open * scale,
+            high=bars_a[idx].high * scale,
+            low=bars_a[idx].low * scale,
+            close=bars_a[idx].close * scale,
+        )
+    data = replace(base, first=validate_bar_series(tuple(bars_a)))
+
+    def switching_signal(
+        a: Floats, b: Floats, cfg: LabSettings, anchor: Floats | None = None
+    ) -> LabSignal:
+        del b, anchor
+        vals = np.full(a.size, cfg.entry, dtype=np.float64)
+        pref = np.zeros(a.size, dtype=np.float64)
+        if cfg.entry < 1.8:
+            pref[:split] = 1.0
+            pref[split:] = 1.0
+        elif cfg.entry > 2.2:
+            pref[:split] = -1.0
+            pref[split:] = -1.0
+        return LabSignal(vals, pref, "z-score", cfg.entry, -cfg.entry, True)
+
+    monkeypatch.setattr("qap.experiment.lab_proof.signal_path", switching_signal)
+    result = prove_lab_strategy(
+        data,
+        settings,
+        trial_count=3,
+        identity_confirmed=True,
+        bootstrap_replicates=49,
+    )
+    assert result.signal_provenance == "walk_forward_stitched"
+    assert result.upper_series is not None and result.lower_series is not None
+    # Verify folds actually switched candidates and stitched values differ across folds.
+    chosen_indices = [fold["candidate_index"] for fold in result.folds]
+    assert len(set(chosen_indices)) > 1
+    for fold in result.folds:
+        s_idx, e_idx = fold["start_index"], fold["end_index"]
+        expected_val = fold["settings"]["entry"]
+        np.testing.assert_allclose(result.signal.values[s_idx:e_idx], expected_val)
+        np.testing.assert_allclose(result.upper_series[s_idx:e_idx], expected_val)
+        np.testing.assert_allclose(result.lower_series[s_idx:e_idx], -expected_val)

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -10,12 +9,10 @@ from pathlib import Path
 from typing import Literal, cast
 from uuid import uuid4
 
-from qap.experiment import read_run_artifacts
 from qap.market import PublicBookSnapshot, VenueInstrument
 from qap.market.microstructure import PublicMarketMetadataSnapshot
 from qap.market.public_evidence import PublicEvidenceBundle
-from qap.scanner.prospective_artifacts import read_forward_cohort
-from qap.scanner.prospective_protocol import DEPTH_CADENCE, L1_CADENCE
+from qap.product_market_data_protocol import DEPTH_CADENCE, L1_CADENCE
 
 CollectionKind = Literal["l1", "depth"]
 CollectorStatus = Literal["not_running", "running", "failed"]
@@ -43,18 +40,6 @@ def _utc(value: datetime, *, field: str) -> datetime:
 
 def _timestamp(value: str | None) -> datetime | None:
     return None if value is None else datetime.fromisoformat(value).astimezone(UTC)
-
-
-def _instrument_identity(instrument: VenueInstrument) -> str:
-    payload = [
-        instrument.venue,
-        instrument.venue_symbol,
-        instrument.base.key,
-        instrument.quote.key,
-        None if instrument.valid_from is None else instrument.valid_from.isoformat(),
-        None if instrument.valid_to is None else instrument.valid_to.isoformat(),
-    ]
-    return json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
 
 
 def _cadence(kind: CollectionKind) -> timedelta:
@@ -129,51 +114,9 @@ def resolve_frozen_instrument(
     active_cohort_id: str,
     active_freeze_id: str,
 ) -> ResolvedCollectorInstrument:
-    """Resolve one active freeze to its exact historical execution instrument."""
-
-    root = run_root.resolve()
-    cohort = read_forward_cohort(root / "scanner-forward" / active_cohort_id)
-    freeze = next(
-        (
-            item
-            for item in cohort.candidate_freezes
-            if item.freeze_id == active_freeze_id
-        ),
-        None,
-    )
-    if freeze is None:
-        raise ProductCurrentEvidenceError("Active freeze is not owned by its cohort.")
-    loaded = read_run_artifacts(root / freeze.candidate_deep_replay_run_id)
-    execution_id = loaded.manifest.execution.execution_instrument_id
-    if execution_id is None:
-        raise ProductCurrentEvidenceError(
-            "Frozen historical replay has no direct execution instrument."
-        )
-    spec = next(
-        (
-            item
-            for item in loaded.manifest.instruments
-            if item.instrument_id == execution_id
-        ),
-        None,
-    )
-    if spec is None:
-        raise ProductCurrentEvidenceError(
-            "Frozen historical execution instrument is unavailable."
-        )
-    instrument = spec.to_domain()
-    if instrument.venue != freeze.venue or instrument.venue not in {"binance", "gate"}:
-        raise ProductCurrentEvidenceError(
-            "Frozen execution instrument does not match the follow-up venue."
-        )
-    return ResolvedCollectorInstrument(
-        collector_instrument_id=_instrument_identity(instrument),
-        execution_instrument_id=execution_id,
-        active_cohort_id=cohort.cohort_id,
-        active_freeze_id=freeze.freeze_id,
-        historical_run_id=freeze.candidate_deep_replay_run_id,
-        instrument=instrument,
-    )
+    """Retired scanner-forward freeze resolution."""
+    del run_root, active_cohort_id, active_freeze_id
+    raise ProductCurrentEvidenceError("Scanner forward cohorts are retired.")
 
 
 class ProductCurrentEvidenceStore:

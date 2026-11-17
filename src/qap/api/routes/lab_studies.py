@@ -20,6 +20,10 @@ from qap.api.pair_rotation_analysis_schemas import AnalysisDays
 from qap.api.pair_rotation_schemas import PairRotationRequestDto
 from qap.api.routes.pair_rotation import require_local, universe
 from qap.api.settings import ApiSettings
+from qap.experiment.lab_statistics import (
+    DEFAULT_SPA_REPLICATES,
+    FamilyResolutionError,
+)
 from qap.policy.lab_settings import LabSettings
 from qap.product_lab_advisor import advise_pair_strategies
 from qap.product_lab_store import LabStoreError, LabStudyStore
@@ -69,6 +73,11 @@ def compute_study(command: LabStudyRequestDto, request: Request) -> LabStudyDto:
             band_lookback=command.band_lookback,
             anchor=command.anchor,
             settings=command.settings,
+            bootstrap_replicates=(
+                DEFAULT_SPA_REPLICATES
+                if command.bootstrap_replicates is None
+                else command.bootstrap_replicates
+            ),
         )
         return LabStudyDto.model_validate(result)
     except (
@@ -77,6 +86,7 @@ def compute_study(command: LabStudyRequestDto, request: Request) -> LabStudyDto:
         ProductMarketDataError,
         ProductGenerationReadError,
         LabStoreError,
+        FamilyResolutionError,
     ) as exc:
         raise ApiBoundaryError(
             code="lab_study_unavailable", message=str(exc), status_code=409, context={}

@@ -1,4 +1,4 @@
-"""Pure L2 rebalance execution and Simple+Pro view helpers for live paper sessions."""
+"""Pure L2 rebalance execution and reconciliation helpers for live paper sessions."""
 
 from __future__ import annotations
 
@@ -7,22 +7,18 @@ import json
 import time
 from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
 from qap.execution.fills import Fill, FillSide
 from qap.execution.l2_book_fill import sweep_l2_taker_order
+from qap.execution.precision import MarketPrecision, MarketPrecisionError
 from qap.market import MarketMetadata, PriceSnapshot, VenueInstrument
 from qap.market.binance_ws_stream import TimedL2Book, capture_binance_l2_window
 from qap.policy import build_rebalance_plan
 from qap.policy.lab_settings import LabSettings
-from qap.portfolio import (
-    AllocationTarget,
-    AssetId,
-    PortfolioLedger,
-    PortfolioState,
-)
+from qap.portfolio import AllocationTarget, AssetId, PortfolioLedger, PortfolioState
 from qap.portfolio._decimal import divide, exact_add, exact_multiply, exact_subtract
 
 _ZERO = Decimal("0")
@@ -75,21 +71,10 @@ def capture_live_books(
 
 
 def window_book_provider(duration_seconds: float) -> BookProvider:
-    """Build a live book provider that streams for at most `duration_seconds`."""
-
     def provider(instruments: Sequence[VenueInstrument]) -> Mapping[str, TimedL2Book]:
         return capture_live_books(instruments, duration_seconds)
 
     return provider
-
-
-def instrument_to_dict(inst: VenueInstrument) -> dict[str, str]:
-    return {
-        "venue": inst.venue,
-        "venue_symbol": inst.venue_symbol,
-        "base": inst.base.key,
-        "quote": inst.quote.key,
-    }
 
 
 def instrument_from_dict(raw: Mapping[str, Any]) -> VenueInstrument:
@@ -146,12 +131,13 @@ def decide_strategy_target(
     last_rot: int | None,
     step_index: int,
     pref_val: float | None,
-) -> tuple[dict[AssetId, Decimal] | None, float, bool, float]:
+) -> tuple[dict[AssetId, Decimal] | None, float, bool, float, str | None]:
     drawdown = 0.0 if peak_value <= 0 else (1.0 - strat_val / peak_value)
     min_gap = max(cfg.minimum_hold, cfg.cooldown)
     cooldown_ok = last_rot is None or (step_index - last_rot) >= min_gap
     target_weights: dict[AssetId, Decimal] | None = None
     next_pref = last_pref
+    reason: str | None = None
 
     if (
         cfg.crash_defense_mode in ("park_usdt", "park_anchor")
@@ -160,6 +146,7 @@ def decide_strategy_target(
         and cooldown_ok
     ):
         parked = True
+        reason = "crash_defense"
         if cfg.crash_defense_mode == "park_usdt":
             target_weights = {inst_a.base: _ZERO, inst_b.base: _ZERO, USDT: _ONE}
         elif inst_anc is not None and inst_anc.base == inst_a.base:
@@ -183,14 +170,131 @@ def decide_strategy_target(
             peak_value = strat_val
             parked = False
             next_pref = pref_val
+            reason = "reenter"
             w_a = cfg.initial_weight + cfg.rotation_size * Decimal(str(next_pref))
             target_weights = {inst_a.base: w_a, inst_b.base: _ONE - w_a, USDT: _ZERO}
     elif pref_val is not None and pref_val != last_pref and cooldown_ok:
         next_pref = pref_val
+        reason = "signal_change"
         w_a = cfg.initial_weight + cfg.rotation_size * Decimal(str(next_pref))
         target_weights = {inst_a.base: w_a, inst_b.base: _ONE - w_a, USDT: _ZERO}
 
-    return target_weights, next_pref, parked, peak_value
+    return target_weights, next_pref, parked, peak_value, reason
+
+
+def _is_tradable_leg(
+    asset: AssetId,
+    qty_delta: Decimal,
+    mid_price: Decimal,
+    inst_by_asset: Mapping[AssetId, VenueInstrument],
+    meta_map: Mapping[str, MarketMetadata],
+    minimum_notional: Decimal,
+) -> bool:
+    notional = exact_multiply(qty_delta.copy_abs(), mid_price)
+    if notional < minimum_notional:
+        return False
+    inst = inst_by_asset.get(asset)
+    if inst is None:
+        return False
+    meta = meta_map.get(inst.venue_symbol)
+    if meta is None:
+        return True
+    precision = MarketPrecision(meta)
+    rounded = precision.quantity_down(qty_delta.copy_abs())
+    if rounded <= _ZERO:
+        return False
+    try:
+        precision.validate_fill(
+            base_quantity=rounded,
+            execution_price=mid_price,
+            market_notional_reference_price=mid_price,
+        )
+    except MarketPrecisionError:
+        return False
+    return True
+
+
+def reconcile_target_status(
+    *,
+    ledger_state: PortfolioState,
+    target_weights: Mapping[AssetId, Decimal],
+    mid_prices: Mapping[AssetId, Decimal],
+    inst_by_asset: Mapping[AssetId, VenueInstrument],
+    basket: tuple[AssetId, ...],
+    settings: LabSettings,
+    meta_map: Mapping[str, MarketMetadata],
+    had_any_fills: bool,
+    rejected: Sequence[str],
+    decision_time: datetime,
+) -> str:
+    snapshot = PriceSnapshot.from_prices(
+        timestamp=decision_time, numeraire=USDT, prices=mid_prices
+    )
+    target = AllocationTarget.for_basket(
+        {asset: target_weights.get(asset, _ZERO) for asset in basket},
+        basket=basket,
+    )
+    remaining = build_rebalance_plan(
+        current_state=ledger_state, target=target, prices=snapshot
+    )
+    tradable_sells = [
+        (asset, delta)
+        for asset, delta in remaining.quantity_deltas.items()
+        if asset != USDT
+        and delta < _ZERO
+        and _is_tradable_leg(
+            asset,
+            delta,
+            mid_prices[asset],
+            inst_by_asset,
+            meta_map,
+            settings.minimum_notional,
+        )
+    ]
+    available_usdt = ledger_state.quantity(USDT) + sum(
+        (
+            exact_multiply(delta.copy_abs(), mid_prices[asset])
+            for asset, delta in tradable_sells
+        ),
+        _ZERO,
+    )
+    tradable_buys = any(
+        _is_tradable_leg(
+            asset,
+            min(delta, available_usdt / mid_prices[asset]),
+            mid_prices[asset],
+            inst_by_asset,
+            meta_map,
+            settings.minimum_notional,
+        )
+        for asset, delta in remaining.quantity_deltas.items()
+        if asset != USDT and delta > _ZERO and available_usdt > _ZERO
+    )
+    tradable_left = bool(tradable_sells) or tradable_buys
+    if not tradable_left and not rejected:
+        return (
+            "dust_complete"
+            if remaining.one_way_rebalance_notional > _ZERO
+            else "complete"
+        )
+    if not tradable_left and had_any_fills:
+        return "dust_complete"
+    if had_any_fills:
+        return "partial"
+    return "rejected"
+
+
+def _effective_exec_time(tbook: TimedL2Book, effective_fill_ns: int) -> datetime:
+    extra_us = max(0, (effective_fill_ns - tbook.received_ns) // 1000)
+    return tbook.book.observed_at + timedelta(microseconds=extra_us)
+
+
+def _sleep_until_epoch_ns(target_ns: int) -> None:
+    remaining_s = (target_ns - time.time_ns()) / 1_000_000_000.0
+    if remaining_s > 0.0:
+        deadline = time.monotonic() + remaining_s
+        while (left := deadline - time.monotonic()) > 0.0:
+            time.sleep(left)
 
 
 def sweep_rebalance(
@@ -199,6 +303,7 @@ def sweep_rebalance(
     portfolio_key: str,
     session_id: str,
     step_index: int,
+    attempt_index: int | None = None,
     target_weights: Mapping[AssetId, Decimal],
     mid_prices: Mapping[AssetId, Decimal],
     inst_by_asset: Mapping[AssetId, VenueInstrument],
@@ -206,6 +311,7 @@ def sweep_rebalance(
     settings: LabSettings,
     order_rtt_ms: float,
     max_staleness_ms: float,
+    t_decide_ns: int | None = None,
     t_fill_leg1_ns: int,
     t_fill_leg2_ns: int,
     req_insts: Sequence[VenueInstrument],
@@ -215,7 +321,17 @@ def sweep_rebalance(
     fill_books_leg2: Mapping[str, TimedL2Book] | None,
     meta_map: Mapping[str, MarketMetadata],
     decision_time: datetime,
-) -> tuple[list[dict[str, Any]], list[str], float | None, float | None]:
+    applied_fill_ids: set[str] | None = None,
+) -> tuple[
+    list[dict[str, Any]],
+    list[str],
+    float | None,
+    float | None,
+    int | None,
+    int | None,
+    int,
+    int,
+]:
     snapshot = PriceSnapshot.from_prices(
         timestamp=decision_time, numeraire=USDT, prices=mid_prices
     )
@@ -226,8 +342,11 @@ def sweep_rebalance(
     plan = build_rebalance_plan(
         current_state=ledger.current_state, target=target, prices=snapshot
     )
+    rtt_ns = int(order_rtt_ms * 1_000_000)
+    req_leg1_ns = t_fill_leg1_ns
+    req_leg2_ns = t_fill_leg2_ns
     if plan.one_way_rebalance_notional < settings.minimum_notional:
-        return [], [], None, None
+        return [], [], None, None, None, None, req_leg1_ns, req_leg2_ns
 
     sells = [
         (asset, delta.copy_abs())
@@ -243,13 +362,17 @@ def sweep_rebalance(
     rejected: list[str] = []
     age1: float | None = None
     age2: float | None = None
+    actual_leg1_ns: int | None = None
+    actual_leg2_ns: int | None = None
+    seen_fills: set[str] = applied_fill_ids if applied_fill_ids is not None else set()
+    tag = f"a{attempt_index}" if attempt_index is not None else f"s{step_index}"
 
     if sells:
         if "leg1" not in leg_cache:
             if fill_books_leg1 is not None:
                 leg_cache["leg1"] = fill_books_leg1
             else:
-                time.sleep(order_rtt_ms / 1000.0)
+                _sleep_until_epoch_ns(req_leg1_ns)
                 leg_cache["leg1"] = book_provider(req_insts)
         books1 = leg_cache["leg1"]
         for idx, (asset, qty) in enumerate(sells):
@@ -257,23 +380,28 @@ def sweep_rebalance(
             if inst.venue_symbol not in books1:
                 rejected.append(f"missing_book:{inst.venue_symbol}")
                 continue
+            fid = f"{session_id}-{tag}-{portfolio_key}-sell{idx}"
+            if fid in seen_fills:
+                continue
             tbook = books1[inst.venue_symbol]
+            eff_ns = max(req_leg1_ns, tbook.received_ns)
             res = sweep_l2_taker_order(
-                fill_id=f"{session_id}-s{step_index}-{portfolio_key}-sell{idx}",
-                decision_id=f"{session_id}-s{step_index}-{portfolio_key}",
-                execution_timestamp=tbook.book.observed_at,
+                fill_id=fid,
+                decision_id=f"{session_id}-{tag}-{portfolio_key}",
+                execution_timestamp=_effective_exec_time(tbook, eff_ns),
                 side=FillSide.SELL,
                 book=tbook.book,
                 book_received_ns=tbook.received_ns,
-                target_fill_ns=t_fill_leg1_ns,
+                target_fill_ns=req_leg1_ns,
                 fee_bps=settings.fee_bps,
                 base_quantity=min(qty, ledger.current_state.quantity(asset)),
                 max_staleness_ms=max_staleness_ms,
                 market_metadata=meta_map.get(inst.venue_symbol),
             )
-            age1 = res.book_age_ms
+            age1 = res.book_age_ms if age1 is None else max(age1, res.book_age_ms)
             if res.fill is not None and res.vwap_price is not None:
                 ledger.apply_fill(res.fill)
+                seen_fills.add(fid)
                 fills_out.append(
                     fill_record(
                         res.fill,
@@ -281,8 +409,17 @@ def sweep_rebalance(
                         vwap_price=res.vwap_price,
                     )
                 )
+                actual_leg1_ns = (
+                    res.effective_fill_ns
+                    if actual_leg1_ns is None
+                    else max(actual_leg1_ns, res.effective_fill_ns)
+                )
             elif res.rejected_reason is not None:
                 rejected.append(res.rejected_reason)
+
+    if actual_leg1_ns is not None:
+        base_decide = t_decide_ns if t_decide_ns is not None else (req_leg1_ns - rtt_ns)
+        req_leg2_ns = max(base_decide + 2 * rtt_ns, actual_leg1_ns + rtt_ns)
 
     target_usdt_reserve = plan.target_values.get(USDT, _ZERO)
     avail_usdt = max(
@@ -294,7 +431,7 @@ def sweep_rebalance(
             if fill_books_leg2 is not None:
                 leg_cache["leg2"] = fill_books_leg2
             else:
-                time.sleep(order_rtt_ms / 1000.0)
+                _sleep_until_epoch_ns(req_leg2_ns)
                 leg_cache["leg2"] = book_provider(req_insts)
         books2 = leg_cache["leg2"]
         total_req = sum(
@@ -306,6 +443,9 @@ def sweep_rebalance(
             if inst.venue_symbol not in books2:
                 rejected.append(f"missing_book:{inst.venue_symbol}")
                 continue
+            fid = f"{session_id}-{tag}-{portfolio_key}-buy{idx}"
+            if fid in seen_fills:
+                continue
             spendable_now = max(
                 _ZERO,
                 exact_subtract(
@@ -316,31 +456,30 @@ def sweep_rebalance(
                 budget = spendable_now
             elif total_req > _ZERO:
                 share = divide(exact_multiply(delta, mid_prices[asset]), total_req)
-                budget = min(
-                    spendable_now,
-                    exact_multiply(avail_usdt, share),
-                )
+                budget = min(spendable_now, exact_multiply(avail_usdt, share))
             else:
                 budget = _ZERO
             if budget <= _ZERO:
                 continue
             tbook = books2[inst.venue_symbol]
+            eff_ns = max(req_leg2_ns, tbook.received_ns)
             res = sweep_l2_taker_order(
-                fill_id=f"{session_id}-s{step_index}-{portfolio_key}-buy{idx}",
-                decision_id=f"{session_id}-s{step_index}-{portfolio_key}",
-                execution_timestamp=tbook.book.observed_at,
+                fill_id=fid,
+                decision_id=f"{session_id}-{tag}-{portfolio_key}",
+                execution_timestamp=_effective_exec_time(tbook, eff_ns),
                 side=FillSide.BUY,
                 book=tbook.book,
                 book_received_ns=tbook.received_ns,
-                target_fill_ns=t_fill_leg2_ns,
+                target_fill_ns=req_leg2_ns,
                 fee_bps=settings.fee_bps,
                 quote_budget=budget,
                 max_staleness_ms=max_staleness_ms,
                 market_metadata=meta_map.get(inst.venue_symbol),
             )
-            age2 = res.book_age_ms
+            age2 = res.book_age_ms if age2 is None else max(age2, res.book_age_ms)
             if res.fill is not None and res.vwap_price is not None:
                 ledger.apply_fill(res.fill)
+                seen_fills.add(fid)
                 fills_out.append(
                     fill_record(
                         res.fill,
@@ -348,14 +487,28 @@ def sweep_rebalance(
                         vwap_price=res.vwap_price,
                     )
                 )
+                actual_leg2_ns = (
+                    res.effective_fill_ns
+                    if actual_leg2_ns is None
+                    else max(actual_leg2_ns, res.effective_fill_ns)
+                )
             elif res.rejected_reason is not None:
                 rejected.append(res.rejected_reason)
 
-    return fills_out, rejected, age1, age2
+    return (
+        fills_out,
+        rejected,
+        age1,
+        age2,
+        actual_leg1_ns,
+        actual_leg2_ns,
+        req_leg1_ns,
+        req_leg2_ns,
+    )
 
 
 def record_portfolio_fills(
-    entry: dict[str, Any], fills: Sequence[Mapping[str, Any]]
+    entry: dict[str, Any], fills: Sequence[Mapping[str, Any]], *, completed: bool = True
 ) -> None:
     fee_sum = sum((Decimal(str(f["fee"])) for f in fills), _ZERO)
     slip_sum = sum((Decimal(str(f["slippage_usdt"])) for f in fills), _ZERO)
@@ -363,89 +516,5 @@ def record_portfolio_fills(
     entry["slippage_usdt"] = str(
         exact_add(Decimal(str(entry["slippage_usdt"])), slip_sum)
     )
-    entry["rotations"] = int(entry["rotations"]) + 1
-
-
-def simple_status_text(
-    *,
-    status: str,
-    decisions_count: int,
-    trades_count: int,
-    vs_hodl_pct: float,
-    vs_control_pct: float,
-) -> str:
-    if status == "stopped":
-        return (
-            f"Stopped after {decisions_count} check(s) and {trades_count} swap(s): "
-            f"{vs_hodl_pct:+.2f}% vs HODL, {vs_control_pct:+.2f}% vs drift control."
-        )
-    if trades_count == 0:
-        return (
-            f"Active ({decisions_count} check(s)); "
-            "tracking 50/50 HODL with no swaps yet."
-        )
-    hodl_rel = "ahead of" if vs_hodl_pct >= 0 else "behind"
-    ctrl_rel = "ahead of" if vs_control_pct >= 0 else "behind"
-    return (
-        f"Active ({trades_count} swap(s)): {hodl_rel} HODL ({vs_hodl_pct:+.2f}%), "
-        f"{ctrl_rel} drift control ({vs_control_pct:+.2f}%)."
-    )
-
-
-def public_session_view(state: dict[str, Any]) -> dict[str, Any]:
-    starting = Decimal(str(state["starting_value"]))
-    portfolios_out: dict[str, Any] = {}
-    for key in ("strategy", "hodl", "drift_control"):
-        p = state["portfolios"][key]
-        val = Decimal(str(p["value_usdt"]))
-        ret_pct = (
-            float(divide(val, starting) - _ONE) * 100.0 if starting > _ZERO else 0.0
-        )
-        portfolios_out[key] = {
-            "value_usdt": str(val),
-            "return_pct": ret_pct,
-            "holdings": dict(p["holdings"]),
-            "fees_usdt": str(p["fees_usdt"]),
-            "slippage_usdt": str(p["slippage_usdt"]),
-            "rotations": int(p["rotations"]),
-        }
-    strat_val = Decimal(str(portfolios_out["strategy"]["value_usdt"]))
-    hodl_val = Decimal(str(portfolios_out["hodl"]["value_usdt"]))
-    ctrl_val = Decimal(str(portfolios_out["drift_control"]["value_usdt"]))
-    vs_hodl = (
-        float(divide(strat_val, hodl_val) - _ONE) * 100.0 if hodl_val > _ZERO else 0.0
-    )
-    vs_ctrl = (
-        float(divide(strat_val, ctrl_val) - _ONE) * 100.0 if ctrl_val > _ZERO else 0.0
-    )
-    trades = list(state["trades"])
-    decisions = int(state["decisions_count"])
-    status = str(state["status"])
-    return {
-        "session_id": state["session_id"],
-        "actor_id": state["actor_id"],
-        "status": status,
-        "created_at": state["created_at"],
-        "updated_at": state["updated_at"],
-        "stopped_at": state.get("stopped_at"),
-        "coin_a": state["coin_a"],
-        "coin_b": state["coin_b"],
-        "anchor": state.get("anchor"),
-        "bar": state["bar"],
-        "order_rtt_ms": float(state["order_rtt_ms"]),
-        "max_staleness_ms": float(state["max_staleness_ms"]),
-        "settings": dict(state["settings"]),
-        "simple_status": simple_status_text(
-            status=status,
-            decisions_count=decisions,
-            trades_count=len(trades),
-            vs_hodl_pct=vs_hodl,
-            vs_control_pct=vs_ctrl,
-        ),
-        "vs_hodl_pct": vs_hodl,
-        "vs_control_pct": vs_ctrl,
-        "decisions_count": decisions,
-        "portfolios": portfolios_out,
-        "trades": trades,
-        "latency_audit": list(state["latency_audit"]),
-    }
+    if completed:
+        entry["rotations"] = int(entry["rotations"]) + 1

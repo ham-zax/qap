@@ -1,93 +1,26 @@
 # QAP
 
-Current product direction — 2026-10-24
-Trigger: backend study checkpoint for the accepted Pair Rotation Lab MVP.
-Purpose: distinguish implemented API behavior from the current dashboard.
-Impact: the local workspace opens `/lab`; financial authority remains unchanged.
-Evidence: [accepted vision](docs/product/vision.md) and [Phase 19](docs/plans/19-pair-rotation-lab-mvp.md).
+Update context — 2026-11-16
+Trigger: Audit repair AR-7 ([Plan 25](docs/plans/25-audit-repairs-and-evidence-integrity.md)).
+Purpose: Align README with the current Pair Rotation Lab entry points, mark older Phases 14–19 descriptions as historical, and document local-only authority/actor boundaries.
+Impact: Documentation alignment only; economic, Shariah, holdout, and `NO-GO` live-capital boundaries remain unchanged.
+Evidence: [TASKS.md](TASKS.md), [Phase 21](docs/plans/21-pair-mvp-fundamentals-and-l2-paper-plan.md), [Phase 24 checkpoint](docs/aegis/work/2026-11-16-phase24-terminal/20-checkpoint.md), and [Plan 25](docs/plans/25-audit-repairs-and-evidence-integrity.md).
 
-The Lab now connects automatic pair-data preparation to immutable-data analysis,
-ratio/anchor charts, measurements and the dataset audit. The backend study API
-adds replay, validation proof and immutable saved results. Dashboard integration
-remains pending, so the UI still says **Strategy not tested**. The older research
-and artifact routes remain available. M3 human acceptance remains pending.
+QAP is a deterministic, long-only, spot-only crypto inventory-rebalancing research system built around explicit owned inventory (`PortfolioState`), causal evidence, realistic spot costs, and matched passive HODL/rebalancing controls.
 
-Update context — 2026-09-30 (authorized cleanup)
-Trigger: Hamza requested removal of legacy and stale code, data and documents,
-then requested wrap-up before UI generation.
-Purpose: point references to the current Phase 18 plan after retiring the two
-explicitly superseded research proposals; preserve their decision context in Git.
-Impact: no economic or research contract change here.
-Evidence: [Phase 18 handoff](docs/plans/18-research-experience-and-asset-resolution.md).
+The primary product objective is **portfolio wealth growth relative to matched passive HODL and a predeclared rebalancing control after costs**. No live-capital order placement is authorized; **Phase 12 remains `NO-GO` for live operation** ([live-readiness decision](docs/reviews/2026-08-17-live-readiness.md)).
 
+## Current Lab entry points & security boundary
 
-QAP is a deterministic, spot-only crypto inventory-rebalancing research system built around explicit owned inventory, causal evidence, realistic costs, and matched passive counterfactuals.
+QAP currently operates as **local research software** exposing one shared Python backend core through two equal interfaces:
 
-The primary product objective is **portfolio wealth growth relative to the correct matched passive HODL/control after costs**. Coin-unit accumulation is a secondary attribution lens, not permission to destroy wealth. A numeraire is used to value heterogeneous holdings consistently; it is a measurement coordinate, not a directional market-prediction objective.
+- **Web UI (`/lab` and `/operations`):** FastAPI loopback API + React/Vite terminal (`TimeSeriesChart` + Watermelon UI). Supports coin discovery, descriptive ratio/dependence analysis, Smart Strategy Advisor presets, chronological walk-forward validation, side-by-side preset comparison, immutable saved runs, and forward L2 paper simulation.
+- **Agent CLI (`qap.lab_cli`):** Token-efficient JSON/Markdown CLI sharing the same study, advisor, comparison, and L2 paper session stores (`uv run python -m qap.lab_cli --help`).
+- **Actor isolation is not hosted authentication:** `X-QAP-Actor-Id` (`--actor-id`) partitions saved study and paper directories per local caller ID (`local` by default, or `actors/<id>`) to keep concurrent agent/user trials separated on a single local machine. It provides no authentication, authorization, TLS, or multi-tenant security for network/hosted exposure.
 
-## Current repository state
+## Historical milestones (archived context)
 
-QAP is an implemented local research product, not a documentation-only scaffold. The repository currently contains:
-
-- a Python 3.14 experiment/replay engine with exact Decimal portfolio accounting, policy/control execution, HODL and matched-contribution comparisons, immutable run artifacts, integrity seals, and final-OOS commitment discipline;
-- relationship evidence and simple-first predictive research components with explicit causal/provenance contracts;
-- deterministic forward-paper execution over recorded public venue inputs, including precision/notional rules, routed fills, independent reconciliation, and self-auditing paper-operation artifacts;
-- a loopback-only FastAPI command/query application boundary with a finite seven-command research mutation surface, durable single-active operation records, and validated immutable evidence reads;
-- a React/Vite unified research workbench for Discovery, Prospective evidence, manual baskets, Operations, research runs, portfolio economics, pair evidence, and paper operations;
-- a sequential local development harness under `tools/agent/` with recoverable state and bounded verification.
-
-**Phase 12 remains `NO-GO` for live operation.** QAP has no private exchange credentials, authenticated trading API, browser order controls, live scheduler, or live-capital authority. The recorded decision is in [`docs/reviews/2026-08-17-live-readiness.md`](docs/reviews/2026-08-17-live-readiness.md).
-
-Phase 14's analytical-workbench implementation has passed its rendered browser acceptance contract; see [`docs/reviews/2026-08-18-phase14-browser-acceptance.md`](docs/reviews/2026-08-18-phase14-browser-acceptance.md). Phase 15 Scanner V1 Slices 1–3 are complete and repository-verified; Slice-3 results are recorded in [`docs/research/2026-08-18-qap-scanner-slice3-results.md`](docs/research/2026-08-18-qap-scanner-slice3-results.md). Slice 1 establishes historical pair research economics only under QAP's declared deterministic replay/cost model; Slice 2 owns genuinely forward candidate evidence and current public capacity qualification; Slice 3 adds O(N) asset-native momentum and manual 3–6 asset one-inventory basket research through one policy target, the existing Phase-11 multi-asset executor, and ordinary QAP economics. Slice 4 is complete: the local unified workbench can initiate and inspect the admitted Slice-1/2/3 workflows through a finite command/query API while immutable scanner/QAP artifacts remain authoritative. Final rendered executable state is `6961937`; the current review-closure state is `62416cc`; verified results are in [`docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`](docs/research/2026-08-19-qap-slice4-unified-workbench-results.md). **Phase 16 — Human-Centered Workbench UX Re-architecture is complete through M8.** The primary IA is `Home / Discover / Validate / Portfolios / Results / Activity`; novice-first task flows, progressive disclosure, Results/Activity separation, forward/current-evidence guidance, portfolio authority boundaries, and the shared visual state grammar now sit over the same authoritative QAP/scanner evidence. Scientific/economic authority remains backend-owned, rejected research remains first-class evidence, and the UI still carries the explicit no-live-trading-authority boundary. The deterministic browser fixture live-exercises `research_only`; `small_capacity` and `tradable_now` presentation paths are implemented but are recorded as not yet live-exercised by that fixture.
-
-**Phase 17 — Product Layer implementation is complete through the Pair Study M11 workflow at `3528973`.** Ordinary Pair Research can study `W / PIXEL` from exact same-venue `ASSET/USDT` evidence before execution, then—after explicit transient USDT research authority—run honest two-leg economics through the existing `multi_asset_bridge` executor without a synthetic `W/PIXEL` market and finish the development conclusion on the Research screen. **M10-D representative-user acceptance rerun is now the final Phase-17 gate.** QAP's Scanner-V1, final-OOS, HODL/control, identity/PIT, and Phase-12 live-capital `NO-GO` boundaries remain unchanged. See [`docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md`](docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md), [`docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`](docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md), [`docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/m10d-representative-user-acceptance.md`](docs/superpowers/agent-plans/2026-08-19-phase17-product-layer/m10d-representative-user-acceptance.md), and [`docs/plans/17-product-layer-market-data-and-research-lifecycle.md`](docs/plans/17-product-layer-market-data-and-research-lifecycle.md).
-
-### Research-flow correction — 2026-09-24
-
-Update context: user research/backtest usability review. This correction changes
-presentation and continuity, not economic or research authority; see the
-[study-workspace design](docs/superpowers/specs/2026-09-24-research-study-workspace.md)
-and [implementation/check record](docs/superpowers/plans/2026-09-24-research-study-workspace.md).
-The historical milestone claims above do not close representative-user acceptance.
-
-The 2026-09-24 first iteration grouped a saved pair question and its attempts,
-but still exposed too many backend stages as separate user actions. Its persistence
-and evidence behavior remains the implementation base; its presentation direction is
-superseded by the approved simple-research plan below.
-
-### Research Console — 2026-09-24 implementation continuation
-
-Update context — 2026-09-24
-Trigger: the first simple-research iteration remained too technical for ordinary users.
-Purpose: put the question, human interpretation, chart and economic answer into one console.
-Impact: presentation and browser-local continuity changed; scientific, economic, identity,
-holdout, and execution authority did not.
-Evidence: the [first iteration](docs/superpowers/plans/2026-09-24-intuitive-research-experience.md),
-the retired Research Console plan (replaced by
-[Phase 18](docs/plans/18-research-experience-and-asset-resolution.md)),
-and focused CLI interaction checks. Representative-user visual acceptance remains pending.
-
-Ordinary Research now opens the Research Console. Choose two assets, a research type
-(Relationship or Backtest comparison), and a period, then select **Start research**.
-Relationship mode reads historical measurements and stops; it does not create a backtest.
-Backtest comparison continues through the backend-declared recipe, support check, and
-simulated economic comparison without extra confirmation when runnable. Asset admission,
-operator-recorded identity mapping, and workspace-scoped USDT bridge authority still require explicit
-decisions when relevant. Nothing here places live orders.
-
-The descriptive view leads with a plain-language interpretation and a normalized price
-chart; ratio and further chart views are available. Model details, dataset fingerprints,
-and provenance remain behind named disclosures. The relationship interpretation is a
-deterministic presentation of backend values, not a trading signal or economic verdict.
-When a backtest finishes, the recorded method comparison against matched HODL and the
-declared simple-rebalancing control leads. Its relative-wealth chart remains prominent;
-fills, costs, exact assumptions, and run identifiers remain accessible in details.
-
-Drafts are saved in this browser; backend result records remain authoritative and
-independently available in History. Reopening a completed run does not reinterpret its
-historical evidence using newly fetched relationship data. Running again may use a later
-trailing-history cutoff and creates another attempt rather than changing the old result.
-The CLI test/build record is not a substitute for representative-user usability review.
+Phases 12–19 (analytical workbench, Scanner V1 Slices 1–3, unified workbench, Pair Study workflow, and pre-Phase-21 Lab MVP) are superseded in the active UI by the Pair Rotation Lab terminal and archived at Git tag `archive/pre-phase21-workbench`. Current task status, Plan 25 audit repairs, and open research-policy items live in [TASKS.md](TASKS.md).
 
 ## Requirements and setup
 
@@ -164,28 +97,30 @@ The Vite development server proxies `/api` to `http://127.0.0.1:8000`.
 
 ## Verification
 
-Backend and repository checks:
+Full compiler gate (serializes heavy checks across worktrees via `/tmp/qap-gate-heavy.lock`):
+
+```bash
+uv run python scripts/qap_gate.py --full
+```
+
+Individual repository checks:
 
 ```bash
 uv run pytest -q
 uv run ruff check .
 uv run ruff format --check .
-uv run pyright src tests scripts tools
+uv run pyright src tests scripts
 uv run lint-imports
 uv run python scripts/check_source_size.py
 uv lock --check
 ```
 
-Frontend and browser checks:
+Frontend checks:
 
 ```bash
-cd web
-pnpm typecheck
-pnpm typecheck:e2e
-pnpm test
-pnpm build
-cd ..
-uv run python scripts/run_playwright_e2e.py
+pnpm --dir web typecheck
+pnpm --dir web test
+pnpm --dir web build
 ```
 
 To verify that the checked-in API contract is current:
@@ -197,25 +132,12 @@ diff -u web/openapi.json /tmp/qap-openapi.json
 
 ## Project map
 
-- [`implementation_prompt.md`](implementation_prompt.md) — governing mission/economic/action-space constraints.
+- [`TASKS.md`](TASKS.md) — active task tracker (Phase 21–24 evidence, Plan 25 audit repairs, RD-1, and wider audit queue).
 - [`docs/plans/README.md`](docs/plans/README.md) — phase map and current sequencing.
-- [`docs/superpowers/specs/2026-08-17-qap-system-design.md`](docs/superpowers/specs/2026-08-17-qap-system-design.md) — economic/domain/system design.
-- [`docs/superpowers/specs/2026-08-17-qap-web-operations-design.md`](docs/superpowers/specs/2026-08-17-qap-web-operations-design.md) — API/web/operations boundaries.
-- [`docs/reviews/2026-08-17-live-readiness.md`](docs/reviews/2026-08-17-live-readiness.md) — current Phase-12 `NO-GO` decision.
-- [`docs/plans/14-analytical-workbench-ux-redesign.md`](docs/plans/14-analytical-workbench-ux-redesign.md) — analytical-workbench acceptance contract.
-- [`docs/plans/15-research-scanner-and-candidate-workbench.md`](docs/plans/15-research-scanner-and-candidate-workbench.md) — completed Scanner V1 / Phase-15 research-kernel umbrella plan for Slices 1–3.
-- [`docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-design.md`](docs/superpowers/specs/2026-08-18-qap-scanner-slice3-asset-momentum-basket-design.md) — exact Slice-3 momentum, manual-basket, graph-resolver, multi-asset replay, research, and workbench contracts.
-- [`docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md`](docs/superpowers/plans/2026-08-18-qap-scanner-slice3-implementation-plan.md) — completed Slice-3 backend implementation sequence and closure contract.
-- [`docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md`](docs/superpowers/plans/2026-08-19-qap-slice4-unified-workbench-implementation-plan.md) — completed implementation plan for the unified local application over Slices 1–3.
-- [`docs/research/2026-08-19-qap-slice4-unified-workbench-results.md`](docs/research/2026-08-19-qap-slice4-unified-workbench-results.md) — verified Slice-4 command/query, browser workflow, repository-gate, and rendered-acceptance results.
-- [`docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md`](docs/research/2026-08-19-qap-human-centered-workbench-ux-investigation.md) — current-route/task analysis, user journeys/flows, cognitive walkthrough, heuristic findings, terminology architecture, and IA hypothesis for non-expert users.
-- [`docs/research/2026-08-19-qap-phase16-implementation-handoff.md`](docs/research/2026-08-19-qap-phase16-implementation-handoff.md) — Phase-16 implementation history, frozen contracts, boundary guidance, milestone commits, and closed handoff state.
-- [`docs/plans/16-human-centered-workbench-ux-rearchitecture.md`](docs/plans/16-human-centered-workbench-ux-rearchitecture.md) — completed post-Slice-4 presentation/IA implementation plan and M8 human-centered closure evidence.
-- [`docs/research/2026-08-19-qap-product-layer-investigation.md`](docs/research/2026-08-19-qap-product-layer-investigation.md) — repository/public-source evidence for the Phase-17 Product Layer: clean-workspace gaps, data/lifecycle ownership, CCXT boundary, current-evidence collection, and measured scanner scale.
-- [`docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md`](docs/research/2026-08-19-tradingview-ratio-legacy-qap-salvage-report.md) — read-only forensic map of reusable legacy QAP engineering/research patterns and explicitly rejected runtime architecture; selectively adopted by the Phase-17 planning amendment.
-- [`docs/superpowers/specs/2026-08-19-qap-product-layer-design.md`](docs/superpowers/specs/2026-08-19-qap-product-layer-design.md) — frozen Phase-17 Product Layer design: explicit asset admission, market-data generations/provenance, current-approved versus historical-PIT research claims, longitudinal Research Ideas, current-evidence collection, and protected authority boundaries.
-- [`docs/plans/17-product-layer-market-data-and-research-lifecycle.md`](docs/plans/17-product-layer-market-data-and-research-lifecycle.md) — executable Phase-17 plan; M0-M10-C and M11-A/B/C/D are integrated through `3528973`, with M10-D representative-user acceptance rerun now the final human closure gate.
-- [`docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md`](docs/superpowers/specs/2026-08-20-qap-pair-study-research-workflow-design.md) — Pair Research design amendment: research question/relationship study first, economic recipe/replay second.
-- [`docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md`](docs/superpowers/plans/2026-08-20-qap-pair-study-research-workflow-implementation-plan.md) — sequential M11 implementation plan for pair-scoped preparation, Pair Study Product flow, and honest direct/two-leg economics.
-- [`tools/agent/README.md`](tools/agent/README.md) — sequential local development harness.
+- [`docs/plans/21-pair-mvp-fundamentals-and-l2-paper-plan.md`](docs/plans/21-pair-mvp-fundamentals-and-l2-paper-plan.md) — active Pair Rotation Lab & L2 paper specification.
+- [`docs/plans/24-binance-terminal-ui-redesign.md`](docs/plans/24-binance-terminal-ui-redesign.md) — Phase 24 terminal UI design.
+- [`docs/plans/25-audit-repairs-and-evidence-integrity.md`](docs/plans/25-audit-repairs-and-evidence-integrity.md) — Plan 25 audit repair sequence & open research-policy decisions (`RD-1`).
+- [`docs/reviews/2026-11-16-audit-repair-completion.md`](docs/reviews/2026-11-16-audit-repair-completion.md) — Plan 25 baseline, probe reconciliation, and verification record.
+- [`docs/reviews/2026-08-17-live-readiness.md`](docs/reviews/2026-08-17-live-readiness.md) — Phase-12 `NO-GO` live-readiness decision.
 - [`docs/OSS_REUSE_BOUNDARY.md`](docs/OSS_REUSE_BOUNDARY.md) — open-source reuse boundary.
+- [`docs/REFERENCE_BOUNDARY.md`](docs/REFERENCE_BOUNDARY.md) — read-only reference corpus boundary.

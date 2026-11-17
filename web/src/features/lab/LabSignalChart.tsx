@@ -32,8 +32,18 @@ export function LabSignalChart({
       { name: 'Active signal', unit: signal.unit, points: activePoints, colorToken: '--chart-series-1' },
     ]
     if (showTriggers) {
-      const upperPoints = activePoints.map((pt) => ({ timestamp: pt.timestamp, value: signal.upper }))
-      const lowerPoints = activePoints.map((pt) => ({ timestamp: pt.timestamp, value: signal.lower }))
+      const upperPoints = signal.time.flatMap((time, idx) => {
+        const value = signal.values[idx]
+        if (value == null) return []
+        const bound = signal.upper_series?.[idx] ?? signal.upper
+        return bound == null ? [] : [{ timestamp: new Date(time * 1000).toISOString(), value: bound }]
+      })
+      const lowerPoints = signal.time.flatMap((time, idx) => {
+        const value = signal.values[idx]
+        if (value == null) return []
+        const bound = signal.lower_series?.[idx] ?? signal.lower
+        return bound == null ? [] : [{ timestamp: new Date(time * 1000).toISOString(), value: bound }]
+      })
       base.push(
         { name: 'Upper trigger', unit: signal.unit, points: upperPoints, dashed: true, colorToken: '--qap-border-strong' },
         { name: 'Lower trigger', unit: signal.unit, points: lowerPoints, dashed: true, colorToken: '--qap-border-strong' },
@@ -44,11 +54,19 @@ export function LabSignalChart({
 
   if (series.length === 0) return null
 
+  const provenanceText =
+    signal.provenance === 'walk_forward_stitched'
+      ? 'Walk-forward stitched executed signal'
+      : signal.provenance === 'context_only'
+        ? 'Context-only signal preview'
+        : 'Legacy saved study (signal provenance not recorded)'
+  const variableText = signal.signal_variable ? `${signal.signal_variable} (${signal.unit})` : signal.unit
+
   return (
     <div className="lab-signal-subpane">
       <TimeSeriesChart
         title="Active signal"
-        description={`Synchronized strategy signal (${signal.unit}) with entry thresholds (${Number(signal.lower.toFixed(4))} / ${Number(signal.upper.toFixed(4))}).`}
+        description={`${provenanceText}: ${variableText} with entry thresholds (${Number(signal.lower.toFixed(4))} / ${Number(signal.upper.toFixed(4))}).`}
         series={series}
         height={180}
         sharedCursorTime={sharedCursorTime}

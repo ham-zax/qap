@@ -2648,6 +2648,39 @@
       "LabProofDto": {
         "additionalProperties": false,
         "properties": {
+          "bootstrap_block_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bootstrap Block Size"
+          },
+          "bootstrap_replicates": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bootstrap Replicates"
+          },
+          "bootstrap_seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bootstrap Seed"
+          },
           "control": {
             "anyOf": [
               {
@@ -2748,6 +2781,17 @@
             "title": "Proof End",
             "type": "string"
           },
+          "proof_protocol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proof Protocol"
+          },
           "proof_start": {
             "format": "date-time",
             "title": "Proof Start",
@@ -2767,6 +2811,17 @@
           "settings_tried": {
             "title": "Settings Tried",
             "type": "integer"
+          },
+          "signal_provenance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signal Provenance"
           },
           "significance": {
             "title": "Significance",
@@ -3532,6 +3587,70 @@
             "title": "Lower",
             "type": "number"
           },
+          "lower_series": {
+            "anyOf": [
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lower Series"
+          },
+          "preferences": {
+            "anyOf": [
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferences"
+          },
+          "provenance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provenance"
+          },
+          "signal_variable": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signal Variable"
+          },
           "time": {
             "items": {
               "type": "integer"
@@ -3546,6 +3665,27 @@
           "upper": {
             "title": "Upper",
             "type": "number"
+          },
+          "upper_series": {
+            "anyOf": [
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upper Series"
           },
           "values": {
             "items": {
@@ -3633,6 +3773,19 @@
             ],
             "title": "Bar",
             "type": "string"
+          },
+          "bootstrap_replicates": {
+            "anyOf": [
+              {
+                "maximum": 200000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bootstrap Replicates"
           },
           "coin_a": {
             "title": "Coin A",
@@ -4055,7 +4208,7 @@
       },
       "LivePaperLatencyDto": {
         "additionalProperties": false,
-        "description": "Four clocks per decision: exchange (us), receive/decide/fill (ns).",
+        "description": "Declared delay vs actual supporting clocks per attempt.",
         "properties": {
           "action": {
             "enum": [
@@ -4065,6 +4218,55 @@
             ],
             "title": "Action",
             "type": "string"
+          },
+          "actual_decide_to_fill_leg1_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Decide To Fill Leg1 Ms"
+          },
+          "actual_decide_to_fill_leg2_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Decide To Fill Leg2 Ms"
+          },
+          "actual_fill_leg1_ns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Fill Leg1 Ns"
+          },
+          "actual_fill_leg2_ns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Fill Leg2 Ns"
+          },
+          "attempt_index": {
+            "default": 1,
+            "title": "Attempt Index",
+            "type": "integer"
           },
           "book_age_leg1_ms": {
             "anyOf": [
@@ -4088,6 +4290,17 @@
             ],
             "title": "Book Age Leg2 Ms"
           },
+          "candle_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candle Time"
+          },
           "decide_to_fill_leg1_ms": {
             "title": "Decide To Fill Leg1 Ms",
             "type": "number"
@@ -4095,6 +4308,21 @@
           "decide_to_fill_leg2_ms": {
             "title": "Decide To Fill Leg2 Ms",
             "type": "number"
+          },
+          "execution_status": {
+            "default": "hold",
+            "title": "Execution Status",
+            "type": "string"
+          },
+          "legacy_clock": {
+            "default": false,
+            "title": "Legacy Clock",
+            "type": "boolean"
+          },
+          "observation_type": {
+            "default": "legacy_step",
+            "title": "Observation Type",
+            "type": "string"
           },
           "order_rtt_ms": {
             "title": "Order Rtt Ms",
@@ -4110,6 +4338,28 @@
             },
             "title": "Rejected Reasons",
             "type": "array"
+          },
+          "requested_fill_leg1_ns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Fill Leg1 Ns"
+          },
+          "requested_fill_leg2_ns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Fill Leg2 Ns"
           },
           "signal_preference": {
             "anyOf": [
@@ -4172,6 +4422,72 @@
           "rejected_reasons"
         ],
         "title": "LivePaperLatencyDto",
+        "type": "object"
+      },
+      "LivePaperMetadataProvenanceDto": {
+        "additionalProperties": false,
+        "properties": {
+          "observed_at": {
+            "title": "Observed At",
+            "type": "string"
+          },
+          "payload_sha256": {
+            "title": "Payload Sha256",
+            "type": "string"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "observed_at",
+          "source_id",
+          "payload_sha256"
+        ],
+        "title": "LivePaperMetadataProvenanceDto",
+        "type": "object"
+      },
+      "LivePaperPendingTargetDto": {
+        "additionalProperties": false,
+        "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "fills_count": {
+            "title": "Fills Count",
+            "type": "integer"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "target_id": {
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_weights": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Target Weights",
+            "type": "object"
+          }
+        },
+        "required": [
+          "target_id",
+          "status",
+          "reason",
+          "target_weights",
+          "attempts",
+          "fills_count"
+        ],
+        "title": "LivePaperPendingTargetDto",
         "type": "object"
       },
       "LivePaperPortfolioDto": {
@@ -4255,6 +4571,11 @@
             ],
             "title": "Anchor"
           },
+          "anchor_mode": {
+            "default": "auto",
+            "title": "Anchor Mode",
+            "type": "string"
+          },
           "bar": {
             "enum": [
               "1m",
@@ -4265,6 +4586,27 @@
             ],
             "title": "Bar",
             "type": "string"
+          },
+          "book_observations_count": {
+            "default": 0,
+            "title": "Book Observations Count",
+            "type": "integer"
+          },
+          "can_step": {
+            "default": true,
+            "title": "Can Step",
+            "type": "boolean"
+          },
+          "candle_origin_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candle Origin Time"
           },
           "coin_a": {
             "title": "Coin A",
@@ -4283,12 +4625,30 @@
             "title": "Decisions Count",
             "type": "integer"
           },
+          "last_candle_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Candle Time"
+          },
           "latency_audit": {
             "items": {
               "$ref": "#/components/schemas/LivePaperLatencyDto"
             },
             "title": "Latency Audit",
             "type": "array"
+          },
+          "market_metadata_provenance": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LivePaperMetadataProvenanceDto"
+            },
+            "title": "Market Metadata Provenance",
+            "type": "object"
           },
           "max_staleness_ms": {
             "title": "Max Staleness Ms",
@@ -4298,8 +4658,23 @@
             "title": "Order Rtt Ms",
             "type": "number"
           },
+          "pending_target": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LivePaperPendingTargetDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "portfolios": {
             "$ref": "#/components/schemas/LivePaperPortfoliosDto"
+          },
+          "schema_version": {
+            "default": "qap.lab.paper_session.v2",
+            "title": "Schema Version",
+            "type": "string"
           },
           "session_id": {
             "title": "Session Id",
@@ -4320,6 +4695,17 @@
             "title": "Status",
             "type": "string"
           },
+          "step_block_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Block Reason"
+          },
           "stopped_at": {
             "anyOf": [
               {
@@ -4331,6 +4717,11 @@
               }
             ],
             "title": "Stopped At"
+          },
+          "track_record_mode": {
+            "default": "continuous_forward",
+            "title": "Track Record Mode",
+            "type": "string"
           },
           "trades": {
             "items": {
@@ -4436,6 +4827,16 @@
             "title": "Bar",
             "type": "string"
           },
+          "book_observations_count": {
+            "default": 0,
+            "title": "Book Observations Count",
+            "type": "integer"
+          },
+          "can_step": {
+            "default": true,
+            "title": "Can Step",
+            "type": "boolean"
+          },
           "coin_a": {
             "title": "Coin A",
             "type": "string"
@@ -4453,6 +4854,11 @@
             "title": "Decisions Count",
             "type": "integer"
           },
+          "schema_version": {
+            "default": "qap.lab.paper_session.v2",
+            "title": "Schema Version",
+            "type": "string"
+          },
           "session_id": {
             "title": "Session Id",
             "type": "string"
@@ -4467,6 +4873,22 @@
               "stopped"
             ],
             "title": "Status",
+            "type": "string"
+          },
+          "step_block_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Block Reason"
+          },
+          "track_record_mode": {
+            "default": "continuous_forward",
+            "title": "Track Record Mode",
             "type": "string"
           },
           "trades_count": {
@@ -4532,7 +4954,8 @@
             "enum": [
               "into_a",
               "into_b",
-              "into_usdt"
+              "into_usdt",
+              "into_anchor"
             ],
             "title": "Direction",
             "type": "string"
@@ -4563,9 +4986,29 @@
             "title": "Slippage Usdt",
             "type": "string"
           },
+          "status": {
+            "default": "complete",
+            "enum": [
+              "complete",
+              "partial"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
           "step_index": {
             "title": "Step Index",
             "type": "integer"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
           }
         },
         "required": [
